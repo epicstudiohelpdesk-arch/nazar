@@ -22,6 +22,13 @@
       "when": 1790603082052,
       "tag": "0002_aromatic_pestilence",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790606264929,
+      "tag": "0003_nervous_shadow_king",
+      "breakpoints": true
     }
   ]
 }

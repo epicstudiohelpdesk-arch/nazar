@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS "idx_profiles_visibility_gender" ON "profiles" USING btree ("visibility","gender");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_profiles_date_of_birth" ON "profiles" USING btree ("date_of_birth");

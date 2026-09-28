@@ -12,3 +12,6 @@ export * from './profile/components/PreferencesView.js';
 export * from './profile/components/InterestsPicker.js';
 export * from './profile/components/PromptsList.js';
 export * from './profile/ProfileOverviewScreen.js';
+export * from './discovery/discovery-api.js';
+export * from './discovery/components/DiscoveryCard.js';
+export * from './discovery/DiscoveryScreen.js';

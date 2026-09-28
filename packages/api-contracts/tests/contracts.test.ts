@@ -62,4 +62,20 @@ describe('@platform/api-contracts', () => {
   it('should safely return null for invalid cursor strings', () => {
     expect(decodeCursor('not-a-valid-cursor')).toBeNull();
   });
+
+  it('should accurately map meter distances to privacy-preserving distance buckets', async () => {
+    const { getDistanceBucket } = await import('../src/index.js');
+    expect(getDistanceBucket(null)).toBeNull();
+    expect(getDistanceBucket(undefined)).toBeNull();
+    expect(getDistanceBucket(-100)).toBeNull();
+    expect(getDistanceBucket(500)).toBe('< 1 km');
+    expect(getDistanceBucket(1000)).toBe('1-5 km');
+    expect(getDistanceBucket(4999)).toBe('1-5 km');
+    expect(getDistanceBucket(5000)).toBe('1-5 km');
+    expect(getDistanceBucket(5001)).toBe('5-10 km');
+    expect(getDistanceBucket(10000)).toBe('5-10 km');
+    expect(getDistanceBucket(22000)).toBe('10-25 km');
+    expect(getDistanceBucket(48000)).toBe('25-50 km');
+    expect(getDistanceBucket(75000)).toBe('50+ km');
+  });
 });

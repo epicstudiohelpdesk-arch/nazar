@@ -61,6 +61,8 @@ export const profiles = pgTable(
   (table) => [
     uniqueIndex('idx_profiles_user_id').on(table.userId),
     index('idx_profiles_visibility').on(table.visibility),
+    index('idx_profiles_visibility_gender').on(table.visibility, table.gender),
+    index('idx_profiles_date_of_birth').on(table.dateOfBirth),
     index('idx_profiles_location').using('gist', table.location),
   ]
 );
