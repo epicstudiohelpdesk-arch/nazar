@@ -2,6 +2,7 @@ import { Injectable, Inject, type OnApplicationShutdown } from '@nestjs/common';
 import type pg from 'pg';
 import { sql } from 'drizzle-orm';
 import type { DrizzleDatabase } from './drizzle/client.js';
+export type { DrizzleDatabase } from './drizzle/client.js';
 import type { IDatabaseService, IUnitOfWork } from './database.interface.js';
 import { DATABASE_POOL_TOKEN, DATABASE_CONNECTION_TOKEN } from './database.tokens.js';
 import { AppLoggerService } from '../../common/logging/app-logger.service.js';
@@ -56,7 +57,7 @@ export class DatabaseService implements IDatabaseService, OnApplicationShutdown 
   }
 
   async withTransaction<T>(fn: (tx: DrizzleDatabase) => Promise<T>): Promise<T> {
-    return this.db.transaction(async (tx) => {
+    return this.db.transaction(async (tx: any) => {
       return fn(tx as unknown as DrizzleDatabase);
     });
   }

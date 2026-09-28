@@ -6,3 +6,5 @@ export * from './common/idempotency.js';
 export * from './health/health.contract.js';
 export * from './auth/auth.contract.js';
 export * from './auth/auth-events.js';
+export * from './profile/profile.contract.js';
+export * from './profile/profile-events.js';

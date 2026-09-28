@@ -267,3 +267,54 @@ Internal database driver errors are mapped to standardized HTTP exceptions by `m
 
 - **Liveness (`/health`, `/v1/health`)**: Process-level liveness probe. Verifies process responsiveness and memory without performing database queries.
 - **Readiness (`/ready`, `/v1/ready`)**: Subsystem readiness probe. Queries PostgreSQL (`SELECT 1 as alive`). If the database connection drops or times out, `/ready` responds with `503 Service Unavailable`, preventing traffic routing while allowing container orchestrators to preserve the container.
+
+---
+
+## 9. Gate 05 Profile, Preferences & Media Schemas
+
+Gate 05 establishes the authoritative dating profile, preferences, taxonomy, and media persistence tables:
+
+### 9.1 `profiles`
+
+- `id` (`uuid`, PK): UUIDv7 identifier.
+- `user_id` (`uuid`, FK -> `users.id`, `ON DELETE CASCADE`, UNIQUE): Canonical user account owner.
+- `display_name` (`varchar(64)`): Public display name.
+- `date_of_birth` (`date`): Private birth date used for authoritative server-side age derivation.
+- `gender` (`varchar(32)`): User gender (`MAN`, `WOMAN`, `NON_BINARY`, `OTHER`).
+- `bio` (`text`): Self-description (up to 500 chars).
+- `occupation`, `education`, `city` (`varchar(128)`): Extended biographical details.
+- `country_code` (`varchar(2)`): 2-letter ISO country code.
+- `latitude`, `longitude` (`double precision`): Internal coordinates.
+- `location` (`geography`): PostGIS 4326 geodesic Point with GiST spatial indexing (`idx_profiles_location_gist`).
+- `visibility` (`varchar(32)`): Profile state machine (`DRAFT`, `ACTIVE`, `PAUSED`, `HIDDEN`).
+- `completion_status` (`jsonb`): Cached server-calculated completeness metrics.
+
+### 9.2 `profile_preferences`
+
+- `id` (`uuid`, PK): UUIDv7 identifier.
+- `user_id` (`uuid`, FK -> `users.id`, `ON DELETE CASCADE`, UNIQUE): Associated user.
+- `min_age`, `max_age` (`integer`): Discovery age bounds (18 to 99, `min_age <= max_age`).
+- `gender_preferences` (`jsonb`): Array of desired genders.
+- `max_distance_km` (`integer`): Discovery radius (1 to 500 km).
+- `relationship_intent` (`varchar(32)`): Long term, short term, casual, friendship, etc.
+
+### 9.3 `interests` & `profile_interests`
+
+- `interests`: Curated active taxonomy with unique slug and category.
+- `profile_interests`: Composite PK `(profile_id, interest_id)` junction table enabling idempotent complete replacements.
+
+### 9.4 `profile_prompt_definitions` & `profile_prompts`
+
+- `profile_prompt_definitions`: Curated active dating prompts.
+- `profile_prompts`: User answers (2 to 500 characters) tied to profile with unique `(profile_id, prompt_definition_id)`.
+
+### 9.5 `profile_media`
+
+- `id` (`uuid`, PK): UUIDv7 identifier.
+- `profile_id`, `user_id` (`uuid`, FKs): Profile and user association.
+- `object_key` (`varchar(512)`): S3/MinIO storage path.
+- `media_type` (`varchar(32)`): `IMAGE` or `VIDEO`.
+- `mime_type` (`varchar(64)`): Validated MIME format.
+- `status` (`varchar(32)`): `PENDING`, `UPLOADING`, `PROCESSING`, `READY`, `REJECTED`, `DELETED`.
+- `position` (`integer`): Display order (0 to 5).
+- `is_primary` (`boolean`): Primary avatar flag (enforced single primary photo per profile).

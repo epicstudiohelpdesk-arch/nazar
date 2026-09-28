@@ -155,7 +155,7 @@ export class SessionRepository implements ISessionRepository {
       .leftJoin(devices, eq(sessions.deviceId, devices.id))
       .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
 
-    return rows.map((r) => ({
+    return rows.map((r: any) => ({
       ...r.session,
       platform: r.device?.platform ?? null,
       deviceModel: r.device?.deviceModel ?? null,

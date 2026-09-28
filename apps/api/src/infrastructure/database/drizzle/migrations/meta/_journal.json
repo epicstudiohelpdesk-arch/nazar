@@ -15,6 +15,13 @@
       "when": 1790583258742,
       "tag": "0001_eager_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790603082052,
+      "tag": "0002_aromatic_pestilence",
+      "breakpoints": true
     }
   ]
 }

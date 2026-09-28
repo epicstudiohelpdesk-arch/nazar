@@ -144,4 +144,48 @@ export class AppConfigService {
   get passkeyOrigin(): string {
     return this.env.PASSKEY_ORIGIN;
   }
+
+  get s3Endpoint(): string {
+    return this.env.S3_ENDPOINT;
+  }
+
+  get s3Region(): string {
+    return this.env.S3_REGION;
+  }
+
+  get s3BucketName(): string {
+    return this.env.S3_BUCKET_NAME;
+  }
+
+  get s3AccessKeyId(): string {
+    return this.env.S3_ACCESS_KEY_ID;
+  }
+
+  get s3SecretAccessKey(): string {
+    return this.env.S3_SECRET_ACCESS_KEY;
+  }
+
+  get s3ForcePathStyle(): boolean {
+    return this.env.S3_FORCE_PATH_STYLE;
+  }
+
+  get mediaPublicUrlPrefix(): string {
+    return this.env.MEDIA_PUBLIC_URL_PREFIX;
+  }
+
+  get mediaUploadExpirySeconds(): number {
+    return this.env.MEDIA_UPLOAD_EXPIRY_SECONDS;
+  }
+
+  get mediaMaxBytes(): number {
+    return this.env.MEDIA_MAX_BYTES;
+  }
+
+  get mediaMaxPhotos(): number {
+    return this.env.MEDIA_MAX_PHOTOS;
+  }
+
+  get mediaMinPhotos(): number {
+    return this.env.MEDIA_MIN_PHOTOS;
+  }
 }

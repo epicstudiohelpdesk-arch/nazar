@@ -45,6 +45,14 @@ export const serverEnvSchema = z
     S3_ENDPOINT: z.string().url().default('http://localhost:9000'),
     S3_REGION: z.string().default('auto'),
     S3_BUCKET_NAME: z.string().default('nazar-media'),
+    S3_ACCESS_KEY_ID: z.string().default('nazar_minio_admin'),
+    S3_SECRET_ACCESS_KEY: z.string().default('nazar_minio_secret'),
+    S3_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
+    MEDIA_PUBLIC_URL_PREFIX: z.string().default('http://localhost:9000/nazar-media'),
+    MEDIA_UPLOAD_EXPIRY_SECONDS: z.coerce.number().int().positive().default(900),
+    MEDIA_MAX_BYTES: z.coerce.number().int().positive().default(10485760),
+    MEDIA_MAX_PHOTOS: z.coerce.number().int().positive().default(6),
+    MEDIA_MIN_PHOTOS: z.coerce.number().int().positive().default(1),
   })
   .refine(
     (data) => {

@@ -8,6 +8,9 @@ import { UuidV7Generator } from './id/uuidv7-generator.service.js';
 import { IDEMPOTENCY_STORE_TOKEN } from '../common/idempotency/idempotency.interface.js';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor.js';
 
+import { STORAGE_SERVICE_TOKEN } from './storage/storage.interface.js';
+import { S3StorageService } from './storage/s3-storage.service.js';
+
 @Global()
 @Module({
   imports: [DatabaseModule],
@@ -27,15 +30,22 @@ import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interc
       useExisting: PostgresIdempotencyStore,
     },
     IdempotencyInterceptor,
+    S3StorageService,
+    {
+      provide: STORAGE_SERVICE_TOKEN,
+      useExisting: S3StorageService,
+    },
   ],
   exports: [
     DatabaseModule,
     CLOCK_TOKEN,
     ID_GENERATOR_TOKEN,
     IDEMPOTENCY_STORE_TOKEN,
+    STORAGE_SERVICE_TOKEN,
     IdempotencyInterceptor,
     SystemClock,
     UuidV7Generator,
+    S3StorageService,
   ],
 })
 export class InfrastructureModule {}

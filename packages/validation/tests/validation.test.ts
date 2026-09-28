@@ -6,6 +6,10 @@ import {
   e164PhoneSchema,
   standardEmailSchema,
   validateEnv,
+  calculateAge,
+  dateOfBirthSchema,
+  updatePreferencesSchema,
+  calculateProfileCompleteness,
 } from '../src/index.js';
 
 describe('@platform/validation', () => {
@@ -55,5 +59,92 @@ describe('@platform/validation', () => {
     expect(validated.APP_NAME).toBe('Nazar');
 
     expect(() => validateEnv(schema, {})).toThrow('[FATAL] Environment variable validation failed');
+  });
+
+  it('should accurately calculate age from date of birth', () => {
+    const ref = new Date('2026-09-28');
+    expect(calculateAge('2000-09-28', ref)).toBe(26);
+    expect(calculateAge('2000-09-29', ref)).toBe(25); // birthday not yet reached
+    expect(calculateAge('2000-01-01', ref)).toBe(26);
+  });
+
+  it('should validate date of birth enforcing minimum age 18 and maximum age 120', () => {
+    // Valid adult
+    expect(dateOfBirthSchema.safeParse('2000-01-15').success).toBe(true);
+
+    // Minor (under 18)
+    const minorDob = '2015-01-01';
+    const minorRes = dateOfBirthSchema.safeParse(minorDob);
+    expect(minorRes.success).toBe(false);
+    if (!minorRes.success) {
+      expect(minorRes.error.errors[0].message).toContain('at least 18');
+    }
+
+    // Future date
+    const futureRes = dateOfBirthSchema.safeParse('2099-01-01');
+    expect(futureRes.success).toBe(false);
+
+    // Over 120 years old
+    const ancientRes = dateOfBirthSchema.safeParse('1850-01-01');
+    expect(ancientRes.success).toBe(false);
+
+    // Invalid calendar date
+    const invalidCalendar = dateOfBirthSchema.safeParse('2000-02-31');
+    expect(invalidCalendar.success).toBe(false);
+  });
+
+  it('should validate preference ranges and reject minAge > maxAge', () => {
+    expect(
+      updatePreferencesSchema.safeParse({
+        minAge: 21,
+        maxAge: 35,
+        maxDistanceKm: 50,
+      }).success
+    ).toBe(true);
+
+    const invalidRange = updatePreferencesSchema.safeParse({
+      minAge: 40,
+      maxAge: 25,
+    });
+    expect(invalidRange.success).toBe(false);
+  });
+
+  it('should calculate profile completeness accurately', () => {
+    // Incomplete draft
+    const incomplete = calculateProfileCompleteness({
+      displayName: 'Alex',
+      dateOfBirth: '2000-01-01',
+      gender: 'MAN',
+      hasPrimaryPhoto: false,
+      hasPreferences: false,
+      bio: null,
+      interestsCount: 0,
+      occupation: null,
+      education: null,
+      promptsCount: 0,
+      readyPhotosCount: 0,
+    });
+    expect(incomplete.percentage).toBeLessThan(50);
+    expect(incomplete.missingRequired).toContain('PRIMARY_PHOTO');
+    expect(incomplete.missingRequired).toContain('PREFERENCES');
+    expect(incomplete.recommended).toContain('BIO');
+
+    // Fully complete profile
+    const complete = calculateProfileCompleteness({
+      displayName: 'Alex',
+      dateOfBirth: '2000-01-01',
+      gender: 'MAN',
+      hasPrimaryPhoto: true,
+      hasPreferences: true,
+      bio: 'Loves hiking, coffee, and open source code.',
+      interestsCount: 5,
+      occupation: 'Software Engineer',
+      education: 'B.Tech CS',
+      promptsCount: 2,
+      readyPhotosCount: 3,
+    });
+    expect(complete.percentage).toBe(100);
+    expect(complete.missingRequired).toHaveLength(0);
+    expect(complete.recommended).toHaveLength(0);
   });
 });
