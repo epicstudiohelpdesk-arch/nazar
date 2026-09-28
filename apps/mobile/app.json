@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "scheme": "nazar",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.nazar.app"
