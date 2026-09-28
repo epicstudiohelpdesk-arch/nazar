@@ -8,6 +8,13 @@
       "when": 1790568780185,
       "tag": "0000_lethal_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790583258742,
+      "tag": "0001_eager_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }

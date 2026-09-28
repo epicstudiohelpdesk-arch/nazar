@@ -97,5 +97,7 @@ For detailed specifications of the backend application foundation and API contra
 
 - [Backend Architecture & Module Structure](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/BACKEND_ARCHITECTURE.md)
 - [Database Engine, Drizzle ORM & PostGIS](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/DATABASE.md)
+- [Authentication & Identity System](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/AUTHENTICATION.md)
+- [Session Security & Token Rotation](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/SESSION_SECURITY.md)
 - [API Conventions, Response Envelopes & Idempotency](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/API_CONVENTIONS.md)
 - [Engineering Gates Roadmap](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/GATES.md)

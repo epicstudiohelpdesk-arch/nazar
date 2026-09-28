@@ -20,6 +20,8 @@ export const sessions = pgTable(
     userAgent: text('user_agent'),
     expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
     revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'date' }),
+    revocationReason: varchar('revocation_reason', { length: 64 }),
+    lastActiveAt: timestamp('last_active_at', { withTimezone: true, mode: 'date' }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   },

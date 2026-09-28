@@ -28,6 +28,8 @@ import { SocialModule } from './modules/social/social.module.js';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 
+import { AuthGuard } from './common/guards/auth.guard.js';
+
 @Module({
   imports: [
     AppConfigModule,
@@ -64,6 +66,10 @@ import { AdminModule } from './modules/admin/admin.module.js';
     {
       provide: APP_GUARD,
       useClass: AppThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
     },
     {
       provide: APP_INTERCEPTOR,

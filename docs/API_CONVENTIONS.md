@@ -89,6 +89,16 @@ The canonical error codes declared in `@platform/api-contracts`:
 | `BAD_REQUEST`           | 400         | Malformed request or illegal payload (e.g. prototype pollution)  |
 | `VALIDATION_ERROR`      | 400         | Request payload schema validation failed (details populated)     |
 | `UNAUTHORIZED`          | 401         | Missing, expired, or invalid authentication credentials          |
+| `TOKEN_EXPIRED`         | 401         | Access token has expired; client must refresh                    |
+| `INVALID_CREDENTIALS`   | 401         | Invalid credentials provided during authentication               |
+| `SESSION_EXPIRED`       | 401         | Session expired or not found                                     |
+| `SESSION_REVOKED`       | 401         | Session has been explicitly revoked or terminated                |
+| `TOKEN_REPLAY_DETECTED` | 401         | Rotated refresh token reused; session invalidated for security   |
+| `OTP_EXPIRED`           | 400         | OTP challenge expired                                            |
+| `OTP_INVALID`           | 400         | Incorrect OTP verification code supplied                         |
+| `TOO_MANY_ATTEMPTS`     | 400         | Max challenge attempts exceeded (locked out)                     |
+| `ACCOUNT_DELETED`       | 403         | User account is soft-deleted                                     |
+| `ACCOUNT_SUSPENDED`     | 403         | User account is suspended by moderation/safety                   |
 | `FORBIDDEN`             | 403         | Authenticated user lacks permission or ownership                 |
 | `NOT_FOUND`             | 404         | Requested route or entity not found                              |
 | `CONFLICT`              | 409         | Resource state conflict (e.g. unique constraint violated)        |

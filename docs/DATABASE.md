@@ -103,7 +103,68 @@ Transactional outbox for reliable asynchronous side effects:
 Immutable compliance and security auditing:
 
 - `audit_logs`: Records administrative actions, entity mutations, and compliance requests.
-- `security_events`: Tracks security-relevant occurrences (failed logins, rate limit breaches, token revocations, privilege escalations).
+- `security_events`: Tracks security-relevant occurrences (failed logins, rate limit breaches, token revocations, privilege escalations, replay detection).
+
+---
+
+## 3. Gate 04 Authentication & Identity Schemas
+
+Gate 04 introduces production tables for identity federation, multi-factor OTP verification, session rotation history, and WebAuthn/passkey support.
+
+### 3.1 `user_identities`
+
+Federated identity providers linked to a canonical user account:
+
+- `id` (`uuid`, PK): UUIDv7.
+- `user_id` (`uuid`, FK -> `users.id`, `ON DELETE CASCADE`): Associated canonical user.
+- `provider` (`varchar(32)`): Provider type (`PHONE`, `EMAIL`, `GOOGLE`, `APPLE`, `PASSKEY`).
+- `provider_subject` (`varchar(255)`): Unique identity key per provider (e.g. E.164 phone, email, Google `sub`, Apple `sub`).
+- `email` (`varchar(255)`): Optional associated email.
+- `email_verified` (`boolean`): Whether provider verified the email.
+- `metadata` (`jsonb`): Provider claims and profile hints.
+- Unique constraint: `(provider, provider_subject)`.
+
+### 3.2 `otp_challenges`
+
+Ephemeral verification challenges for Phone OTP and Email:
+
+- `id` (`uuid`, PK): UUIDv7.
+- `identifier` (`varchar(255)`): Phone number or email.
+- `identifier_type` (`varchar(16)`): `PHONE` or `EMAIL`.
+- `otp_hash` (`varchar(64)`): SHA-256 HMAC of 6-digit OTP code.
+- `salt` (`varchar(32)`): 16-byte random hex salt per challenge.
+- `attempt_count` (`integer`): Number of verification attempts (max 5).
+- `max_attempts` (`integer`): 5.
+- `expires_at` (`timestamptz`): Challenge expiration timestamp (5 minutes).
+- `consumed_at` (`timestamptz`): Timestamp when redeemed (prevents reuse).
+- `ip_address`, `device_id`: Request origin context.
+
+### 3.3 `passkeys` & `passkey_challenges`
+
+WebAuthn FIDO2 credentials and assertion challenges:
+
+- `passkeys`:
+  - `id` (`uuid`, PK): UUIDv7.
+  - `user_id` (`uuid`, FK -> `users.id`, `ON DELETE CASCADE`).
+  - `credential_id` (`varchar(255)`, UNIQUE): Base64URL-encoded credential ID.
+  - `public_key` (`text`): Base64URL-encoded public key.
+  - `counter` (`integer`): Sign counter for clone detection.
+  - `aaguid`, `transports`: Authenticator metadata.
+- `passkey_challenges`:
+  - `id` (`uuid`, PK): UUIDv7.
+  - `challenge` (`varchar(255)`, UNIQUE): Ephemeral cryptographic challenge.
+  - `user_id` (`uuid`): Bound user (for registration).
+  - `purpose` (`varchar(32)`): `registration` or `login`.
+  - `expires_at`, `consumed_at`: Challenge lifecycle timestamps.
+
+### 3.4 `session_token_history`
+
+Durable token family ledger for refresh token replay detection:
+
+- `id` (`uuid`, PK): UUIDv7.
+- `session_id` (`uuid`, FK -> `sessions.id`, `ON DELETE CASCADE`): Owning session.
+- `token_hash` (`varchar(64)`, UNIQUE): SHA-256 digest of invalidated/rotated refresh token.
+- `created_at` (`timestamptz`): Invalidation timestamp.
 
 ---
 

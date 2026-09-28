@@ -84,4 +84,64 @@ export class AppConfigService {
   get databaseStatementTimeoutMs(): number {
     return this.env.DATABASE_STATEMENT_TIMEOUT_MS;
   }
+
+  get jwtAccessSecret(): string {
+    return this.env.JWT_ACCESS_SECRET;
+  }
+
+  get jwtRefreshSecret(): string {
+    return this.env.JWT_REFRESH_SECRET;
+  }
+
+  get jwtAccessExpirationSeconds(): number {
+    return this.env.JWT_ACCESS_EXPIRATION_SECONDS;
+  }
+
+  get jwtRefreshExpirationSeconds(): number {
+    return this.env.JWT_REFRESH_EXPIRATION_SECONDS;
+  }
+
+  get jwtIssuer(): string {
+    return this.env.JWT_ISSUER;
+  }
+
+  get jwtAudience(): string {
+    return this.env.JWT_AUDIENCE;
+  }
+
+  get otpExpirationSeconds(): number {
+    return this.env.OTP_EXPIRATION_SECONDS;
+  }
+
+  get otpMaxAttempts(): number {
+    return this.env.OTP_MAX_ATTEMPTS;
+  }
+
+  get otpLength(): number {
+    return this.env.OTP_LENGTH;
+  }
+
+  get emailVerificationExpirationSeconds(): number {
+    return this.env.EMAIL_VERIFICATION_EXPIRATION_SECONDS;
+  }
+
+  get googleClientId(): string {
+    return this.env.GOOGLE_CLIENT_ID;
+  }
+
+  get appleClientId(): string {
+    return this.env.APPLE_CLIENT_ID;
+  }
+
+  get passkeyRpId(): string {
+    return this.env.PASSKEY_RP_ID;
+  }
+
+  get passkeyRpName(): string {
+    return this.env.PASSKEY_RP_NAME;
+  }
+
+  get passkeyOrigin(): string {
+    return this.env.PASSKEY_ORIGIN;
+  }
 }

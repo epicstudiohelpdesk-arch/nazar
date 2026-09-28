@@ -10,6 +10,8 @@ export const securityEvents = pgTable(
   {
     id: uuid('id').primaryKey(),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    sessionId: uuid('session_id'),
+    deviceId: uuid('device_id'),
     eventType: varchar('event_type', { length: 128 }).notNull(),
     severity: varchar('severity', { length: 16 }).notNull().default('INFO'), // 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
     ipAddress: varchar('ip_address', { length: 64 }),

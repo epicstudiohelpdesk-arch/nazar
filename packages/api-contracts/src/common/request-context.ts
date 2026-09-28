@@ -9,4 +9,7 @@ export interface RequestContext {
   readonly userAgent?: string;
   readonly path?: string;
   readonly method?: string;
+  readonly userId?: string;
+  readonly sessionId?: string;
+  readonly deviceId?: string;
 }
