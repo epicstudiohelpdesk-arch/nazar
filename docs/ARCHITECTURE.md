@@ -32,7 +32,7 @@ The architecture enforces strict invariants across data durability, client trust
 
 ## 2. System Topology
 
-```
+```text
 +-------------------------------------------------------------+
 |                 Mobile Client (Expo / React Native)         |
 |  - React Native + Expo Router + TanStack Query + Zustand    |
@@ -61,25 +61,30 @@ The architecture enforces strict invariants across data durability, client trust
 
 ---
 
-## 3. Data Flow & Transaction Integrity
+## 3. Workspace Boundaries & Dependency Flow
 
-### Mutual Matching Flow (Two-Phase Verification)
+```text
++------------------+     +------------------+     +------------------+
+|   apps/mobile    |     |     apps/api     |     |    apps/admin    |
++--------+---------+     +--------+---------+     +--------+---------+
+         |                        |                        |
+         |         +--------------+-------------+          |
+         |         |              |             |          |
+         v         v              v             v          v
++--------------------+   +----------------+   +--------------------+
+|  @platform/ui      |   | @platform/     |   | @platform/         |
+|  (Tokens & Styles) |   |  api-contracts |   |  validation        |
++--------------------+   +----------------+   +---------+----------+
+                                  |                     |
+                                  v                     v
+                         +----------------+   +--------------------+
+                         | @platform/     |   | @platform/config   |
+                         |  domain        |   | (Environment/Safe) |
+                         +----------------+   +--------------------+
+```
 
-1. User A likes User B:
-   - Request received with `idempotencyKey` and `targetUserId`.
-   - Written to `user_interactions` table with unique constraint on `(actor_user_id, target_user_id)`.
-   - Query checks if reciprocal like exists (`actor_user_id = B, target_user_id = A`).
-   - If reciprocal like exists:
-     - Transaction opens:
-       - Match record created in `matches` table (`user1_id < user2_id` deterministic canonical ordering).
-       - Outbox event `MATCH_CREATED` enqueued within the same database transaction.
-     - Outbox worker consumes event, emits real-time WebSocket notification to both parties, and triggers push notification.
+### Invariants:
 
-### Chat & Messaging Flow
-
-1. User sends message:
-   - Message validated against schema and match authorization.
-   - Message persisted in `messages` table with UUIDv7 identifier.
-   - Match `last_message_at` updated.
-   - Outbox event `MESSAGE_SENT` enqueued for push notification and offline sync.
-   - WebSocket broadcasts event to connected room participants.
+1. **Zero Cross-Application Imports**: Applications (`apps/*`) never import directly from other applications.
+2. **Framework Isolation in Domain**: `@platform/domain` has zero dependencies on NestJS, React, Express, or database drivers.
+3. **Secret Hygiene**: Client applications (`apps/mobile`, `apps/admin`) only consume client-safe schemas (`ClientEnv`), never server credentials or secrets.

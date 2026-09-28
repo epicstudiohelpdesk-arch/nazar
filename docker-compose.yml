@@ -13,7 +13,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init-postgis.sh:/docker-entrypoint-initdb.d/init-postgis.sh:ro
+      - ./infra/docker/postgres/init-postgis.sh:/docker-entrypoint-initdb.d/init-postgis.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nazar_user} -d ${POSTGRES_DB:-nazar_db}"]
       interval: 5s

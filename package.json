@@ -6,17 +6,25 @@
   "scripts": {
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f"
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,json,md}\"",
+    "dev:api": "pnpm --filter @platform/api dev",
+    "dev:admin": "pnpm --filter @platform/admin dev",
+    "dev:mobile": "pnpm --filter @platform/mobile start",
+    "clean": "git clean -xdf -e .env -e node_modules",
+    "docker:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "docker:logs": "docker compose -f infra/docker/docker-compose.yml logs -f",
+    "verify": "./scripts/verify.sh"
   },
   "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "eslint": "^9.21.0",
     "prettier": "^3.5.3",
     "turbo": "^2.4.4",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.25.0"
   }
 }

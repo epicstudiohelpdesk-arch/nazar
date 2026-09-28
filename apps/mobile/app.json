@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Nazar",
+    "slug": "nazar",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "nazar",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.nazar.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.nazar.app"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router"]
+  }
+}
