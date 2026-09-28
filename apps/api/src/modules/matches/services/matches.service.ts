@@ -1,5 +1,5 @@
 import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
-import { inArray } from 'drizzle-orm';
+import { inArray, eq } from 'drizzle-orm';
 import {
   ErrorCode,
   type MatchListResponseDto,
@@ -16,6 +16,7 @@ import {
   profiles,
   profileMedia,
   outboxEvents,
+  conversations,
 } from '../../../infrastructure/database/drizzle/schema/index.js';
 import { S3StorageService } from '../../../infrastructure/storage/s3-storage.service.js';
 import { STORAGE_SERVICE_TOKEN } from '../../../infrastructure/storage/storage.interface.js';
@@ -293,6 +294,15 @@ export class MatchesService {
     return this.databaseService.withTransaction(async (tx) => {
       const updated = await this.matchesRepo.unmatch(matchId, userId, reason, tx);
 
+      // Close associated conversation for this match (Requirements 5, 45)
+      await tx
+        .update(conversations)
+        .set({
+          status: 'CLOSED',
+          updatedAt: new Date(),
+        })
+        .where(eq(conversations.matchId, matchId));
+
       const otherUserId = match.userAId === userId ? match.userBId : match.userAId;
 
       await tx.insert(outboxEvents).values({
@@ -306,6 +316,20 @@ export class MatchesService {
           otherUserId,
           reason: reason || 'USER_INITIATED',
           unmatchedAt: new Date().toISOString(),
+        },
+        status: 'PENDING',
+      });
+
+      await tx.insert(outboxEvents).values({
+        id: generateUuidV7(),
+        eventType: 'conversation.closed',
+        aggregateType: 'CONVERSATION',
+        aggregateId: matchId,
+        payload: {
+          matchId,
+          closedByUserId: userId,
+          otherUserId,
+          closedAt: new Date().toISOString(),
         },
         status: 'PENDING',
       });

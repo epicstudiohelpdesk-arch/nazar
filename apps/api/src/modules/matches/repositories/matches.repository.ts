@@ -5,6 +5,7 @@ import {
   type DrizzleDatabase,
 } from '../../../infrastructure/database/database.service.js';
 import { matches, type MatchRow } from '../../../infrastructure/database/drizzle/schema/matches.js';
+import { conversations } from '../../../infrastructure/database/drizzle/schema/conversations.js';
 import { generateUuidV7 } from '@platform/domain';
 import type {
   IMatchesRepository,
@@ -63,6 +64,23 @@ export class MatchesRepository implements IMatchesRepository {
         throw new Error('Failed to update match status');
       }
 
+      await tx
+        .insert(conversations)
+        .values({
+          id: generateUuidV7(),
+          matchId: updated.id,
+          status: 'ACTIVE',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [conversations.matchId],
+          set: {
+            status: 'ACTIVE',
+            updatedAt: new Date(),
+          },
+        });
+
       return { match: updated, wasCreated: true };
     }
 
@@ -95,6 +113,23 @@ export class MatchesRepository implements IMatchesRepository {
     if (!inserted) {
       throw new Error('Failed to insert match record');
     }
+
+    await tx
+      .insert(conversations)
+      .values({
+        id: generateUuidV7(),
+        matchId: inserted.id,
+        status: 'ACTIVE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [conversations.matchId],
+        set: {
+          status: 'ACTIVE',
+          updatedAt: new Date(),
+        },
+      });
 
     return { match: inserted, wasCreated: true };
   }

@@ -19,3 +19,5 @@ export * from './profile-prompts.js';
 export * from './profile-media.js';
 export * from './interactions.js';
 export * from './matches.js';
+export * from './conversations.js';
+export * from './messages.js';

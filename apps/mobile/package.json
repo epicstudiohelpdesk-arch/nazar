@@ -14,11 +14,11 @@
     "lint": "eslint app src --ext .ts,.tsx"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~57.0.16",
     "@platform/api-contracts": "workspace:*",
     "@platform/ui": "workspace:*",
     "@platform/validation": "workspace:*",
     "@tanstack/react-query": "^5.104.0",
-    "@expo/metro-runtime": "~57.0.16",
     "expo": "~57.0.25",
     "expo-constants": "~57.0.19",
     "expo-linking": "~57.0.11",
@@ -30,6 +30,7 @@
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "socket.io-client": "^4.8.4",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

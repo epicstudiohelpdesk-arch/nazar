@@ -36,6 +36,13 @@
       "when": 1790614530152,
       "tag": "0004_pale_mauler",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790617471527,
+      "tag": "0005_material_kang",
+      "breakpoints": true
     }
   ]
 }

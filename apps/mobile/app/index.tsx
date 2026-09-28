@@ -27,7 +27,16 @@ export default function IndexScreen(): React.JSX.Element {
           accessibilityRole="button"
           accessibilityLabel="Go to matches"
         >
-          <Text style={styles.secondaryButtonText}>View Matches 💬</Text>
+          <Text style={styles.secondaryButtonText}>View Matches 💕</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => router.push('/conversations')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to messages"
+        >
+          <Text style={styles.secondaryButtonText}>Open Messages 💌</Text>
         </TouchableOpacity>
       </View>
     </View>

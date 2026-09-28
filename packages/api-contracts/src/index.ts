@@ -11,3 +11,4 @@ export * from './profile/profile-events.js';
 export * from './discovery/discovery.contract.js';
 export * from './interactions/interactions.contract.js';
 export * from './matches/matches.contract.js';
+export * from './chat/chat.contract.js';
