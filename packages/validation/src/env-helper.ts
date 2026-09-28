@@ -1,9 +1,9 @@
 import type { z } from 'zod';
 
-export function validateEnv<T extends z.ZodRawShape>(
-  schema: z.ZodObject<T>,
+export function validateEnv<TOutput>(
+  schema: z.ZodType<TOutput, any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
   envSource: Record<string, unknown> = process.env
-): z.infer<z.ZodObject<T>> {
+): TOutput {
   const result = schema.safeParse(envSource);
   if (!result.success) {
     const errorDetails = result.error.errors

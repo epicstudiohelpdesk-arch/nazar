@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "==========================================="
-echo "  NAZAR GATE 01 - SYSTEM VERIFICATION"
+echo "  NAZAR PLATFORM - SYSTEM VERIFICATION"
 echo "==========================================="
 
 echo ">> 1. Checking formatting with Prettier..."
@@ -21,5 +21,5 @@ echo ">> 5. Linting workspaces..."
 pnpm lint
 
 echo "==========================================="
-echo "  GATE 01 VERIFICATION SUCCESSFUL"
+echo "  SYSTEM VERIFICATION SUCCESSFUL"
 echo "==========================================="

@@ -88,3 +88,13 @@ The architecture enforces strict invariants across data durability, client trust
 1. **Zero Cross-Application Imports**: Applications (`apps/*`) never import directly from other applications.
 2. **Framework Isolation in Domain**: `@platform/domain` has zero dependencies on NestJS, React, Express, or database drivers.
 3. **Secret Hygiene**: Client applications (`apps/mobile`, `apps/admin`) only consume client-safe schemas (`ClientEnv`), never server credentials or secrets.
+
+---
+
+## 4. Architectural Layering & Subsystem Reference
+
+For detailed specifications of the backend application foundation and API contracts established in Gate 02, see:
+
+- [Backend Architecture & Module Structure](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/BACKEND_ARCHITECTURE.md)
+- [API Conventions, Response Envelopes & Idempotency](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/API_CONVENTIONS.md)
+- [Engineering Gates Roadmap](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/GATES.md)

@@ -1,29 +1,55 @@
 import { describe, it, expect } from 'vitest';
 import {
   createSuccessResponse,
+  createPaginatedResponse,
   createFailureResponse,
   ErrorCode,
   encodeCursor,
   decodeCursor,
+  HEADER_REQUEST_ID,
+  HEADER_IDEMPOTENCY_KEY,
 } from '../src/index.js';
 
 describe('@platform/api-contracts', () => {
-  it('should construct valid success envelopes', () => {
-    const res = createSuccessResponse({ id: 'test-1' }, { page: 1 });
+  it('should construct valid success envelopes with requestId', () => {
+    const res = createSuccessResponse({ id: 'test-1' }, 'req-12345', { page: 1 });
     expect(res.success).toBe(true);
     expect(res.data).toEqual({ id: 'test-1' });
     expect(res.meta).toEqual({ page: 1 });
+    expect(res.requestId).toBe('req-12345');
   });
 
-  it('should construct valid failure envelopes', () => {
-    const res = createFailureResponse({
-      statusCode: 400,
-      code: ErrorCode.BAD_REQUEST,
-      message: 'Invalid input',
-      timestamp: new Date().toISOString(),
-    });
+  it('should construct valid paginated envelopes', () => {
+    const res = createPaginatedResponse(
+      [{ id: '1' }, { id: '2' }],
+      { nextCursor: 'abc', hasMore: true, totalCount: 10 },
+      'req-54321'
+    );
+    expect(res.success).toBe(true);
+    expect(res.data).toHaveLength(2);
+    expect(res.pagination.nextCursor).toBe('abc');
+    expect(res.pagination.hasMore).toBe(true);
+    expect(res.requestId).toBe('req-54321');
+  });
+
+  it('should construct valid failure envelopes with requestId', () => {
+    const res = createFailureResponse(
+      {
+        statusCode: 400,
+        code: ErrorCode.VALIDATION_ERROR,
+        message: 'Invalid input',
+        timestamp: new Date().toISOString(),
+      },
+      'req-error-99'
+    );
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe(ErrorCode.BAD_REQUEST);
+    expect(res.error.code).toBe(ErrorCode.VALIDATION_ERROR);
+    expect(res.requestId).toBe('req-error-99');
+  });
+
+  it('should expose header constants', () => {
+    expect(HEADER_REQUEST_ID).toBe('x-request-id');
+    expect(HEADER_IDEMPOTENCY_KEY).toBe('idempotency-key');
   });
 
   it('should encode and decode cursors correctly', () => {

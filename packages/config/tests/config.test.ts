@@ -6,6 +6,9 @@ describe('@platform/config', () => {
     const config = loadServerConfig({});
     expect(config.PORT).toBe(4000);
     expect(config.NODE_ENV).toBe('development');
+    expect(config.API_PREFIX).toBe('v1');
+    expect(config.LOG_LEVEL).toBe('info');
+    expect(config.RATE_LIMIT_LIMIT).toBe(100);
     expect(config.DATABASE_URL).toContain('postgresql://');
   });
 
@@ -19,11 +22,22 @@ describe('@platform/config', () => {
   it('should override configuration with custom environment variables', () => {
     const config = loadServerConfig({
       PORT: '5500',
-      NODE_ENV: 'production',
-      JWT_ACCESS_SECRET: 'production_secret_key_at_least_32_characters_long_string',
-      JWT_REFRESH_SECRET: 'production_secret_key_at_least_32_characters_long_string',
+      NODE_ENV: 'staging',
+      CORS_ORIGIN: 'https://staging.nazar.app',
+      JWT_ACCESS_SECRET: 'staging_secret_key_at_least_32_characters_long_string',
+      JWT_REFRESH_SECRET: 'staging_secret_key_at_least_32_characters_long_string',
     });
     expect(config.PORT).toBe(5500);
-    expect(config.NODE_ENV).toBe('production');
+    expect(config.NODE_ENV).toBe('staging');
+    expect(config.CORS_ORIGIN).toBe('https://staging.nazar.app');
+  });
+
+  it('should reject wildcard CORS in production environment', () => {
+    expect(() =>
+      loadServerConfig({
+        NODE_ENV: 'production',
+        CORS_ORIGIN: '*',
+      })
+    ).toThrow('CORS_ORIGIN cannot be wildcard "*" in production environment');
   });
 });

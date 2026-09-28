@@ -5,6 +5,7 @@ packages:
 
 allowBuilds:
   esbuild: true
+  '@scarf/scarf': false
 
 onlyBuiltDependencies:
   - esbuild
