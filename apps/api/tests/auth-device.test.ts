@@ -6,6 +6,7 @@ import {
   MockEmailProvider,
   EMAIL_PROVIDER_TOKEN,
 } from '../src/modules/auth/providers/email.provider.js';
+import { generateUuidV7 } from '@platform/domain';
 
 describe('Auth: Device Management & Object-Level Authorization', () => {
   let app: INestApplication;
@@ -21,7 +22,8 @@ describe('Auth: Device Management & Object-Level Authorization', () => {
     await app.close();
   });
 
-  async function createSession(email: string) {
+  async function createSession(prefix: string) {
+    const email = `${prefix.replace(/@.*$/, '')}_${generateUuidV7()}@example.com`;
     await request(app.getHttpServer()).post('/v1/auth/email/request-verification').send({ email });
     const code = mockEmailProvider.getLastCode(email)!;
     const res = await request(app.getHttpServer())

@@ -6,6 +6,7 @@ import {
   MockEmailProvider,
   EMAIL_PROVIDER_TOKEN,
 } from '../src/modules/auth/providers/email.provider.js';
+import { generateUuidV7 } from '@platform/domain';
 
 describe('Auth: Passkey WebAuthn Flow', () => {
   let app: INestApplication;
@@ -18,7 +19,7 @@ describe('Auth: Passkey WebAuthn Flow', () => {
     mockEmailProvider = app.get<MockEmailProvider>(EMAIL_PROVIDER_TOKEN);
 
     // Bootstrap an active user session via email
-    const email = 'passkeyuser@example.com';
+    const email = `passkey_${generateUuidV7()}@example.com`;
     await request(app.getHttpServer()).post('/v1/auth/email/request-verification').send({ email });
     const code = mockEmailProvider.getLastCode(email)!;
     const verifyRes = await request(app.getHttpServer())

@@ -25,11 +25,12 @@ describe('Idempotency Subsystem', () => {
     expect(res.body.error.message).toContain(HEADER_IDEMPOTENCY_KEY);
   });
 
+  const firstKey = `idem-first-call-key-${Date.now()}`;
+
   it('executes mutation on first call with an idempotency key', async () => {
-    const key = 'idem-first-call-key-1001';
     const res = await request(app.getHttpServer())
       .post('/test/idempotent')
-      .set(HEADER_IDEMPOTENCY_KEY, key);
+      .set(HEADER_IDEMPOTENCY_KEY, firstKey);
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -39,10 +40,9 @@ describe('Idempotency Subsystem', () => {
   });
 
   it('replays previously cached response and does not re-execute on subsequent identical call', async () => {
-    const key = 'idem-first-call-key-1001'; // Same key as previous test
     const res = await request(app.getHttpServer())
       .post('/test/idempotent')
-      .set(HEADER_IDEMPOTENCY_KEY, key);
+      .set(HEADER_IDEMPOTENCY_KEY, firstKey);
 
     expect(res.status).toBe(201);
     expect(res.headers['x-idempotent-replayed']).toBe('true');
@@ -52,7 +52,7 @@ describe('Idempotency Subsystem', () => {
   });
 
   it('executes again for a new unique idempotency key', async () => {
-    const key = 'idem-second-call-key-1002';
+    const key = `idem-second-call-key-${Date.now()}`;
     const res = await request(app.getHttpServer())
       .post('/test/idempotent')
       .set(HEADER_IDEMPOTENCY_KEY, key);

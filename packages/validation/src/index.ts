@@ -4,3 +4,5 @@ export * from './primitives.js';
 export * from './env-helper.js';
 export * from './profile.js';
 export * from './discovery.js';
+export * from './interactions.js';
+export * from './matches.js';

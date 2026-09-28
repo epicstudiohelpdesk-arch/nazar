@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { colors, spacing, typography } from '@platform/ui';
 import type { DiscoveryItemDto } from '@platform/api-contracts';
 
@@ -12,9 +12,18 @@ const CARD_WIDTH = Math.min(windowWidth - spacing.lg * 2, 420);
 export interface DiscoveryCardProps {
   readonly item: DiscoveryItemDto;
   readonly testID?: string;
+  readonly onPass?: () => void;
+  readonly onLike?: () => void;
+  readonly isSubmitting?: boolean;
 }
 
-export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ item, testID }) => {
+export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
+  item,
+  testID,
+  onPass,
+  onLike,
+  isSubmitting = false,
+}) => {
   const { profile, distanceBucket } = item;
   const primaryPhoto =
     profile.media.find((m) => m.isPrimary) || (profile.media.length > 0 ? profile.media[0] : null);
@@ -91,6 +100,41 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ item, testID }) =>
           </View>
         ) : null}
       </View>
+
+      {/* 6. Interaction Actions (PASS / LIKE) */}
+      {(onPass || onLike) && (
+        <View style={styles.actionsRow}>
+          {onPass && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.passButton, isSubmitting && styles.disabledButton]}
+              onPress={onPass}
+              disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel={`Pass on ${profile.displayName}`}
+              accessibilityHint="Passes this candidate and advances to next profile"
+              testID={`pass-btn-${profile.id}`}
+            >
+              <Text style={styles.passIcon}>✕</Text>
+              <Text style={styles.passText}>Pass</Text>
+            </TouchableOpacity>
+          )}
+
+          {onLike && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.likeButton, isSubmitting && styles.disabledButton]}
+              onPress={onLike}
+              disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel={`Like ${profile.displayName}`}
+              accessibilityHint="Likes this candidate. May create a mutual match."
+              testID={`like-btn-${profile.id}`}
+            >
+              <Text style={styles.likeIcon}>♥</Text>
+              <Text style={styles.likeText}>Like</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </View>
   );
 };
@@ -227,5 +271,58 @@ const styles = StyleSheet.create({
     color: colors.neutral[800],
     fontStyle: 'italic',
     lineHeight: 20,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral[200],
+    backgroundColor: colors.neutral[50],
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 120,
+    height: 48,
+    borderRadius: 24,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.xs,
+  },
+  passButton: {
+    backgroundColor: colors.neutral[200],
+    borderWidth: 1,
+    borderColor: colors.neutral[400],
+  },
+  passIcon: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.neutral[700],
+  },
+  passText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: '600',
+    color: colors.neutral[700],
+  },
+  likeButton: {
+    backgroundColor: colors.primary[600],
+    borderWidth: 1,
+    borderColor: colors.primary[700],
+  },
+  likeIcon: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.neutral[50],
+  },
+  likeText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: '600',
+    color: colors.neutral[50],
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });

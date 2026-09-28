@@ -17,3 +17,5 @@ export * from './profile-interests.js';
 export * from './profile-prompt-definitions.js';
 export * from './profile-prompts.js';
 export * from './profile-media.js';
+export * from './interactions.js';
+export * from './matches.js';

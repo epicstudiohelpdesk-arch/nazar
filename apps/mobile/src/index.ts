@@ -1,5 +1,5 @@
 /**
- * Mobile Architectural Layers Foundation
+ * Mobile Architectural Layers Foundation (Gates 01-07)
  */
 export * from './types/index.js';
 export * from './auth/token-storage.js';
@@ -15,3 +15,8 @@ export * from './profile/ProfileOverviewScreen.js';
 export * from './discovery/discovery-api.js';
 export * from './discovery/components/DiscoveryCard.js';
 export * from './discovery/DiscoveryScreen.js';
+export * from './interactions/interactions-api.js';
+export * from './matches/matches-api.js';
+export * from './matches/components/MatchCelebrationModal.js';
+export * from './matches/MatchesScreen.js';
+export * from './matches/MatchDetailScreen.js';

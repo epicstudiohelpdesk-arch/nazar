@@ -15,15 +15,15 @@ export async function resetDatabase(
 
   console.log(`[Reset] Resetting database in ${env} environment...`);
 
-  // Drop foundational tables in correct dependency order
+  // Drop all public tables and migration metadata
   await db.execute(sql`
-    DROP TABLE IF EXISTS "security_events" CASCADE;
-    DROP TABLE IF EXISTS "audit_logs" CASCADE;
-    DROP TABLE IF EXISTS "outbox_events" CASCADE;
-    DROP TABLE IF EXISTS "idempotency_keys" CASCADE;
-    DROP TABLE IF EXISTS "sessions" CASCADE;
-    DROP TABLE IF EXISTS "devices" CASCADE;
-    DROP TABLE IF EXISTS "users" CASCADE;
+    DO $$ DECLARE
+      r RECORD;
+    BEGIN
+      FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> 'spatial_ref_sys') LOOP
+        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+      END LOOP;
+    END $$;
     DROP SCHEMA IF EXISTS "drizzle" CASCADE;
     DROP TABLE IF EXISTS "__drizzle_migrations" CASCADE;
   `);

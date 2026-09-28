@@ -171,6 +171,7 @@ export interface PublicPromptItem {
 
 export interface PublicProfileResponse {
   readonly id: string;
+  readonly userId?: string;
   readonly displayName: string;
   readonly age: number;
   readonly gender: Gender;

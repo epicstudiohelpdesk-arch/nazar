@@ -135,6 +135,7 @@ export class DiscoveryService {
 
       const publicProfile: PublicProfileResponse = {
         id: candidate.profileId,
+        userId: candidate.userId,
         displayName: candidate.displayName,
         age: candidate.age,
         gender: candidate.gender,

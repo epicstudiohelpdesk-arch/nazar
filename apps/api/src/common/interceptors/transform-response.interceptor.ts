@@ -34,7 +34,12 @@ function isPaginatedPayload<T>(value: unknown): value is RawPaginatedData<T> {
 }
 
 function isAlreadyEnvelope(value: unknown): value is { success: boolean; requestId?: string } {
-  return typeof value === 'object' && value !== null && 'success' in value;
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'success' in value &&
+    ('data' in value || 'error' in value)
+  );
 }
 
 @Injectable()

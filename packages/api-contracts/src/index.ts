@@ -9,3 +9,5 @@ export * from './auth/auth-events.js';
 export * from './profile/profile.contract.js';
 export * from './profile/profile-events.js';
 export * from './discovery/discovery.contract.js';
+export * from './interactions/interactions.contract.js';
+export * from './matches/matches.contract.js';

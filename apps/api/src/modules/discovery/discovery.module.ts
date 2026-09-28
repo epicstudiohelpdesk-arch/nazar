@@ -11,7 +11,7 @@ import { DeterministicCandidateRanker } from './ranker/deterministic-candidate-r
 import { CANDIDATE_RANKER_TOKEN } from './ranker/candidate-ranker.interface.js';
 import { DiscoveryCursorService } from './cursor/discovery-cursor.service.js';
 import { DISCOVERY_CURSOR_SERVICE_TOKEN } from './cursor/discovery-cursor.interface.js';
-import { DefaultCandidateExclusionService } from './exclusions/default-candidate-exclusion.service.js';
+import { InteractionExclusionService } from '../interactions/services/interaction-exclusion.service.js';
 import { CANDIDATE_EXCLUSION_PROVIDER_TOKEN } from './exclusions/candidate-exclusion.interface.js';
 
 @Module({
@@ -33,10 +33,10 @@ import { CANDIDATE_EXCLUSION_PROVIDER_TOKEN } from './exclusions/candidate-exclu
       provide: DISCOVERY_CURSOR_SERVICE_TOKEN,
       useClass: DiscoveryCursorService,
     },
-    DefaultCandidateExclusionService,
+    InteractionExclusionService,
     {
       provide: CANDIDATE_EXCLUSION_PROVIDER_TOKEN,
-      useClass: DefaultCandidateExclusionService,
+      useClass: InteractionExclusionService,
     },
     DiscoveryService,
   ],

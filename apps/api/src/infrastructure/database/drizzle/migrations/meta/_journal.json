@@ -29,6 +29,13 @@
       "when": 1790606264929,
       "tag": "0003_nervous_shadow_king",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790614530152,
+      "tag": "0004_pale_mauler",
+      "breakpoints": true
     }
   ]
 }
