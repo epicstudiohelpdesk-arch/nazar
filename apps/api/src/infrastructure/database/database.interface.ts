@@ -16,3 +16,4 @@ export interface IDatabaseService {
 }
 
 export const DATABASE_SERVICE_TOKEN = Symbol('IDatabaseService');
+export const DATABASE_CONNECTION_TOKEN = Symbol('IDatabaseConnection');

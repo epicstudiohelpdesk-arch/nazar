@@ -4,35 +4,41 @@ import type { IIdempotencyStore } from './idempotency.interface.js';
 
 /**
  * In-Memory Idempotency Store (Developmental / Test Double)
- * NOTE: Production requires durable PostgreSQL / Redis backing store (introduced in future gates).
  */
 @Injectable()
 export class InMemoryIdempotencyStore implements IIdempotencyStore {
   private readonly store = new Map<string, IdempotencyRecord>();
 
-  async get(key: string): Promise<IdempotencyRecord | null> {
-    const record = this.store.get(key);
+  private makeKey(key: string, scope = 'global'): string {
+    return `${scope}:${key}`;
+  }
+
+  async get(key: string, scope = 'global'): Promise<IdempotencyRecord | null> {
+    const compositeKey = this.makeKey(key, scope);
+    const record = this.store.get(compositeKey);
     if (!record) return null;
 
     if (new Date(record.expiresAt).getTime() < Date.now()) {
-      this.store.delete(key);
+      this.store.delete(compositeKey);
       return null;
     }
     return record;
   }
 
   async set(record: IdempotencyRecord): Promise<void> {
-    this.store.set(record.key, record);
+    const compositeKey = this.makeKey(record.key, record.scope);
+    this.store.set(compositeKey, record);
   }
 
-  async update(key: string, updates: Partial<IdempotencyRecord>): Promise<void> {
-    const existing = this.store.get(key);
+  async update(key: string, updates: Partial<IdempotencyRecord>, scope = 'global'): Promise<void> {
+    const compositeKey = this.makeKey(key, scope);
+    const existing = this.store.get(compositeKey);
     if (existing) {
-      this.store.set(key, { ...existing, ...updates });
+      this.store.set(compositeKey, { ...existing, ...updates });
     }
   }
 
-  async delete(key: string): Promise<void> {
-    this.store.delete(key);
+  async delete(key: string, scope = 'global'): Promise<void> {
+    this.store.delete(this.makeKey(key, scope));
   }
 }

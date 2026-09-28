@@ -8,6 +8,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { createHash } from 'node:crypto';
 import type { Observable } from 'rxjs';
 import { of } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -19,6 +20,13 @@ import { type IIdempotencyStore, IDEMPOTENCY_STORE_TOKEN } from './idempotency.i
 interface IdempotentMetadata {
   required: boolean;
   ttlSeconds: number;
+}
+
+export function computeRequestFingerprint(req: Request): string {
+  const method = req.method.toUpperCase();
+  const url = req.originalUrl || req.url;
+  const body = req.body ? JSON.stringify(req.body) : '';
+  return createHash('sha256').update(`${method}:${url}:${body}`).digest('hex');
 }
 
 @Injectable()
@@ -53,23 +61,42 @@ export class IdempotencyInterceptor implements NestInterceptor {
     }
 
     const key = rawKey.trim();
-    const existing = await this.store.get(key);
+    const scope = (req as Request & { user?: { id?: string } }).user?.id || 'global';
+    const fingerprint = computeRequestFingerprint(req);
+
+    const existing = await this.store.get(key, scope);
 
     if (existing) {
-      if (existing.status === 'STARTED') {
-        throw new ConflictException({
-          code: ErrorCode.IDEMPOTENCY_CONFLICT,
-          message:
-            'A mutation with this idempotency key is currently processing. Please retry shortly.',
-        });
-      }
+      const isExpired = new Date() > new Date(existing.expiresAt);
 
-      if (existing.status === 'COMPLETED' && existing.response !== undefined) {
-        if (existing.statusCode) {
-          res.status(existing.statusCode);
+      if (!isExpired) {
+        // Enforce payload consistency: same key with different payload is a conflict
+        if (existing.requestFingerprint && existing.requestFingerprint !== fingerprint) {
+          throw new ConflictException({
+            code: ErrorCode.IDEMPOTENCY_CONFLICT,
+            message:
+              'Idempotency key was previously used with a different request payload or endpoint',
+          });
         }
-        res.setHeader('x-idempotent-replayed', 'true');
-        return of(existing.response);
+
+        if (existing.status === 'STARTED') {
+          throw new ConflictException({
+            code: ErrorCode.IDEMPOTENCY_CONFLICT,
+            message:
+              'A mutation with this idempotency key is currently processing. Please retry shortly.',
+          });
+        }
+
+        if (existing.status === 'COMPLETED' && existing.response !== undefined) {
+          if (existing.statusCode) {
+            res.status(existing.statusCode);
+          }
+          res.setHeader('x-idempotent-replayed', 'true');
+          return of(existing.response);
+        }
+      } else {
+        // Expired record: delete old record so retry is treated as new
+        await this.store.delete(key, scope);
       }
     }
 
@@ -78,6 +105,8 @@ export class IdempotencyInterceptor implements NestInterceptor {
 
     const record: IdempotencyRecord = {
       key,
+      scope,
+      requestFingerprint: fingerprint,
       status: 'STARTED',
       createdAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
@@ -88,16 +117,24 @@ export class IdempotencyInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap({
         next: async (responseBody) => {
-          await this.store.update(key, {
-            status: 'COMPLETED',
-            statusCode: res.statusCode,
-            response: responseBody,
-          });
+          await this.store.update(
+            key,
+            {
+              status: 'COMPLETED',
+              statusCode: res.statusCode,
+              response: responseBody,
+            },
+            scope
+          );
         },
         error: async () => {
-          await this.store.update(key, {
-            status: 'FAILED',
-          });
+          await this.store.update(
+            key,
+            {
+              status: 'FAILED',
+            },
+            scope
+          );
         },
       })
     );

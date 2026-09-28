@@ -10,6 +10,11 @@ describe('@platform/config', () => {
     expect(config.LOG_LEVEL).toBe('info');
     expect(config.RATE_LIMIT_LIMIT).toBe(100);
     expect(config.DATABASE_URL).toContain('postgresql://');
+    expect(config.DATABASE_POOL_MIN).toBe(2);
+    expect(config.DATABASE_POOL_MAX).toBe(10);
+    expect(config.DATABASE_CONNECTION_TIMEOUT_MS).toBe(5000);
+    expect(config.DATABASE_IDLE_TIMEOUT_MS).toBe(30000);
+    expect(config.DATABASE_STATEMENT_TIMEOUT_MS).toBe(10000);
   });
 
   it('should load default client configuration without leaking secrets', () => {

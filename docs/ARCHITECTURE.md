@@ -96,5 +96,6 @@ The architecture enforces strict invariants across data durability, client trust
 For detailed specifications of the backend application foundation and API contracts established in Gate 02, see:
 
 - [Backend Architecture & Module Structure](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/BACKEND_ARCHITECTURE.md)
+- [Database Engine, Drizzle ORM & PostGIS](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/DATABASE.md)
 - [API Conventions, Response Envelopes & Idempotency](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/API_CONVENTIONS.md)
 - [Engineering Gates Roadmap](file:///Users/subhamdas/Documents/PROJECTS/nazar/docs/GATES.md)

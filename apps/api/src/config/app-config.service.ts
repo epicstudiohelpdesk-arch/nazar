@@ -60,4 +60,28 @@ export class AppConfigService {
   get rateLimitLimit(): number {
     return this.env.RATE_LIMIT_LIMIT;
   }
+
+  get databaseUrl(): string {
+    return this.env.DATABASE_URL;
+  }
+
+  get databasePoolMin(): number {
+    return this.env.DATABASE_POOL_MIN;
+  }
+
+  get databasePoolMax(): number {
+    return this.env.DATABASE_POOL_MAX;
+  }
+
+  get databaseConnectionTimeoutMs(): number {
+    return this.env.DATABASE_CONNECTION_TIMEOUT_MS;
+  }
+
+  get databaseIdleTimeoutMs(): number {
+    return this.env.DATABASE_IDLE_TIMEOUT_MS;
+  }
+
+  get databaseStatementTimeoutMs(): number {
+    return this.env.DATABASE_STATEMENT_TIMEOUT_MS;
+  }
 }

@@ -15,6 +15,11 @@ export const serverEnvSchema = z
       .string()
       .url()
       .default('postgresql://nazar_user:nazar_password@localhost:5432/nazar_db'),
+    DATABASE_POOL_MIN: z.coerce.number().int().nonnegative().default(2),
+    DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
+    DATABASE_CONNECTION_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
+    DATABASE_IDLE_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
+    DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),
     REDIS_URL: z.string().url().default('redis://:nazar_redis_password@localhost:6379/0'),
     JWT_ACCESS_SECRET: z
       .string()
