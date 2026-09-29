@@ -28,12 +28,15 @@ export interface ProfileCardData {
   readonly age: number;
   readonly city?: string;
   readonly country?: string;
+  readonly location?: string;
   readonly occupation?: string;
   readonly education?: string;
   readonly bio?: string;
   readonly imageUrl?: string | null;
+  readonly images?: readonly string[];
   readonly imageCount?: number;
   readonly isVerified?: boolean;
+  readonly verified?: boolean;
   readonly contextualInfo?: string; // e.g. "Within 5 km", "Matched 2d ago", "Attending Mumbai Mixer"
   readonly interests?: readonly string[];
   readonly prompts?: readonly {
@@ -71,6 +74,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 
   const isDiscovery = context === 'discovery';
   const isCompact = context === 'matches' || context === 'search' || context === 'community';
+  const effectiveImageUri = profile.imageUrl || profile.images?.[0];
+  const effectiveVerified = profile.isVerified ?? profile.verified;
+  const effectiveCity = profile.city || profile.location;
 
   return (
     <SurfaceCard
@@ -91,9 +97,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           },
         ]}
       >
-        {profile.imageUrl ? (
+        {effectiveImageUri ? (
           <Image
-            source={{ uri: profile.imageUrl }}
+            source={{ uri: effectiveImageUri }}
             style={styles.image}
             resizeMode="cover"
             accessibilityLabel={`${profile.name}'s profile photo`}
@@ -131,14 +137,14 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             <Heading level={isCompact ? 'h3' : 'h2'} style={{ color: '#FFFFFF' }}>
               {profile.name}, {profile.age}
             </Heading>
-            {profile.isVerified && (
+            {effectiveVerified && (
               <View style={[styles.verifiedDot, { backgroundColor: colors.info }]}>
                 <Icon name="check" size="tiny" color="#FFFFFF" strokeWidth={2.5} />
               </View>
             )}
           </View>
 
-          {profile.city && (
+          {effectiveCity && (
             <View style={styles.locationRow}>
               <Icon name="location" size="tiny" color="#E7E2DA" style={{ marginRight: 4 }} />
               <Text variant="bodySmall" style={{ color: '#E7E2DA' }}>

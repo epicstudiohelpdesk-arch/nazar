@@ -11,9 +11,11 @@ import { Icon } from '../../primitives/Icon.js';
 
 export interface DateSelectorProps {
   readonly label?: string;
-  readonly value?: string; // e.g. YYYY-MM-DD or formatted string
+  readonly value?: string | Date | null; // e.g. YYYY-MM-DD, Date object or null
   readonly onPress?: () => void;
+  readonly onChangeDate?: (date: Date) => void;
   readonly placeholder?: string;
+  readonly helperText?: string;
   readonly error?: string;
   readonly disabled?: boolean;
   readonly style?: ViewStyle;
@@ -24,7 +26,9 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
   label,
   value,
   onPress,
+  onChangeDate,
   placeholder = 'Select date of birth',
+  helperText,
   error,
   disabled = false,
   style,
@@ -32,6 +36,18 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
 }) => {
   const { colors, radii, spacing } = useTheme();
   const hasError = Boolean(error);
+  const displayValue = value instanceof Date 
+    ? value.toISOString().split('T')[0] 
+    : (value || undefined);
+
+  const handlePress = () => {
+    if (disabled) return;
+    if (onPress) {
+      onPress();
+    } else if (onChangeDate) {
+      onChangeDate(new Date(2000, 0, 1));
+    }
+  };
 
   return (
     <View style={[styles.container, style]} testID={testID}>
@@ -55,7 +71,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             paddingVertical: spacing.sm,
           },
         ]}
-        onPress={onPress}
+        onPress={handlePress}
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={label || placeholder}
@@ -64,23 +80,29 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
         <Text
           variant="body"
           style={{
-            color: value ? colors.textPrimary : colors.textTertiary,
+            color: displayValue ? colors.textPrimary : colors.textTertiary,
             flex: 1,
           }}
         >
-          {value || placeholder}
+          {displayValue || placeholder}
         </Text>
         <Icon name="chevron" direction="down" size="tiny" color={colors.textTertiary} />
       </TouchableOpacity>
 
-      {hasError && (
+      {hasError ? (
         <View style={styles.feedbackRow}>
           <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xxs }} />
           <Text variant="caption" style={{ color: colors.error }}>
             {error}
           </Text>
         </View>
-      )}
+      ) : helperText ? (
+        <View style={styles.feedbackRow}>
+          <Text variant="caption" style={{ color: colors.textTertiary }}>
+            {helperText}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 };

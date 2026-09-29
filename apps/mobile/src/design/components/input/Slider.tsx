@@ -10,11 +10,14 @@ import { Text } from '../../primitives/Text.js';
 
 export interface SliderProps {
   readonly label?: string;
-  readonly min: number;
-  readonly max: number;
+  readonly min?: number;
+  readonly max?: number;
+  readonly minimumValue?: number;
+  readonly maximumValue?: number;
   readonly step?: number;
   readonly value: number;
-  readonly onChange: (value: number) => void;
+  readonly onChange?: (value: number) => void;
+  readonly onValueChange?: (value: number) => void;
   readonly unit?: string;
   readonly disabled?: boolean;
   readonly style?: ViewStyle;
@@ -25,9 +28,12 @@ export const Slider: React.FC<SliderProps> = ({
   label,
   min,
   max,
+  minimumValue,
+  maximumValue,
   step = 1,
   value,
   onChange,
+  onValueChange,
   unit = '',
   disabled = false,
   style,
@@ -35,18 +41,22 @@ export const Slider: React.FC<SliderProps> = ({
 }) => {
   const { colors, radii } = useTheme();
 
-  const percentage = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+  const effectiveMin = min ?? minimumValue ?? 0;
+  const effectiveMax = max ?? maximumValue ?? 100;
+  const effectiveChange = onChange || onValueChange || (() => {});
+
+  const percentage = Math.max(0, Math.min(100, ((value - effectiveMin) / (effectiveMax - effectiveMin)) * 100));
 
   const handleDecrease = () => {
     if (disabled) return;
-    const next = Math.max(min, value - step);
-    onChange(next);
+    const next = Math.max(effectiveMin, value - step);
+    effectiveChange(next);
   };
 
   const handleIncrease = () => {
     if (disabled) return;
-    const next = Math.min(max, value + step);
-    onChange(next);
+    const next = Math.min(effectiveMax, value + step);
+    effectiveChange(next);
   };
 
   return (
@@ -73,7 +83,7 @@ export const Slider: React.FC<SliderProps> = ({
             },
           ]}
           onPress={handleDecrease}
-          disabled={disabled || value <= min}
+          disabled={disabled || value <= effectiveMin}
           accessibilityRole="button"
           accessibilityLabel={`Decrease ${label || 'value'}`}
         >
@@ -92,7 +102,7 @@ export const Slider: React.FC<SliderProps> = ({
             },
           ]}
           accessibilityRole="adjustable"
-          accessibilityValue={{ min, max, now: value }}
+          accessibilityValue={{ min: effectiveMin, max: effectiveMax, now: value }}
         >
           <View
             style={[
@@ -116,7 +126,7 @@ export const Slider: React.FC<SliderProps> = ({
             },
           ]}
           onPress={handleIncrease}
-          disabled={disabled || value >= max}
+          disabled={disabled || value >= effectiveMax}
           accessibilityRole="button"
           accessibilityLabel={`Increase ${label || 'value'}`}
         >

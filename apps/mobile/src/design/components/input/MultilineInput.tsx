@@ -14,7 +14,9 @@ import { Icon } from '../../primitives/Icon.js';
 export interface MultilineInputProps extends RNTextInputProps {
   readonly label?: string;
   readonly error?: string;
+  readonly errorMessage?: string;
   readonly hint?: string;
+  readonly helperText?: string;
   readonly maxLength?: number;
   readonly minLines?: number;
   readonly disabled?: boolean;
@@ -26,7 +28,9 @@ export interface MultilineInputProps extends RNTextInputProps {
 export const MultilineInput: React.FC<MultilineInputProps> = ({
   label,
   error,
+  errorMessage,
   hint,
+  helperText,
   maxLength = 500,
   minLines = 4,
   disabled = false,
@@ -40,7 +44,9 @@ export const MultilineInput: React.FC<MultilineInputProps> = ({
   const { colors, radii, spacing } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
 
-  const hasError = Boolean(error);
+  const effectiveError = error || errorMessage;
+  const effectiveHint = hint || helperText;
+  const hasError = Boolean(effectiveError);
   const currentLength = value?.length || 0;
 
   const getBorderColor = (): string => {
@@ -116,12 +122,12 @@ export const MultilineInput: React.FC<MultilineInputProps> = ({
         <View style={styles.feedbackRow}>
           <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xxs }} />
           <Text variant="caption" style={{ color: colors.error }}>
-            {error}
+            {effectiveError}
           </Text>
         </View>
-      ) : hint ? (
+      ) : effectiveHint ? (
         <Text variant="caption" style={[styles.hint, { color: colors.textTertiary }]}>
-          {hint}
+          {effectiveHint}
         </Text>
       ) : null}
     </View>

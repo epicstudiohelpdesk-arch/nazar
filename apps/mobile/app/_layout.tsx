@@ -25,7 +25,27 @@ export default function RootLayout(): React.JSX.Element {
             screenOptions={{
               headerShown: false,
             }}
-          />
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="modal/filters"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="modal/report"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="modal/block"
+              options={{ presentation: 'transparentModal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="modal/celebration"
+              options={{ presentation: 'transparentModal', headerShown: false }}
+            />
+          </Stack>
         </LocalizationProvider>
       </ThemeProvider>
     </QueryClientProvider>

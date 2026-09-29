@@ -16,10 +16,14 @@ export interface ChipItem<T = string> {
 
 export interface ChipSelectorProps<T = string> {
   readonly label?: string;
-  readonly items: readonly ChipItem<T>[];
-  readonly selectedIds: readonly T[];
-  readonly onToggle: (id: T) => void;
+  readonly items?: readonly ChipItem<T>[];
+  readonly options?: readonly ChipItem<T>[];
+  readonly selectedIds?: readonly T[];
+  readonly selectedValues?: readonly T[];
+  readonly onToggle?: (id: T) => void;
+  readonly onToggleValue?: (id: T) => void;
   readonly maxSelection?: number;
+  readonly maxSelectable?: number;
   readonly error?: string;
   readonly disabled?: boolean;
   readonly style?: ViewStyle;
@@ -29,15 +33,23 @@ export interface ChipSelectorProps<T = string> {
 export const ChipSelector = <T extends string | number>({
   label,
   items,
+  options,
   selectedIds,
+  selectedValues,
   onToggle,
+  onToggleValue,
   maxSelection,
+  maxSelectable,
   error,
   disabled = false,
   style,
   testID,
 }: ChipSelectorProps<T>): React.JSX.Element => {
   const { colors, radii, spacing } = useTheme();
+  const effectiveItems = items || options || [];
+  const effectiveSelected = selectedIds || selectedValues || [];
+  const effectiveToggle = onToggle || onToggleValue || (() => {});
+  const effectiveMax = maxSelection || maxSelectable;
   const hasError = Boolean(error);
 
   return (
@@ -50,19 +62,19 @@ export const ChipSelector = <T extends string | number>({
           >
             {label}
           </Text>
-          {maxSelection !== undefined && (
+          {effectiveMax !== undefined && (
             <Text variant="caption" style={{ color: colors.textTertiary }}>
-              {selectedIds.length}/{maxSelection}
+              {effectiveSelected.length}/{effectiveMax}
             </Text>
           )}
         </View>
       )}
 
       <View style={styles.chipsWrap}>
-        {items.map((item) => {
-          const isSelected = selectedIds.includes(item.id);
+        {effectiveItems.map((item) => {
+          const isSelected = effectiveSelected.includes(item.id);
           const reachedMax = Boolean(
-            maxSelection && selectedIds.length >= maxSelection && !isSelected
+            effectiveMax && effectiveSelected.length >= effectiveMax && !isSelected
           );
           const isChipDisabled = disabled || reachedMax;
 
@@ -83,7 +95,7 @@ export const ChipSelector = <T extends string | number>({
                   opacity: isChipDisabled ? 0.45 : 1,
                 },
               ]}
-              onPress={() => onToggle(item.id)}
+              onPress={() => effectiveToggle(item.id)}
               disabled={isChipDisabled}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: isSelected, disabled: isChipDisabled }}

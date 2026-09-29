@@ -23,10 +23,13 @@ export type PhotoUploadStatus =
 
 export interface ImagePickerTriggerProps {
   readonly uri?: string | null;
+  readonly imageUri?: string | null;
   readonly isPrimary?: boolean;
   readonly status?: PhotoUploadStatus;
   readonly onPickPhoto?: () => void;
+  readonly onPickImage?: () => void;
   readonly onRemove?: () => void;
+  readonly onRemoveImage?: () => void;
   readonly onRetry?: () => void;
   readonly aspectRatio?: number;
   readonly error?: string;
@@ -36,10 +39,13 @@ export interface ImagePickerTriggerProps {
 
 export const ImagePickerTrigger: React.FC<ImagePickerTriggerProps> = ({
   uri,
+  imageUri,
   isPrimary = false,
   status = 'empty',
   onPickPhoto,
+  onPickImage,
   onRemove,
+  onRemoveImage,
   onRetry,
   aspectRatio = 3 / 4,
   error,
@@ -47,6 +53,10 @@ export const ImagePickerTrigger: React.FC<ImagePickerTriggerProps> = ({
   testID,
 }) => {
   const { colors, radii, spacing } = useTheme();
+
+  const effectiveUri = uri ?? imageUri;
+  const handlePick = onPickPhoto || onPickImage;
+  const handleRemove = onRemove || onRemoveImage;
 
   const isUploading = status === 'uploading' || status === 'processing';
   const isRejected = status === 'rejected' || status === 'error';
@@ -61,17 +71,17 @@ export const ImagePickerTrigger: React.FC<ImagePickerTriggerProps> = ({
           borderRadius: radii.radiusLG,
           backgroundColor: colors.surfaceMuted,
           borderColor: isRejected ? colors.error : colors.border,
-          borderWidth: uri ? 1 : 2,
-          borderStyle: uri ? 'solid' : 'dashed',
+          borderWidth: effectiveUri ? 1 : 2,
+          borderStyle: effectiveUri ? 'solid' : 'dashed',
         },
         style,
       ]}
       testID={testID}
     >
-      {uri ? (
+      {effectiveUri ? (
         <View style={styles.imageWrapper}>
           <Image
-            source={{ uri }}
+            source={{ uri: effectiveUri }}
             style={[styles.image, { borderRadius: radii.radiusLG }]}
             resizeMode="cover"
           />
@@ -124,7 +134,7 @@ export const ImagePickerTrigger: React.FC<ImagePickerTriggerProps> = ({
           )}
 
           {/* Remove Button */}
-          {onRemove && !isUploading && (
+          {handleRemove && !isUploading && (
             <TouchableOpacity
               style={[
                 styles.removeButton,
@@ -134,7 +144,7 @@ export const ImagePickerTrigger: React.FC<ImagePickerTriggerProps> = ({
                   borderRadius: radii.radiusFull,
                 },
               ]}
-              onPress={onRemove}
+              onPress={handleRemove}
               accessibilityRole="button"
               accessibilityLabel="Remove photo"
             >
@@ -145,7 +155,7 @@ export const ImagePickerTrigger: React.FC<ImagePickerTriggerProps> = ({
       ) : (
         <TouchableOpacity
           style={styles.emptyTrigger}
-          onPress={onPickPhoto}
+          onPress={handlePick}
           accessibilityRole="button"
           accessibilityLabel="Add photo"
         >

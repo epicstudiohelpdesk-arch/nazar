@@ -13,8 +13,11 @@ import { Icon } from '../../primitives/Icon.js';
 export interface OtpInputProps {
   readonly length?: 4 | 6;
   readonly value: string;
-  readonly onChangeOtp: (otp: string) => void;
+  readonly onChangeOtp?: (otp: string) => void;
+  readonly onChangeCode?: (otp: string) => void;
+  readonly onChangeText?: (otp: string) => void;
   readonly error?: string;
+  readonly errorMessage?: string;
   readonly disabled?: boolean;
   readonly style?: ViewStyle;
   readonly testID?: string;
@@ -24,7 +27,10 @@ export const OtpInput: React.FC<OtpInputProps> = ({
   length = 6,
   value = '',
   onChangeOtp,
+  onChangeCode,
+  onChangeText,
   error,
+  errorMessage,
   disabled = false,
   style,
   testID,
@@ -34,11 +40,14 @@ export const OtpInput: React.FC<OtpInputProps> = ({
 
   const digits = Array.from({ length }, (_, i) => value.charAt(i) || '');
   const activeIndex = Math.min(value.length, length - 1);
-  const hasError = Boolean(error);
+  const effectiveError = error || errorMessage;
+  const hasError = Boolean(effectiveError);
 
-  const handleChangeText = (text: string) => {
+  const handleChange = (text: string) => {
     const cleanDigits = text.replace(/[^0-9]/g, '').slice(0, length);
-    onChangeOtp(cleanDigits);
+    onChangeOtp?.(cleanDigits);
+    onChangeCode?.(cleanDigits);
+    onChangeText?.(cleanDigits);
   };
 
   return (
@@ -47,7 +56,7 @@ export const OtpInput: React.FC<OtpInputProps> = ({
       <RNTextInput
         ref={hiddenInputRef}
         value={value}
-        onChangeText={handleChangeText}
+        onChangeText={handleChange}
         maxLength={length}
         keyboardType="number-pad"
         textContentType="oneTimeCode"
@@ -104,7 +113,7 @@ export const OtpInput: React.FC<OtpInputProps> = ({
         <View style={styles.feedbackRow}>
           <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xxs }} />
           <Text variant="caption" style={{ color: colors.error }}>
-            {error}
+            {effectiveError}
           </Text>
         </View>
       )}

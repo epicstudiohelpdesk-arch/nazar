@@ -33,6 +33,7 @@ export type TextColor =
 
 export interface TextProps extends RNTextProps {
   readonly variant?: TextVariant;
+  readonly level?: TextVariant;
   readonly color?: TextColor | string;
   readonly align?: 'left' | 'center' | 'right';
   readonly weight?: 'normal' | 'medium' | 'semibold' | 'bold';
@@ -40,7 +41,8 @@ export interface TextProps extends RNTextProps {
 }
 
 export const Text: React.FC<TextProps> = ({
-  variant = 'body',
+  variant,
+  level,
   color = 'primary',
   align = 'left',
   weight,
@@ -50,7 +52,8 @@ export const Text: React.FC<TextProps> = ({
 }) => {
   const { colors, typographyScale, typography } = useTheme();
 
-  const variantStyle = typographyScale[variant] || typographyScale.body;
+  const effectiveVariant = variant || level || 'body';
+  const variantStyle = typographyScale[effectiveVariant] || typographyScale.body;
 
   const resolveColor = (): string => {
     switch (color) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, spacing, typography } from '@platform/ui';
 
@@ -7,7 +7,7 @@ export default function IndexScreen(): React.JSX.Element {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Nazar Platform</Text>
       <Text style={styles.subtitle}>
         Dating & Spatial Social Discovery (Release Candidate v1.0.0)
@@ -16,11 +16,29 @@ export default function IndexScreen(): React.JSX.Element {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => router.push('/discovery')}
+          onPress={() => router.push('/(tabs)/discovery')}
           accessibilityRole="button"
           accessibilityLabel="Go to discovery feed"
         >
           <Text style={styles.primaryButtonText}>Start Discovery ✨</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => router.push('/(auth)/welcome')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to welcome landing"
+        >
+          <Text style={styles.secondaryButtonText}>Welcome / Sign Up 🚀</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => router.push('/(onboarding)/profile-setup')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to onboarding flow"
+        >
+          <Text style={styles.secondaryButtonText}>Onboarding Flow 📝</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -43,6 +61,24 @@ export default function IndexScreen(): React.JSX.Element {
 
         <TouchableOpacity
           style={styles.secondaryButton}
+          onPress={() => router.push('/(tabs)/explore')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to explore"
+        >
+          <Text style={styles.secondaryButtonText}>Explore / Communities 🌍</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => router.push('/(tabs)/profile')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to my profile"
+        >
+          <Text style={styles.secondaryButtonText}>My Profile 👤</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
           onPress={() => router.push('/billing')}
           accessibilityRole="button"
           accessibilityLabel="Go to billing"
@@ -61,11 +97,11 @@ export default function IndexScreen(): React.JSX.Element {
 
         <TouchableOpacity
           style={styles.secondaryButton}
-          onPress={() => router.push('/settings/account')}
+          onPress={() => router.push('/settings')}
           accessibilityRole="button"
-          accessibilityLabel="Go to account settings"
+          accessibilityLabel="Go to settings hub"
         >
-          <Text style={styles.secondaryButtonText}>Account & Privacy ⚙️</Text>
+          <Text style={styles.secondaryButtonText}>Settings Hub ⚙️</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -77,17 +113,18 @@ export default function IndexScreen(): React.JSX.Element {
           <Text style={[styles.secondaryButtonText, { color: '#D84315' }]}>Design System QA 🎨</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: colors.neutral[50],
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
+    paddingVertical: 48,
   },
   title: {
     fontSize: typography.fontSize['3xl'],

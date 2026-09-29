@@ -25,7 +25,8 @@ export interface TopNavHeaderProps {
   readonly subtitle?: string;
   readonly leftAction?: TopNavLeftAction;
   readonly onLeftAction?: () => void;
-  readonly rightAction?: TopNavRightAction;
+  readonly onBack?: () => void;
+  readonly rightAction?: TopNavRightAction | React.ReactNode;
   readonly transparent?: boolean;
   readonly style?: ViewStyle;
   readonly testID?: string;
@@ -36,6 +37,7 @@ export const TopNavHeader: React.FC<TopNavHeaderProps> = ({
   subtitle,
   leftAction = 'back',
   onLeftAction,
+  onBack,
   rightAction,
   transparent = false,
   style,
@@ -43,6 +45,7 @@ export const TopNavHeader: React.FC<TopNavHeaderProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const { colors, spacing } = useTheme();
+  const handleLeftPress = onLeftAction || onBack;
 
   return (
     <View
@@ -63,10 +66,10 @@ export const TopNavHeader: React.FC<TopNavHeaderProps> = ({
       <View style={styles.contentRow}>
         {/* Left Action (Back or Modal Close) */}
         <View style={styles.actionCol}>
-          {leftAction === 'back' && onLeftAction && (
+          {leftAction === 'back' && handleLeftPress && (
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={onLeftAction}
+              onPress={handleLeftPress}
               accessibilityRole="button"
               accessibilityLabel="Go back"
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -75,10 +78,10 @@ export const TopNavHeader: React.FC<TopNavHeaderProps> = ({
             </TouchableOpacity>
           )}
 
-          {leftAction === 'close' && onLeftAction && (
+          {leftAction === 'close' && handleLeftPress && (
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={onLeftAction}
+              onPress={handleLeftPress}
               accessibilityRole="button"
               accessibilityLabel="Close screen"
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -107,32 +110,41 @@ export const TopNavHeader: React.FC<TopNavHeaderProps> = ({
 
         {/* Right Action */}
         <View style={[styles.actionCol, { alignItems: 'flex-end' }]}>
-          {rightAction && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={rightAction.onPress}
-              accessibilityRole="button"
-              accessibilityLabel={rightAction.label || 'Action'}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              {rightAction.icon ? (
-                <Icon
-                  name={rightAction.icon}
-                  size="md"
-                  color={rightAction.isDestructive ? colors.error : colors.accent}
-                />
-              ) : rightAction.label ? (
-                <Text
-                  variant="button"
-                  style={{
-                    color: rightAction.isDestructive ? colors.error : colors.accent,
-                  }}
-                >
-                  {rightAction.label}
-                </Text>
-              ) : null}
-            </TouchableOpacity>
-          )}
+          {rightAction &&
+            (React.isValidElement(rightAction) ? (
+              rightAction
+            ) : (
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={(rightAction as TopNavRightAction).onPress}
+                accessibilityRole="button"
+                accessibilityLabel={(rightAction as TopNavRightAction).label || 'Action'}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                {(rightAction as TopNavRightAction).icon ? (
+                  <Icon
+                    name={(rightAction as TopNavRightAction).icon!}
+                    size="md"
+                    color={
+                      (rightAction as TopNavRightAction).isDestructive
+                        ? colors.error
+                        : colors.accent
+                    }
+                  />
+                ) : (rightAction as TopNavRightAction).label ? (
+                  <Text
+                    variant="button"
+                    style={{
+                      color: (rightAction as TopNavRightAction).isDestructive
+                        ? colors.error
+                        : colors.accent,
+                    }}
+                  >
+                    {(rightAction as TopNavRightAction).label}
+                  </Text>
+                ) : null}
+              </TouchableOpacity>
+            ))}
         </View>
       </View>
     </View>

@@ -16,6 +16,7 @@ import { Icon, type IconName } from '../../primitives/Icon.js';
 export interface TextInputProps extends RNTextInputProps {
   readonly label?: string;
   readonly error?: string;
+  readonly errorMessage?: string;
   readonly hint?: string;
   readonly leftIcon?: IconName;
   readonly rightIcon?: IconName;
@@ -30,6 +31,7 @@ export interface TextInputProps extends RNTextInputProps {
 export const TextInput: React.FC<TextInputProps> = ({
   label,
   error,
+  errorMessage,
   hint,
   leftIcon,
   rightIcon,
@@ -48,8 +50,9 @@ export const TextInput: React.FC<TextInputProps> = ({
   const { colors, radii, spacing } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
 
+  const effectiveError = error || errorMessage;
   const hasValue = Boolean(value && value.length > 0);
-  const hasError = Boolean(error);
+  const hasError = Boolean(effectiveError);
 
   const getBorderColor = (): string => {
     if (disabled) return colors.border;
@@ -153,7 +156,7 @@ export const TextInput: React.FC<TextInputProps> = ({
         <View style={styles.feedbackRow}>
           <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xxs }} />
           <Text variant="caption" style={{ color: colors.error }}>
-            {error}
+            {effectiveError}
           </Text>
         </View>
       ) : hint ? (

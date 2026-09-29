@@ -14,6 +14,7 @@ export interface SurfaceCardProps {
   readonly p?: number | keyof SpacingTokens;
   readonly radius?: keyof RadiiTokens;
   readonly elevationLevel?: keyof ShadowTokens;
+  readonly elevation?: keyof ShadowTokens | 'none' | 'sm' | 'md' | 'lg';
   readonly border?: boolean;
   readonly borderColor?: string;
   readonly bg?: string;
@@ -30,7 +31,8 @@ export interface SurfaceCardProps {
 export const SurfaceCard: React.FC<SurfaceCardProps> = ({
   p = 'md',
   radius = 'radiusLG',
-  elevationLevel = 'shadowSM',
+  elevationLevel,
+  elevation,
   border = true,
   borderColor,
   bg,
@@ -45,9 +47,18 @@ export const SurfaceCard: React.FC<SurfaceCardProps> = ({
 }) => {
   const { colors, spacing, radii, shadows } = useTheme();
 
+  const resolveElevation = () => {
+    const raw = elevation || elevationLevel || 'shadowSM';
+    if (raw === 'none' || raw === 'shadowNone') return shadows.shadowNone;
+    if (raw === 'sm' || raw === 'shadowSM') return shadows.shadowSM;
+    if (raw === 'md' || raw === 'shadowMD') return shadows.shadowMD;
+    if (raw === 'lg' || raw === 'shadowLG') return shadows.shadowLG;
+    return shadows[raw as keyof typeof shadows] || shadows.shadowSM;
+  };
+
   const paddingVal = typeof p === 'number' ? p : spacing[p as keyof typeof spacing];
   const radiusVal = radii[radius];
-  const shadowStyle = shadows[elevationLevel];
+  const shadowStyle = resolveElevation();
 
   const resolvedBorderColor = selected
     ? colors.accent

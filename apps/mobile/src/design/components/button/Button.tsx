@@ -16,7 +16,8 @@ export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive'
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps {
-  readonly label: string;
+  readonly label?: string;
+  readonly children?: React.ReactNode;
   readonly onPress?: () => void;
   readonly variant?: ButtonVariant;
   readonly size?: ButtonSize;
@@ -24,6 +25,7 @@ export interface ButtonProps {
   readonly iconPosition?: 'left' | 'right';
   readonly fullWidth?: boolean;
   readonly loading?: boolean;
+  readonly isLoading?: boolean;
   readonly disabled?: boolean;
   readonly success?: boolean;
   readonly error?: boolean;
@@ -36,6 +38,7 @@ export interface ButtonProps {
 
 export const Button: React.FC<ButtonProps> = ({
   label,
+  children,
   onPress,
   variant = 'primary',
   size = 'md',
@@ -43,6 +46,7 @@ export const Button: React.FC<ButtonProps> = ({
   iconPosition = 'left',
   fullWidth = false,
   loading = false,
+  isLoading = false,
   disabled = false,
   success = false,
   error = false,
@@ -54,7 +58,9 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   const { colors, radii, spacing } = useTheme();
 
-  const isInteractive = !disabled && !loading && !success && !error;
+  const isSpinning = loading || isLoading;
+  const isInteractive = !disabled && !isSpinning && !success && !error;
+  const buttonText = (typeof children === 'string' ? children : undefined) || label || '';
 
   const getSizeStyles = () => {
     switch (size) {
@@ -162,15 +168,15 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={!isInteractive}
       activeOpacity={0.8}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel || label}
+      accessibilityLabel={accessibilityLabel || buttonText}
       accessibilityHint={accessibilityHint}
       accessibilityState={{
         disabled: !isInteractive,
-        busy: loading,
+        busy: isSpinning,
       }}
       testID={testID}
     >
-      {loading ? (
+      {isSpinning ? (
         <ActivityIndicator size="small" color={vs.text} />
       ) : success ? (
         <View style={styles.contentRow}>
@@ -179,7 +185,7 @@ export const Button: React.FC<ButtonProps> = ({
             variant="button"
             style={[{ color: vs.text, fontSize: sz.fontSize }, textStyle]}
           >
-            {label}
+            {buttonText}
           </Text>
         </View>
       ) : error ? (
@@ -189,7 +195,7 @@ export const Button: React.FC<ButtonProps> = ({
             variant="button"
             style={[{ color: vs.text, fontSize: sz.fontSize }, textStyle]}
           >
-            {label}
+            {buttonText}
           </Text>
         </View>
       ) : (
@@ -206,7 +212,7 @@ export const Button: React.FC<ButtonProps> = ({
             variant="button"
             style={[{ color: vs.text, fontSize: sz.fontSize }, textStyle]}
           >
-            {label}
+            {buttonText}
           </Text>
           {icon && iconPosition === 'right' && (
             <Icon

@@ -21,7 +21,8 @@ export interface SelectProps<T = string> {
   readonly label?: string;
   readonly options: readonly SelectOption<T>[];
   readonly value?: T;
-  readonly onSelect: (value: T) => void;
+  readonly onSelect?: (value: T) => void;
+  readonly onSelectOption?: (value: T) => void;
   readonly placeholder?: string;
   readonly error?: string;
   readonly disabled?: boolean;
@@ -34,6 +35,7 @@ export const Select = <T extends string | number>({
   options,
   value,
   onSelect,
+  onSelectOption,
   placeholder = 'Select an option',
   error,
   disabled = false,
@@ -45,9 +47,10 @@ export const Select = <T extends string | number>({
 
   const selectedOption = options.find((o) => o.value === value);
   const hasError = Boolean(error);
+  const effectiveSelect = onSelect || onSelectOption || (() => {});
 
   const handleSelect = (val: T) => {
-    onSelect(val);
+    effectiveSelect(val);
     setModalVisible(false);
   };
 
