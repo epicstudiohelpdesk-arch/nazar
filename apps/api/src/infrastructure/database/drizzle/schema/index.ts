@@ -21,3 +21,8 @@ export * from './interactions.js';
 export * from './matches.js';
 export * from './conversations.js';
 export * from './messages.js';
+export * from './user-blocks.js';
+export * from './moderation-cases.js';
+export * from './moderation-case-events.js';
+export * from './reports.js';
+export * from './user-restrictions.js';

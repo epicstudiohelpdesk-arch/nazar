@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { InfrastructureModule } from '../../infrastructure/infrastructure.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { ProfilesModule } from '../profiles/profiles.module.js';
 import { MatchesModule } from '../matches/matches.module.js';
+import { SafetyModule } from '../safety/safety.module.js';
 import { ChatController } from './chat.controller.js';
 import { ChatGateway } from './chat.gateway.js';
 import { ConversationsService } from './services/conversations.service.js';
@@ -18,6 +19,7 @@ import { MessagesRepository } from './repositories/messages.repository.js';
     AuthModule,
     ProfilesModule,
     MatchesModule,
+    forwardRef(() => SafetyModule),
   ],
   controllers: [ChatController],
   providers: [

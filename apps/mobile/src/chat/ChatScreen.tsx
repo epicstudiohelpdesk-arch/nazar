@@ -14,6 +14,10 @@ import { colors, spacing, typography } from '@platform/ui';
 import { getDefaultAuthClient } from '../auth/default-client.js';
 import { createChatApi, CHAT_QUERY_KEYS } from './chat-api.js';
 import { chatSocket, type SocketConnectionState } from './chat-socket.js';
+import { createSafetyApi } from '../safety/safety-api.js';
+import { ReportModal } from '../safety/components/ReportModal.js';
+import { BlockModal } from '../safety/components/BlockModal.js';
+import type { ReportReasonCode, ReportTargetType } from '@platform/api-contracts';
 import { ChatHeader } from './components/ChatHeader.js';
 import { MessageBubble, type OptimisticMessageItem } from './components/MessageBubble.js';
 import { MessageComposer } from './components/MessageComposer.js';
@@ -37,6 +41,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   const effectiveClient = useMemo(() => authClient || getDefaultAuthClient(), [authClient]);
   const chatApi = useMemo(() => createChatApi(effectiveClient), [effectiveClient]);
+  const safetyApi = useMemo(() => createSafetyApi(effectiveClient), [effectiveClient]);
 
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -45,6 +50,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     chatSocket.getConnectionState()
   );
   const [optimisticMessages, setOptimisticMessages] = useState<OptimisticMessageItem[]>([]);
+  const [isReportModalVisible, setIsReportModalVisible] = useState(false);
+  const [isBlockModalVisible, setIsBlockModalVisible] = useState(false);
 
   // 1. Load conversation detail
   const { data: conversation } = useQuery({
@@ -251,6 +258,27 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     [conversation]
   );
 
+  const handleBlockConfirm = async (targetUserId: string, reason?: string) => {
+    await safetyApi.blockUser(targetUserId, { reason });
+    queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations });
+    queryClient.removeQueries({ queryKey: CHAT_QUERY_KEYS.conversation(conversationId) });
+    handleBack();
+  };
+
+  const handleReportSubmit = async (data: {
+    targetType: ReportTargetType;
+    targetId: string;
+    reasonCode: ReportReasonCode;
+    notes?: string;
+  }) => {
+    await safetyApi.createReport({
+      targetType: data.targetType,
+      targetId: data.targetId,
+      reasonCode: data.reasonCode,
+      description: data.notes || undefined,
+    });
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -263,6 +291,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         avatarUrl={conversation?.otherUser.primaryMedia?.url}
         connectionState={connectionState}
         onBack={handleBack}
+        onReport={() => setIsReportModalVisible(true)}
+        onBlock={() => setIsBlockModalVisible(true)}
       />
 
       {connectionState === 'reconnecting' && (
@@ -297,6 +327,26 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         onSend={handleSendMessage}
         disabled={isSending || conversation?.status === 'CLOSED'}
       />
+
+      {conversation && (
+        <>
+          <ReportModal
+            visible={isReportModalVisible}
+            targetType="CONVERSATION"
+            targetId={conversation.id}
+            targetName={conversation.otherUser.displayName}
+            onClose={() => setIsReportModalVisible(false)}
+            onSubmit={handleReportSubmit}
+          />
+          <BlockModal
+            visible={isBlockModalVisible}
+            targetUserId={conversation.otherUser.userId}
+            targetUserName={conversation.otherUser.displayName}
+            onClose={() => setIsBlockModalVisible(false)}
+            onConfirm={handleBlockConfirm}
+          />
+        </>
+      )}
     </KeyboardAvoidingView>
   );
 };

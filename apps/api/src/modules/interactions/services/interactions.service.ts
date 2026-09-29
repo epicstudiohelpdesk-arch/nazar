@@ -21,6 +21,7 @@ import {
   type IMatchesRepository,
 } from '../../matches/repositories/matches.repository.interface.js';
 import { normalizeUserPair } from '../../matches/domain/match.utils.js';
+import { SafetyEnforcementService } from '../../safety/services/safety-enforcement.service.js';
 
 @Injectable()
 export class InteractionsService {
@@ -31,6 +32,8 @@ export class InteractionsService {
     private readonly matchesRepo: IMatchesRepository,
     @Inject(PROFILE_REPOSITORY_TOKEN)
     private readonly profileRepo: IProfileRepository,
+    @Inject(SafetyEnforcementService)
+    private readonly safetyEnforcement: SafetyEnforcementService,
     @Inject(DatabaseService)
     private readonly databaseService: DatabaseService
   ) {}
@@ -64,6 +67,9 @@ export class InteractionsService {
         HttpStatus.BAD_REQUEST
       );
     }
+
+    // 3. Safety checks (blocking and interaction restrictions - Gate 09)
+    await this.safetyEnforcement.assertCanInteract(actorUserId, resolvedTargetUserId);
 
     if (targetProfile.visibility !== 'ACTIVE') {
       throw new HttpException(
@@ -184,7 +190,10 @@ export class InteractionsService {
       );
     }
 
-    // 3. Transactional pass mutation
+    // 3. Safety checks (blocking and interaction restrictions - Gate 09)
+    await this.safetyEnforcement.assertCanInteract(actorUserId, resolvedTargetUserId);
+
+    // 4. Transactional pass mutation
     return this.databaseService.withTransaction(async (tx) => {
       const existing = await this.interactionsRepo.findInteraction(actorUserId, resolvedTargetUserId, tx);
       const isRepeatPass = existing?.type === 'PASS';
@@ -248,6 +257,9 @@ export class InteractionsService {
           HttpStatus.BAD_REQUEST
         );
       }
+
+      // Safety check
+      await this.safetyEnforcement.assertCanInteract(actorUserId, recent.targetUserId);
 
       if (recent.type === 'LIKE') {
         const { userAId, userBId } = normalizeUserPair(actorUserId, recent.targetUserId);

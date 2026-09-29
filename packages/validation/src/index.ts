@@ -7,3 +7,4 @@ export * from './discovery.js';
 export * from './interactions.js';
 export * from './matches.js';
 export * from './chat.js';
+export * from './safety.js';

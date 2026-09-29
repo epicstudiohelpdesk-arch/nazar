@@ -28,6 +28,26 @@ export class InteractionExclusionService implements ICandidateExclusionProvider 
       SELECT CASE WHEN user_a_id = ${viewerUserId} THEN user_b_id ELSE user_a_id END AS "userId"
       FROM matches
       WHERE (user_a_id = ${viewerUserId} OR user_b_id = ${viewerUserId})
+
+      UNION
+
+      SELECT blocked_user_id AS "userId"
+      FROM user_blocks
+      WHERE blocker_user_id = ${viewerUserId}
+
+      UNION
+
+      SELECT blocker_user_id AS "userId"
+      FROM user_blocks
+      WHERE blocked_user_id = ${viewerUserId}
+
+      UNION
+
+      SELECT user_id AS "userId"
+      FROM user_restrictions
+      WHERE restriction_type IN ('DISCOVERY', 'FULL_ACCOUNT', 'PROFILE_VISIBILITY')
+        AND revoked_at IS NULL
+        AND (expires_at IS NULL OR expires_at > NOW())
     `);
 
     const rows = (result.rows || result) as unknown as Array<{ userId: string }>;

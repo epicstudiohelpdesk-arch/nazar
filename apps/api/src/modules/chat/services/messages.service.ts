@@ -30,6 +30,7 @@ import {
   formatMessageItemDto,
   type MessageCursorPayload,
 } from '../domain/chat.utils.js';
+import { SafetyEnforcementService } from '../../safety/services/safety-enforcement.service.js';
 import type { MessageRow } from '../../../infrastructure/database/drizzle/schema/messages.js';
 
 @Injectable()
@@ -42,7 +43,9 @@ export class MessagesService {
     @Inject(ConversationsService)
     private readonly conversationsService: ConversationsService,
     @Inject(DatabaseService)
-    private readonly databaseService: DatabaseService
+    private readonly databaseService: DatabaseService,
+    @Inject(SafetyEnforcementService)
+    private readonly safetyEnforcement: SafetyEnforcementService
   ) {}
 
   async sendMessage(
@@ -52,6 +55,9 @@ export class MessagesService {
   ): Promise<SendMessageResponseDto> {
     const { conversation, match, otherUserId } =
       await this.conversationsService.assertConversationAccess(senderUserId, conversationId);
+
+    // Gate 09: Enforce safety & block assertions
+    await this.safetyEnforcement.assertCanMessage(senderUserId, otherUserId);
 
     // Enforce match/conversation active state (Requirements 5, 45)
     if (conversation.status !== 'ACTIVE' || match.status !== 'ACTIVE') {

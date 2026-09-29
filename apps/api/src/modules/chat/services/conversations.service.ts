@@ -31,6 +31,7 @@ import {
   PROFILE_REPOSITORY_TOKEN,
   type IProfileRepository,
 } from '../../profiles/repositories/profile.repository.js';
+import { SafetyEnforcementService } from '../../safety/services/safety-enforcement.service.js';
 import {
   encodeCursor,
   decodeCursor,
@@ -53,7 +54,9 @@ export class ConversationsService {
     @Inject(STORAGE_SERVICE_TOKEN)
     private readonly storageService: S3StorageService,
     @Inject(DatabaseService)
-    private readonly databaseService: DatabaseService
+    private readonly databaseService: DatabaseService,
+    @Inject(SafetyEnforcementService)
+    private readonly safetyEnforcement: SafetyEnforcementService
   ) {}
 
   private async getPrimaryMediaForUser(userId: string): Promise<PublicMediaItem | null> {
@@ -113,6 +116,11 @@ export class ConversationsService {
 
     const items: ConversationItemDto[] = [];
     for (const r of pageRows) {
+      const isBlocked = await this.safetyEnforcement.isUserBlockedBidirectional(userId, r.otherUserId);
+      if (isBlocked) {
+        continue;
+      }
+
       const otherProfile = await this.profileRepo.findByUserId(r.otherUserId);
       const primaryMediaDto = await this.getPrimaryMediaForUser(r.otherUserId);
 
@@ -234,6 +242,15 @@ export class ConversationsService {
     }
 
     const otherUserId = match.userAId === userId ? match.userBId : match.userAId;
+
+    const isBlocked = await this.safetyEnforcement.isUserBlockedBidirectional(userId, otherUserId);
+    if (isBlocked) {
+      throw new HttpException(
+        { code: ErrorCode.USER_BLOCKED, message: 'Conversation is inaccessible due to safety settings' },
+        HttpStatus.FORBIDDEN
+      );
+    }
+
     return { conversation, match, otherUserId };
   }
 

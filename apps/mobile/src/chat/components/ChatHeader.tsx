@@ -9,6 +9,8 @@ interface ChatHeaderProps {
   readonly avatarUrl?: string | null;
   readonly connectionState: SocketConnectionState;
   readonly onBack: () => void;
+  readonly onReport?: () => void;
+  readonly onBlock?: () => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -17,6 +19,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   avatarUrl,
   connectionState,
   onBack,
+  onReport,
+  onBlock,
 }) => {
   const renderStatusIndicator = () => {
     switch (connectionState) {
@@ -77,6 +81,31 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           </Text>
           {renderStatusIndicator()}
         </View>
+      </View>
+
+      <View style={styles.actionContainer}>
+        {onReport && (
+          <TouchableOpacity
+            onPress={onReport}
+            style={styles.safetyButton}
+            accessibilityRole="button"
+            accessibilityLabel="Report user"
+            testID="chat-report-btn"
+          >
+            <Text style={styles.safetyIcon}>🚩</Text>
+          </TouchableOpacity>
+        )}
+        {onBlock && (
+          <TouchableOpacity
+            onPress={onBlock}
+            style={styles.safetyButton}
+            accessibilityRole="button"
+            accessibilityLabel="Block user"
+            testID="chat-block-btn"
+          >
+            <Text style={styles.safetyIcon}>🚫</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -159,5 +188,19 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: typography.fontSize.xs,
     color: colors.neutral[400],
+  },
+  actionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginLeft: 'auto',
+  },
+  safetyButton: {
+    padding: spacing.xs,
+    borderRadius: 8,
+    backgroundColor: colors.neutral[100],
+  },
+  safetyIcon: {
+    fontSize: 16,
   },
 });

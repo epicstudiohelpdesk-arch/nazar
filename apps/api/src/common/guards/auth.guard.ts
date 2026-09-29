@@ -1,9 +1,11 @@
 import {
   Injectable,
   Inject,
+  Optional,
   type CanActivate,
   type ExecutionContext,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ErrorCode } from '@platform/api-contracts';
@@ -16,6 +18,10 @@ import {
   SESSION_REPOSITORY_TOKEN,
   type ISessionRepository,
 } from '../../modules/auth/repositories/session.repository.js';
+import {
+  USER_RESTRICTIONS_REPOSITORY_TOKEN,
+  type IUserRestrictionsRepository,
+} from '../../modules/safety/repositories/user-restrictions.repository.interface.js';
 
 export interface AuthenticatedPrincipal {
   readonly userId: string;
@@ -31,7 +37,10 @@ export class AuthGuard implements CanActivate {
     @Inject(TOKEN_SERVICE_TOKEN)
     private readonly tokenService: ITokenService,
     @Inject(SESSION_REPOSITORY_TOKEN)
-    private readonly sessionRepository: ISessionRepository
+    private readonly sessionRepository: ISessionRepository,
+    @Optional()
+    @Inject(USER_RESTRICTIONS_REPOSITORY_TOKEN)
+    private readonly userRestrictionsRepo?: IUserRestrictionsRepository
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -88,7 +97,32 @@ export class AuthGuard implements CanActivate {
       });
     }
 
-    // 3. Attach authenticated principal
+    // 3. Verify user active restrictions (Requirements 15, 16, 17)
+    if (this.userRestrictionsRepo) {
+      const isFullBanned = await this.userRestrictionsRepo.hasActiveRestriction(
+        payload.sub,
+        'FULL_ACCOUNT'
+      );
+      if (isFullBanned) {
+        throw new ForbiddenException({
+          code: ErrorCode.ACCOUNT_BANNED,
+          message: 'Account has been permanently suspended or banned',
+        });
+      }
+
+      const isLoginSuspended = await this.userRestrictionsRepo.hasActiveRestriction(
+        payload.sub,
+        'ACCOUNT_LOGIN'
+      );
+      if (isLoginSuspended) {
+        throw new ForbiddenException({
+          code: ErrorCode.ACCOUNT_SUSPENDED,
+          message: 'Account login is temporarily suspended',
+        });
+      }
+    }
+
+    // 4. Attach authenticated principal
     const principal: AuthenticatedPrincipal = {
       userId: payload.sub,
       sessionId: payload.sid,

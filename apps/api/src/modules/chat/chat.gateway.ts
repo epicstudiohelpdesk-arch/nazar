@@ -21,6 +21,7 @@ import {
 import type { AuthenticatedPrincipal } from '../../common/guards/auth.guard.js';
 import { ConversationsService } from './services/conversations.service.js';
 import { MessagesService } from './services/messages.service.js';
+import { SafetyEnforcementService } from '../safety/services/safety-enforcement.service.js';
 import { createRealtimeEvent } from './domain/chat.utils.js';
 import type { SendMessageInput } from '@platform/validation';
 
@@ -48,7 +49,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @Inject(ConversationsService)
     private readonly conversationsService: ConversationsService,
     @Inject(MessagesService)
-    private readonly messagesService: MessagesService
+    private readonly messagesService: MessagesService,
+    @Inject(SafetyEnforcementService)
+    private readonly safetyEnforcement: SafetyEnforcementService
   ) {}
 
   async handleConnection(client: Socket): Promise<void> {
@@ -91,6 +94,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         sessionId: payload.sid,
         deviceId: payload.dev,
       };
+
+      // 3.5. Enforce safety restrictions on WebSocket connection (Gate 09)
+      await this.safetyEnforcement.assertCanLogin(principal.userId);
+
       client.data.user = principal;
 
       // 4. Join user's personal room for multi-device fanout (Requirement 18, 19)
@@ -99,10 +106,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.logger.log(`[WS] Socket connected & authenticated: user=${principal.userId}, socket=${client.id}`);
       client.emit('authenticated', { userId: principal.userId });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Authentication failure';
+      const code =
+        (err as any)?.response?.code ||
+        (err as any)?.code ||
+        ErrorCode.REALTIME_AUTH_FAILED;
+      const message =
+        (err as any)?.response?.message ||
+        (err instanceof Error ? err.message : 'Authentication failure');
       this.logger.warn(`[WS] Handshake failed: ${message}`);
       client.emit('error', {
-        code: ErrorCode.REALTIME_AUTH_FAILED,
+        code,
         message,
       });
       client.disconnect();
@@ -130,11 +143,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
-      await this.conversationsService.assertConversationAccess(user.userId, data.conversationId);
+      const { otherUserId } = await this.conversationsService.assertConversationAccess(user.userId, data.conversationId);
+      await this.safetyEnforcement.assertCanMessage(user.userId, otherUserId);
       await client.join(`conversation:${data.conversationId}`);
       return { success: true, conversationId: data.conversationId };
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Access denied';
+      const message =
+        (err as any)?.response?.message ||
+        (err instanceof Error ? err.message : 'Access denied');
       return { success: false, error: message };
     }
   }
@@ -280,7 +296,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
-      await this.conversationsService.assertConversationAccess(user.userId, data.conversationId);
+      const { otherUserId } = await this.conversationsService.assertConversationAccess(user.userId, data.conversationId);
+      await this.safetyEnforcement.assertCanMessage(user.userId, otherUserId);
 
       const event = createRealtimeEvent(
         'typing.started',
