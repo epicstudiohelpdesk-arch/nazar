@@ -29,3 +29,6 @@ export * from './chat/components/ChatHeader.js';
 export * from './chat/ConversationsScreen.js';
 export * from './chat/ChatScreen.js';
 export * from './social/index.js';
+export * from './notifications/index.js';
+export * from './billing/index.js';
+export * from './recommendations/index.js';

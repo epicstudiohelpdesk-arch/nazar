@@ -410,7 +410,7 @@ describe('Matches & Concurrency Engine (Gate 07)', () => {
 
       // Initial discovery feed contains isolated candidates
       const feedInitial = await request(app.getHttpServer())
-        .get('/v1/discovery')
+        .get('/v1/discovery?limit=50')
         .set('Authorization', `Bearer ${viewer.accessToken}`);
 
       expect(feedInitial.status).toBe(200);
@@ -431,7 +431,7 @@ describe('Matches & Concurrency Engine (Gate 07)', () => {
 
       // 3. Query discovery again - candidate 1 and candidate 2 must be excluded!
       const feedAfter = await request(app.getHttpServer())
-        .get('/v1/discovery')
+        .get('/v1/discovery?limit=50')
         .set('Authorization', `Bearer ${viewer.accessToken}`);
 
       const remainingIds = feedAfter.body.data.items.map((i: any) => i.profile.userId);
@@ -446,7 +446,7 @@ describe('Matches & Concurrency Engine (Gate 07)', () => {
 
       // Candidate 2 reappears in discovery!
       const feedAfterUndo = await request(app.getHttpServer())
-        .get('/v1/discovery')
+        .get('/v1/discovery?limit=50')
         .set('Authorization', `Bearer ${viewer.accessToken}`);
 
       const postUndoIds = feedAfterUndo.body.data.items.map((i: any) => i.profile.userId);

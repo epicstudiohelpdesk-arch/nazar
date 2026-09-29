@@ -37,3 +37,4 @@ export * from './billing-webhook-events.js';
 export * from './communities.js';
 export * from './posts.js';
 export * from './events.js';
+export * from './recommendations.js';
