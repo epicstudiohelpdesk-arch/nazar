@@ -1,4 +1,4 @@
-name: Nazar CI
+name: Nazar Continuous Integration
 
 on:
   push:
@@ -6,9 +6,15 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
+    name: Lint, Typecheck, Test & Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -28,14 +34,35 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
+      - name: Verify Code Formatting
+        run: pnpm format:check
+
+      - name: Static Code Analysis (Lint)
         run: pnpm lint
 
-      - name: Typecheck
+      - name: Static Type Checking
         run: pnpm typecheck
 
-      - name: Run Tests
-        run: pnpm test
+      - name: Start Database & Cache Containers
+        run: |
+          docker compose up -d postgres redis minio
+          docker compose ps
 
-      - name: Build
+      - name: Run Test Suite
+        run: pnpm test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://nazar_user:nazar_password@localhost:5432/nazar_db
+          REDIS_URL: redis://:nazar_redis_password@localhost:6379/0
+
+      - name: Build Monorepo Packages & Applications
         run: pnpm build
+
+      - name: Container Security Scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'

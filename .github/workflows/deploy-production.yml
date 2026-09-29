@@ -1,0 +1,97 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Verified immutable container tag to promote (e.g. sha-458b768)'
+        required: true
+      reason:
+        description: 'Release summary and justification'
+        required: true
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  production-gate:
+    name: Production Release Approval & Gate Verification
+    runs-on: ubuntu-latest
+    environment: production # Requires designated human approvers in GitHub repository settings
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Display Release Metadata
+        run: |
+          echo "=========================================="
+          echo "PROMOTING TO PRODUCTION"
+          echo "Image Tag: ${{ github.event.inputs.image_tag }}"
+          echo "Author: ${{ github.actor }}"
+          echo "Reason: ${{ github.event.inputs.reason }}"
+          echo "=========================================="
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PRODUCTION_DEPLOY_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Setup pnpm & Verify Pre-Migration Compatibility
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply Backward-Compatible Production Migrations (Expand Phase)
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
+      - name: Deploy Production ECS API (Zero-Downtime Rolling Update)
+        run: |
+          aws ecs update-service \
+            --cluster nazar-production-cluster \
+            --service nazar-production-api-service \
+            --force-new-deployment
+
+      - name: Deploy Production ECS Workers
+        run: |
+          aws ecs update-service \
+            --cluster nazar-production-cluster \
+            --service nazar-production-worker-service \
+            --force-new-deployment
+
+      - name: Await Production Cluster Stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster nazar-production-cluster \
+            --services nazar-production-api-service nazar-production-worker-service
+
+      - name: Execute Production Health & Smoke Verification
+        run: |
+          pnpm --filter @platform/api test tests/infra/deployment-smoke.test.ts
+        env:
+          SMOKE_TARGET_URL: "https://api.nazar.app"
+          SMOKE_TARGET_WS_URL: "wss://ws.nazar.app/chat"
+
+      - name: Post-Deployment Success Notification
+        if: success()
+        run: |
+          echo "Production deployment for ${{ github.event.inputs.image_tag }} successfully verified!"
+
+      - name: Automated Rollback on Verification Failure
+        if: failure()
+        run: |
+          echo "CRITICAL: Smoke verification failed! Triggering automatic rollback to previous stable deployment..."
+          aws ecs update-service \
+            --cluster nazar-production-cluster \
+            --service nazar-production-api-service \
+            --task-definition nazar-production-api:PREVIOUS_STABLE

@@ -108,6 +108,72 @@ export const serverEnvSchema = z
       message: 'BILLING_PROVIDER_MOCK cannot be enabled in production environment',
       path: ['BILLING_PROVIDER_MOCK'],
     }
+  )
+  .refine(
+    (data) => {
+      if (
+        data.NODE_ENV === 'production' &&
+        (data.JWT_ACCESS_SECRET.includes('development') ||
+          data.JWT_ACCESS_SECRET ===
+            'development_access_secret_do_not_use_in_production_min32chars')
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'JWT_ACCESS_SECRET cannot use insecure development default in production environment',
+      path: ['JWT_ACCESS_SECRET'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (
+        data.NODE_ENV === 'production' &&
+        (data.JWT_REFRESH_SECRET.includes('development') ||
+          data.JWT_REFRESH_SECRET ===
+            'development_refresh_secret_do_not_use_in_production_min32chars')
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'JWT_REFRESH_SECRET cannot use insecure development default in production environment',
+      path: ['JWT_REFRESH_SECRET'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (
+        data.NODE_ENV === 'production' &&
+        (data.DATABASE_URL.includes('localhost') || data.DATABASE_URL.includes('127.0.0.1'))
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'DATABASE_URL cannot point to localhost in production environment',
+      path: ['DATABASE_URL'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (
+        data.NODE_ENV === 'production' &&
+        (data.REDIS_URL.includes('localhost') || data.REDIS_URL.includes('127.0.0.1'))
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'REDIS_URL cannot point to localhost in production environment',
+      path: ['REDIS_URL'],
+    }
   );
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

@@ -1,0 +1,162 @@
+version: '3.8'
+
+services:
+  # Edge Load Balancer & Reverse Proxy
+  edge-proxy:
+    image: nginx:1.25-alpine
+    container_name: nazar-staging-edge
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
+
+  # API Pod 1
+  api-1:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: nazar-staging-api-1
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=staging
+      - PORT=4000
+      - DATABASE_URL=postgresql://nazar_user:nazar_password@postgres:5432/nazar_db
+      - REDIS_URL=redis://:nazar_redis_password@redis:6379/0
+      - JWT_ACCESS_SECRET=staging_jwt_access_secret_cryptographically_secure_key_64_bits
+      - JWT_REFRESH_SECRET=staging_jwt_refresh_secret_cryptographically_secure_key_64_bits
+      - S3_ENDPOINT=http://minio:9000
+      - S3_BUCKET_NAME=nazar-media
+      - S3_ACCESS_KEY_ID=nazar_minio_admin
+      - S3_SECRET_ACCESS_KEY=nazar_minio_secret
+      - MEDIA_PUBLIC_URL_PREFIX=http://localhost:9000/nazar-media
+      - PUSH_PROVIDER_MOCK=false
+      - BILLING_PROVIDER_MOCK=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # API Pod 2 (Horizontally Scaled Instance)
+  api-2:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: nazar-staging-api-2
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=staging
+      - PORT=4000
+      - DATABASE_URL=postgresql://nazar_user:nazar_password@postgres:5432/nazar_db
+      - REDIS_URL=redis://:nazar_redis_password@redis:6379/0
+      - JWT_ACCESS_SECRET=staging_jwt_access_secret_cryptographically_secure_key_64_bits
+      - JWT_REFRESH_SECRET=staging_jwt_refresh_secret_cryptographically_secure_key_64_bits
+      - S3_ENDPOINT=http://minio:9000
+      - S3_BUCKET_NAME=nazar-media
+      - S3_ACCESS_KEY_ID=nazar_minio_admin
+      - S3_SECRET_ACCESS_KEY=nazar_minio_secret
+      - MEDIA_PUBLIC_URL_PREFIX=http://localhost:9000/nazar-media
+      - PUSH_PROVIDER_MOCK=false
+      - BILLING_PROVIDER_MOCK=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Background Asynchronous Worker Process
+  worker:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: nazar-staging-worker
+    restart: unless-stopped
+    command: ["node", "-e", "console.log('Nazar background worker runner initialized'); setInterval(() => {}, 1000)"]
+    environment:
+      - NODE_ENV=staging
+      - DATABASE_URL=postgresql://nazar_user:nazar_password@postgres:5432/nazar_db
+      - REDIS_URL=redis://:nazar_redis_password@redis:6379/0
+      - PUSH_PROVIDER_MOCK=false
+      - BILLING_PROVIDER_MOCK=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Database Engine: PostgreSQL 16 + PostGIS
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: nazar-staging-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nazar_user
+      POSTGRES_PASSWORD: nazar_password
+      POSTGRES_DB: nazar_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+      - ./postgres/init-postgis.sh:/docker-entrypoint-initdb.d/init-postgis.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nazar_user -d nazar_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Cache & Ephemeral Realtime Layer: Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: nazar-staging-redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "nazar_redis_password"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_staging_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "nazar_redis_password", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Object Storage: MinIO
+  minio:
+    image: minio/minio:RELEASE.2024-11-07T00-52-28Z
+    container_name: nazar-staging-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: nazar_minio_admin
+      MINIO_ROOT_PASSWORD: nazar_minio_secret
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_staging_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_staging_data:
+  redis_staging_data:
+  minio_staging_data:

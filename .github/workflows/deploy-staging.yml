@@ -1,0 +1,87 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    name: Build Immutable Image & Deploy Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate Immutable Image Tag
+        id: meta
+        run: |
+          IMAGE_TAG="sha-${GITHUB_SHA::8}"
+          echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "Deploying image tag: ${IMAGE_TAG}"
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_STAGING_DEPLOY_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push Production Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/nazar-api:${{ steps.meta.outputs.tag }}
+            ${{ steps.login-ecr.outputs.registry }}/nazar-api:staging-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Setup pnpm & Run Database Migrations
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Apply Staging Migrations
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
+      - name: Deploy to Amazon ECS (Rolling Update)
+        run: |
+          aws ecs update-service \
+            --cluster nazar-staging-cluster \
+            --service nazar-staging-api-service \
+            --force-new-deployment
+
+      - name: Wait for Staging Service Stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster nazar-staging-cluster \
+            --services nazar-staging-api-service
+
+      - name: Execute Post-Deployment Smoke Tests
+        run: |
+          pnpm --filter @platform/api test tests/infra/deployment-smoke.test.ts
+        env:
+          SMOKE_TARGET_URL: "https://staging.nazar.app"
+          SMOKE_TARGET_WS_URL: "wss://staging.nazar.app/chat"
