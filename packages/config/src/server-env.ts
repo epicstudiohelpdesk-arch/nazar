@@ -53,6 +53,16 @@ export const serverEnvSchema = z
     MEDIA_MAX_BYTES: z.coerce.number().int().positive().default(10485760),
     MEDIA_MAX_PHOTOS: z.coerce.number().int().positive().default(6),
     MEDIA_MIN_PHOTOS: z.coerce.number().int().positive().default(1),
+    // Gate 10: APNs & FCM Push Provider Config
+    APNS_TEAM_ID: z.string().optional(),
+    APNS_KEY_ID: z.string().optional(),
+    APNS_PRIVATE_KEY: z.string().optional(),
+    APNS_BUNDLE_ID: z.string().default('com.nazar.app'),
+    APNS_PRODUCTION: z.coerce.boolean().default(false),
+    FCM_PROJECT_ID: z.string().optional(),
+    FCM_CLIENT_EMAIL: z.string().optional(),
+    FCM_PRIVATE_KEY: z.string().optional(),
+    PUSH_PROVIDER_MOCK: z.coerce.boolean().default(false),
   })
   .refine(
     (data) => {
@@ -64,6 +74,18 @@ export const serverEnvSchema = z
     {
       message: 'CORS_ORIGIN cannot be wildcard "*" in production environment',
       path: ['CORS_ORIGIN'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.NODE_ENV === 'production' && data.PUSH_PROVIDER_MOCK) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'PUSH_PROVIDER_MOCK cannot be enabled in production environment',
+      path: ['PUSH_PROVIDER_MOCK'],
     }
   );
 

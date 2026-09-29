@@ -13,3 +13,4 @@ export * from './interactions/interactions.contract.js';
 export * from './matches/matches.contract.js';
 export * from './chat/chat.contract.js';
 export * from './safety/safety.contract.js';
+export * from './notifications/notifications.contract.js';

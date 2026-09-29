@@ -26,3 +26,6 @@ export * from './moderation-cases.js';
 export * from './moderation-case-events.js';
 export * from './reports.js';
 export * from './user-restrictions.js';
+export * from './notification-preferences.js';
+export * from './notifications.js';
+export * from './notification-delivery-jobs.js';

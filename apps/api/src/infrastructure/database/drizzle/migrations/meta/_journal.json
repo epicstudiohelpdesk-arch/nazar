@@ -57,6 +57,13 @@
       "when": 1790655558801,
       "tag": "0007_silent_sally_floyd",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790656236349,
+      "tag": "0008_low_big_bertha",
+      "breakpoints": true
     }
   ]
 }

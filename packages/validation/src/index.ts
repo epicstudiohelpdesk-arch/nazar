@@ -8,3 +8,4 @@ export * from './interactions.js';
 export * from './matches.js';
 export * from './chat.js';
 export * from './safety.js';
+export * from './notifications.js';

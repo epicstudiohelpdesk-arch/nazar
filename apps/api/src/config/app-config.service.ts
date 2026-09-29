@@ -188,4 +188,40 @@ export class AppConfigService {
   get mediaMinPhotos(): number {
     return this.env.MEDIA_MIN_PHOTOS;
   }
+
+  get apnsTeamId(): string | undefined {
+    return this.env.APNS_TEAM_ID;
+  }
+
+  get apnsKeyId(): string | undefined {
+    return this.env.APNS_KEY_ID;
+  }
+
+  get apnsPrivateKey(): string | undefined {
+    return this.env.APNS_PRIVATE_KEY;
+  }
+
+  get apnsBundleId(): string {
+    return this.env.APNS_BUNDLE_ID;
+  }
+
+  get apnsProduction(): boolean {
+    return this.env.APNS_PRODUCTION;
+  }
+
+  get fcmProjectId(): string | undefined {
+    return this.env.FCM_PROJECT_ID;
+  }
+
+  get fcmClientEmail(): string | undefined {
+    return this.env.FCM_CLIENT_EMAIL;
+  }
+
+  get fcmPrivateKey(): string | undefined {
+    return this.env.FCM_PRIVATE_KEY;
+  }
+
+  get pushProviderMock(): boolean {
+    return this.env.PUSH_PROVIDER_MOCK;
+  }
 }
