@@ -12,3 +12,4 @@ export * from './notifications.js';
 export * from './payments.js';
 export * from './social.js';
 export * from './recommendations.js';
+export * from './admin.js';

@@ -54,6 +54,12 @@ export class AuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
+    const url = request.originalUrl || request.url || '';
+    if (url.startsWith('/v1/admin')) {
+      // Administrative endpoints use dedicated AdminAuthGuard and staff identities
+      return true;
+    }
+
     const authHeader = request.headers['authorization'];
 
     if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {

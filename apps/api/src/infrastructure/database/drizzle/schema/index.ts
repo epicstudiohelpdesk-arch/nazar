@@ -38,3 +38,4 @@ export * from './communities.js';
 export * from './posts.js';
 export * from './events.js';
 export * from './recommendations.js';
+export * from './admin.js';
