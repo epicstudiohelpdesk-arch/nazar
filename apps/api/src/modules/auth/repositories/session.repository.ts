@@ -1,4 +1,5 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
+import { ErrorCode } from '@platform/api-contracts';
 import { eq, and, isNull } from 'drizzle-orm';
 import { generateUuidV7 } from '@platform/domain';
 import { DatabaseService } from '../../../infrastructure/database/database.service.js';
@@ -97,7 +98,7 @@ export class SessionRepository implements ISessionRepository {
         tokenHash: oldTokenHash,
       });
 
-      // 2. Update session with new token hash and expiry
+      // 2. Update session with new token hash and expiry with optimistic concurrency guard
       const [updated] = await tx
         .update(sessions)
         .set({
@@ -106,11 +107,14 @@ export class SessionRepository implements ISessionRepository {
           updatedAt: new Date(),
           lastActiveAt: new Date(),
         })
-        .where(eq(sessions.id, sessionId))
+        .where(and(eq(sessions.id, sessionId), eq(sessions.tokenHash, oldTokenHash)))
         .returning();
 
       if (!updated) {
-        throw new Error('Failed to rotate session refresh token');
+        throw new UnauthorizedException({
+          code: ErrorCode.TOKEN_REPLAY_DETECTED,
+          message: 'Refresh token has already been rotated by another concurrent request',
+        });
       }
 
       return updated;

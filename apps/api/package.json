@@ -12,7 +12,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/infrastructure/database/drizzle/migrate-cli.ts",
     "db:seed": "tsx src/infrastructure/database/seeds/seed.ts",
-    "db:reset": "tsx src/infrastructure/database/tools/reset.ts"
+    "db:reset": "tsx src/infrastructure/database/tools/reset.ts",
+    "db:perf:seed": "tsx src/infrastructure/database/tools/perf-seed-cli.ts",
+    "db:perf:purge": "tsx src/infrastructure/database/tools/perf-purge-cli.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1141.0",

@@ -1,4 +1,5 @@
 import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
+import { sql } from 'drizzle-orm';
 import {
   ErrorCode,
   type InteractionResponseDto,
@@ -83,6 +84,16 @@ export class InteractionsService {
 
     // 3. Transactional like & reciprocal match detection
     return this.databaseService.withTransaction(async (tx) => {
+      const { userAId, userBId } = normalizeUserPair(actorUserId, resolvedTargetUserId);
+
+      // Acquire transaction-scoped advisory lock for the normalized user pair
+      // to serialize concurrent reciprocal likes and guarantee deterministic match formation
+      await tx.execute(sql`
+        SELECT pg_advisory_xact_lock(
+          hashtext('match:' || ${userAId} || ':' || ${userBId})
+        );
+      `);
+
       const existing = await this.interactionsRepo.findInteraction(
         actorUserId,
         resolvedTargetUserId,
@@ -109,7 +120,6 @@ export class InteractionsService {
       let matchId: string | null = null;
 
       if (isReciprocalLike) {
-        const { userAId, userBId } = normalizeUserPair(actorUserId, resolvedTargetUserId);
         const { match, wasCreated } = await this.matchesRepo.createOrActivateMatchTx(
           tx,
           userAId,
