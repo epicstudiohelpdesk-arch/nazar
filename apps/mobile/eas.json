@@ -1,0 +1,68 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "EXPO_PUBLIC_API_URL": "http://localhost:4000/api/v1",
+        "EXPO_PUBLIC_WS_URL": "ws://localhost:4000",
+        "EXPO_PUBLIC_APP_VERSION": "1.0.0",
+        "EXPO_PUBLIC_API_VERSION": "v1",
+        "EXPO_PUBLIC_DEEP_LINK_SCHEME": "nazar",
+        "EXPO_PUBLIC_DEEP_LINK_DOMAIN": "nazar.app"
+      }
+    },
+    "staging": {
+      "distribution": "internal",
+      "channel": "staging",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging",
+        "EXPO_PUBLIC_API_URL": "https://staging.nazar.app/api/v1",
+        "EXPO_PUBLIC_WS_URL": "wss://staging.nazar.app",
+        "EXPO_PUBLIC_APP_VERSION": "1.0.0",
+        "EXPO_PUBLIC_API_VERSION": "v1",
+        "EXPO_PUBLIC_DEEP_LINK_SCHEME": "nazar",
+        "EXPO_PUBLIC_DEEP_LINK_DOMAIN": "staging.nazar.app"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "channel": "production",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "https://api.nazar.app/v1",
+        "EXPO_PUBLIC_WS_URL": "wss://api.nazar.app",
+        "EXPO_PUBLIC_APP_VERSION": "1.0.0",
+        "EXPO_PUBLIC_API_VERSION": "v1",
+        "EXPO_PUBLIC_DEEP_LINK_SCHEME": "nazar",
+        "EXPO_PUBLIC_DEEP_LINK_DOMAIN": "nazar.app"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal"
+      },
+      "ios": {
+        "appleId": "apple-dev@nazar.app",
+        "ascAppId": "6400000000",
+        "appleTeamId": "TEAMID1234"
+      }
+    }
+  }
+}

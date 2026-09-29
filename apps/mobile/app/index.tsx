@@ -9,7 +9,9 @@ export default function IndexScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Nazar Platform</Text>
-      <Text style={styles.subtitle}>Social Discovery & Interaction Engine (Gate 07)</Text>
+      <Text style={styles.subtitle}>
+        Dating & Spatial Social Discovery (Release Candidate v1.0.0)
+      </Text>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -37,6 +39,33 @@ export default function IndexScreen(): React.JSX.Element {
           accessibilityLabel="Go to messages"
         >
           <Text style={styles.secondaryButtonText}>Open Messages 💌</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => router.push('/billing')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to billing"
+        >
+          <Text style={styles.secondaryButtonText}>Billing & Premium 👑</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => router.push('/notifications')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to notifications"
+        >
+          <Text style={styles.secondaryButtonText}>Notifications 🔔</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => router.push('/settings/account')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to account settings"
+        >
+          <Text style={styles.secondaryButtonText}>Account & Privacy ⚙️</Text>
         </TouchableOpacity>
       </View>
     </View>

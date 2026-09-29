@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouter } from 'expo-router';
-import { DiscoveryScreen } from '../../src/discovery/DiscoveryScreen.js';
-import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { DiscoveryScreen } from '../../src/discovery/DiscoveryScreen';
+import { getDefaultAuthClient } from '../../src/auth/default-client';
 
 export default function DiscoveryRoute(): React.JSX.Element {
   const router = useRouter();

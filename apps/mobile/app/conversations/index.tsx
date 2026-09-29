@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouter } from 'expo-router';
-import { ConversationsScreen } from '../../src/chat/ConversationsScreen.js';
-import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { ConversationsScreen } from '../../src/chat/ConversationsScreen';
+import { getDefaultAuthClient } from '../../src/auth/default-client';
 
 export default function ConversationsRoute(): React.JSX.Element {
   const router = useRouter();

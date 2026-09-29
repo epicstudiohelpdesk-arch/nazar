@@ -1,8 +1,8 @@
 import type React from 'react';
 import { useMemo } from 'react';
-import { NotificationsScreen } from '../../src/notifications/NotificationsScreen.js';
-import { NotificationsApiClient } from '../../src/notifications/notifications-api.js';
-import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { NotificationsScreen } from '../../src/notifications/NotificationsScreen';
+import { NotificationsApiClient } from '../../src/notifications/notifications-api';
+import { getDefaultAuthClient } from '../../src/auth/default-client';
 
 export default function NotificationsRoute(): React.JSX.Element {
   const authClient = getDefaultAuthClient();
@@ -10,9 +10,7 @@ export default function NotificationsRoute(): React.JSX.Element {
   const client = useMemo(
     () =>
       new NotificationsApiClient({
-        baseUrl:
-          (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
-          'http://localhost:3000',
+        baseUrl: authClient.getBaseUrl(),
         getAccessToken: async () => authClient.getStorage().getAccessToken(),
       }),
     [authClient]

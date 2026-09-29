@@ -301,4 +301,21 @@ export class AuthController {
   ): Promise<RevokeDeviceResponse> {
     return this.authService.revokeUserDevice(user.userId, deviceId);
   }
+
+  // ----------------------------------------------------
+  // Self-Service Account Deletion (Apple Guideline 5.1.1(v) & Google Play Policy)
+  // ----------------------------------------------------
+
+  @ApiBearerAuth()
+  @Delete('account')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request permanent account deletion and revoke all active sessions' })
+  @SwaggerResponse({ status: 200, description: 'Account deletion confirmation' })
+  async deleteAccount(
+    @CurrentUser() user: AuthenticatedPrincipal,
+    @Req() req: Request
+  ): Promise<{ success: boolean; message: string }> {
+    const userAgent = req.headers['user-agent'] as string | undefined;
+    return this.authService.deleteUserAccount(user.userId, req.ip, userAgent);
+  }
 }

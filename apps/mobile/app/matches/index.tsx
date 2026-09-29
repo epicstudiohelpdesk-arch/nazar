@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouter } from 'expo-router';
-import { MatchesScreen } from '../../src/matches/MatchesScreen.js';
-import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { MatchesScreen } from '../../src/matches/MatchesScreen';
+import { getDefaultAuthClient } from '../../src/auth/default-client';
 
 export default function MatchesRoute(): React.JSX.Element {
   const router = useRouter();

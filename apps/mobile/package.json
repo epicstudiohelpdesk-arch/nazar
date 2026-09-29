@@ -1,6 +1,6 @@
 {
   "name": "@platform/mobile",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -10,12 +10,16 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
+    "build:export:ios": "expo export -p ios --no-bytecode",
+    "build:export:android": "expo export -p android --no-bytecode",
+    "build:manifest": "node scripts/generate-manifest.js",
     "test": "vitest run",
     "lint": "eslint app src --ext .ts,.tsx"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
     "@platform/api-contracts": "workspace:*",
+    "@platform/config": "workspace:*",
     "@platform/domain": "workspace:*",
     "@platform/ui": "workspace:*",
     "@platform/validation": "workspace:*",

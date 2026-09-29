@@ -19,6 +19,7 @@ export enum AuthEventType {
   LOGOUT_ALL = 'LOGOUT_ALL',
   DEVICE_REGISTERED = 'DEVICE_REGISTERED',
   DEVICE_REVOKED = 'DEVICE_REVOKED',
+  ACCOUNT_DELETED = 'ACCOUNT_DELETED',
 }
 
 export type AuthSecuritySeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';

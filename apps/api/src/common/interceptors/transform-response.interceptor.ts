@@ -47,9 +47,13 @@ export class TransformResponseInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<Request>();
 
-    // Skip Swagger documentation and raw static asset requests
+    // Skip Swagger documentation, raw static asset requests, and standard .well-known manifests
     const path = req.originalUrl || req.url;
-    if (path.startsWith('/docs') || path.startsWith('/favicon')) {
+    if (
+      path.startsWith('/docs') ||
+      path.startsWith('/favicon') ||
+      path.startsWith('/.well-known')
+    ) {
       return next.handle();
     }
 

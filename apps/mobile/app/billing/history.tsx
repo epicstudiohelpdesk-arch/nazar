@@ -1,8 +1,8 @@
 import type React from 'react';
 import { useMemo } from 'react';
-import { BillingHistoryScreen } from '../../src/billing/BillingHistoryScreen.js';
-import { BillingApiClient } from '../../src/billing/billing-api.js';
-import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { BillingHistoryScreen } from '../../src/billing/BillingHistoryScreen';
+import { BillingApiClient } from '../../src/billing/billing-api';
+import { getDefaultAuthClient } from '../../src/auth/default-client';
 
 export default function BillingHistoryRoute(): React.JSX.Element {
   const authClient = getDefaultAuthClient();
@@ -10,9 +10,7 @@ export default function BillingHistoryRoute(): React.JSX.Element {
   const client = useMemo(
     () =>
       new BillingApiClient({
-        baseUrl:
-          (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
-          'http://localhost:3000',
+        baseUrl: authClient.getBaseUrl(),
         getAccessToken: async () => authClient.getStorage().getAccessToken(),
       }),
     [authClient]

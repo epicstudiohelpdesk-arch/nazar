@@ -29,7 +29,12 @@ import { e164PhoneSchema, standardEmailSchema } from '@platform/validation';
 import { AppConfigService } from '../../../config/app-config.service.js';
 import { eq } from 'drizzle-orm';
 import { DatabaseService } from '../../../infrastructure/database/database.service.js';
-import { users, type DeviceRow } from '../../../infrastructure/database/drizzle/schema/index.js';
+import {
+  users,
+  profiles,
+  devices,
+  type DeviceRow,
+} from '../../../infrastructure/database/drizzle/schema/index.js';
 import { TOKEN_SERVICE_TOKEN, type ITokenService } from '../tokens/token.interface.js';
 import { SMS_PROVIDER_TOKEN, type ISmsProvider } from '../providers/sms.provider.js';
 import { EMAIL_PROVIDER_TOKEN, type IEmailProvider } from '../providers/email.provider.js';
@@ -743,6 +748,68 @@ export class AuthService {
     });
 
     return { message: 'Device revoked successfully.' };
+  }
+
+  // ----------------------------------------------------
+  // Self-Service Account Deletion (Store Compliance)
+  // ----------------------------------------------------
+
+  async deleteUserAccount(
+    userId: string,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<{ success: boolean; message: string }> {
+    const db = this.databaseService.client;
+    const userRows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const user = userRows[0];
+
+    if (!user || user.status === 'DELETED') {
+      throw new NotFoundException({
+        code: ErrorCode.NOT_FOUND,
+        message: 'User account not found or already deleted.',
+      });
+    }
+
+    await this.databaseService.withTransaction(async (tx) => {
+      // 1. Mark user as DELETED with timestamp
+      await tx
+        .update(users)
+        .set({
+          status: 'DELETED',
+          deletedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+
+      // 2. Hide profile from discovery and social feeds immediately
+      await tx
+        .update(profiles)
+        .set({
+          visibility: 'HIDDEN',
+          updatedAt: new Date(),
+        })
+        .where(eq(profiles.userId, userId));
+
+      // 3. Remove/revoke push notification device bindings
+      await tx.delete(devices).where(eq(devices.userId, userId));
+    });
+
+    // 4. Revoke all active user sessions
+    await this.sessionRepo.revokeAllUserSessions(userId, 'ACCOUNT_DELETED');
+
+    // 5. Record security event for audit trail
+    await this.securityService.recordSecurityEvent({
+      eventType: AuthEventType.ACCOUNT_DELETED,
+      userId,
+      ipAddress,
+      userAgent,
+    });
+
+    return {
+      success: true,
+      message:
+        'Account successfully scheduled for permanent deletion and all active sessions revoked.',
+    };
   }
 
   // ----------------------------------------------------

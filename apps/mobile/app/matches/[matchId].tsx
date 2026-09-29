@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { MatchDetailScreen } from '../../src/matches/MatchDetailScreen.js';
-import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { MatchDetailScreen } from '../../src/matches/MatchDetailScreen';
+import { getDefaultAuthClient } from '../../src/auth/default-client';
 
 export default function MatchDetailRoute(): React.JSX.Element {
   const router = useRouter();

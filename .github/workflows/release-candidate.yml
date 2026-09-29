@@ -1,0 +1,191 @@
+name: Mobile Release Candidate Pipeline
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Candidate Version (e.g. 1.0.0)'
+        required: true
+        default: '1.0.0'
+      version_code:
+        description: 'Android Monotonic versionCode / iOS buildNumber (e.g. 10000)'
+        required: true
+        default: '10000'
+      channel:
+        description: 'EAS Channel / Distribution Track (e.g. production, staging)'
+        required: true
+        default: 'production'
+      target_platform:
+        description: 'Target Mobile Platforms'
+        required: true
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+        default: all
+
+concurrency:
+  group: mobile-release-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ----------------------------------------------------
+  # 1. CI Validation Gate
+  # ----------------------------------------------------
+  validate:
+    name: Lint, Typecheck, Test & Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11.9.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify Code Formatting
+        run: pnpm format:check
+
+      - name: Static Code Analysis (Lint)
+        run: pnpm lint
+
+      - name: Static Type Checking
+        run: pnpm typecheck
+
+      - name: Start Database & Cache Containers
+        run: |
+          docker compose up -d postgres redis minio
+          docker compose ps
+
+      - name: Run Monorepo Test Suite
+        run: pnpm test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://nazar_user:nazar_password@localhost:5432/nazar_db
+          REDIS_URL: redis://:nazar_redis_password@localhost:6379/0
+
+      - name: Build Monorepo Packages
+        run: pnpm build
+
+      - name: Security Scan (Trivy Filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+  # ----------------------------------------------------
+  # 2. Mobile Release Candidate Compilation
+  # ----------------------------------------------------
+  build-release-candidate:
+    name: Build & Verify Mobile Release Artifacts
+    needs: [validate]
+    runs-on: macos-14 # Native macOS runner for iOS & Android tooling
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11.9.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Setup Java JDK (Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit Mobile Production Environment Safety
+        run: |
+          node -e '
+            const fs = require("fs");
+            const appJson = JSON.parse(fs.readFileSync("apps/mobile/app.json", "utf-8"));
+            const expo = appJson.expo;
+            console.log("Validating App ID:", expo.ios.bundleIdentifier, expo.android.package);
+            if (expo.ios.bundleIdentifier !== "com.nazar.app" || expo.android.package !== "com.nazar.app") {
+              throw new Error("Production package identifier mismatch");
+            }
+            if (!expo.android.versionCode || !expo.ios.buildNumber) {
+              throw new Error("Missing monotonic build numbers");
+            }
+            console.log("Configuration Audit Passed: Ready for RC build");
+          '
+
+      - name: Build Production iOS Bundle & Export
+        if: ${{ github.event.inputs.target_platform != 'android' }}
+        run: pnpm --filter @platform/mobile build:export:ios
+        env:
+          EXPO_PUBLIC_APP_ENV: production
+          EXPO_PUBLIC_API_URL: https://api.nazar.app/v1
+          EXPO_PUBLIC_WS_URL: wss://api.nazar.app
+
+      - name: Build Production Android Bundle & Export
+        if: ${{ github.event.inputs.target_platform != 'ios' }}
+        run: pnpm --filter @platform/mobile build:export:android
+        env:
+          EXPO_PUBLIC_APP_ENV: production
+          EXPO_PUBLIC_API_URL: https://api.nazar.app/v1
+          EXPO_PUBLIC_WS_URL: wss://api.nazar.app
+
+      - name: Generate Release Manifest & Traceability Metadata
+        run: pnpm --filter @platform/mobile build:manifest
+
+      - name: Archive Release Candidate Artifacts & Manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: nazar-release-candidate-${{ github.sha }}
+          path: |
+            RELEASE_MANIFEST.json
+            apps/mobile/dist
+            MOBILE_PERMISSION_MATRIX.md
+            STORE_RELEASE_CHECKLIST.md
+            RELEASE_NOTES.md
+          retention-days: 30
+
+  # ----------------------------------------------------
+  # 3. Internal Distribution & Store Submission Gate
+  # ----------------------------------------------------
+  internal-distribution-gate:
+    name: Store Submission Approval Gate
+    needs: [build-release-candidate]
+    runs-on: ubuntu-latest
+    environment: store-review # Requires designated human approvers before submission
+    steps:
+      - name: Display Release Candidate Verification
+        run: |
+          echo "========================================================"
+          echo "NAZAR RELEASE CANDIDATE SUBMISSION GATE"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Status: Build Passed & Artifacts Verified"
+          echo "Next Action: Ready for Google Play Console & TestFlight submission"
+          echo "========================================================"

@@ -32,6 +32,38 @@ export class AuthClient {
     return this.storage;
   }
 
+  getBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  async logout(): Promise<void> {
+    try {
+      const refreshToken = await this.storage.getRefreshToken();
+      if (refreshToken) {
+        await this.request('/v1/auth/logout', {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken }),
+        });
+      }
+    } finally {
+      await this.storage.clearTokens();
+    }
+  }
+
+  async deleteAccount(): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await this.request<{ success: boolean; message: string }>('/v1/auth/account', {
+        method: 'DELETE',
+      });
+      if (res.success) {
+        return res.data;
+      }
+      throw new Error(res.error?.message || 'Failed to delete account');
+    } finally {
+      await this.storage.clearTokens();
+    }
+  }
+
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const url = endpoint.startsWith('http')
       ? endpoint

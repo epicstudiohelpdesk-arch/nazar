@@ -1,16 +1,16 @@
 import { AuthClient } from './auth-client.js';
 import { InMemoryTokenStorage } from './token-storage.js';
 
+import { getMobileConfig } from '../config/mobile-config';
+
 let defaultClient: AuthClient | null = null;
 
 export function getDefaultAuthClient(): AuthClient {
   if (!defaultClient) {
-    const baseUrl =
-      (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
-      'http://localhost:3000';
+    const config = getMobileConfig();
 
     defaultClient = new AuthClient({
-      baseUrl,
+      baseUrl: config.EXPO_PUBLIC_API_URL,
       storage: new InMemoryTokenStorage(),
     });
   }
