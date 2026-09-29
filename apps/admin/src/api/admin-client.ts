@@ -26,6 +26,16 @@ import type {
   AdminRecommendationDiagnosticsDto,
   AdminOutboxJobDto,
   AdminNotificationJobDto,
+  AnalyticsOverviewDto,
+  DailyMetricDto,
+  DailyMetricsQueryDto,
+  FunnelResultDto,
+  FunnelQueryDto,
+  RetentionResultDto,
+  RetentionQueryDto,
+  ExperimentSummaryDto,
+  AnalyticsPipelineHealthDto,
+  AnalyticsQuarantineItemDto,
 } from '@platform/api-contracts';
 
 const API_BASE = '/v1/admin';
@@ -240,6 +250,68 @@ export class AdminApiClient {
     if (params.cursor) query.set('cursor', params.cursor);
     const qs = query.toString() ? `?${query.toString()}` : '';
     return this.request(`/audit/security-events${qs}`);
+  }
+
+  // Analytics & Telemetry (Gate 15)
+  async getAnalyticsOverview(startDate?: string, endDate?: string): Promise<AnalyticsOverviewDto> {
+    const query = new URLSearchParams();
+    if (startDate) query.set('startDate', startDate);
+    if (endDate) query.set('endDate', endDate);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return this.request(`/analytics/overview${qs}`);
+  }
+
+  async getAnalyticsMetrics(params: DailyMetricsQueryDto): Promise<DailyMetricDto[]> {
+    const query = new URLSearchParams();
+    query.set('startDate', params.startDate);
+    query.set('endDate', params.endDate);
+    if (params.dimension) query.set('dimension', params.dimension);
+    if (params.metricNames) {
+      params.metricNames.forEach((m) => query.append('metricNames', m));
+    }
+    return this.request(`/analytics/metrics?${query.toString()}`);
+  }
+
+  async getAnalyticsFunnel(
+    funnelId: string,
+    params: FunnelQueryDto = {}
+  ): Promise<FunnelResultDto> {
+    const query = new URLSearchParams();
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
+    if (params.platform) query.set('platform', params.platform);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return this.request(`/analytics/funnels/${funnelId}${qs}`);
+  }
+
+  async getAnalyticsRetention(params: RetentionQueryDto = {}): Promise<RetentionResultDto> {
+    const query = new URLSearchParams();
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
+    if (params.limit) query.set('limit', String(params.limit));
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return this.request(`/analytics/retention${qs}`);
+  }
+
+  async getAnalyticsExperiments(): Promise<ExperimentSummaryDto[]> {
+    return this.request('/analytics/experiments');
+  }
+
+  async getAnalyticsHealth(): Promise<AnalyticsPipelineHealthDto> {
+    return this.request('/analytics/health');
+  }
+
+  async getAnalyticsQuarantine(limit = 50, offset = 0): Promise<AnalyticsQuarantineItemDto[]> {
+    return this.request(`/analytics/quarantine?limit=${limit}&offset=${offset}`);
+  }
+
+  async triggerAnalyticsAggregation(
+    date?: string
+  ): Promise<{ aggregatedMetricsCount: number; date: string }> {
+    return this.request('/analytics/aggregate', {
+      method: 'POST',
+      body: JSON.stringify({ date }),
+    });
   }
 }
 

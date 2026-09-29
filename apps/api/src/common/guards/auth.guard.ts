@@ -49,10 +49,6 @@ export class AuthGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    if (isPublic) {
-      return true;
-    }
-
     const request = context.switchToHttp().getRequest();
     const url = request.originalUrl || request.url || '';
     if (url.startsWith('/v1/admin')) {
@@ -61,6 +57,28 @@ export class AuthGuard implements CanActivate {
     }
 
     const authHeader = request.headers['authorization'];
+
+    if (isPublic) {
+      if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.slice(7).trim();
+        if (token) {
+          try {
+            const payload = this.tokenService.verifyAccessToken(token);
+            const session = await this.sessionRepository.findById(payload.sid);
+            if (session && !session.revokedAt && session.expiresAt >= new Date()) {
+              request.user = {
+                userId: payload.sub,
+                sessionId: payload.sid,
+                deviceId: payload.dev,
+              };
+            }
+          } catch {
+            // Optional auth ignores invalid token on public routes
+          }
+        }
+      }
+      return true;
+    }
 
     if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException({

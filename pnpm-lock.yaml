@@ -181,6 +181,9 @@ importers:
       '@platform/api-contracts':
         specifier: workspace:*
         version: link:../../packages/api-contracts
+      '@platform/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@platform/ui':
         specifier: workspace:*
         version: link:../../packages/ui

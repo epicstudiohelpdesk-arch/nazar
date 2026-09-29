@@ -52,6 +52,8 @@ export const ADMIN_PERMISSIONS = [
   'recommendations.diagnostics.read',
   'health.read',
   'jobs.read',
+  'analytics.read',
+  'analytics.manage',
 
   // Audit & Security
   'audit.read',
@@ -105,6 +107,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<AdminRoleName, readonly AdminPermi
     'recommendations.diagnostics.read',
     'health.read',
     'jobs.read',
+    'analytics.read',
     'audit.read',
     'security.events.read',
     'staff.read',
@@ -160,6 +163,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<AdminRoleName, readonly AdminPermi
     'recommendations.diagnostics.read',
     'notifications.diagnostics.read',
     'jobs.read',
+    'analytics.read',
+    'analytics.manage',
     'audit.read',
   ],
   READ_ONLY_OPERATOR: [
@@ -173,6 +178,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<AdminRoleName, readonly AdminPermi
     'entitlements.read',
     'health.read',
     'jobs.read',
+    'analytics.read',
     'audit.read',
     'security.events.read',
   ],

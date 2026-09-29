@@ -27,6 +27,7 @@ import { PaymentsModule } from './modules/payments/payments.module.js';
 import { SocialModule } from './modules/social/social.module.js';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
+import { AnalyticsModule } from './modules/analytics/analytics.module.js';
 
 import { AuthGuard } from './common/guards/auth.guard.js';
 
@@ -61,6 +62,7 @@ import { AuthGuard } from './common/guards/auth.guard.js';
     SocialModule,
     RecommendationsModule,
     AdminModule,
+    AnalyticsModule,
   ],
   providers: [
     {

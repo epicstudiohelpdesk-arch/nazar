@@ -18,3 +18,4 @@ export * from './payments/payments.contract.js';
 export * from './social/social.contract.js';
 export * from './recommendations/recommendations.contract.js';
 export * from './admin/index.js';
+export * from './analytics/index.js';
