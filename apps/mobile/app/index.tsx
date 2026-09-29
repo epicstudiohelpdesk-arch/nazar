@@ -67,6 +67,15 @@ export default function IndexScreen(): React.JSX.Element {
         >
           <Text style={styles.secondaryButtonText}>Account & Privacy ⚙️</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.secondaryButton, { backgroundColor: '#FDF0EC', borderColor: '#D84315', borderWidth: 1 }]}
+          onPress={() => router.push('/design-system-showcase')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to design system showcase"
+        >
+          <Text style={[styles.secondaryButtonText, { color: '#D84315' }]}>Design System QA 🎨</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
