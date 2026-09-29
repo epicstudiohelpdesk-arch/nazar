@@ -83,7 +83,11 @@ export class InteractionsService {
 
     // 3. Transactional like & reciprocal match detection
     return this.databaseService.withTransaction(async (tx) => {
-      const existing = await this.interactionsRepo.findInteraction(actorUserId, resolvedTargetUserId, tx);
+      const existing = await this.interactionsRepo.findInteraction(
+        actorUserId,
+        resolvedTargetUserId,
+        tx
+      );
       const isRepeatLike = existing?.type === 'LIKE';
 
       const interaction = await this.interactionsRepo.upsertInteraction(
@@ -94,7 +98,11 @@ export class InteractionsService {
       );
 
       // Check reciprocal interaction
-      const reciprocal = await this.interactionsRepo.findInteraction(resolvedTargetUserId, actorUserId, tx);
+      const reciprocal = await this.interactionsRepo.findInteraction(
+        resolvedTargetUserId,
+        actorUserId,
+        tx
+      );
       const isReciprocalLike = reciprocal?.type === 'LIKE';
 
       let matched = false;
@@ -157,7 +165,6 @@ export class InteractionsService {
         matchId,
       };
     });
-
   }
 
   async pass(actorUserId: string, targetUserId: string): Promise<InteractionResponseDto> {
@@ -195,7 +202,11 @@ export class InteractionsService {
 
     // 4. Transactional pass mutation
     return this.databaseService.withTransaction(async (tx) => {
-      const existing = await this.interactionsRepo.findInteraction(actorUserId, resolvedTargetUserId, tx);
+      const existing = await this.interactionsRepo.findInteraction(
+        actorUserId,
+        resolvedTargetUserId,
+        tx
+      );
       const isRepeatPass = existing?.type === 'PASS';
 
       if (existing?.type === 'LIKE') {
@@ -268,7 +279,8 @@ export class InteractionsService {
           throw new HttpException(
             {
               code: ErrorCode.UNDO_NOT_ALLOWED,
-              message: 'Cannot undo a like that resulted in an active match. Please unmatch instead.',
+              message:
+                'Cannot undo a like that resulted in an active match. Please unmatch instead.',
             },
             HttpStatus.BAD_REQUEST
           );

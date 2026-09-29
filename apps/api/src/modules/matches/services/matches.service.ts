@@ -70,10 +70,7 @@ export class MatchesService {
     private readonly databaseService: DatabaseService
   ) {}
 
-  async getMatches(
-    userId: string,
-    options: GetMatchesOptions = {}
-  ): Promise<MatchListResponseDto> {
+  async getMatches(userId: string, options: GetMatchesOptions = {}): Promise<MatchListResponseDto> {
     const limit = Math.min(Math.max(options.limit || 20, 1), 50);
 
     // Decode cursor
@@ -135,9 +132,7 @@ export class MatchesService {
         ? await client
             .select()
             .from(profileMedia)
-            .where(
-              inArray(profileMedia.profileId, otherProfileIds)
-            )
+            .where(inArray(profileMedia.profileId, otherProfileIds))
         : [];
 
     const primaryPhotoByProfileId = new Map<string, string>();
@@ -263,11 +258,7 @@ export class MatchesService {
     };
   }
 
-  async unmatch(
-    userId: string,
-    matchId: string,
-    reason?: string
-  ): Promise<UnmatchResponseDto> {
+  async unmatch(userId: string, matchId: string, reason?: string): Promise<UnmatchResponseDto> {
     const match = await this.matchesRepo.findMatchById(matchId);
     if (!match) {
       throw new HttpException(

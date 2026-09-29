@@ -22,9 +22,7 @@ export const notificationPreferences = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   },
-  (table) => [
-    uniqueIndex('idx_notif_prefs_user_id').on(table.userId),
-  ]
+  (table) => [uniqueIndex('idx_notif_prefs_user_id').on(table.userId)]
 );
 
 export type NotificationPreferencesRow = typeof notificationPreferences.$inferSelect;

@@ -15,3 +15,4 @@ export * from './chat/chat.contract.js';
 export * from './safety/safety.contract.js';
 export * from './notifications/notifications.contract.js';
 export * from './payments/payments.contract.js';
+export * from './social/social.contract.js';

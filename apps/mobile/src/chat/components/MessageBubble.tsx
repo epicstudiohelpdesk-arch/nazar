@@ -28,7 +28,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   };
 
-  const renderDeliveryStatus = (state: DeliveryState, isOptimistic?: boolean, isFailed?: boolean) => {
+  const renderDeliveryStatus = (
+    state: DeliveryState,
+    isOptimistic?: boolean,
+    isFailed?: boolean
+  ) => {
     if (isFailed) {
       return (
         <TouchableOpacity
@@ -61,36 +65,19 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         isCurrentUser ? styles.containerOutgoing : styles.containerIncoming,
       ]}
     >
-      <View
-        style={[
-          styles.bubble,
-          isCurrentUser ? styles.bubbleOutgoing : styles.bubbleIncoming,
-        ]}
-      >
-        <Text
-          style={[
-            styles.bodyText,
-            isCurrentUser ? styles.bodyOutgoing : styles.bodyIncoming,
-          ]}
-        >
+      <View style={[styles.bubble, isCurrentUser ? styles.bubbleOutgoing : styles.bubbleIncoming]}>
+        <Text style={[styles.bodyText, isCurrentUser ? styles.bodyOutgoing : styles.bodyIncoming]}>
           {message.body}
         </Text>
         <View style={styles.metaRow}>
           <Text
-            style={[
-              styles.timeText,
-              isCurrentUser ? styles.timeOutgoing : styles.timeIncoming,
-            ]}
+            style={[styles.timeText, isCurrentUser ? styles.timeOutgoing : styles.timeIncoming]}
           >
             {formatTime(message.createdAt)}
           </Text>
           {isCurrentUser && (
             <View style={styles.statusIcon}>
-              {renderDeliveryStatus(
-                message.deliveryState,
-                message.isOptimistic,
-                message.isFailed
-              )}
+              {renderDeliveryStatus(message.deliveryState, message.isOptimistic, message.isFailed)}
             </View>
           )}
         </View>

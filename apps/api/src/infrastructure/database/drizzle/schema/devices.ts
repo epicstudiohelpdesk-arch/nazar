@@ -24,7 +24,9 @@ export const devices = pgTable(
     locale: varchar('locale', { length: 32 }),
     timezone: varchar('timezone', { length: 64 }),
     lastActiveAt: timestamp('last_active_at', { withTimezone: true, mode: 'date' }),
-    lastSeenAt: timestamp('last_seen_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'date' }),

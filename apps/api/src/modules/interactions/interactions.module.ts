@@ -28,10 +28,6 @@ import { InteractionExclusionService } from './services/interaction-exclusion.se
     InteractionsService,
     InteractionExclusionService,
   ],
-  exports: [
-    InteractionsService,
-    INTERACTIONS_REPOSITORY_TOKEN,
-    InteractionExclusionService,
-  ],
+  exports: [InteractionsService, INTERACTIONS_REPOSITORY_TOKEN, InteractionExclusionService],
 })
 export class InteractionsModule {}

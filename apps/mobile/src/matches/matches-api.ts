@@ -14,7 +14,9 @@ export const MATCHES_QUERY_KEYS = {
 
 export function createMatchesApi(authClient: AuthClient) {
   return {
-    async getMatches(params: { limit?: number; cursor?: string } = {}): Promise<MatchListResponseDto> {
+    async getMatches(
+      params: { limit?: number; cursor?: string } = {}
+    ): Promise<MatchListResponseDto> {
       const searchParams = new URLSearchParams();
       if (params.limit !== undefined) {
         searchParams.set('limit', String(params.limit));

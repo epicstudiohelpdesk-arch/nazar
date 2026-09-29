@@ -1,7 +1,4 @@
-import type {
-  PaymentProviderType,
-  TransactionType,
-} from '@platform/api-contracts';
+import type { PaymentProviderType, TransactionType } from '@platform/api-contracts';
 
 export interface VerifyPurchaseInput {
   readonly userId: string;

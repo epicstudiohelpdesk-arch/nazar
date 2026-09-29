@@ -1,16 +1,13 @@
-import type { ReportRow, NewReportRow } from '../../../infrastructure/database/drizzle/schema/reports.js';
+import type {
+  ReportRow,
+  NewReportRow,
+} from '../../../infrastructure/database/drizzle/schema/reports.js';
 import type { DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
 
 export interface IReportsRepository {
-  createReport(
-    data: NewReportRow,
-    tx?: DrizzleDatabase
-  ): Promise<ReportRow>;
+  createReport(data: NewReportRow, tx?: DrizzleDatabase): Promise<ReportRow>;
 
-  findReportById(
-    reportId: string,
-    tx?: DrizzleDatabase
-  ): Promise<ReportRow | null>;
+  findReportById(reportId: string, tx?: DrizzleDatabase): Promise<ReportRow | null>;
 
   findOpenDuplicate(
     reporterUserId: string,

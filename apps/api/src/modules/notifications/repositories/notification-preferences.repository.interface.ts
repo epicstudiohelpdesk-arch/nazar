@@ -12,4 +12,6 @@ export interface INotificationPreferencesRepository {
   ): Promise<NotificationPreferencesRow>;
 }
 
-export const NOTIFICATION_PREFERENCES_REPOSITORY_TOKEN = Symbol('INotificationPreferencesRepository');
+export const NOTIFICATION_PREFERENCES_REPOSITORY_TOKEN = Symbol(
+  'INotificationPreferencesRepository'
+);

@@ -1,4 +1,14 @@
-import { pgTable, uuid, varchar, text, integer, timestamp, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  integer,
+  timestamp,
+  jsonb,
+  index,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 
 /**
  * Billing Webhook Events Table
@@ -14,7 +24,9 @@ export const billingWebhookEvents = pgTable(
     eventType: varchar('event_type', { length: 64 }).notNull(),
     payloadHash: varchar('payload_hash', { length: 64 }).notNull(), // SHA-256 hex digest
     rawPayload: jsonb('raw_payload').notNull(), // payload with credentials stripped
-    receivedAt: timestamp('received_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    receivedAt: timestamp('received_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
     processedAt: timestamp('processed_at', { withTimezone: true, mode: 'date' }),
     status: varchar('status', { length: 32 }).notNull().default('PENDING'), // 'PENDING' | 'PROCESSING' | 'PROCESSED' | 'FAILED' | 'IGNORED'
     attemptCount: integer('attempt_count').notNull().default(0),

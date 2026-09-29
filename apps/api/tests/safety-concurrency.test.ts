@@ -92,10 +92,7 @@ describe('Safety: Concurrency & Race Conditions', () => {
       .select()
       .from(userBlocks)
       .where(
-        and(
-          eq(userBlocks.blockerUserId, userA.userId),
-          eq(userBlocks.blockedUserId, userB.userId)
-        )
+        and(eq(userBlocks.blockerUserId, userA.userId), eq(userBlocks.blockedUserId, userB.userId))
       );
 
     expect(blockRows).toHaveLength(1);
@@ -148,7 +145,8 @@ describe('Safety: Concurrency & Race Conditions', () => {
 
     const matchId = generateUuidV7();
     const conversationId = generateUuidV7();
-    const [u1, u2] = userA.userId < userB.userId ? [userA.userId, userB.userId] : [userB.userId, userA.userId];
+    const [u1, u2] =
+      userA.userId < userB.userId ? [userA.userId, userB.userId] : [userB.userId, userA.userId];
 
     await databaseService.client.insert(matches).values({
       id: matchId,

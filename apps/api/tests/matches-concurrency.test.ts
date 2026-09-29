@@ -119,10 +119,7 @@ describe('Matches & Concurrency Engine (Gate 07)', () => {
         .select()
         .from(outboxEvents)
         .where(
-          and(
-            eq(outboxEvents.aggregateId, matchId),
-            eq(outboxEvents.eventType, 'match.created')
-          )
+          and(eq(outboxEvents.aggregateId, matchId), eq(outboxEvents.eventType, 'match.created'))
         );
 
       expect(matchEvents).toHaveLength(1);
@@ -389,10 +386,7 @@ describe('Matches & Concurrency Engine (Gate 07)', () => {
         .select()
         .from(outboxEvents)
         .where(
-          and(
-            eq(outboxEvents.aggregateId, matchId),
-            eq(outboxEvents.eventType, 'match.unmatched')
-          )
+          and(eq(outboxEvents.aggregateId, matchId), eq(outboxEvents.eventType, 'match.unmatched'))
         );
 
       expect(events).toHaveLength(1);

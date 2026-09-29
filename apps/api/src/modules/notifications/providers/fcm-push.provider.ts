@@ -21,7 +21,8 @@ export class FcmPushProvider implements IPushNotificationProvider {
   ) {}
 
   async send(req: PushNotificationRequest): Promise<PushDeliveryResult> {
-    const redactedToken = req.token.length > 8 ? `${req.token.slice(0, 4)}...${req.token.slice(-4)}` : '***';
+    const redactedToken =
+      req.token.length > 8 ? `${req.token.slice(0, 4)}...${req.token.slice(-4)}` : '***';
 
     this.logger.debug(
       `[FCM] Preparing push dispatch to token [${redactedToken}]`,
@@ -30,7 +31,11 @@ export class FcmPushProvider implements IPushNotificationProvider {
 
     // In local development or testing without live FCM credentials, simulate delivery
     if (this.config.nodeEnv !== 'production' && !this.config.fcmPrivateKey) {
-      if (req.token.includes('invalid') || req.token.includes('bad_token') || req.token.includes('unregistered')) {
+      if (
+        req.token.includes('invalid') ||
+        req.token.includes('bad_token') ||
+        req.token.includes('unregistered')
+      ) {
         return {
           success: false,
           errorCategory: 'TOKEN_UNREGISTERED',

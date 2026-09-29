@@ -27,23 +27,11 @@ export interface IUserBlocksRepository {
     tx?: DrizzleDatabase
   ): Promise<{ block: UserBlockRow; wasCreated: boolean }>;
 
-  deleteBlock(
-    blockerUserId: string,
-    blockedUserId: string,
-    tx?: DrizzleDatabase
-  ): Promise<boolean>;
+  deleteBlock(blockerUserId: string, blockedUserId: string, tx?: DrizzleDatabase): Promise<boolean>;
 
-  hasBlocked(
-    blockerUserId: string,
-    blockedUserId: string,
-    tx?: DrizzleDatabase
-  ): Promise<boolean>;
+  hasBlocked(blockerUserId: string, blockedUserId: string, tx?: DrizzleDatabase): Promise<boolean>;
 
-  isBlockedBidirectional(
-    userAId: string,
-    userBId: string,
-    tx?: DrizzleDatabase
-  ): Promise<boolean>;
+  isBlockedBidirectional(userAId: string, userBId: string, tx?: DrizzleDatabase): Promise<boolean>;
 
   findBlockedUsers(
     blockerUserId: string,
@@ -51,10 +39,7 @@ export interface IUserBlocksRepository {
     tx?: DrizzleDatabase
   ): Promise<readonly BlockedUserQueryResult[]>;
 
-  getAllBlockedUserIdsForUser(
-    userId: string,
-    tx?: DrizzleDatabase
-  ): Promise<readonly string[]>;
+  getAllBlockedUserIdsForUser(userId: string, tx?: DrizzleDatabase): Promise<readonly string[]>;
 }
 
 export const USER_BLOCKS_REPOSITORY_TOKEN = Symbol('IUserBlocksRepository');

@@ -1,4 +1,14 @@
-import { pgTable, uuid, varchar, text, integer, timestamp, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  integer,
+  timestamp,
+  jsonb,
+  index,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 
 /**
  * Products Table
@@ -47,7 +57,11 @@ export const productProviderMappings = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex('idx_product_provider_env').on(table.provider, table.providerProductId, table.environment),
+    uniqueIndex('idx_product_provider_env').on(
+      table.provider,
+      table.providerProductId,
+      table.environment
+    ),
     index('idx_product_provider_mapping_product_id').on(table.productId),
   ]
 );

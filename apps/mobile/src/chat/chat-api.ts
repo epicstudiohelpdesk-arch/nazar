@@ -29,9 +29,7 @@ export function createChatApi(authClient: AuthClient) {
       }
 
       const queryString = searchParams.toString();
-      const endpoint = queryString
-        ? `/v1/conversations?${queryString}`
-        : '/v1/conversations';
+      const endpoint = queryString ? `/v1/conversations?${queryString}` : '/v1/conversations';
 
       const res = await authClient.request<ConversationListResponseDto>(endpoint);
       if (!res.success) {
@@ -91,10 +89,7 @@ export function createChatApi(authClient: AuthClient) {
       return res.data;
     },
 
-    async markRead(
-      conversationId: string,
-      messageId: string
-    ): Promise<MarkReadResponseDto> {
+    async markRead(conversationId: string, messageId: string): Promise<MarkReadResponseDto> {
       const res = await authClient.request<MarkReadResponseDto>(
         `/v1/conversations/${conversationId}/read`,
         {

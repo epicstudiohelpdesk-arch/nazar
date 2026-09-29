@@ -1,7 +1,4 @@
-import type {
-  PushProviderType,
-  PushDeliveryResult,
-} from '@platform/api-contracts';
+import type { PushProviderType, PushDeliveryResult } from '@platform/api-contracts';
 
 export interface PushNotificationRequest {
   readonly token: string;

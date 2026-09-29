@@ -91,9 +91,12 @@ export class BillingApiClient {
   }
 
   async getSubscription(id: string): Promise<SubscriptionResponseDto> {
-    const res = await this.fetchWithAuth<SubscriptionResponseDto>(`/v1/billing/subscriptions/${id}`, {
-      method: 'GET',
-    });
+    const res = await this.fetchWithAuth<SubscriptionResponseDto>(
+      `/v1/billing/subscriptions/${id}`,
+      {
+        method: 'GET',
+      }
+    );
     return res.data;
   }
 

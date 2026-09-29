@@ -102,7 +102,12 @@ describe('Notifications & Devices: Device Registration Lifecycle', () => {
     const [secEvent] = await databaseService.client
       .select()
       .from(securityEvents)
-      .where(and(eq(securityEvents.userId, user.userId), eq(securityEvents.eventType, 'device.registered')));
+      .where(
+        and(
+          eq(securityEvents.userId, user.userId),
+          eq(securityEvents.eventType, 'device.registered')
+        )
+      );
     expect(secEvent).toBeDefined();
   });
 

@@ -71,6 +71,13 @@
       "when": 1790658077545,
       "tag": "0009_red_skreet",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790660954100,
+      "tag": "0010_solid_junta",
+      "breakpoints": true
     }
   ]
 }

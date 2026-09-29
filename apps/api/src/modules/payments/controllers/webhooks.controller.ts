@@ -1,28 +1,12 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Headers,
-  Req,
-  HttpCode,
-  HttpStatus,
-  Inject,
-} from '@nestjs/common';
+import { Controller, Post, Body, Headers, Req, HttpCode, HttpStatus, Inject } from '@nestjs/common';
 import type { Request } from 'express';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse as SwaggerResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse as SwaggerResponse } from '@nestjs/swagger';
 import {
   type AppleWebhookRequestDto,
   type GoogleWebhookRequestDto,
   type WebhookAcknowledgementDto,
 } from '@platform/api-contracts';
-import {
-  appleWebhookSchema,
-  googleWebhookSchema,
-} from '@platform/validation';
+import { appleWebhookSchema, googleWebhookSchema } from '@platform/validation';
 import { AppValidationPipe } from '../../../common/pipes/app-validation.pipe.js';
 import { Public } from '../../../common/decorators/public.decorator.js';
 import { BillingWebhookService } from '../services/billing-webhook.service.js';

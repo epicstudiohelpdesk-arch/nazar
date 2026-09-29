@@ -99,7 +99,8 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
 
   const { otherUser, matchedAt, status } = data;
   const primaryPhoto =
-    otherUser.media.find((m) => m.isPrimary) || (otherUser.media.length > 0 ? otherUser.media[0] : null);
+    otherUser.media.find((m) => m.isPrimary) ||
+    (otherUser.media.length > 0 ? otherUser.media[0] : null);
 
   const formattedDate = new Date(matchedAt).toLocaleDateString(undefined, {
     month: 'long',

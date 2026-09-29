@@ -28,22 +28,86 @@ export interface ReportModalProps {
 }
 
 const REPORT_REASONS: Array<{ code: ReportReasonCode; label: string; description: string }> = [
-  { code: 'HARASSMENT', label: 'Harassment & Bullying', description: 'Insults, bullying, or aggressive behavior' },
-  { code: 'ABUSE', label: 'Abuse & Intimidation', description: 'Emotional, verbal, or abusive conduct' },
-  { code: 'THREATS', label: 'Threats of Harm', description: 'Direct or indirect threats toward someone' },
-  { code: 'HATE_OR_DISCRIMINATION', label: 'Hate Speech & Discrimination', description: 'Attack based on identity, race, religion, or gender' },
-  { code: 'SEXUAL_CONTENT', label: 'Explicit Sexual Content', description: 'Nudity or sexually explicit imagery' },
-  { code: 'UNWANTED_SEXUAL_BEHAVIOR', label: 'Unwanted Sexual Advances', description: 'Non-consensual sexual messages or requests' },
-  { code: 'SCAM_OR_FRAUD', label: 'Scam & Financial Fraud', description: 'Asking for money, crypto, gifts, or investment schemes' },
-  { code: 'SPAM', label: 'Spam & Bots', description: 'Automated messages, promotional links, or repetitive spam' },
-  { code: 'IMPERSONATION', label: 'Impersonation', description: 'Pretending to be someone else or using someone else’s photos' },
-  { code: 'FAKE_PROFILE', label: 'Fake Profile', description: 'Fraudulent profile, stolen images, or AI-generated persona' },
-  { code: 'MINOR_SAFETY_CONCERN', label: 'Minor / Underage Concern', description: 'Suspected user under the age of 18 or child safety issue' },
-  { code: 'SELF_HARM_CONCERN', label: 'Self-Harm / Suicide Concern', description: 'User expressing intent or depicting self-harm' },
-  { code: 'VIOLENCE_OR_DANGER', label: 'Violence or Physical Danger', description: 'Physical safety threats or dangerous offline encounters' },
-  { code: 'OFF_PLATFORM_PAYMENT_SCAM', label: 'Off-Platform Payment Scam', description: 'Demanding payments via external cash apps or services' },
-  { code: 'INAPPROPRIATE_CONTENT', label: 'Inappropriate Content', description: 'Offensive, vulgar, or inappropriate profile or message' },
-  { code: 'OTHER', label: 'Other Safety Concern', description: 'Any other safety or trust issue not listed above' },
+  {
+    code: 'HARASSMENT',
+    label: 'Harassment & Bullying',
+    description: 'Insults, bullying, or aggressive behavior',
+  },
+  {
+    code: 'ABUSE',
+    label: 'Abuse & Intimidation',
+    description: 'Emotional, verbal, or abusive conduct',
+  },
+  {
+    code: 'THREATS',
+    label: 'Threats of Harm',
+    description: 'Direct or indirect threats toward someone',
+  },
+  {
+    code: 'HATE_OR_DISCRIMINATION',
+    label: 'Hate Speech & Discrimination',
+    description: 'Attack based on identity, race, religion, or gender',
+  },
+  {
+    code: 'SEXUAL_CONTENT',
+    label: 'Explicit Sexual Content',
+    description: 'Nudity or sexually explicit imagery',
+  },
+  {
+    code: 'UNWANTED_SEXUAL_BEHAVIOR',
+    label: 'Unwanted Sexual Advances',
+    description: 'Non-consensual sexual messages or requests',
+  },
+  {
+    code: 'SCAM_OR_FRAUD',
+    label: 'Scam & Financial Fraud',
+    description: 'Asking for money, crypto, gifts, or investment schemes',
+  },
+  {
+    code: 'SPAM',
+    label: 'Spam & Bots',
+    description: 'Automated messages, promotional links, or repetitive spam',
+  },
+  {
+    code: 'IMPERSONATION',
+    label: 'Impersonation',
+    description: 'Pretending to be someone else or using someone else’s photos',
+  },
+  {
+    code: 'FAKE_PROFILE',
+    label: 'Fake Profile',
+    description: 'Fraudulent profile, stolen images, or AI-generated persona',
+  },
+  {
+    code: 'MINOR_SAFETY_CONCERN',
+    label: 'Minor / Underage Concern',
+    description: 'Suspected user under the age of 18 or child safety issue',
+  },
+  {
+    code: 'SELF_HARM_CONCERN',
+    label: 'Self-Harm / Suicide Concern',
+    description: 'User expressing intent or depicting self-harm',
+  },
+  {
+    code: 'VIOLENCE_OR_DANGER',
+    label: 'Violence or Physical Danger',
+    description: 'Physical safety threats or dangerous offline encounters',
+  },
+  {
+    code: 'OFF_PLATFORM_PAYMENT_SCAM',
+    label: 'Off-Platform Payment Scam',
+    description: 'Demanding payments via external cash apps or services',
+  },
+  {
+    code: 'INAPPROPRIATE_CONTENT',
+    label: 'Inappropriate Content',
+    description: 'Offensive, vulgar, or inappropriate profile or message',
+  },
+  {
+    code: 'OTHER',
+    label: 'Other Safety Concern',
+    description: 'Any other safety or trust issue not listed above',
+  },
 ];
 
 export const ReportModal: React.FC<ReportModalProps> = ({
@@ -83,9 +147,11 @@ export const ReportModal: React.FC<ReportModalProps> = ({
         reasonCode: selectedReason,
         notes: notes.trim() || undefined,
       });
-      Alert.alert('Report Received', 'Thank you for helping keep our community safe. Our trust & safety team will review this report promptly.', [
-        { text: 'OK', onPress: handleClose },
-      ]);
+      Alert.alert(
+        'Report Received',
+        'Thank you for helping keep our community safe. Our trust & safety team will review this report promptly.',
+        [{ text: 'OK', onPress: handleClose }]
+      );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to submit report';
       Alert.alert('Report Error', msg);

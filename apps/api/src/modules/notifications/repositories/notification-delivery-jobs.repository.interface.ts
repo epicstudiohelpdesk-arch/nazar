@@ -10,10 +10,7 @@ export interface INotificationDeliveryJobsRepository {
     tx?: DrizzleDatabase
   ): Promise<readonly NotificationDeliveryJobRow[]>;
 
-  claimPendingJobs(
-    limit: number,
-    workerId: string
-  ): Promise<readonly NotificationDeliveryJobRow[]>;
+  claimPendingJobs(limit: number, workerId: string): Promise<readonly NotificationDeliveryJobRow[]>;
 
   markSent(jobId: string, providerMessageId?: string): Promise<boolean>;
 

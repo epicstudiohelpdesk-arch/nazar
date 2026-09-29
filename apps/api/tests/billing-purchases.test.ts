@@ -103,7 +103,9 @@ describe('Billing: Purchase Verification, Idempotency & Restoration (Gate 11)', 
       .from(entitlements)
       .where(eq(entitlements.userId, user.userId));
     expect(userEnts.length).toBeGreaterThanOrEqual(1);
-    expect(userEnts.some((e) => e.entitlementCode === 'PREMIUM' && e.revokedAt === null)).toBe(true);
+    expect(userEnts.some((e) => e.entitlementCode === 'PREMIUM' && e.revokedAt === null)).toBe(
+      true
+    );
   });
 
   it('idempotently returns existing subscription and transaction on replay by the same user', async () => {
@@ -223,6 +225,8 @@ describe('Billing: Purchase Verification, Idempotency & Restoration (Gate 11)', 
     expect(restoreRes.body.success).toBe(true);
     expect(restoreRes.body.data.restoredCount).toBeGreaterThanOrEqual(1);
     expect(restoreRes.body.data.subscriptions.length).toBeGreaterThanOrEqual(1);
-    expect(restoreRes.body.data.effectiveEntitlements.some((e: any) => e.code === 'PREMIUM')).toBe(true);
+    expect(restoreRes.body.data.effectiveEntitlements.some((e: any) => e.code === 'PREMIUM')).toBe(
+      true
+    );
   });
 });

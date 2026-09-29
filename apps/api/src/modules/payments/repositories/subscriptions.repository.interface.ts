@@ -19,10 +19,15 @@ export interface ISubscriptionsRepository {
   updateStatus(
     id: string,
     status: SubscriptionRow['status'],
-    updates?: Partial<Omit<NewSubscriptionRow, 'id' | 'createdAt' | 'userId' | 'productId' | 'provider'>>,
+    updates?: Partial<
+      Omit<NewSubscriptionRow, 'id' | 'createdAt' | 'userId' | 'productId' | 'provider'>
+    >,
     tx?: DrizzleDatabase
   ): Promise<SubscriptionRow>;
-  findExpiredActiveSubscriptions(asOf?: Date, tx?: DrizzleDatabase): Promise<readonly SubscriptionRow[]>;
+  findExpiredActiveSubscriptions(
+    asOf?: Date,
+    tx?: DrizzleDatabase
+  ): Promise<readonly SubscriptionRow[]>;
 }
 
 export const SUBSCRIPTIONS_REPOSITORY_TOKEN = 'SUBSCRIPTIONS_REPOSITORY_TOKEN';

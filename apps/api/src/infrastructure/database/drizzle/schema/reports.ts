@@ -1,4 +1,13 @@
-import { pgTable, uuid, varchar, text, jsonb, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  jsonb,
+  timestamp,
+  index,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from './users.js';
 import { moderationCases } from './moderation-cases.js';
@@ -26,12 +35,8 @@ export const reports = pgTable(
     moderationCaseId: uuid('moderation_case_id').references(() => moderationCases.id, {
       onDelete: 'set null',
     }),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     resolvedAt: timestamp('resolved_at', { withTimezone: true, mode: 'date' }),
   },
   (table) => [
@@ -40,12 +45,7 @@ export const reports = pgTable(
     index('idx_reports_target_user').on(table.targetUserId),
     index('idx_reports_status_priority').on(table.status, table.priority),
     uniqueIndex('idx_reports_open_dedup')
-      .on(
-        table.reporterUserId,
-        table.targetType,
-        table.targetId,
-        table.reasonCode
-      )
+      .on(table.reporterUserId, table.targetType, table.targetId, table.reasonCode)
       .where(sql`status = 'OPEN'`),
   ]
 );

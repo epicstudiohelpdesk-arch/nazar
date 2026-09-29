@@ -238,8 +238,8 @@ export function SubscriptionScreen({ client }: SubscriptionScreenProps) {
 
       {/* Terms Notice */}
       <Text style={styles.termsText}>
-        Subscriptions automatically renew unless canceled at least 24 hours before the end of the current
-        period in App Store / Google Play account settings.
+        Subscriptions automatically renew unless canceled at least 24 hours before the end of the
+        current period in App Store / Google Play account settings.
       </Text>
     </ScrollView>
   );

@@ -6,10 +6,7 @@ import type { DrizzleDatabase } from '../../../infrastructure/database/database.
 import type { UserRestrictionType } from '@platform/api-contracts';
 
 export interface IUserRestrictionsRepository {
-  createRestriction(
-    data: NewUserRestrictionRow,
-    tx?: DrizzleDatabase
-  ): Promise<UserRestrictionRow>;
+  createRestriction(data: NewUserRestrictionRow, tx?: DrizzleDatabase): Promise<UserRestrictionRow>;
 
   findActiveRestrictions(
     userId: string,

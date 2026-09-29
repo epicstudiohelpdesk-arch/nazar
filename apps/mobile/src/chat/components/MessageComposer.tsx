@@ -33,18 +33,16 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           testID="message-input"
         />
         {value.length > 1800 && (
-          <Text
-            style={[
-              styles.counterText,
-              remainingChars < 0 ? styles.counterExceeded : null,
-            ]}
-          >
+          <Text style={[styles.counterText, remainingChars < 0 ? styles.counterExceeded : null]}>
             {remainingChars}
           </Text>
         )}
       </View>
       <TouchableOpacity
-        style={[styles.sendButton, isSendDisabled ? styles.sendButtonDisabled : styles.sendButtonActive]}
+        style={[
+          styles.sendButton,
+          isSendDisabled ? styles.sendButtonDisabled : styles.sendButtonActive,
+        ]}
         onPress={onSend}
         disabled={isSendDisabled}
         accessibilityRole="button"

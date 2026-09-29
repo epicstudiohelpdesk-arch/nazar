@@ -60,14 +60,16 @@ export const BlockModal: React.FC<BlockModalProps> = ({
       <View style={styles.overlay}>
         <View style={styles.modalCard}>
           <Text style={styles.title}>Block {displayName}?</Text>
-          <Text style={styles.body}>
-            Once blocked:
-          </Text>
+          <Text style={styles.body}>Once blocked:</Text>
           <View style={styles.bulletList}>
             <Text style={styles.bulletItem}>• Your match will be immediately dissolved.</Text>
             <Text style={styles.bulletItem}>• Any active conversation will be closed.</Text>
-            <Text style={styles.bulletItem}>• Neither of you will see each other in discovery.</Text>
-            <Text style={styles.bulletItem}>• Neither of you will be able to message or interact.</Text>
+            <Text style={styles.bulletItem}>
+              • Neither of you will see each other in discovery.
+            </Text>
+            <Text style={styles.bulletItem}>
+              • Neither of you will be able to message or interact.
+            </Text>
           </View>
 
           <TextInput

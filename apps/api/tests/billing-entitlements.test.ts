@@ -113,9 +113,7 @@ describe('Billing: Entitlements, Gating & Expiration (Gate 11)', () => {
   it('enforces feature gating: throws ENTITLEMENT_REQUIRED when user lacks required entitlement', async () => {
     const user = await createActiveUser('billing_gate_user');
 
-    await expect(
-      entitlementService.requireEntitlement(user.userId, 'SEE_LIKES')
-    ).rejects.toThrow();
+    await expect(entitlementService.requireEntitlement(user.userId, 'SEE_LIKES')).rejects.toThrow();
 
     try {
       await entitlementService.requireEntitlement(user.userId, 'SEE_LIKES');

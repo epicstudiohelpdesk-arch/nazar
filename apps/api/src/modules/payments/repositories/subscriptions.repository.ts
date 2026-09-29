@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, lte, desc } from 'drizzle-orm';
-import { DatabaseService, type DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
+import {
+  DatabaseService,
+  type DrizzleDatabase,
+} from '../../../infrastructure/database/database.service.js';
 import {
   subscriptions,
   type SubscriptionRow,
@@ -31,7 +34,11 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
 
   async findById(id: string, tx?: DrizzleDatabase): Promise<SubscriptionRow | null> {
     const client = this.getClient(tx);
-    const [row] = await client.select().from(subscriptions).where(eq(subscriptions.id, id)).limit(1);
+    const [row] = await client
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.id, id))
+      .limit(1);
     return row || null;
   }
 
@@ -126,7 +133,9 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
   async updateStatus(
     id: string,
     status: SubscriptionRow['status'],
-    updates?: Partial<Omit<NewSubscriptionRow, 'id' | 'createdAt' | 'userId' | 'productId' | 'provider'>>,
+    updates?: Partial<
+      Omit<NewSubscriptionRow, 'id' | 'createdAt' | 'userId' | 'productId' | 'provider'>
+    >,
     tx?: DrizzleDatabase
   ): Promise<SubscriptionRow> {
     const client = this.getClient(tx);
@@ -143,17 +152,15 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     return updated!;
   }
 
-  async findExpiredActiveSubscriptions(asOf: Date = new Date(), tx?: DrizzleDatabase): Promise<readonly SubscriptionRow[]> {
+  async findExpiredActiveSubscriptions(
+    asOf: Date = new Date(),
+    tx?: DrizzleDatabase
+  ): Promise<readonly SubscriptionRow[]> {
     const client = this.getClient(tx);
     return client
       .select()
       .from(subscriptions)
-      .where(
-        and(
-          eq(subscriptions.status, 'ACTIVE'),
-          lte(subscriptions.expiresAt, asOf)
-        )
-      )
+      .where(and(eq(subscriptions.status, 'ACTIVE'), lte(subscriptions.expiresAt, asOf)))
       .limit(100);
   }
 }

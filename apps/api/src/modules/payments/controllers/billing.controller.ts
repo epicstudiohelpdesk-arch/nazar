@@ -73,9 +73,7 @@ export class BillingController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get details of a specific product by ID or code' })
   @SwaggerResponse({ status: 200, description: 'Product details' })
-  async getProduct(
-    @Param('id') id: string
-  ): Promise<{ success: true; data: ProductResponseDto }> {
+  async getProduct(@Param('id') id: string): Promise<{ success: true; data: ProductResponseDto }> {
     const data = await this.productsService.getProductByIdOrCode(id);
     return { success: true, data };
   }
@@ -154,9 +152,14 @@ export class BillingController {
   @SwaggerResponse({ status: 200, description: 'User transactions' })
   async listTransactions(
     @CurrentUser() user: AuthenticatedPrincipal,
-    @Query(new AppValidationPipe(listTransactionsQuerySchema)) query: { limit: number; cursor?: string }
+    @Query(new AppValidationPipe(listTransactionsQuerySchema))
+    query: { limit: number; cursor?: string }
   ): Promise<{ success: true; data: PaymentTransactionListResponseDto }> {
-    const data = await this.subscriptionsService.getUserTransactions(user.userId, query.limit, query.cursor);
+    const data = await this.subscriptionsService.getUserTransactions(
+      user.userId,
+      query.limit,
+      query.cursor
+    );
     return { success: true, data };
   }
 }

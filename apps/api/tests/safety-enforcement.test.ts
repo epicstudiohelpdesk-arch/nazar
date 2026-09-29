@@ -148,7 +148,8 @@ describe('Safety: Enforcement, Restrictions Precedence & Session Revocation', ()
 
       const matchId = generateUuidV7();
       const conversationId = generateUuidV7();
-      const [u1, u2] = userA.userId < userB.userId ? [userA.userId, userB.userId] : [userB.userId, userA.userId];
+      const [u1, u2] =
+        userA.userId < userB.userId ? [userA.userId, userB.userId] : [userB.userId, userA.userId];
 
       await databaseService.client.insert(matches).values({
         id: matchId,
@@ -248,12 +249,9 @@ describe('Safety: Enforcement, Restrictions Precedence & Session Revocation', ()
       });
 
       // Apply BAN decision
-      const result = await moderationService.applyDecision(
-        caseId,
-        moderatorId,
-        'BAN',
-        { reason: 'Severe threat detected; immediate platform ban' }
-      );
+      const result = await moderationService.applyDecision(caseId, moderatorId, 'BAN', {
+        reason: 'Severe threat detected; immediate platform ban',
+      });
 
       expect(result.success).toBe(true);
       expect(result.decision).toBe('BAN');

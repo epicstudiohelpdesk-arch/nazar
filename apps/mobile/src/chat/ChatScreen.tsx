@@ -30,11 +30,7 @@ export interface ChatScreenProps {
   readonly onBack?: () => void;
 }
 
-export const ChatScreen: React.FC<ChatScreenProps> = ({
-  conversationId,
-  authClient,
-  onBack,
-}) => {
+export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClient, onBack }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const flatListRef = useRef<FlatList>(null);
@@ -61,10 +57,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   });
 
   // 2. Load message history
-  const {
-    data: messagesData,
-    isLoading: isLoadingMessages,
-  } = useQuery({
+  const { data: messagesData, isLoading: isLoadingMessages } = useQuery({
     queryKey: CHAT_QUERY_KEYS.messages(conversationId),
     queryFn: () => chatApi.getMessages(conversationId, { limit: 50 }),
     enabled: Boolean(conversationId),
@@ -165,10 +158,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         messageType: 'TEXT',
       });
 
-      setOptimisticMessages((prev) =>
-        prev.filter((m) => m.clientMessageId !== clientMessageId)
-      );
-      queryClient.setQueryData(CHAT_QUERY_KEYS.messages(conversationId), (old: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      setOptimisticMessages((prev) => prev.filter((m) => m.clientMessageId !== clientMessageId));
+      queryClient.setQueryData(CHAT_QUERY_KEYS.messages(conversationId), (old: any) => {
+        // eslint-disable-line @typescript-eslint/no-explicit-any
         if (!old) return { items: [res.message], hasMore: false };
         return {
           ...old,
@@ -179,9 +171,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     } catch {
       setOptimisticMessages((prev) =>
         prev.map((m) =>
-          m.clientMessageId === clientMessageId
-            ? { ...m, isOptimistic: false, isFailed: true }
-            : m
+          m.clientMessageId === clientMessageId ? { ...m, isOptimistic: false, isFailed: true } : m
         )
       );
     } finally {
@@ -208,7 +198,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       setOptimisticMessages((prev) =>
         prev.filter((m) => m.clientMessageId !== failedMsg.clientMessageId)
       );
-      queryClient.setQueryData(CHAT_QUERY_KEYS.messages(conversationId), (old: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      queryClient.setQueryData(CHAT_QUERY_KEYS.messages(conversationId), (old: any) => {
+        // eslint-disable-line @typescript-eslint/no-explicit-any
         if (!old) return { items: [res.message], hasMore: false };
         return { ...old, items: [res.message, ...(old.items || [])] };
       });
@@ -247,13 +238,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         item.senderUserId === 'me' ||
         (conversation ? item.senderUserId !== conversation.otherUser.userId : true);
 
-      return (
-        <MessageBubble
-          message={item}
-          isCurrentUser={isCurrentUser}
-          onRetry={handleRetry}
-        />
-      );
+      return <MessageBubble message={item} isCurrentUser={isCurrentUser} onRetry={handleRetry} />;
     },
     [conversation]
   );

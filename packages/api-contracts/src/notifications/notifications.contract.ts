@@ -12,7 +12,11 @@ export type NotificationType =
   | 'NEW_LIKE'
   | 'SYSTEM_NOTICE'
   | 'SECURITY_ALERT'
-  | 'ACCOUNT_RESTRICTION';
+  | 'ACCOUNT_RESTRICTION'
+  | 'POST_COMMENT'
+  | 'COMMUNITY_JOIN'
+  | 'EVENT_RSVP'
+  | 'EVENT_WAITLIST_PROMOTED';
 
 export type NotificationPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
 
@@ -27,12 +31,7 @@ export type PushProviderErrorCategory =
   | 'UNKNOWN_PROVIDER_ERROR';
 
 export type NotificationDeliveryStatus =
-  | 'PENDING'
-  | 'PROCESSING'
-  | 'SENT'
-  | 'FAILED'
-  | 'RETRYING'
-  | 'CANCELLED';
+  'PENDING' | 'PROCESSING' | 'SENT' | 'FAILED' | 'RETRYING' | 'CANCELLED';
 
 // ----------------------------------------------------
 // Device Registration

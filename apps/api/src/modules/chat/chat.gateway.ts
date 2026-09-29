@@ -10,10 +10,7 @@ import {
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Server, Socket } from 'socket.io';
 import { ErrorCode } from '@platform/api-contracts';
-import {
-  TOKEN_SERVICE_TOKEN,
-  type ITokenService,
-} from '../auth/tokens/token.interface.js';
+import { TOKEN_SERVICE_TOKEN, type ITokenService } from '../auth/tokens/token.interface.js';
 import {
   SESSION_REPOSITORY_TOKEN,
   type ISessionRepository,
@@ -79,7 +76,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // 2. Verify durable session lifecycle
       const session = await this.sessionRepository.findById(payload.sid);
       if (!session || session.revokedAt || session.expiresAt < new Date()) {
-        this.logger.warn(`[WS] Connection rejected: session revoked or expired for user ${payload.sub}`);
+        this.logger.warn(
+          `[WS] Connection rejected: session revoked or expired for user ${payload.sub}`
+        );
         client.emit('error', {
           code: ErrorCode.SESSION_EXPIRED,
           message: 'Session revoked or expired',
@@ -103,13 +102,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // 4. Join user's personal room for multi-device fanout (Requirement 18, 19)
       await client.join(`user:${principal.userId}`);
 
-      this.logger.log(`[WS] Socket connected & authenticated: user=${principal.userId}, socket=${client.id}`);
+      this.logger.log(
+        `[WS] Socket connected & authenticated: user=${principal.userId}, socket=${client.id}`
+      );
       client.emit('authenticated', { userId: principal.userId });
     } catch (err: unknown) {
       const code =
-        (err as any)?.response?.code ||
-        (err as any)?.code ||
-        ErrorCode.REALTIME_AUTH_FAILED;
+        (err as any)?.response?.code || (err as any)?.code || ErrorCode.REALTIME_AUTH_FAILED;
       const message =
         (err as any)?.response?.message ||
         (err instanceof Error ? err.message : 'Authentication failure');
@@ -129,7 +128,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.typingTimers.delete(client.id);
     }
     const user = client.data?.user as AuthenticatedPrincipal | undefined;
-    this.logger.log(`[WS] Socket disconnected: user=${user?.userId || 'anon'}, socket=${client.id}`);
+    this.logger.log(
+      `[WS] Socket disconnected: user=${user?.userId || 'anon'}, socket=${client.id}`
+    );
   }
 
   @SubscribeMessage('join:conversation')
@@ -143,14 +144,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
-      const { otherUserId } = await this.conversationsService.assertConversationAccess(user.userId, data.conversationId);
+      const { otherUserId } = await this.conversationsService.assertConversationAccess(
+        user.userId,
+        data.conversationId
+      );
       await this.safetyEnforcement.assertCanMessage(user.userId, otherUserId);
       await client.join(`conversation:${data.conversationId}`);
       return { success: true, conversationId: data.conversationId };
     } catch (err: unknown) {
       const message =
-        (err as any)?.response?.message ||
-        (err instanceof Error ? err.message : 'Access denied');
+        (err as any)?.response?.message || (err instanceof Error ? err.message : 'Access denied');
       return { success: false, error: message };
     }
   }
@@ -200,11 +203,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         data.conversationId
       );
 
-      const event = createRealtimeEvent(
-        'message.created',
-        result.message,
-        data.conversationId
-      );
+      const event = createRealtimeEvent('message.created', result.message, data.conversationId);
 
       // Broadcast to active conversation room
       this.server.to(`conversation:${data.conversationId}`).emit('message.created', event);
@@ -236,11 +235,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         data.messageId
       );
 
-      const event = createRealtimeEvent(
-        'message.read',
-        result,
-        data.conversationId
-      );
+      const event = createRealtimeEvent('message.read', result, data.conversationId);
 
       this.server.to(`conversation:${data.conversationId}`).emit('message.read', event);
       return { success: true, data: result };
@@ -261,11 +256,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
-      await this.messagesService.markAsDelivered(
-        user.userId,
-        data.conversationId,
-        data.messageId
-      );
+      await this.messagesService.markAsDelivered(user.userId, data.conversationId, data.messageId);
 
       const event = createRealtimeEvent(
         'message.delivered',
@@ -296,7 +287,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
-      const { otherUserId } = await this.conversationsService.assertConversationAccess(user.userId, data.conversationId);
+      const { otherUserId } = await this.conversationsService.assertConversationAccess(
+        user.userId,
+        data.conversationId
+      );
       await this.safetyEnforcement.assertCanMessage(user.userId, otherUserId);
 
       const event = createRealtimeEvent(

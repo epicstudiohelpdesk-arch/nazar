@@ -58,10 +58,21 @@ export class ChatController {
   @Get()
   @ApiOperation({
     summary: 'Retrieve paginated active conversations',
-    description: 'Returns cursor-paginated conversations for the authenticated user, ordered by last activity.',
+    description:
+      'Returns cursor-paginated conversations for the authenticated user, ordered by last activity.',
   })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items limit (1-50, default 20)' })
-  @ApiQuery({ name: 'cursor', required: false, type: String, description: 'Cursor token for pagination' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items limit (1-50, default 20)',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Cursor token for pagination',
+  })
   @ApiResponse({ status: 200, description: 'Conversations retrieved successfully' })
   async getConversations(
     @CurrentUser() user: AuthenticatedPrincipal,
@@ -99,17 +110,31 @@ export class ChatController {
         HttpStatus.BAD_REQUEST
       );
     }
-    return this.conversationsService.getConversationDetail(user.userId, parseResult.data.conversationId);
+    return this.conversationsService.getConversationDetail(
+      user.userId,
+      parseResult.data.conversationId
+    );
   }
 
   @Get(':conversationId/messages')
   @ApiOperation({
     summary: 'Retrieve cursor-paginated message history',
-    description: 'Returns messages in reverse chronological order with delivery/read state indicators.',
+    description:
+      'Returns messages in reverse chronological order with delivery/read state indicators.',
   })
   @ApiParam({ name: 'conversationId', type: String, description: 'Conversation UUID' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items limit (1-100, default 50)' })
-  @ApiQuery({ name: 'cursor', required: false, type: String, description: 'Cursor token for pagination' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items limit (1-100, default 50)',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Cursor token for pagination',
+  })
   @ApiResponse({ status: 200, description: 'Messages retrieved successfully' })
   async getMessages(
     @CurrentUser() user: AuthenticatedPrincipal,
@@ -299,8 +324,18 @@ export class ChatController {
     description: 'Returns missed messages since the last known message ID.',
   })
   @ApiParam({ name: 'conversationId', type: String, description: 'Conversation UUID' })
-  @ApiQuery({ name: 'sinceMessageId', required: false, type: String, description: 'Last known message UUID' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Limit (1-100, default 50)' })
+  @ApiQuery({
+    name: 'sinceMessageId',
+    required: false,
+    type: String,
+    description: 'Last known message UUID',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Limit (1-100, default 50)',
+  })
   @ApiResponse({ status: 200, description: 'Missed messages synchronized successfully' })
   async syncMessages(
     @CurrentUser() user: AuthenticatedPrincipal,

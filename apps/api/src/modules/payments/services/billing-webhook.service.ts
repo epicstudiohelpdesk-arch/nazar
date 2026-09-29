@@ -24,10 +24,7 @@ import { PaymentProviderFactory } from '../providers/payment-provider.factory.js
 import { DatabaseService } from '../../../infrastructure/database/database.service.js';
 import { outboxEvents } from '../../../infrastructure/database/drizzle/schema/outbox-events.js';
 import { AppLoggerService } from '../../../common/logging/app-logger.service.js';
-import {
-  type PaymentProviderType,
-  type WebhookAcknowledgementDto,
-} from '@platform/api-contracts';
+import { type PaymentProviderType, type WebhookAcknowledgementDto } from '@platform/api-contracts';
 import { generateUuidV7 } from '@platform/domain';
 import type { BillingWebhookEventRow } from '../../../infrastructure/database/drizzle/schema/billing-webhook-events.js';
 
@@ -204,7 +201,10 @@ export class BillingWebhookService {
           );
 
           // Extend entitlements
-          const grantedCodes = await this.productsRepo.getGrantedEntitlements(subscription.productId, tx);
+          const grantedCodes = await this.productsRepo.getGrantedEntitlements(
+            subscription.productId,
+            tx
+          );
           for (const code of grantedCodes) {
             await this.entitlementsRepo.grantOrExtendEntitlement(
               {
@@ -357,7 +357,8 @@ export class BillingWebhookService {
 
           await tx.insert(outboxEvents).values({
             id: generateUuidV7(),
-            eventType: parsed.eventType === 'REFUND' ? 'subscription.refunded' : 'subscription.revoked',
+            eventType:
+              parsed.eventType === 'REFUND' ? 'subscription.refunded' : 'subscription.revoked',
             aggregateType: 'SUBSCRIPTION',
             aggregateId: subscription.id,
             payload: {

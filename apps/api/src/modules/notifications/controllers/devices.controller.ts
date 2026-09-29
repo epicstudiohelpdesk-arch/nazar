@@ -16,10 +16,7 @@ import {
   ApiResponse as SwaggerResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import {
-  type RegisterDeviceRequestDto,
-  type DeviceResponseDto,
-} from '@platform/api-contracts';
+import { type RegisterDeviceRequestDto, type DeviceResponseDto } from '@platform/api-contracts';
 import { registerDeviceSchema } from '@platform/validation';
 import { AppValidationPipe } from '../../../common/pipes/app-validation.pipe.js';
 import { AuthGuard, type AuthenticatedPrincipal } from '../../../common/guards/auth.guard.js';

@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, or, asc } from 'drizzle-orm';
-import { DatabaseService, type DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
+import {
+  DatabaseService,
+  type DrizzleDatabase,
+} from '../../../infrastructure/database/database.service.js';
 import {
   moderationCases,
   type ModerationCaseRow,
@@ -24,10 +27,7 @@ export class ModerationCasesRepository implements IModerationCasesRepository {
     return tx || this.databaseService.client;
   }
 
-  async createCase(
-    data: NewModerationCaseRow,
-    tx?: DrizzleDatabase
-  ): Promise<ModerationCaseRow> {
+  async createCase(data: NewModerationCaseRow, tx?: DrizzleDatabase): Promise<ModerationCaseRow> {
     const client = this.getClient(tx);
     const [row] = await client.insert(moderationCases).values(data).returning();
     return row!;
@@ -57,10 +57,7 @@ export class ModerationCasesRepository implements IModerationCasesRepository {
     return row || null;
   }
 
-  async findCaseById(
-    caseId: string,
-    tx?: DrizzleDatabase
-  ): Promise<ModerationCaseRow | null> {
+  async findCaseById(caseId: string, tx?: DrizzleDatabase): Promise<ModerationCaseRow | null> {
     const client = this.getClient(tx);
     const [row] = await client
       .select()

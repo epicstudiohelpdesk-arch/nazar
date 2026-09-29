@@ -63,8 +63,7 @@ describe('Notifications Concurrency & Lock Safety (Gate 10)', () => {
       .update(outboxEvents)
       .set({ status: 'PUBLISHED' })
       .where(eq(outboxEvents.status, 'PENDING'));
-    await databaseService.client
-      .delete(notificationDeliveryJobs);
+    await databaseService.client.delete(notificationDeliveryJobs);
   });
 
   async function seedTestUser(prefix: string) {

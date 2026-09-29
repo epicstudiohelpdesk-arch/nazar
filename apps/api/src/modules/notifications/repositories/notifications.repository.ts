@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { DatabaseService, type DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
+import {
+  DatabaseService,
+  type DrizzleDatabase,
+} from '../../../infrastructure/database/database.service.js';
 import {
   notifications,
   type NotificationRow,
@@ -164,12 +167,7 @@ export class NotificationsRepository implements INotificationsRepository {
         readAt: now,
         updatedAt: now,
       })
-      .where(
-        and(
-          eq(notifications.id, notificationId),
-          eq(notifications.userId, userId)
-        )
-      )
+      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
       .returning();
 
     return updated || null;
@@ -185,12 +183,7 @@ export class NotificationsRepository implements INotificationsRepository {
         readAt: now,
         updatedAt: now,
       })
-      .where(
-        and(
-          eq(notifications.userId, userId),
-          sql`${notifications.readAt} IS NULL`
-        )
-      )
+      .where(and(eq(notifications.userId, userId), sql`${notifications.readAt} IS NULL`))
       .returning({ id: notifications.id });
 
     return result.length;

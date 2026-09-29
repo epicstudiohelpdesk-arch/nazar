@@ -1,4 +1,13 @@
-import { pgTable, uuid, varchar, integer, timestamp, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  integer,
+  timestamp,
+  jsonb,
+  index,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 import { users } from './users.js';
 import { products } from './products.js';
 import { subscriptions } from './subscriptions.js';
@@ -18,7 +27,9 @@ export const paymentTransactions = pgTable(
     productId: uuid('product_id')
       .notNull()
       .references(() => products.id),
-    subscriptionId: uuid('subscription_id').references(() => subscriptions.id, { onDelete: 'set null' }),
+    subscriptionId: uuid('subscription_id').references(() => subscriptions.id, {
+      onDelete: 'set null',
+    }),
     provider: varchar('provider', { length: 32 }).notNull(), // 'APPLE_APP_STORE' | 'GOOGLE_PLAY' | 'MOCK'
     providerTransactionId: varchar('provider_transaction_id', { length: 255 }).notNull(), // Apple transactionId or Google order ID
     providerOriginalTransactionId: varchar('provider_original_transaction_id', { length: 255 }),

@@ -49,7 +49,10 @@ export class NotificationDeliveryWorker {
   /**
    * Process a batch of claimed notification delivery jobs.
    */
-  async processJobs(limit: number = 20, workerId: string = `worker-${generateUuidV7()}`): Promise<number> {
+  async processJobs(
+    limit: number = 20,
+    workerId: string = `worker-${generateUuidV7()}`
+  ): Promise<number> {
     // 1. Reclaim any stuck jobs from crashed workers
     await this.deliveryJobsRepo.recoverStuckJobs(5);
 
@@ -77,11 +80,7 @@ export class NotificationDeliveryWorker {
     return processedCount;
   }
 
-  private async deliverJob(
-    jobId: string,
-    notificationId: string,
-    deviceId: string
-  ): Promise<void> {
+  private async deliverJob(jobId: string, notificationId: string, deviceId: string): Promise<void> {
     // 1. Fetch notification and device
     const notification = await this.notificationsRepo.findById(notificationId);
     if (!notification) {
@@ -108,7 +107,9 @@ export class NotificationDeliveryWorker {
     }
 
     // 4. Check recipient safety / ban status
-    const restrictions = await this.userRestrictionsRepo.findActiveRestrictions(notification.userId);
+    const restrictions = await this.userRestrictionsRepo.findActiveRestrictions(
+      notification.userId
+    );
     const isBanned = restrictions.some((r: { restrictionType: string }) =>
       ['FULL_ACCOUNT', 'ACCOUNT_LOGIN'].includes(r.restrictionType)
     );
@@ -118,9 +119,10 @@ export class NotificationDeliveryWorker {
     }
 
     // 5. Select push provider
-    const provider = device.pushProvider === 'FCM' || device.platform === 'ANDROID'
-      ? this.fcmProvider
-      : this.apnsProvider;
+    const provider =
+      device.pushProvider === 'FCM' || device.platform === 'ANDROID'
+        ? this.fcmProvider
+        : this.apnsProvider;
 
     // 6. Send push request
     const result = await provider.send({

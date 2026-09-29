@@ -155,154 +155,168 @@ export class PurchasesService {
 
     try {
       result = await this.databaseService.client.transaction(async (tx) => {
-      let subscriptionRow: SubscriptionRow | null = null;
-      const now = new Date();
+        let subscriptionRow: SubscriptionRow | null = null;
+        const now = new Date();
 
-      if (resolvedProduct.productType === 'SUBSCRIPTION') {
-        const periodStart = verifiedPurchase.purchaseDate || now;
-        const periodEnd =
-          verifiedPurchase.expiresDate ||
-          new Date(periodStart.getTime() + (resolvedProduct.durationDays || 30) * 24 * 60 * 60 * 1000);
+        if (resolvedProduct.productType === 'SUBSCRIPTION') {
+          const periodStart = verifiedPurchase.purchaseDate || now;
+          const periodEnd =
+            verifiedPurchase.expiresDate ||
+            new Date(
+              periodStart.getTime() + (resolvedProduct.durationDays || 30) * 24 * 60 * 60 * 1000
+            );
 
-        subscriptionRow = await this.subscriptionsRepo.upsertSubscription(
+          subscriptionRow = await this.subscriptionsRepo.upsertSubscription(
+            {
+              userId,
+              productId: resolvedProduct.id,
+              provider: dto.provider,
+              providerSubscriptionId:
+                dto.purchaseToken || verifiedPurchase.providerOriginalTransactionId,
+              providerOriginalTransactionId: verifiedPurchase.providerOriginalTransactionId,
+              status: 'ACTIVE',
+              startedAt: periodStart,
+              currentPeriodStart: periodStart,
+              currentPeriodEnd: periodEnd,
+              cancelledAt: null,
+              expiresAt: periodEnd,
+              autoRenewEnabled: verifiedPurchase.autoRenewStatus ?? true,
+              gracePeriodUntil: null,
+              metadata: verifiedPurchase.rawMetadata || {},
+            },
+            tx
+          );
+        }
+
+        // Record transaction
+        const transactionRow = await this.transactionsRepo.createTransaction(
           {
             userId,
             productId: resolvedProduct.id,
+            subscriptionId: subscriptionRow?.id || null,
             provider: dto.provider,
-            providerSubscriptionId: dto.purchaseToken || verifiedPurchase.providerOriginalTransactionId,
+            providerTransactionId: verifiedPurchase.providerTransactionId,
             providerOriginalTransactionId: verifiedPurchase.providerOriginalTransactionId,
-            status: 'ACTIVE',
-            startedAt: periodStart,
-            currentPeriodStart: periodStart,
-            currentPeriodEnd: periodEnd,
-            cancelledAt: null,
-            expiresAt: periodEnd,
-            autoRenewEnabled: verifiedPurchase.autoRenewStatus ?? true,
-            gracePeriodUntil: null,
-            metadata: verifiedPurchase.rawMetadata || {},
+            transactionType: verifiedPurchase.transactionType,
+            status: 'SUCCEEDED',
+            amountMinor: verifiedPurchase.amountMinor || resolvedProduct.basePriceMinor,
+            currency: verifiedPurchase.currency || resolvedProduct.baseCurrency,
+            providerCreatedAt: verifiedPurchase.purchaseDate,
+            verifiedAt: now,
+            providerMetadata: verifiedPurchase.rawMetadata || {},
           },
           tx
         );
-      }
 
-      // Record transaction
-      const transactionRow = await this.transactionsRepo.createTransaction(
-        {
-          userId,
-          productId: resolvedProduct.id,
-          subscriptionId: subscriptionRow?.id || null,
-          provider: dto.provider,
-          providerTransactionId: verifiedPurchase.providerTransactionId,
-          providerOriginalTransactionId: verifiedPurchase.providerOriginalTransactionId,
-          transactionType: verifiedPurchase.transactionType,
-          status: 'SUCCEEDED',
-          amountMinor: verifiedPurchase.amountMinor || resolvedProduct.basePriceMinor,
-          currency: verifiedPurchase.currency || resolvedProduct.baseCurrency,
-          providerCreatedAt: verifiedPurchase.purchaseDate,
-          verifiedAt: now,
-          providerMetadata: verifiedPurchase.rawMetadata || {},
-        },
-        tx
-      );
+        // Grant product entitlements
+        const grantedCodes = await this.productsRepo.getGrantedEntitlements(resolvedProduct.id, tx);
+        const entitlementExpiry =
+          resolvedProduct.productType === 'SUBSCRIPTION'
+            ? verifiedPurchase.expiresDate || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+            : resolvedProduct.durationDays
+              ? new Date(now.getTime() + resolvedProduct.durationDays * 24 * 60 * 60 * 1000)
+              : null;
 
-      // Grant product entitlements
-      const grantedCodes = await this.productsRepo.getGrantedEntitlements(resolvedProduct.id, tx);
-      const entitlementExpiry =
-        resolvedProduct.productType === 'SUBSCRIPTION'
-          ? verifiedPurchase.expiresDate || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-          : resolvedProduct.durationDays
-          ? new Date(now.getTime() + resolvedProduct.durationDays * 24 * 60 * 60 * 1000)
-          : null;
+        for (const entCode of grantedCodes) {
+          await this.entitlementsRepo.grantOrExtendEntitlement(
+            {
+              userId,
+              entitlementCode: entCode,
+              sourceType:
+                resolvedProduct.productType === 'SUBSCRIPTION'
+                  ? 'SUBSCRIPTION'
+                  : 'ONE_TIME_PURCHASE',
+              sourceId: subscriptionRow?.id || transactionRow.id,
+              status: 'ACTIVE',
+              startsAt: now,
+              expiresAt: entitlementExpiry,
+              revokedAt: null,
+            },
+            tx
+          );
+        }
 
-      for (const entCode of grantedCodes) {
-        await this.entitlementsRepo.grantOrExtendEntitlement(
-          {
-            userId,
-            entitlementCode: entCode,
-            sourceType: resolvedProduct.productType === 'SUBSCRIPTION' ? 'SUBSCRIPTION' : 'ONE_TIME_PURCHASE',
-            sourceId: subscriptionRow?.id || transactionRow.id,
-            status: 'ACTIVE',
-            startsAt: now,
-            expiresAt: entitlementExpiry,
-            revokedAt: null,
-          },
-          tx
-        );
-      }
+        // Emit outbox events
+        if (subscriptionRow) {
+          await tx.insert(outboxEvents).values({
+            id: generateUuidV7(),
+            eventType: 'subscription.created',
+            aggregateType: 'SUBSCRIPTION',
+            aggregateId: subscriptionRow.id,
+            payload: {
+              subscriptionId: subscriptionRow.id,
+              userId,
+              productCode: resolvedProduct.code,
+              provider: dto.provider,
+              expiresAt: subscriptionRow.expiresAt?.toISOString(),
+            },
+            status: 'PENDING',
+          });
+        }
 
-      // Emit outbox events
-      if (subscriptionRow) {
         await tx.insert(outboxEvents).values({
           id: generateUuidV7(),
-          eventType: 'subscription.created',
-          aggregateType: 'SUBSCRIPTION',
-          aggregateId: subscriptionRow.id,
+          eventType: 'payment.succeeded',
+          aggregateType: 'PAYMENT_TRANSACTION',
+          aggregateId: transactionRow.id,
           payload: {
-            subscriptionId: subscriptionRow.id,
+            transactionId: transactionRow.id,
             userId,
+            amountMinor: transactionRow.amountMinor,
+            currency: transactionRow.currency,
             productCode: resolvedProduct.code,
-            provider: dto.provider,
-            expiresAt: subscriptionRow.expiresAt?.toISOString(),
           },
           status: 'PENDING',
         });
-      }
-
-      await tx.insert(outboxEvents).values({
-        id: generateUuidV7(),
-        eventType: 'payment.succeeded',
-        aggregateType: 'PAYMENT_TRANSACTION',
-        aggregateId: transactionRow.id,
-        payload: {
-          transactionId: transactionRow.id,
-          userId,
-          amountMinor: transactionRow.amountMinor,
-          currency: transactionRow.currency,
-          productCode: resolvedProduct.code,
-        },
-        status: 'PENDING',
-      });
-
-      return {
-        subscription: subscriptionRow,
-        transaction: transactionRow,
-      };
-    });
-  } catch (err: unknown) {
-    const errObj = err as { code?: string; message?: string };
-    if (
-      errObj?.code === '23505' ||
-      errObj?.message?.includes('duplicate key') ||
-      errObj?.message?.includes('unique constraint')
-    ) {
-      const raceTx = await this.transactionsRepo.findByProviderTransactionId(
-        dto.provider,
-        dto.transactionId
-      );
-      if (raceTx) {
-        if (raceTx.userId !== userId) {
-          throw new ForbiddenException({
-            statusCode: 403,
-            code: ErrorCode.PURCHASE_OWNERSHIP_MISMATCH,
-            message: 'This transaction was already registered to a different user account',
-          });
-        }
-        const sub = raceTx.subscriptionId
-          ? await this.subscriptionsRepo.findById(raceTx.subscriptionId)
-          : null;
-        const effectiveEntitlements = await this.getEffectiveEntitlementDtos(userId);
-        const product = await this.productsRepo.findById(raceTx.productId);
 
         return {
-          verified: true,
-          subscription: sub ? this.toSubscriptionDto(sub, product?.code || 'UNKNOWN') : undefined,
-          transaction: this.toTransactionDto(raceTx, product?.code || 'UNKNOWN'),
-          effectiveEntitlements,
+          subscription: subscriptionRow,
+          transaction: transactionRow,
         };
+      });
+    } catch (err: unknown) {
+      const errObj = err as {
+        code?: string;
+        message?: string;
+        cause?: { code?: string; message?: string };
+      };
+      const isUniqueViolation =
+        errObj?.code === '23505' ||
+        errObj?.cause?.code === '23505' ||
+        errObj?.message?.includes('duplicate key') ||
+        errObj?.message?.includes('unique constraint') ||
+        errObj?.cause?.message?.includes('duplicate key') ||
+        errObj?.cause?.message?.includes('unique constraint');
+
+      if (isUniqueViolation) {
+        const raceTx = await this.transactionsRepo.findByProviderTransactionId(
+          dto.provider,
+          dto.transactionId
+        );
+        if (raceTx) {
+          if (raceTx.userId !== userId) {
+            throw new ForbiddenException({
+              statusCode: 403,
+              code: ErrorCode.PURCHASE_OWNERSHIP_MISMATCH,
+              message: 'This transaction was already registered to a different user account',
+            });
+          }
+          const sub = raceTx.subscriptionId
+            ? await this.subscriptionsRepo.findById(raceTx.subscriptionId)
+            : null;
+          const effectiveEntitlements = await this.getEffectiveEntitlementDtos(userId);
+          const product = await this.productsRepo.findById(raceTx.productId);
+
+          return {
+            verified: true,
+            subscription: sub ? this.toSubscriptionDto(sub, product?.code || 'UNKNOWN') : undefined,
+            transaction: this.toTransactionDto(raceTx, product?.code || 'UNKNOWN'),
+            effectiveEntitlements,
+          };
+        }
       }
+      throw err;
     }
-    throw err;
-  }
 
     const effectiveEntitlements = await this.getEffectiveEntitlementDtos(userId);
 
@@ -375,7 +389,9 @@ export class PurchasesService {
     };
   }
 
-  private async getEffectiveEntitlementDtos(userId: string): Promise<readonly UserEntitlementDto[]> {
+  private async getEffectiveEntitlementDtos(
+    userId: string
+  ): Promise<readonly UserEntitlementDto[]> {
     const rows = await this.entitlementsRepo.findActiveEntitlements(userId, new Date());
     const now = new Date();
     return rows.map((r) => ({

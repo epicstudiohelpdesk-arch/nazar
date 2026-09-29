@@ -30,11 +30,7 @@ import { BlockingController } from './controllers/blocking.controller.js';
 import { ReportingController } from './controllers/reporting.controller.js';
 
 @Module({
-  imports: [
-    InfrastructureModule,
-    forwardRef(() => AuthModule),
-    forwardRef(() => ProfilesModule),
-  ],
+  imports: [InfrastructureModule, forwardRef(() => AuthModule), forwardRef(() => ProfilesModule)],
   controllers: [BlockingController, ReportingController],
   providers: [
     UserBlocksRepository,

@@ -7,10 +7,7 @@ import {
 import { matches, type MatchRow } from '../../../infrastructure/database/drizzle/schema/matches.js';
 import { conversations } from '../../../infrastructure/database/drizzle/schema/conversations.js';
 import { generateUuidV7 } from '@platform/domain';
-import type {
-  IMatchesRepository,
-  FindMatchesOptions,
-} from './matches.repository.interface.js';
+import type { IMatchesRepository, FindMatchesOptions } from './matches.repository.interface.js';
 
 @Injectable()
 export class MatchesRepository implements IMatchesRepository {
@@ -29,9 +26,7 @@ export class MatchesRepository implements IMatchesRepository {
     userBId: string
   ): Promise<{ match: MatchRow; wasCreated: boolean }> {
     // 1. Acquire transaction-scoped advisory lock on the normalized pair to serialize concurrent likes
-    await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${userAId}), hashtext(${userBId}))`
-    );
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userAId}), hashtext(${userBId}))`);
 
     // 2. Check existing row with row-level lock
     const existing = await tx
@@ -169,10 +164,7 @@ export class MatchesRepository implements IMatchesRepository {
     if (options.cursor) {
       const cursorCond = or(
         lt(matches.matchedAt, options.cursor.matchedAt),
-        and(
-          eq(matches.matchedAt, options.cursor.matchedAt),
-          lt(matches.id, options.cursor.id)
-        )
+        and(eq(matches.matchedAt, options.cursor.matchedAt), lt(matches.id, options.cursor.id))
       );
       conditions = and(conditions, cursorCond);
     }

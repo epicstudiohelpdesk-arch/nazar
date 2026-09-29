@@ -131,7 +131,9 @@ export function NotificationsScreen({ client }: NotificationsScreenProps) {
         <Text style={styles.itemBody} numberOfLines={2}>
           {item.body}
         </Text>
-        <Text style={styles.itemTime}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+        <Text style={styles.itemTime}>
+          {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </Text>
       </TouchableOpacity>
     );
   };

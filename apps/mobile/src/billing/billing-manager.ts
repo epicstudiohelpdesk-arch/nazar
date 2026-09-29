@@ -46,10 +46,7 @@ export class BillingManager {
   hasEntitlement(code: EntitlementCode): boolean {
     const now = new Date();
     return this.cachedEntitlements.some(
-      (e) =>
-        e.code === code &&
-        e.active &&
-        (!e.expiresAt || new Date(e.expiresAt) > now)
+      (e) => e.code === code && e.active && (!e.expiresAt || new Date(e.expiresAt) > now)
     );
   }
 

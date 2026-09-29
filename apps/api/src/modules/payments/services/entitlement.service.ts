@@ -70,7 +70,10 @@ export class EntitlementService {
   /**
    * Grant or extend an entitlement for a user.
    */
-  async grantEntitlement(input: GrantEntitlementInput, tx?: DrizzleDatabase): Promise<EntitlementRow> {
+  async grantEntitlement(
+    input: GrantEntitlementInput,
+    tx?: DrizzleDatabase
+  ): Promise<EntitlementRow> {
     return this.entitlementsRepo.grantOrExtendEntitlement(
       {
         userId: input.userId,

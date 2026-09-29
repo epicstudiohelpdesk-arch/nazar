@@ -109,9 +109,8 @@ describe('Safety: User Blocking & Cross-Gate Enforcement', () => {
       const matchId = generateUuidV7();
       const conversationId = generateUuidV7();
 
-      const [user1Id, user2Id] = userA.userId < userB.userId
-        ? [userA.userId, userB.userId]
-        : [userB.userId, userA.userId];
+      const [user1Id, user2Id] =
+        userA.userId < userB.userId ? [userA.userId, userB.userId] : [userB.userId, userA.userId];
 
       await databaseService.client.insert(matches).values({
         id: matchId,
@@ -219,7 +218,8 @@ describe('Safety: User Blocking & Cross-Gate Enforcement', () => {
 
       const matchId = generateUuidV7();
       const conversationId = generateUuidV7();
-      const [u1, u2] = userA.userId < userB.userId ? [userA.userId, userB.userId] : [userB.userId, userA.userId];
+      const [u1, u2] =
+        userA.userId < userB.userId ? [userA.userId, userB.userId] : [userB.userId, userA.userId];
 
       await databaseService.client.insert(matches).values({
         id: matchId,
@@ -254,7 +254,9 @@ describe('Safety: User Blocking & Cross-Gate Enforcement', () => {
         });
 
       expect([400, 403]).toContain(msgRes.status);
-      expect([ErrorCode.USER_BLOCKED, ErrorCode.CONVERSATION_CLOSED]).toContain(msgRes.body.error.code);
+      expect([ErrorCode.USER_BLOCKED, ErrorCode.CONVERSATION_CLOSED]).toContain(
+        msgRes.body.error.code
+      );
 
       // Accessing conversation detail also rejected with 403 USER_BLOCKED
       const detailRes = await request(app.getHttpServer())

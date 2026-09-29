@@ -35,11 +35,7 @@ export type EntitlementCode =
   | 'UNLIMITED_REWINDS';
 
 export type EntitlementSourceType =
-  | 'SUBSCRIPTION'
-  | 'ONE_TIME_PURCHASE'
-  | 'PROMOTION'
-  | 'ADMIN_GRANT'
-  | 'SYSTEM';
+  'SUBSCRIPTION' | 'ONE_TIME_PURCHASE' | 'PROMOTION' | 'ADMIN_GRANT' | 'SYSTEM';
 
 export type EntitlementStatus = 'ACTIVE' | 'EXPIRED' | 'REVOKED';
 

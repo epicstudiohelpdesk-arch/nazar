@@ -15,8 +15,14 @@ export interface IProductsRepository {
     environment?: string,
     tx?: DrizzleDatabase
   ): Promise<{ product: ProductRow; mapping: ProductProviderMappingRow } | null>;
-  getGrantedEntitlements(productId: string, tx?: DrizzleDatabase): Promise<readonly EntitlementCode[]>;
-  getProviderMappings(productId: string, tx?: DrizzleDatabase): Promise<readonly ProductProviderMappingRow[]>;
+  getGrantedEntitlements(
+    productId: string,
+    tx?: DrizzleDatabase
+  ): Promise<readonly EntitlementCode[]>;
+  getProviderMappings(
+    productId: string,
+    tx?: DrizzleDatabase
+  ): Promise<readonly ProductProviderMappingRow[]>;
   seedDefaultCatalog(tx?: DrizzleDatabase): Promise<void>;
 }
 

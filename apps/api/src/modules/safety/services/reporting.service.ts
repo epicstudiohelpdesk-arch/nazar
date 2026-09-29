@@ -14,6 +14,9 @@ import { messages } from '../../../infrastructure/database/drizzle/schema/messag
 import { conversations } from '../../../infrastructure/database/drizzle/schema/conversations.js';
 import { matches } from '../../../infrastructure/database/drizzle/schema/matches.js';
 import { profileMedia } from '../../../infrastructure/database/drizzle/schema/profile-media.js';
+import { posts, postComments } from '../../../infrastructure/database/drizzle/schema/posts.js';
+import { communities } from '../../../infrastructure/database/drizzle/schema/communities.js';
+import { events } from '../../../infrastructure/database/drizzle/schema/events.js';
 import {
   REPORTS_REPOSITORY_TOKEN,
   type IReportsRepository,
@@ -535,6 +538,126 @@ export class ReportingService {
       }
 
       return media.userId;
+    }
+
+    if (targetType === 'POST') {
+      const [post] = await client
+        .select({ id: posts.id, authorId: posts.authorId })
+        .from(posts)
+        .where(eq(posts.id, targetId))
+        .limit(1);
+
+      if (!post) {
+        throw new HttpException(
+          {
+            code: ErrorCode.REPORT_TARGET_NOT_FOUND,
+            message: 'Target post does not exist',
+          },
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      if (post.authorId === reporterUserId) {
+        throw new HttpException(
+          {
+            code: ErrorCode.SELF_REPORT_NOT_ALLOWED,
+            message: 'You cannot report your own post',
+          },
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      return post.authorId;
+    }
+
+    if (targetType === 'COMMENT') {
+      const [comment] = await client
+        .select({ id: postComments.id, authorId: postComments.authorId })
+        .from(postComments)
+        .where(eq(postComments.id, targetId))
+        .limit(1);
+
+      if (!comment) {
+        throw new HttpException(
+          {
+            code: ErrorCode.REPORT_TARGET_NOT_FOUND,
+            message: 'Target comment does not exist',
+          },
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      if (comment.authorId === reporterUserId) {
+        throw new HttpException(
+          {
+            code: ErrorCode.SELF_REPORT_NOT_ALLOWED,
+            message: 'You cannot report your own comment',
+          },
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      return comment.authorId;
+    }
+
+    if (targetType === 'COMMUNITY') {
+      const [community] = await client
+        .select({ id: communities.id, creatorId: communities.creatorId })
+        .from(communities)
+        .where(eq(communities.id, targetId))
+        .limit(1);
+
+      if (!community) {
+        throw new HttpException(
+          {
+            code: ErrorCode.REPORT_TARGET_NOT_FOUND,
+            message: 'Target community does not exist',
+          },
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      if (community.creatorId === reporterUserId) {
+        throw new HttpException(
+          {
+            code: ErrorCode.SELF_REPORT_NOT_ALLOWED,
+            message: 'You cannot report your own community',
+          },
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      return community.creatorId;
+    }
+
+    if (targetType === 'EVENT') {
+      const [event] = await client
+        .select({ id: events.id, organizerId: events.organizerId })
+        .from(events)
+        .where(eq(events.id, targetId))
+        .limit(1);
+
+      if (!event) {
+        throw new HttpException(
+          {
+            code: ErrorCode.REPORT_TARGET_NOT_FOUND,
+            message: 'Target event does not exist',
+          },
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      if (event.organizerId === reporterUserId) {
+        throw new HttpException(
+          {
+            code: ErrorCode.SELF_REPORT_NOT_ALLOWED,
+            message: 'You cannot report your own event',
+          },
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      return event.organizerId;
     }
 
     throw new HttpException(

@@ -10,3 +10,4 @@ export * from './chat.js';
 export * from './safety.js';
 export * from './notifications.js';
 export * from './payments.js';
+export * from './social.js';

@@ -1,4 +1,13 @@
-import { pgTable, uuid, varchar, integer, text, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  integer,
+  text,
+  timestamp,
+  index,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 import { notifications } from './notifications.js';
 import { devices } from './devices.js';
 
@@ -20,7 +29,9 @@ export const notificationDeliveryJobs = pgTable(
     status: varchar('status', { length: 32 }).notNull().default('PENDING'), // 'PENDING' | 'PROCESSING' | 'SENT' | 'FAILED' | 'RETRYING' | 'CANCELLED'
     attemptCount: integer('attempt_count').notNull().default(0),
     maxAttempts: integer('max_attempts').notNull().default(5),
-    availableAt: timestamp('available_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    availableAt: timestamp('available_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
     lockedAt: timestamp('locked_at', { withTimezone: true, mode: 'date' }),
     lockedBy: varchar('locked_by', { length: 128 }),
     lastAttemptAt: timestamp('last_attempt_at', { withTimezone: true, mode: 'date' }),

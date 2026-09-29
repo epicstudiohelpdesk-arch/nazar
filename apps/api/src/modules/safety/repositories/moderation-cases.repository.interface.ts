@@ -9,20 +9,14 @@ import type {
 import type { DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
 
 export interface IModerationCasesRepository {
-  createCase(
-    data: NewModerationCaseRow,
-    tx?: DrizzleDatabase
-  ): Promise<ModerationCaseRow>;
+  createCase(data: NewModerationCaseRow, tx?: DrizzleDatabase): Promise<ModerationCaseRow>;
 
   findOpenCaseBySubject(
     subjectUserId: string,
     tx?: DrizzleDatabase
   ): Promise<ModerationCaseRow | null>;
 
-  findCaseById(
-    caseId: string,
-    tx?: DrizzleDatabase
-  ): Promise<ModerationCaseRow | null>;
+  findCaseById(caseId: string, tx?: DrizzleDatabase): Promise<ModerationCaseRow | null>;
 
   updateCase(
     caseId: string,
@@ -35,10 +29,7 @@ export interface IModerationCasesRepository {
     tx?: DrizzleDatabase
   ): Promise<ModerationCaseEventRow>;
 
-  findCaseEvents(
-    caseId: string,
-    tx?: DrizzleDatabase
-  ): Promise<readonly ModerationCaseEventRow[]>;
+  findCaseEvents(caseId: string, tx?: DrizzleDatabase): Promise<readonly ModerationCaseEventRow[]>;
 }
 
 export const MODERATION_CASES_REPOSITORY_TOKEN = Symbol('IModerationCasesRepository');

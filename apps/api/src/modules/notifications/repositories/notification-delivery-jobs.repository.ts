@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
-import { DatabaseService, type DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
+import {
+  DatabaseService,
+  type DrizzleDatabase,
+} from '../../../infrastructure/database/database.service.js';
 import {
   notificationDeliveryJobs,
   type NotificationDeliveryJobRow,
@@ -127,7 +130,10 @@ export class NotificationDeliveryJobsRepository implements INotificationDelivery
   ): Promise<boolean> {
     const now = new Date();
     const [current] = await this.databaseService.client
-      .select({ attemptCount: notificationDeliveryJobs.attemptCount, maxAttempts: notificationDeliveryJobs.maxAttempts })
+      .select({
+        attemptCount: notificationDeliveryJobs.attemptCount,
+        maxAttempts: notificationDeliveryJobs.maxAttempts,
+      })
       .from(notificationDeliveryJobs)
       .where(eq(notificationDeliveryJobs.id, jobId))
       .limit(1);
@@ -141,8 +147,8 @@ export class NotificationDeliveryJobsRepository implements INotificationDelivery
       .set({
         status: finalFailed ? 'FAILED' : 'RETRYING',
         attemptCount: newAttemptCount,
-        availableAt: finalFailed ? now : (nextAttemptAt || now),
-        nextAttemptAt: finalFailed ? null : (nextAttemptAt || now),
+        availableAt: finalFailed ? now : nextAttemptAt || now,
+        nextAttemptAt: finalFailed ? null : nextAttemptAt || now,
         lastErrorCode: errorCode,
         lastErrorMessage: errorMessage,
         lastErrorAt: now,

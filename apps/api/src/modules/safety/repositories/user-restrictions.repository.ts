@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, or, isNull, gt, sql } from 'drizzle-orm';
-import { DatabaseService, type DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
+import {
+  DatabaseService,
+  type DrizzleDatabase,
+} from '../../../infrastructure/database/database.service.js';
 import {
   userRestrictions,
   type UserRestrictionRow,
@@ -43,10 +46,7 @@ export class UserRestrictionsRepository implements IUserRestrictionsRepository {
         and(
           eq(userRestrictions.userId, userId),
           isNull(userRestrictions.revokedAt),
-          or(
-            isNull(userRestrictions.expiresAt),
-            gt(userRestrictions.expiresAt, now)
-          )
+          or(isNull(userRestrictions.expiresAt), gt(userRestrictions.expiresAt, now))
         )
       );
   }
@@ -61,9 +61,7 @@ export class UserRestrictionsRepository implements IUserRestrictionsRepository {
 
     // FULL_ACCOUNT precedes and covers all sub-restrictions
     const restrictionTypes =
-      restrictionType === 'FULL_ACCOUNT'
-        ? ['FULL_ACCOUNT']
-        : ['FULL_ACCOUNT', restrictionType];
+      restrictionType === 'FULL_ACCOUNT' ? ['FULL_ACCOUNT'] : ['FULL_ACCOUNT', restrictionType];
 
     const [row] = await client
       .select({ id: userRestrictions.id })
@@ -76,10 +74,7 @@ export class UserRestrictionsRepository implements IUserRestrictionsRepository {
             sql`, `
           )})`,
           isNull(userRestrictions.revokedAt),
-          or(
-            isNull(userRestrictions.expiresAt),
-            gt(userRestrictions.expiresAt, now)
-          )
+          or(isNull(userRestrictions.expiresAt), gt(userRestrictions.expiresAt, now))
         )
       )
       .limit(1);
@@ -117,12 +112,7 @@ export class UserRestrictionsRepository implements IUserRestrictionsRepository {
         revokedAt: new Date(),
         revokedByUserId: revokedByUserId || null,
       })
-      .where(
-        and(
-          eq(userRestrictions.userId, userId),
-          isNull(userRestrictions.revokedAt)
-        )
-      )
+      .where(and(eq(userRestrictions.userId, userId), isNull(userRestrictions.revokedAt)))
       .returning();
 
     return result.length;

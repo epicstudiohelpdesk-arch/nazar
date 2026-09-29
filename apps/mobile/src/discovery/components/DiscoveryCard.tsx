@@ -106,7 +106,11 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
         <View style={styles.actionsRow}>
           {onPass && (
             <TouchableOpacity
-              style={[styles.actionButton, styles.passButton, isSubmitting && styles.disabledButton]}
+              style={[
+                styles.actionButton,
+                styles.passButton,
+                isSubmitting && styles.disabledButton,
+              ]}
               onPress={onPass}
               disabled={isSubmitting}
               accessibilityRole="button"
@@ -121,7 +125,11 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
 
           {onLike && (
             <TouchableOpacity
-              style={[styles.actionButton, styles.likeButton, isSubmitting && styles.disabledButton]}
+              style={[
+                styles.actionButton,
+                styles.likeButton,
+                isSubmitting && styles.disabledButton,
+              ]}
               onPress={onLike}
               disabled={isSubmitting}
               accessibilityRole="button"

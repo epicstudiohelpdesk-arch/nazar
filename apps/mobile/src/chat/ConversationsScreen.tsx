@@ -31,13 +31,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
   const effectiveClient = useMemo(() => authClient || getDefaultAuthClient(), [authClient]);
   const chatApi = useMemo(() => createChatApi(effectiveClient), [effectiveClient]);
 
-  const {
-    data,
-    isLoading,
-    isRefetching,
-    refetch,
-    error,
-  } = useQuery({
+  const { data, isLoading, isRefetching, refetch, error } = useQuery({
     queryKey: CHAT_QUERY_KEYS.conversations,
     queryFn: () => chatApi.getConversations({ limit: 50 }),
   });
@@ -107,10 +101,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
 
           <View style={styles.previewRow}>
             <Text
-              style={[
-                styles.previewText,
-                item.unreadCount > 0 ? styles.previewUnread : null,
-              ]}
+              style={[styles.previewText, item.unreadCount > 0 ? styles.previewUnread : null]}
               numberOfLines={1}
             >
               {lastPreview}

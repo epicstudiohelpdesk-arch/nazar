@@ -20,7 +20,9 @@ export const matches = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     status: varchar('status', { length: 16 }).notNull().default('ACTIVE'), // 'ACTIVE' | 'UNMATCHED'
     matchedAt: timestamp('matched_at', { withTimezone: true }).defaultNow().notNull(),
-    unmatchedByUserId: uuid('unmatched_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    unmatchedByUserId: uuid('unmatched_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     unmatchedAt: timestamp('unmatched_at', { withTimezone: true }),
     unmatchedReason: varchar('unmatched_reason', { length: 256 }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

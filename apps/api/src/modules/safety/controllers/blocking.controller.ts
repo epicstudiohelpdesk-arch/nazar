@@ -112,7 +112,12 @@ export class BlockingController {
     summary: 'List blocked users',
     description: 'Returns cursor-paginated list of users blocked by the authenticated user.',
   })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Limit (1-50, default 20)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Limit (1-50, default 20)',
+  })
   @ApiQuery({ name: 'cursor', required: false, type: String, description: 'Pagination cursor' })
   @ApiResponse({ status: 200, description: 'Blocked users retrieved successfully' })
   async listBlockedUsers(

@@ -1,4 +1,7 @@
-import type { NotificationRow, NewNotificationRow } from '../../../infrastructure/database/drizzle/schema/notifications.js';
+import type {
+  NotificationRow,
+  NewNotificationRow,
+} from '../../../infrastructure/database/drizzle/schema/notifications.js';
 import type { DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
 
 export interface ListNotificationsOptions {

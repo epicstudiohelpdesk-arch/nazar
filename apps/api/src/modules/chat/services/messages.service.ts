@@ -105,7 +105,12 @@ export class MessagesService {
 
       if (wasCreated) {
         // Update conversation last message pointer
-        await this.conversationsRepo.updateLastMessage(conversationId, message.id, message.createdAt, tx);
+        await this.conversationsRepo.updateLastMessage(
+          conversationId,
+          message.id,
+          message.createdAt,
+          tx
+        );
 
         // Emit durable outbox event (Requirement 30)
         await tx.insert(outboxEvents).values({
@@ -213,14 +218,20 @@ export class MessagesService {
     const targetMessage = await this.messagesRepo.findMessageById(messageId);
     if (!targetMessage || targetMessage.conversationId !== conversationId) {
       throw new HttpException(
-        { code: ErrorCode.MESSAGE_NOT_FOUND, message: 'Message does not exist in this conversation' },
+        {
+          code: ErrorCode.MESSAGE_NOT_FOUND,
+          message: 'Message does not exist in this conversation',
+        },
         HttpStatus.NOT_FOUND
       );
     }
 
     // Monotonicity check: do not regress read cursor (Requirement 25)
     const currentReadState = await this.conversationsRepo.getReadState(conversationId, userId);
-    if (currentReadState?.lastReadAt && currentReadState.lastReadAt.getTime() > targetMessage.createdAt.getTime()) {
+    if (
+      currentReadState?.lastReadAt &&
+      currentReadState.lastReadAt.getTime() > targetMessage.createdAt.getTime()
+    ) {
       return {
         success: true,
         conversationId,
@@ -265,11 +276,7 @@ export class MessagesService {
     });
   }
 
-  async markAsDelivered(
-    userId: string,
-    conversationId: string,
-    messageId: string
-  ): Promise<void> {
+  async markAsDelivered(userId: string, conversationId: string, messageId: string): Promise<void> {
     const { otherUserId } = await this.conversationsService.assertConversationAccess(
       userId,
       conversationId

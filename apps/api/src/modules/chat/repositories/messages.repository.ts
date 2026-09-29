@@ -57,11 +57,7 @@ export class MessagesRepository implements IMessagesRepository {
 
   async findMessageById(messageId: string, tx?: DrizzleDatabase): Promise<MessageRow | null> {
     const client = this.getClient(tx);
-    const rows = await client
-      .select()
-      .from(messages)
-      .where(eq(messages.id, messageId))
-      .limit(1);
+    const rows = await client.select().from(messages).where(eq(messages.id, messageId)).limit(1);
     return rows[0] || null;
   }
 
@@ -101,10 +97,7 @@ export class MessagesRepository implements IMessagesRepository {
       conditions.push(
         or(
           lt(messages.createdAt, options.cursor.createdAt),
-          and(
-            eq(messages.createdAt, options.cursor.createdAt),
-            lt(messages.id, options.cursor.id)
-          )
+          and(eq(messages.createdAt, options.cursor.createdAt), lt(messages.id, options.cursor.id))
         )!
       );
     }
@@ -129,10 +122,7 @@ export class MessagesRepository implements IMessagesRepository {
       eq(messages.conversationId, conversationId),
       or(
         gt(messages.createdAt, sinceCreatedAt),
-        and(
-          eq(messages.createdAt, sinceCreatedAt),
-          gt(messages.id, sinceId)
-        )
+        and(eq(messages.createdAt, sinceCreatedAt), gt(messages.id, sinceId))
       )!,
     ];
 

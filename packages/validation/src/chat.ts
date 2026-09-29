@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-export const uuidSchema = z
-  .string()
-  .uuid('Invalid UUID format');
+export const uuidSchema = z.string().uuid('Invalid UUID format');
 
 export const conversationIdParamSchema = z.object({
   conversationId: uuidSchema,
@@ -19,12 +17,8 @@ export const sendMessageSchema = z.object({
     .trim()
     .min(1, 'Message body cannot be empty')
     .max(2000, 'Message body cannot exceed 2000 characters'),
-  messageType: z
-    .enum(['TEXT', 'IMAGE', 'SYSTEM'] as const)
-    .default('TEXT'),
-  metadata: z
-    .record(z.unknown())
-    .optional(),
+  messageType: z.enum(['TEXT', 'IMAGE', 'SYSTEM'] as const).default('TEXT'),
+  metadata: z.record(z.unknown()).optional(),
 });
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
@@ -36,11 +30,7 @@ export const markReadSchema = z.object({
 export type MarkReadInput = z.infer<typeof markReadSchema>;
 
 export const getMessagesQuerySchema = z.object({
-  cursor: z
-    .string()
-    .trim()
-    .min(1, 'Cursor cannot be empty')
-    .optional(),
+  cursor: z.string().trim().min(1, 'Cursor cannot be empty').optional(),
   limit: z.coerce
     .number()
     .int('Limit must be an integer')
@@ -52,11 +42,7 @@ export const getMessagesQuerySchema = z.object({
 export type GetMessagesQueryInput = z.infer<typeof getMessagesQuerySchema>;
 
 export const getConversationsQuerySchema = z.object({
-  cursor: z
-    .string()
-    .trim()
-    .min(1, 'Cursor cannot be empty')
-    .optional(),
+  cursor: z.string().trim().min(1, 'Cursor cannot be empty').optional(),
   limit: z.coerce
     .number()
     .int('Limit must be an integer')

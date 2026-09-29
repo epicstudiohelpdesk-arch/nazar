@@ -21,25 +21,19 @@ export type ReportTargetType =
   | 'PROFILE'
   | 'MESSAGE'
   | 'CONVERSATION'
-  | 'MEDIA';
+  | 'MEDIA'
+  | 'POST'
+  | 'COMMENT'
+  | 'COMMUNITY'
+  | 'EVENT';
 
 export type ReportStatus =
-  | 'OPEN'
-  | 'UNDER_REVIEW'
-  | 'ACTIONED'
-  | 'DISMISSED'
-  | 'DUPLICATE'
-  | 'CLOSED';
+  'OPEN' | 'UNDER_REVIEW' | 'ACTIONED' | 'DISMISSED' | 'DUPLICATE' | 'CLOSED';
 
 export type ReportPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 
 export type ModerationCaseStatus =
-  | 'OPEN'
-  | 'TRIAGED'
-  | 'UNDER_REVIEW'
-  | 'ACTION_REQUIRED'
-  | 'RESOLVED'
-  | 'DISMISSED';
+  'OPEN' | 'TRIAGED' | 'UNDER_REVIEW' | 'ACTION_REQUIRED' | 'RESOLVED' | 'DISMISSED';
 
 export type ModerationCasePriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 
@@ -55,12 +49,7 @@ export type ModerationDecisionOutcome =
   | 'BAN';
 
 export type UserRestrictionType =
-  | 'PROFILE_VISIBILITY'
-  | 'DISCOVERY'
-  | 'LIKES'
-  | 'MESSAGING'
-  | 'ACCOUNT_LOGIN'
-  | 'FULL_ACCOUNT';
+  'PROFILE_VISIBILITY' | 'DISCOVERY' | 'LIKES' | 'MESSAGING' | 'ACCOUNT_LOGIN' | 'FULL_ACCOUNT';
 
 export interface UserRestrictionDto {
   readonly id: string;

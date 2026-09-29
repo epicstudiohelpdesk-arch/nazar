@@ -1,5 +1,10 @@
 import { io, type Socket } from 'socket.io-client';
-import type { RealtimeEvent, MessageItemDto, MarkReadResponseDto, TypingEventPayload } from '@platform/api-contracts';
+import type {
+  RealtimeEvent,
+  MessageItemDto,
+  MarkReadResponseDto,
+  TypingEventPayload,
+} from '@platform/api-contracts';
 
 export type SocketConnectionState = 'connected' | 'connecting' | 'reconnecting' | 'disconnected';
 
@@ -9,7 +14,11 @@ export class ChatSocketManager {
   private connectionStateListeners: Set<(state: SocketConnectionState) => void> = new Set();
   private messageListeners: Set<(event: RealtimeEvent<MessageItemDto>) => void> = new Set();
   private readListeners: Set<(event: RealtimeEvent<MarkReadResponseDto>) => void> = new Set();
-  private deliveryListeners: Set<(event: RealtimeEvent<{ conversationId: string; messageId: string; recipientUserId: string }>) => void> = new Set();
+  private deliveryListeners: Set<
+    (
+      event: RealtimeEvent<{ conversationId: string; messageId: string; recipientUserId: string }>
+    ) => void
+  > = new Set();
   private typingListeners: Set<(event: RealtimeEvent<TypingEventPayload>) => void> = new Set();
 
   getConnectionState(): SocketConnectionState {
@@ -78,11 +87,16 @@ export class ChatSocketManager {
       }
     });
 
-    this.socket.on('message.delivered', (event: RealtimeEvent<{ conversationId: string; messageId: string; recipientUserId: string }>) => {
-      for (const listener of this.deliveryListeners) {
-        listener(event);
+    this.socket.on(
+      'message.delivered',
+      (
+        event: RealtimeEvent<{ conversationId: string; messageId: string; recipientUserId: string }>
+      ) => {
+        for (const listener of this.deliveryListeners) {
+          listener(event);
+        }
       }
-    });
+    );
 
     this.socket.on('typing.started', (event: RealtimeEvent<TypingEventPayload>) => {
       for (const listener of this.typingListeners) {
@@ -144,7 +158,9 @@ export class ChatSocketManager {
   }
 
   onMessageDelivered(
-    listener: (event: RealtimeEvent<{ conversationId: string; messageId: string; recipientUserId: string }>) => void
+    listener: (
+      event: RealtimeEvent<{ conversationId: string; messageId: string; recipientUserId: string }>
+    ) => void
   ): () => void {
     this.deliveryListeners.add(listener);
     return () => this.deliveryListeners.delete(listener);

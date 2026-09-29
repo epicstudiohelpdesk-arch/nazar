@@ -14,11 +14,7 @@ export const blockUserBodySchema = z.object({
 export type BlockUserBodyInput = z.infer<typeof blockUserBodySchema>;
 
 export const getBlockedUsersQuerySchema = z.object({
-  cursor: z
-    .string()
-    .trim()
-    .min(1, 'Cursor cannot be empty')
-    .optional(),
+  cursor: z.string().trim().min(1, 'Cursor cannot be empty').optional(),
   limit: z.coerce
     .number()
     .int('Limit must be an integer')
@@ -54,6 +50,10 @@ export const reportTargetTypeSchema = z.enum([
   'MESSAGE',
   'CONVERSATION',
   'MEDIA',
+  'POST',
+  'COMMENT',
+  'COMMUNITY',
+  'EVENT',
 ] as const);
 
 export const createReportSchema = z.object({
@@ -66,10 +66,7 @@ export const createReportSchema = z.object({
     .max(1000, 'Description cannot exceed 1000 characters')
     .optional()
     .nullable(),
-  metadata: z
-    .record(z.unknown())
-    .optional()
-    .nullable(),
+  metadata: z.record(z.unknown()).optional().nullable(),
 });
 
 export type CreateReportInput = z.infer<typeof createReportSchema>;

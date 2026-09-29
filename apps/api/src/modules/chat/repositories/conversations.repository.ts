@@ -119,9 +119,7 @@ export class ConversationsRepository implements IConversationsRepository {
   ): Promise<readonly ConversationWithMatchRow[]> {
     const client = this.getClient(tx);
 
-    const conditions = [
-      or(eq(matches.userAId, userId), eq(matches.userBId, userId)),
-    ];
+    const conditions = [or(eq(matches.userAId, userId), eq(matches.userBId, userId))];
 
     if (options.cursor) {
       conditions.push(

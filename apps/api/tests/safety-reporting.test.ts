@@ -69,13 +69,11 @@ describe('Safety: Reporting Engine & Moderation Cases', () => {
 
   describe('POST /v1/reports', () => {
     it('rejects unauthenticated reports with 401 UNAUTHORIZED', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/v1/reports')
-        .send({
-          targetType: 'USER',
-          targetId: generateUuidV7(),
-          reasonCode: 'HARASSMENT',
-        });
+      const res = await request(app.getHttpServer()).post('/v1/reports').send({
+        targetType: 'USER',
+        targetId: generateUuidV7(),
+        reasonCode: 'HARASSMENT',
+      });
 
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
@@ -190,7 +188,8 @@ describe('Safety: Reporting Engine & Moderation Cases', () => {
       const conversationId = generateUuidV7();
       const messageId = generateUuidV7();
 
-      const [u1, u2] = userA.userId < userB.userId ? [userA.userId, userB.userId] : [userB.userId, userA.userId];
+      const [u1, u2] =
+        userA.userId < userB.userId ? [userA.userId, userB.userId] : [userB.userId, userA.userId];
 
       await databaseService.client.insert(matches).values({
         id: matchId,

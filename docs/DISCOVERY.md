@@ -70,19 +70,19 @@ HTTP GET /v1/discovery?cursor=...&limit=...
 
 A candidate profile $C$ is eligible for viewer $V$ if and only if **all** of the following conditions are satisfied:
 
-| Rule | Condition | Enforcement Layer |
-| :--- | :--- | :--- |
-| **Self Exclusion** | $C.userId \neq V.userId$ | Candidate Repository SQL + Exclusion Service |
-| **Visibility** | $C.visibility = 'ACTIVE'$ | PostGIS SQL Query (`idx_profiles_visibility_gender`) |
-| **Completeness** | $C.missingRequired = []$ | PostGIS SQL Query (`jsonb_array_length(...) = 0`) |
-| **Viewer Distance** | $ST\_Distance(V.loc, C.loc) \le V.maxDistanceKm \times 1000$ | PostGIS `ST_DWithin` on geography (meters) |
-| **Candidate Distance**| $ST\_Distance(V.loc, C.loc) \le C.maxDistanceKm \times 1000$ | PostGIS `ST_DWithin` on geography (meters) |
-| **Viewer Age Bound** | $C.age \ge V.minAge \land C.age \le V.maxAge$ | PostGIS SQL Query on `p.date_of_birth` |
-| **Candidate Age Bound**| $V.age \ge C.minAge \land V.age \le C.maxAge$ | PostGIS SQL Query on candidate preferences |
-| **Viewer Gender Pref** | $C.gender \in V.genderPreferences$ | PostGIS SQL Query (`p.gender = ANY(...)`) |
-| **Candidate Gender Pref**| $V.gender \in C.genderPreferences$ | PostGIS SQL Query (`pp.gender_preferences @> [V.gender]`) |
-| **Relationship Intent** | Compatible intents or unrestricted | Scoring engine compatibility factor |
-| **Media Requirement** | At least one media item with status `READY` | PostGIS SQL Query (`EXISTS(SELECT 1 FROM profile_media...)`) |
+| Rule                      | Condition                                                    | Enforcement Layer                                            |
+| :------------------------ | :----------------------------------------------------------- | :----------------------------------------------------------- |
+| **Self Exclusion**        | $C.userId \neq V.userId$                                     | Candidate Repository SQL + Exclusion Service                 |
+| **Visibility**            | $C.visibility = 'ACTIVE'$                                    | PostGIS SQL Query (`idx_profiles_visibility_gender`)         |
+| **Completeness**          | $C.missingRequired = []$                                     | PostGIS SQL Query (`jsonb_array_length(...) = 0`)            |
+| **Viewer Distance**       | $ST\_Distance(V.loc, C.loc) \le V.maxDistanceKm \times 1000$ | PostGIS `ST_DWithin` on geography (meters)                   |
+| **Candidate Distance**    | $ST\_Distance(V.loc, C.loc) \le C.maxDistanceKm \times 1000$ | PostGIS `ST_DWithin` on geography (meters)                   |
+| **Viewer Age Bound**      | $C.age \ge V.minAge \land C.age \le V.maxAge$                | PostGIS SQL Query on `p.date_of_birth`                       |
+| **Candidate Age Bound**   | $V.age \ge C.minAge \land V.age \le C.maxAge$                | PostGIS SQL Query on candidate preferences                   |
+| **Viewer Gender Pref**    | $C.gender \in V.genderPreferences$                           | PostGIS SQL Query (`p.gender = ANY(...)`)                    |
+| **Candidate Gender Pref** | $V.gender \in C.genderPreferences$                           | PostGIS SQL Query (`pp.gender_preferences @> [V.gender]`)    |
+| **Relationship Intent**   | Compatible intents or unrestricted                           | Scoring engine compatibility factor                          |
+| **Media Requirement**     | At least one media item with status `READY`                  | PostGIS SQL Query (`EXISTS(SELECT 1 FROM profile_media...)`) |
 
 ---
 
@@ -105,7 +105,7 @@ $$Score = W_1 \cdot S_{\text{intent}} + W_2 \cdot S_{\text{completeness}} + W_3 
    - Exponential decay: $\exp\left(-\frac{\text{hoursSinceUpdate}}{168.0}\right)$ (half-life of 7 days).
 4. **Distance Proximity ($W_4 = 0.20$)**:
    - Linear decay over viewer radius: $\max\left(0, 1.0 - \frac{\text{distanceKm}}{V.maxDistanceKm}\right)$.
-5. **Deterministic Diversity Micro-Adjustment ($\delta_{\text{diversity}} < 0.001$)**:
+5. **Deterministic Diversity Micro-Adjustment ($\delta\_{\text{diversity}} < 0.001$)**:
    - Pseudo-random offset derived deterministically from SHA-256 hash of `viewerId:candidateId`.
    - Prevents identical-score ties while remaining 100% reproducible for the viewer across queries.
 6. **Secondary Tie-Breaker**:
@@ -118,6 +118,7 @@ $$Score = W_1 \cdot S_{\text{intent}} + W_2 \cdot S_{\text{completeness}} + W_3 
 The discovery cursor implements a cryptographically secured, opaque seek-method token.
 
 ### Payload Schema
+
 ```json
 {
   "v": 1,
@@ -133,6 +134,7 @@ The discovery cursor implements a cryptographically secured, opaque seek-method 
 - `sig`: HMAC-SHA256 signature truncated to 16 hex characters (`HMAC-SHA256(secret, "v1:0.9423:019460a8-...")`).
 
 ### Security Properties
+
 - **Tamper Detection**: If a client alters the score, profile ID, or signature, `DiscoveryCursorService` throws `DISCOVERY_INVALID_CURSOR` (HTTP 400).
 - **Zero Skips / Zero Duplicates**: Uses composite seek comparison `(score < cursorScore) OR (score == cursorScore AND id > cursorId)`.
 - **Stateless Verification**: The server verifies the HMAC signature using `APP_SECRET` without requiring session database lookups.
@@ -142,12 +144,15 @@ The discovery cursor implements a cryptographically secured, opaque seek-method 
 ## 6. Database Schema & PostGIS Optimization
 
 ### PostGIS Geography Coordinates
+
 Profiles store location as PostGIS 4326 geography points:
+
 ```sql
 ALTER TABLE profiles ADD COLUMN location geography(Point, 4326);
 ```
 
 ### Strategic Indexes
+
 - **Spatial Index**:
   ```sql
   CREATE INDEX idx_profiles_location ON profiles USING GIST(location);
@@ -166,6 +171,7 @@ ALTER TABLE profiles ADD COLUMN location geography(Point, 4326);
   ```
 
 ### Optimized Candidate SQL
+
 ```sql
 SELECT
   p.id AS profile_id,
@@ -225,6 +231,7 @@ export function getDistanceBucket(meters: number): DistanceBucket {
 ```
 
 The public candidate payload returned to mobile clients contains:
+
 - `profile`: Display name, derived age, gender, bio, occupation, education, city, country code, media, interests, prompts.
 - `distanceBucket`: Coarse human-readable distance tier.
 - `matchedRelationshipIntent`: Compatibility indicator.
@@ -254,6 +261,7 @@ The mobile discovery interface provides a fluid discovery experience:
 ## 9. Future Integration (Gate 07 & Gate 13)
 
 The architecture is prepared for subsequent gates:
+
 - **Gate 07 (Interactions & Matches)**:
   - `ICandidateExclusionService` interface provides a clean plug-in point for `InteractionsModule` to exclude profiles already liked, passed, or blocked by the viewer.
 - **Gate 13 (Recommendation Engine & Machine Learning)**:

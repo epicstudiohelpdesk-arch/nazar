@@ -194,10 +194,7 @@ export class BlockingService {
     });
   }
 
-  async unblockUser(
-    blockerUserId: string,
-    targetUserId: string
-  ): Promise<UnblockUserResponseDto> {
+  async unblockUser(blockerUserId: string, targetUserId: string): Promise<UnblockUserResponseDto> {
     if (blockerUserId === targetUserId) {
       throw new HttpException(
         {
@@ -221,28 +218,28 @@ export class BlockingService {
       }
 
       const now = new Date();
-        await tx.insert(outboxEvents).values({
-          id: generateUuidV7(),
-          eventType: 'user.unblocked',
-          aggregateType: 'USER',
-          aggregateId: blockerUserId,
-          payload: {
-            blockerUserId,
-            unblockedUserId: targetUserId,
-            unblockedAt: now.toISOString(),
-          },
-          status: 'PENDING',
-        });
+      await tx.insert(outboxEvents).values({
+        id: generateUuidV7(),
+        eventType: 'user.unblocked',
+        aggregateType: 'USER',
+        aggregateId: blockerUserId,
+        payload: {
+          blockerUserId,
+          unblockedUserId: targetUserId,
+          unblockedAt: now.toISOString(),
+        },
+        status: 'PENDING',
+      });
 
-        await tx.insert(securityEvents).values({
-          id: generateUuidV7(),
-          userId: blockerUserId,
-          eventType: 'user.unblocked',
-          severity: 'INFO',
-          metadata: {
-            unblockedUserId: targetUserId,
-          },
-        });
+      await tx.insert(securityEvents).values({
+        id: generateUuidV7(),
+        userId: blockerUserId,
+        eventType: 'user.unblocked',
+        severity: 'INFO',
+        metadata: {
+          unblockedUserId: targetUserId,
+        },
+      });
 
       return {
         success: true,

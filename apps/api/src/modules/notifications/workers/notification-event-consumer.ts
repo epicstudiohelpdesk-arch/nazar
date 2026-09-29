@@ -1,7 +1,10 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, sql } from 'drizzle-orm';
 import { DatabaseService } from '../../../infrastructure/database/database.service.js';
-import { outboxEvents, type OutboxEventRow } from '../../../infrastructure/database/drizzle/schema/outbox-events.js';
+import {
+  outboxEvents,
+  type OutboxEventRow,
+} from '../../../infrastructure/database/drizzle/schema/outbox-events.js';
 import { conversationReadStates } from '../../../infrastructure/database/drizzle/schema/conversations.js';
 import { profiles } from '../../../infrastructure/database/drizzle/schema/profiles.js';
 import {
@@ -161,8 +164,22 @@ export class NotificationEventConsumer {
         await this.handleBillingEvent(event.id, event.eventType, payload);
         break;
 
+      case 'post.commented':
+        await this.handlePostCommented(event.id, payload);
+        break;
+
+      case 'community.member_joined':
+      case 'community.membership_approved':
+        await this.handleCommunityMembership(event.id, event.eventType, payload);
+        break;
+
+      case 'event.rsvp_confirmed':
+      case 'event.waitlist_promoted':
+        await this.handleEventRsvp(event.id, event.eventType, payload);
+        break;
+
       default:
-        // Other events (user.blocked, conversation.closed, etc.) do not trigger direct user push notifications
+        // Other events (user.blocked, conversation.closed, post.reacted, etc.) do not trigger direct user push notifications
         break;
     }
   }
@@ -175,7 +192,10 @@ export class NotificationEventConsumer {
     if (!recipientUserId || !senderUserId || !messageId) return;
 
     // 1. Safety check: Gate 09 bidirectional block check
-    const isBlocked = await this.userBlocksRepo.isBlockedBidirectional(senderUserId, recipientUserId);
+    const isBlocked = await this.userBlocksRepo.isBlockedBidirectional(
+      senderUserId,
+      recipientUserId
+    );
     if (isBlocked) {
       this.logger.warn(
         `[NotificationConsumer] Suppressing push for message ${messageId} due to block relationship`,
@@ -273,7 +293,11 @@ export class NotificationEventConsumer {
 
       // Check restrictions
       const restrictions = await this.userRestrictionsRepo.findActiveRestrictions(recipientId);
-      if (restrictions.some((r: { restrictionType: string }) => ['FULL_ACCOUNT', 'ACCOUNT_LOGIN'].includes(r.restrictionType))) {
+      if (
+        restrictions.some((r: { restrictionType: string }) =>
+          ['FULL_ACCOUNT', 'ACCOUNT_LOGIN'].includes(r.restrictionType)
+        )
+      ) {
         continue;
       }
 
@@ -320,7 +344,11 @@ export class NotificationEventConsumer {
 
     // Check restrictions
     const restrictions = await this.userRestrictionsRepo.findActiveRestrictions(targetUserId);
-    if (restrictions.some((r: { restrictionType: string }) => ['FULL_ACCOUNT', 'ACCOUNT_LOGIN'].includes(r.restrictionType))) {
+    if (
+      restrictions.some((r: { restrictionType: string }) =>
+        ['FULL_ACCOUNT', 'ACCOUNT_LOGIN'].includes(r.restrictionType)
+      )
+    ) {
       return;
     }
 
@@ -375,7 +403,11 @@ export class NotificationEventConsumer {
 
     // Check account restrictions
     const restrictions = await this.userRestrictionsRepo.findActiveRestrictions(userId);
-    if (restrictions.some((r: { restrictionType: string }) => ['FULL_ACCOUNT', 'ACCOUNT_LOGIN'].includes(r.restrictionType))) {
+    if (
+      restrictions.some((r: { restrictionType: string }) =>
+        ['FULL_ACCOUNT', 'ACCOUNT_LOGIN'].includes(r.restrictionType)
+      )
+    ) {
       return;
     }
 
@@ -423,6 +455,115 @@ export class NotificationEventConsumer {
         subscriptionId: payload.subscriptionId,
       },
       priority,
+    });
+  }
+
+  private async handlePostCommented(
+    eventId: string,
+    payload: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+  ): Promise<void> {
+    const { commentId, postId, commentAuthorId, postAuthorId, content } = payload;
+    if (!commentId || !postId || !commentAuthorId || !postAuthorId) return;
+    if (commentAuthorId === postAuthorId) return;
+
+    const isBlocked = await this.userBlocksRepo.isBlockedBidirectional(
+      commentAuthorId,
+      postAuthorId
+    );
+    if (isBlocked) return;
+
+    const restrictions = await this.userRestrictionsRepo.findActiveRestrictions(postAuthorId);
+    if (
+      restrictions.some((r: { restrictionType: string }) =>
+        ['FULL_ACCOUNT', 'ACCOUNT_LOGIN'].includes(r.restrictionType)
+      )
+    ) {
+      return;
+    }
+
+    let commenterName = 'Someone';
+    const [profile] = await this.databaseService.client
+      .select({ displayName: profiles.displayName })
+      .from(profiles)
+      .where(eq(profiles.userId, commentAuthorId))
+      .limit(1);
+
+    if (profile?.displayName) {
+      commenterName = profile.displayName;
+    }
+
+    await this.createNotificationAndJobs({
+      sourceEventId: eventId,
+      recipientUserId: postAuthorId,
+      type: 'POST_COMMENT',
+      title: `${commenterName} commented on your post`,
+      body: String(content || 'New comment on your post')
+        .slice(0, 100)
+        .trim(),
+      data: {
+        type: 'POST_COMMENT',
+        postId,
+        commentId,
+      },
+      priority: 'NORMAL',
+    });
+  }
+
+  private async handleCommunityMembership(
+    eventId: string,
+    eventType: string,
+    payload: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+  ): Promise<void> {
+    const { communityId, userId } = payload;
+    if (!communityId || !userId) return;
+
+    const isApproved = eventType === 'community.membership_approved';
+    const title = isApproved ? 'Community membership approved!' : 'Welcome to the community!';
+    const body = isApproved
+      ? 'Your request to join the private community was approved.'
+      : 'You have joined a new community.';
+
+    await this.createNotificationAndJobs({
+      sourceEventId: eventId,
+      recipientUserId: userId,
+      type: 'COMMUNITY_JOIN',
+      title,
+      body,
+      data: {
+        type: 'COMMUNITY_JOIN',
+        communityId,
+      },
+      priority: 'NORMAL',
+    });
+  }
+
+  private async handleEventRsvp(
+    eventId: string,
+    eventType: string,
+    payload: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+  ): Promise<void> {
+    const { eventId: targetEventId, userId, title } = payload;
+    if (!targetEventId || !userId) return;
+
+    const isPromoted = eventType === 'event.waitlist_promoted';
+    const notifTitle = isPromoted
+      ? `You're in! Spot confirmed for ${title || 'event'}`
+      : `RSVP Confirmed for ${title || 'event'}`;
+    const notifBody = isPromoted
+      ? 'A spot opened up and your RSVP has been promoted from the waitlist.'
+      : 'Your spot has been reserved.';
+
+    await this.createNotificationAndJobs({
+      sourceEventId: eventId,
+      recipientUserId: userId,
+      type: isPromoted ? 'EVENT_WAITLIST_PROMOTED' : 'EVENT_RSVP',
+      title: notifTitle,
+      body: notifBody,
+      data: {
+        type: isPromoted ? 'EVENT_WAITLIST_PROMOTED' : 'EVENT_RSVP',
+        eventId: targetEventId,
+      },
+      priority: 'NORMAL',
     });
   }
 

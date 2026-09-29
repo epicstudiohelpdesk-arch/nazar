@@ -43,7 +43,10 @@ export class SubscriptionsService {
     return dtos;
   }
 
-  async getSubscriptionById(userId: string, subscriptionId: string): Promise<SubscriptionResponseDto> {
+  async getSubscriptionById(
+    userId: string,
+    subscriptionId: string
+  ): Promise<SubscriptionResponseDto> {
     const row = await this.subscriptionsRepo.findById(subscriptionId);
     if (!row) {
       throw new NotFoundException({

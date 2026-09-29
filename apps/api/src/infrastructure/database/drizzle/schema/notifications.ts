@@ -1,4 +1,13 @@
-import { pgTable, uuid, varchar, text, jsonb, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  jsonb,
+  timestamp,
+  index,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 import { users } from './users.js';
 
 /**
@@ -29,7 +38,11 @@ export const notifications = pgTable(
     index('idx_notifications_user_read').on(table.userId, table.readAt),
     index('idx_notifications_user_type').on(table.userId, table.type),
     index('idx_notifications_expires').on(table.expiresAt),
-    uniqueIndex('idx_notifications_event_user_type').on(table.sourceEventId, table.userId, table.type),
+    uniqueIndex('idx_notifications_event_user_type').on(
+      table.sourceEventId,
+      table.userId,
+      table.type
+    ),
   ]
 );
 

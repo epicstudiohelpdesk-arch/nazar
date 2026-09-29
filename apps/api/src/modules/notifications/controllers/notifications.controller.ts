@@ -53,7 +53,8 @@ export class NotificationsController {
   @SwaggerResponse({ status: 200, description: 'Paginated notifications list' })
   async listNotifications(
     @CurrentUser() user: AuthenticatedPrincipal,
-    @Query(new AppValidationPipe(listNotificationsQuerySchema)) query: { cursor?: string; limit: number }
+    @Query(new AppValidationPipe(listNotificationsQuerySchema))
+    query: { cursor?: string; limit: number }
   ): Promise<{ success: true; data: NotificationListResponseDto }> {
     const data = await this.notificationsService.listNotifications(
       user.userId,
@@ -114,7 +115,8 @@ export class NotificationsController {
   @SwaggerResponse({ status: 200, description: 'Updated notification preferences' })
   async updatePreferences(
     @CurrentUser() user: AuthenticatedPrincipal,
-    @Body(new AppValidationPipe(updateNotificationPreferencesSchema)) dto: UpdateNotificationPreferencesDto
+    @Body(new AppValidationPipe(updateNotificationPreferencesSchema))
+    dto: UpdateNotificationPreferencesDto
   ): Promise<{ success: true; data: NotificationPreferencesDto }> {
     const data = await this.preferencesService.updatePreferences(user.userId, dto);
     return { success: true, data };

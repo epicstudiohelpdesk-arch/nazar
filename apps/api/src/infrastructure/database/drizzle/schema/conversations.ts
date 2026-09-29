@@ -1,4 +1,13 @@
-import { pgTable, uuid, varchar, timestamp, uniqueIndex, index, check, primaryKey } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  timestamp,
+  uniqueIndex,
+  index,
+  check,
+  primaryKey,
+} from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from './users.js';
 import { matches } from './matches.js';
@@ -52,7 +61,10 @@ export const conversationReadStates = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.conversationId, table.userId], name: 'pk_conversation_read_states' }),
+    primaryKey({
+      columns: [table.conversationId, table.userId],
+      name: 'pk_conversation_read_states',
+    }),
     index('idx_conv_read_states_user').on(table.userId),
   ]
 );

@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
-import { DatabaseService, type DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
+import {
+  DatabaseService,
+  type DrizzleDatabase,
+} from '../../../infrastructure/database/database.service.js';
 import {
   products,
   productProviderMappings,
@@ -71,7 +74,10 @@ export class ProductsRepository implements IProductsRepository {
     return rows[0] || null;
   }
 
-  async getGrantedEntitlements(productId: string, tx?: DrizzleDatabase): Promise<readonly EntitlementCode[]> {
+  async getGrantedEntitlements(
+    productId: string,
+    tx?: DrizzleDatabase
+  ): Promise<readonly EntitlementCode[]> {
     const client = this.getClient(tx);
     const rows = await client
       .select({ code: productEntitlements.entitlementCode })
@@ -81,7 +87,10 @@ export class ProductsRepository implements IProductsRepository {
     return rows.map((r) => r.code as EntitlementCode);
   }
 
-  async getProviderMappings(productId: string, tx?: DrizzleDatabase): Promise<readonly ProductProviderMappingRow[]> {
+  async getProviderMappings(
+    productId: string,
+    tx?: DrizzleDatabase
+  ): Promise<readonly ProductProviderMappingRow[]> {
     const client = this.getClient(tx);
     return client
       .select()
@@ -96,12 +105,19 @@ export class ProductsRepository implements IProductsRepository {
       {
         code: 'PREMIUM_MONTHLY',
         name: 'Nazar Premium Monthly',
-        description: 'Unlimited likes, see who liked you, advanced discovery filters, and unlimited rewinds',
+        description:
+          'Unlimited likes, see who liked you, advanced discovery filters, and unlimited rewinds',
         productType: 'SUBSCRIPTION',
         durationDays: 30,
         basePriceMinor: 19900, // ₹199.00
         baseCurrency: 'INR',
-        entitlements: ['PREMIUM', 'SEE_LIKES', 'UNLIMITED_LIKES', 'ADVANCED_DISCOVERY', 'UNLIMITED_REWINDS'],
+        entitlements: [
+          'PREMIUM',
+          'SEE_LIKES',
+          'UNLIMITED_LIKES',
+          'ADVANCED_DISCOVERY',
+          'UNLIMITED_REWINDS',
+        ],
         mappings: [
           { provider: 'APPLE_APP_STORE', providerProductId: 'com.nazar.premium.monthly' },
           { provider: 'GOOGLE_PLAY', providerProductId: 'nazar_premium_monthly' },
@@ -116,7 +132,14 @@ export class ProductsRepository implements IProductsRepository {
         durationDays: 365,
         basePriceMinor: 149900, // ₹1,499.00
         baseCurrency: 'INR',
-        entitlements: ['PREMIUM', 'SEE_LIKES', 'UNLIMITED_LIKES', 'ADVANCED_DISCOVERY', 'PROFILE_BOOST', 'UNLIMITED_REWINDS'],
+        entitlements: [
+          'PREMIUM',
+          'SEE_LIKES',
+          'UNLIMITED_LIKES',
+          'ADVANCED_DISCOVERY',
+          'PROFILE_BOOST',
+          'UNLIMITED_REWINDS',
+        ],
         mappings: [
           { provider: 'APPLE_APP_STORE', providerProductId: 'com.nazar.premium.annual' },
           { provider: 'GOOGLE_PLAY', providerProductId: 'nazar_premium_annual' },
@@ -126,7 +149,8 @@ export class ProductsRepository implements IProductsRepository {
       {
         code: 'BOOST_ONE_TIME',
         name: 'Profile Boost (24h)',
-        description: 'Supercharge your profile visibility to 10x more discovery candidates for 24 hours',
+        description:
+          'Supercharge your profile visibility to 10x more discovery candidates for 24 hours',
         productType: 'ONE_TIME',
         durationDays: 1,
         basePriceMinor: 4900, // ₹49.00
@@ -141,7 +165,11 @@ export class ProductsRepository implements IProductsRepository {
     ];
 
     for (const item of catalog) {
-      let [existing] = await client.select().from(products).where(eq(products.code, item.code)).limit(1);
+      let [existing] = await client
+        .select()
+        .from(products)
+        .where(eq(products.code, item.code))
+        .limit(1);
 
       if (!existing) {
         const prodId = generateUuidV7();

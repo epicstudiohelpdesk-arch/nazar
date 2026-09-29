@@ -47,8 +47,14 @@ export class MockPaymentProvider implements IPaymentProvider {
   async verifyPurchase(input: VerifyPurchaseInput): Promise<VerifiedPurchase> {
     this.verifiedPurchases.push(input);
 
-    if (this.shouldFailVerification || input.transactionId.includes('invalid') || input.purchaseToken?.includes('invalid')) {
-      throw new BadRequestException('Mock purchase verification failed: Invalid transaction or token');
+    if (
+      this.shouldFailVerification ||
+      input.transactionId.includes('invalid') ||
+      input.purchaseToken?.includes('invalid')
+    ) {
+      throw new BadRequestException(
+        'Mock purchase verification failed: Invalid transaction or token'
+      );
     }
 
     const now = new Date();
@@ -69,8 +75,8 @@ export class MockPaymentProvider implements IPaymentProvider {
       transactionType: input.transactionId.startsWith('renew_')
         ? 'RENEWAL'
         : input.transactionId.startsWith('restore_')
-        ? 'RESTORE'
-        : 'INITIAL_PURCHASE',
+          ? 'RESTORE'
+          : 'INITIAL_PURCHASE',
       purchaseDate: now,
       expiresDate,
       autoRenewStatus: !this.mockExpiredSubscription && !this.mockRevokedSubscription,
@@ -122,7 +128,10 @@ export class MockPaymentProvider implements IPaymentProvider {
       autoRenewEnabled: eventType !== 'CANCEL',
       isRefund: payload.isRefund || eventType === 'REFUND',
       isRevocation: payload.isRevocation || eventType === 'REVOKE',
-      gracePeriodUntil: eventType === 'DID_FAIL_TO_RENEW' ? new Date(eventDate.getTime() + 16 * 24 * 60 * 60 * 1000) : undefined,
+      gracePeriodUntil:
+        eventType === 'DID_FAIL_TO_RENEW'
+          ? new Date(eventDate.getTime() + 16 * 24 * 60 * 60 * 1000)
+          : undefined,
       rawMetadata: {
         mock: true,
         source: input.provider,

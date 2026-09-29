@@ -18,9 +18,15 @@ export interface ConversationWithMatchRow {
 
 export interface IConversationsRepository {
   createConversation(matchId: string, tx?: DrizzleDatabase): Promise<ConversationRow>;
-  findConversationById(conversationId: string, tx?: DrizzleDatabase): Promise<ConversationRow | null>;
+  findConversationById(
+    conversationId: string,
+    tx?: DrizzleDatabase
+  ): Promise<ConversationRow | null>;
   findConversationByMatchId(matchId: string, tx?: DrizzleDatabase): Promise<ConversationRow | null>;
-  findOrCreateConversationForMatchTx(matchId: string, tx: DrizzleDatabase): Promise<ConversationRow>;
+  findOrCreateConversationForMatchTx(
+    matchId: string,
+    tx: DrizzleDatabase
+  ): Promise<ConversationRow>;
   findConversationsForUser(
     userId: string,
     options: {

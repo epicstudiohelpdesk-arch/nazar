@@ -28,7 +28,9 @@ export class EntitlementExpirationWorker {
   /**
    * Scan and expire entitlements and cancelled subscriptions past their paid period end.
    */
-  async processExpirations(asOf: Date = new Date()): Promise<{ expiredEntitlements: number; expiredSubscriptions: number }> {
+  async processExpirations(
+    asOf: Date = new Date()
+  ): Promise<{ expiredEntitlements: number; expiredSubscriptions: number }> {
     const expiredEnts = await this.entitlementsRepo.findExpiredActiveEntitlements(asOf);
     let expiredEntitlementsCount = 0;
 

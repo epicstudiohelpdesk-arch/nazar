@@ -1,7 +1,13 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, or, sql } from 'drizzle-orm';
-import { DatabaseService, type DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
-import { devices, type DeviceRow } from '../../../infrastructure/database/drizzle/schema/devices.js';
+import {
+  DatabaseService,
+  type DrizzleDatabase,
+} from '../../../infrastructure/database/database.service.js';
+import {
+  devices,
+  type DeviceRow,
+} from '../../../infrastructure/database/drizzle/schema/devices.js';
 import { generateUuidV7 } from '@platform/domain';
 import type { RegisterDeviceRequestDto } from '@platform/api-contracts';
 import type { IDevicesRepository } from './devices.repository.interface.js';
@@ -48,12 +54,7 @@ export class DevicesRepository implements IDevicesRepository {
     const [existing] = await client
       .select()
       .from(devices)
-      .where(
-        and(
-          eq(devices.userId, userId),
-          eq(devices.deviceIdentifier, dto.deviceIdentifier)
-        )
-      )
+      .where(and(eq(devices.userId, userId), eq(devices.deviceIdentifier, dto.deviceIdentifier)))
       .limit(1);
 
     const provider = dto.pushProvider || (dto.platform === 'ANDROID' ? 'FCM' : 'APNS');
@@ -106,11 +107,7 @@ export class DevicesRepository implements IDevicesRepository {
 
   async findById(deviceId: string, tx?: DrizzleDatabase): Promise<DeviceRow | null> {
     const client = this.getClient(tx);
-    const [device] = await client
-      .select()
-      .from(devices)
-      .where(eq(devices.id, deviceId))
-      .limit(1);
+    const [device] = await client.select().from(devices).where(eq(devices.id, deviceId)).limit(1);
 
     return device || null;
   }

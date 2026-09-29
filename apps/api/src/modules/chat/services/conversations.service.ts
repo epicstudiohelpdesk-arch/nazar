@@ -116,7 +116,10 @@ export class ConversationsService {
 
     const items: ConversationItemDto[] = [];
     for (const r of pageRows) {
-      const isBlocked = await this.safetyEnforcement.isUserBlockedBidirectional(userId, r.otherUserId);
+      const isBlocked = await this.safetyEnforcement.isUserBlockedBidirectional(
+        userId,
+        r.otherUserId
+      );
       if (isBlocked) {
         continue;
       }
@@ -236,7 +239,10 @@ export class ConversationsService {
 
     if (match.userAId !== userId && match.userBId !== userId) {
       throw new HttpException(
-        { code: ErrorCode.CONVERSATION_ACCESS_DENIED, message: 'You are not a participant in this conversation' },
+        {
+          code: ErrorCode.CONVERSATION_ACCESS_DENIED,
+          message: 'You are not a participant in this conversation',
+        },
         HttpStatus.FORBIDDEN
       );
     }
@@ -246,7 +252,10 @@ export class ConversationsService {
     const isBlocked = await this.safetyEnforcement.isUserBlockedBidirectional(userId, otherUserId);
     if (isBlocked) {
       throw new HttpException(
-        { code: ErrorCode.USER_BLOCKED, message: 'Conversation is inaccessible due to safety settings' },
+        {
+          code: ErrorCode.USER_BLOCKED,
+          message: 'Conversation is inaccessible due to safety settings',
+        },
         HttpStatus.FORBIDDEN
       );
     }

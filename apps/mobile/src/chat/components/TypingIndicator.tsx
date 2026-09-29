@@ -7,10 +7,7 @@ interface TypingIndicatorProps {
   readonly displayName?: string;
 }
 
-export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
-  isTyping,
-  displayName,
-}) => {
+export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ isTyping, displayName }) => {
   if (!isTyping) {
     return null;
   }
@@ -18,9 +15,7 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.bubble}>
-        <Text style={styles.text}>
-          {displayName ? `${displayName} is typing` : 'Typing'}
-        </Text>
+        <Text style={styles.text}>{displayName ? `${displayName} is typing` : 'Typing'}</Text>
         <View style={styles.dotsRow}>
           <View style={[styles.dot, styles.dot1]} />
           <View style={[styles.dot, styles.dot2]} />

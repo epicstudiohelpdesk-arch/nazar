@@ -3,7 +3,11 @@
  * Defines mutual match entities, summary profiles, detail responses, and unmatch lifecycle.
  */
 
-import type { PublicMediaItem, InterestItem, PublicPromptItem } from '../profile/profile.contract.js';
+import type {
+  PublicMediaItem,
+  InterestItem,
+  PublicPromptItem,
+} from '../profile/profile.contract.js';
 
 export type MatchStatus = 'ACTIVE' | 'UNMATCHED';
 

@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-} from 'react-native';
+import { Modal, View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { colors, spacing, typography } from '@platform/ui';
 
 export interface MatchedCelebrationUser {
@@ -51,9 +43,7 @@ export const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
           {/* Confetti / Celebration Header */}
           <Text style={styles.celebrationEmoji}>✨ 🎉 ✨</Text>
           <Text style={styles.title}>It's a Match!</Text>
-          <Text style={styles.subtitle}>
-            You and {matchedUser.displayName} liked each other.
-          </Text>
+          <Text style={styles.subtitle}>You and {matchedUser.displayName} liked each other.</Text>
 
           {/* Photo */}
           <View style={styles.photoContainer}>
@@ -66,9 +56,7 @@ export const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
               />
             ) : (
               <View style={styles.photoPlaceholder}>
-                <Text style={styles.photoPlaceholderText}>
-                  {matchedUser.displayName.charAt(0)}
-                </Text>
+                <Text style={styles.photoPlaceholderText}>{matchedUser.displayName.charAt(0)}</Text>
               </View>
             )}
           </View>

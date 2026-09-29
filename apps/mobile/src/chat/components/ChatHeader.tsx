@@ -68,9 +68,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarInitials}>
-                {displayName.substring(0, 1).toUpperCase()}
-              </Text>
+              <Text style={styles.avatarInitials}>{displayName.substring(0, 1).toUpperCase()}</Text>
             </View>
           )}
         </View>

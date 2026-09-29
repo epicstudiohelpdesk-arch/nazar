@@ -113,10 +113,7 @@ export class SafetyEnforcementService {
     }
 
     // Bidirectional block check: neither user can interact if either blocked the other
-    const isBlocked = await this.userBlocksRepo.isBlockedBidirectional(
-      actorUserId,
-      targetUserId
-    );
+    const isBlocked = await this.userBlocksRepo.isBlockedBidirectional(actorUserId, targetUserId);
     if (isBlocked) {
       throw new HttpException(
         {
@@ -157,10 +154,7 @@ export class SafetyEnforcementService {
       );
     }
 
-    const isBlocked = await this.userBlocksRepo.isBlockedBidirectional(
-      senderUserId,
-      targetUserId
-    );
+    const isBlocked = await this.userBlocksRepo.isBlockedBidirectional(senderUserId, targetUserId);
     if (isBlocked) {
       throw new HttpException(
         {

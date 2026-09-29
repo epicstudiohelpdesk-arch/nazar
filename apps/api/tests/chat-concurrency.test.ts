@@ -144,10 +144,7 @@ describe('Chat Concurrency, Idempotency & Monotonic State (Gate 08)', () => {
         .select()
         .from(outboxEvents)
         .where(
-          and(
-            eq(outboxEvents.aggregateType, 'MESSAGE'),
-            eq(outboxEvents.aggregateId, messageId)
-          )
+          and(eq(outboxEvents.aggregateType, 'MESSAGE'), eq(outboxEvents.aggregateId, messageId))
         );
 
       expect(outbox).toHaveLength(1);

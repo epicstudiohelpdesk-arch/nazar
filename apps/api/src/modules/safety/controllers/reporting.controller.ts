@@ -18,10 +18,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import {
-  ErrorCode,
-  type ReportResponseDto,
-} from '@platform/api-contracts';
+import { ErrorCode, type ReportResponseDto } from '@platform/api-contracts';
 import {
   createReportSchema,
   reportIdParamSchema,

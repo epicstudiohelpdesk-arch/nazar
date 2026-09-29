@@ -11,10 +11,7 @@ export interface IDevicesRepository {
 
   findById(deviceId: string, tx?: DrizzleDatabase): Promise<DeviceRow | null>;
 
-  findActiveDevicesByUserId(
-    userId: string,
-    tx?: DrizzleDatabase
-  ): Promise<readonly DeviceRow[]>;
+  findActiveDevicesByUserId(userId: string, tx?: DrizzleDatabase): Promise<readonly DeviceRow[]>;
 
   listByUserId(userId: string, tx?: DrizzleDatabase): Promise<readonly DeviceRow[]>;
 

@@ -1,7 +1,13 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, or, sql, desc } from 'drizzle-orm';
-import { DatabaseService, type DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
-import { userBlocks, type UserBlockRow } from '../../../infrastructure/database/drizzle/schema/user-blocks.js';
+import {
+  DatabaseService,
+  type DrizzleDatabase,
+} from '../../../infrastructure/database/database.service.js';
+import {
+  userBlocks,
+  type UserBlockRow,
+} from '../../../infrastructure/database/drizzle/schema/user-blocks.js';
 import { profiles } from '../../../infrastructure/database/drizzle/schema/profiles.js';
 import { profileMedia } from '../../../infrastructure/database/drizzle/schema/profile-media.js';
 import { generateUuidV7 } from '@platform/domain';
@@ -116,14 +122,8 @@ export class UserBlocksRepository implements IUserBlocksRepository {
       .from(userBlocks)
       .where(
         or(
-          and(
-            eq(userBlocks.blockerUserId, userAId),
-            eq(userBlocks.blockedUserId, userBId)
-          ),
-          and(
-            eq(userBlocks.blockerUserId, userBId),
-            eq(userBlocks.blockedUserId, userAId)
-          )
+          and(eq(userBlocks.blockerUserId, userAId), eq(userBlocks.blockedUserId, userBId)),
+          and(eq(userBlocks.blockerUserId, userBId), eq(userBlocks.blockedUserId, userAId))
         )
       )
       .limit(1);

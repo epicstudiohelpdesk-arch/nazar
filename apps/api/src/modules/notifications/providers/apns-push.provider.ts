@@ -22,7 +22,8 @@ export class ApnsPushProvider implements IPushNotificationProvider {
 
   async send(req: PushNotificationRequest): Promise<PushDeliveryResult> {
     // Redact token for logging: e.g. "token_xyz...1234"
-    const redactedToken = req.token.length > 8 ? `${req.token.slice(0, 4)}...${req.token.slice(-4)}` : '***';
+    const redactedToken =
+      req.token.length > 8 ? `${req.token.slice(0, 4)}...${req.token.slice(-4)}` : '***';
 
     this.logger.debug(
       `[APNs] Preparing push dispatch to token [${redactedToken}] (priority: ${req.priority || 'NORMAL'})`,
@@ -87,7 +88,11 @@ export class ApnsPushProvider implements IPushNotificationProvider {
       };
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      this.logger.error(`[APNs] Error dispatching push: ${errorMsg}`, undefined, 'ApnsPushProvider');
+      this.logger.error(
+        `[APNs] Error dispatching push: ${errorMsg}`,
+        undefined,
+        'ApnsPushProvider'
+      );
 
       return {
         success: false,

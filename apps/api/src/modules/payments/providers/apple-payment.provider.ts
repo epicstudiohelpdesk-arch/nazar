@@ -55,7 +55,9 @@ export class ApplePaymentProvider implements IPaymentProvider {
       const json = Buffer.from(payloadBase64, 'base64').toString('utf8');
       return JSON.parse(json) as T;
     } catch (err) {
-      throw new BadRequestException(`Failed to decode Apple JWS: ${err instanceof Error ? err.message : String(err)}`);
+      throw new BadRequestException(
+        `Failed to decode Apple JWS: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
 
@@ -105,7 +107,8 @@ export class ApplePaymentProvider implements IPaymentProvider {
 
   async verifyWebhook(input: VerifyWebhookInput): Promise<VerifiedWebhookEvent> {
     const rawPayload = input.payload as { signedPayload?: string } | undefined;
-    const signedPayload = (input.rawBody && input.rawBody.includes('.') ? input.rawBody : rawPayload?.signedPayload);
+    const signedPayload =
+      input.rawBody && input.rawBody.includes('.') ? input.rawBody : rawPayload?.signedPayload;
 
     if (!signedPayload || !signedPayload.includes('.')) {
       throw new BadRequestException('Missing or invalid Apple signedPayload');
@@ -121,7 +124,8 @@ export class ApplePaymentProvider implements IPaymentProvider {
       txInfo = this.decodeJWS<AppleJWSPayload>(notification.data.signedTransactionInfo);
     }
 
-    const originalTransactionId = txInfo.originalTransactionId || txInfo.transactionId || 'apple-unknown-tx';
+    const originalTransactionId =
+      txInfo.originalTransactionId || txInfo.transactionId || 'apple-unknown-tx';
     const eventType = this.mapAppleNotificationType(appleNotificationType, notification.subtype);
 
     const eventDate = notification.signedDate ? new Date(notification.signedDate) : new Date();
@@ -141,7 +145,10 @@ export class ApplePaymentProvider implements IPaymentProvider {
       autoRenewEnabled: eventType !== 'CANCEL',
       isRefund: eventType === 'REFUND',
       isRevocation: eventType === 'REVOKE',
-      gracePeriodUntil: appleNotificationType === 'DID_FAIL_TO_RENEW' ? new Date(Date.now() + 16 * 24 * 60 * 60 * 1000) : undefined,
+      gracePeriodUntil:
+        appleNotificationType === 'DID_FAIL_TO_RENEW'
+          ? new Date(Date.now() + 16 * 24 * 60 * 60 * 1000)
+          : undefined,
       rawMetadata: {
         appleNotificationType,
         subtype: notification.subtype,

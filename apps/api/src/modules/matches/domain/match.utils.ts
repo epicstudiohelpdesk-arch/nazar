@@ -20,7 +20,10 @@ export function normalizeUserPair(userId1: string, userId2: string): NormalizedU
 
   if (userId1 === userId2) {
     throw new HttpException(
-      { code: ErrorCode.INTERACTION_SELF_TARGET, message: 'A user cannot interact or match with themselves' },
+      {
+        code: ErrorCode.INTERACTION_SELF_TARGET,
+        message: 'A user cannot interact or match with themselves',
+      },
       HttpStatus.BAD_REQUEST
     );
   }

@@ -1,7 +1,14 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, or, sql, gt } from 'drizzle-orm';
-import { DatabaseService, type DrizzleDatabase } from '../../../infrastructure/database/database.service.js';
-import { reports, type ReportRow, type NewReportRow } from '../../../infrastructure/database/drizzle/schema/reports.js';
+import {
+  DatabaseService,
+  type DrizzleDatabase,
+} from '../../../infrastructure/database/database.service.js';
+import {
+  reports,
+  type ReportRow,
+  type NewReportRow,
+} from '../../../infrastructure/database/drizzle/schema/reports.js';
 import type { IReportsRepository } from './reports.repository.interface.js';
 
 @Injectable()
@@ -15,25 +22,15 @@ export class ReportsRepository implements IReportsRepository {
     return tx || this.databaseService.client;
   }
 
-  async createReport(
-    data: NewReportRow,
-    tx?: DrizzleDatabase
-  ): Promise<ReportRow> {
+  async createReport(data: NewReportRow, tx?: DrizzleDatabase): Promise<ReportRow> {
     const client = this.getClient(tx);
     const [row] = await client.insert(reports).values(data).returning();
     return row!;
   }
 
-  async findReportById(
-    reportId: string,
-    tx?: DrizzleDatabase
-  ): Promise<ReportRow | null> {
+  async findReportById(reportId: string, tx?: DrizzleDatabase): Promise<ReportRow | null> {
     const client = this.getClient(tx);
-    const [row] = await client
-      .select()
-      .from(reports)
-      .where(eq(reports.id, reportId))
-      .limit(1);
+    const [row] = await client.select().from(reports).where(eq(reports.id, reportId)).limit(1);
 
     return row || null;
   }
@@ -72,12 +69,7 @@ export class ReportsRepository implements IReportsRepository {
     const [result] = await client
       .select({ count: sql<number>`count(*)::int` })
       .from(reports)
-      .where(
-        and(
-          eq(reports.reporterUserId, reporterUserId),
-          gt(reports.createdAt, since)
-        )
-      );
+      .where(and(eq(reports.reporterUserId, reporterUserId), gt(reports.createdAt, since)));
 
     return result?.count || 0;
   }

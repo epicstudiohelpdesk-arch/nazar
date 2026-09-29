@@ -7,10 +7,7 @@ import {
   EMAIL_PROVIDER_TOKEN,
 } from '../src/modules/auth/providers/email.provider.js';
 import { DatabaseService } from '../src/infrastructure/database/database.service.js';
-import {
-  profiles,
-  products,
-} from '../src/infrastructure/database/drizzle/schema/index.js';
+import { profiles, products } from '../src/infrastructure/database/drizzle/schema/index.js';
 import { generateUuidV7 } from '@platform/domain';
 import { eq } from 'drizzle-orm';
 

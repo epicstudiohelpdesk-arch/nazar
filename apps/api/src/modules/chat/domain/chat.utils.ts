@@ -1,5 +1,10 @@
 import { generateUuidV7 } from '@platform/domain';
-import type { DeliveryState, MessageItemDto, MessageType, RealtimeEvent } from '@platform/api-contracts';
+import type {
+  DeliveryState,
+  MessageItemDto,
+  MessageType,
+  RealtimeEvent,
+} from '@platform/api-contracts';
 import type { MessageRow } from '../../../infrastructure/database/drizzle/schema/messages.js';
 
 export interface MessageCursorPayload {

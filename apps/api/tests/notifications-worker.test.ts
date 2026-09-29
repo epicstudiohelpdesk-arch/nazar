@@ -68,8 +68,7 @@ describe('Notifications Worker & Push Delivery Pipeline', () => {
       .update(outboxEvents)
       .set({ status: 'PUBLISHED' })
       .where(eq(outboxEvents.status, 'PENDING'));
-    await databaseService.client
-      .delete(notificationDeliveryJobs);
+    await databaseService.client.delete(notificationDeliveryJobs);
   });
 
   async function seedTestUser(prefix: string) {
@@ -455,7 +454,12 @@ describe('Notifications Worker & Push Delivery Pipeline', () => {
     const [secEvent] = await databaseService.client
       .select()
       .from(securityEvents)
-      .where(and(eq(securityEvents.userId, userId), eq(securityEvents.eventType, 'device.token.invalidated')));
+      .where(
+        and(
+          eq(securityEvents.userId, userId),
+          eq(securityEvents.eventType, 'device.token.invalidated')
+        )
+      );
 
     expect(secEvent).toBeDefined();
   });

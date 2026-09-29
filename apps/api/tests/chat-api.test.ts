@@ -226,7 +226,9 @@ describe('Chat & Messaging REST API (Gate 08)', () => {
         );
 
       expect(outbox.length).toBeGreaterThan(0);
-      const matchingEvent = outbox.find((e) => (e.payload as any).clientMessageId === clientMessageId);
+      const matchingEvent = outbox.find(
+        (e) => (e.payload as any).clientMessageId === clientMessageId
+      );
       expect(matchingEvent).toBeDefined();
     });
 
@@ -377,7 +379,10 @@ describe('Chat & Messaging REST API (Gate 08)', () => {
 
   describe('Unmatch Lifecycle & Conversation Closure', () => {
     it('closes conversation when match is unmatched and blocks subsequent message sending', async () => {
-      const { userA, userB, matchId, conversationId } = await createMatchedPair('unmatch_a', 'unmatch_b');
+      const { userA, userB, matchId, conversationId } = await createMatchedPair(
+        'unmatch_a',
+        'unmatch_b'
+      );
 
       // User A unmatches User B
       const unmatchRes = await request(app.getHttpServer())

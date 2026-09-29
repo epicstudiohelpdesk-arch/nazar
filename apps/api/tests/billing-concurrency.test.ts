@@ -141,9 +141,7 @@ describe('Billing: Concurrency & Race Conditions (Gate 11)', () => {
 
     // Fire 10 simultaneous webhook submissions with the exact same payload
     const promises = Array.from({ length: 10 }).map(() =>
-      request(app.getHttpServer())
-        .post('/v1/webhooks/apple')
-        .send({ signedPayload })
+      request(app.getHttpServer()).post('/v1/webhooks/apple').send({ signedPayload })
     );
 
     const results = await Promise.all(promises);
@@ -205,9 +203,7 @@ describe('Billing: Concurrency & Race Conditions (Gate 11)', () => {
           productId: 'PREMIUM_MONTHLY',
           transactionId: sharedOrigTxId,
         }),
-      request(app.getHttpServer())
-        .post('/v1/webhooks/apple')
-        .send({ signedPayload }),
+      request(app.getHttpServer()).post('/v1/webhooks/apple').send({ signedPayload }),
     ]);
 
     expect(verifyRes.status).toBe(200);
@@ -225,6 +221,8 @@ describe('Billing: Concurrency & Race Conditions (Gate 11)', () => {
       .select()
       .from(entitlements)
       .where(eq(entitlements.userId, user.userId));
-    expect(userEnts.some((e) => e.entitlementCode === 'PREMIUM' && e.revokedAt === null)).toBe(true);
+    expect(userEnts.some((e) => e.entitlementCode === 'PREMIUM' && e.revokedAt === null)).toBe(
+      true
+    );
   });
 });

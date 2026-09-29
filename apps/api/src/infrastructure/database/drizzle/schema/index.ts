@@ -34,3 +34,6 @@ export * from './subscriptions.js';
 export * from './payment-transactions.js';
 export * from './entitlements.js';
 export * from './billing-webhook-events.js';
+export * from './communities.js';
+export * from './posts.js';
+export * from './events.js';

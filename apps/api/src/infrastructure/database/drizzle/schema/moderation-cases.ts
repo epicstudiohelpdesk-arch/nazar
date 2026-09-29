@@ -20,12 +20,8 @@ export const moderationCases = pgTable(
     priority: varchar('priority', { length: 16 }).notNull().default('NORMAL'), // 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
     assignedTo: uuid('assigned_to'),
     resolutionDecision: varchar('resolution_decision', { length: 64 }),
-    openedAt: timestamp('opened_at', { withTimezone: true, mode: 'date' })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
-      .notNull()
-      .defaultNow(),
+    openedAt: timestamp('opened_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     resolvedAt: timestamp('resolved_at', { withTimezone: true, mode: 'date' }),
   },
   (table) => [

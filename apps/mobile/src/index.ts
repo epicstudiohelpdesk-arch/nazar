@@ -28,3 +28,4 @@ export * from './chat/components/TypingIndicator.js';
 export * from './chat/components/ChatHeader.js';
 export * from './chat/ConversationsScreen.js';
 export * from './chat/ChatScreen.js';
+export * from './social/index.js';

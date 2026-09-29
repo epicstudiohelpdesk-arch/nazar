@@ -57,9 +57,7 @@ export function createSafetyApi(authClient: AuthClient) {
       }
 
       const queryString = searchParams.toString();
-      const endpoint = queryString
-        ? `/v1/users/blocks?${queryString}`
-        : '/v1/users/blocks';
+      const endpoint = queryString ? `/v1/users/blocks?${queryString}` : '/v1/users/blocks';
 
       const res = await authClient.request<BlockedUserListResponseDto>(endpoint);
       if (!res.success) {

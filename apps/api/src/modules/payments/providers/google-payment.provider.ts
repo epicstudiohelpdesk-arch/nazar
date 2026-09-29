@@ -49,7 +49,9 @@ export class GooglePaymentProvider implements IPaymentProvider {
     );
 
     if (!input.purchaseToken && !input.transactionId) {
-      throw new BadRequestException('Google Play purchase verification requires purchaseToken or transactionId');
+      throw new BadRequestException(
+        'Google Play purchase verification requires purchaseToken or transactionId'
+      );
     }
 
     const purchaseToken = input.purchaseToken || input.transactionId;
@@ -81,7 +83,11 @@ export class GooglePaymentProvider implements IPaymentProvider {
   }
 
   async verifyWebhook(input: VerifyWebhookInput): Promise<VerifiedWebhookEvent> {
-    const message = (input.payload.message || {}) as { data?: string; messageId?: string; publishTime?: string };
+    const message = (input.payload.message || {}) as {
+      data?: string;
+      messageId?: string;
+      publishTime?: string;
+    };
     if (!message.data) {
       throw new BadRequestException('Missing Google Pub/Sub message data');
     }
@@ -91,13 +97,17 @@ export class GooglePaymentProvider implements IPaymentProvider {
       const decodedJson = Buffer.from(message.data, 'base64').toString('utf8');
       notification = JSON.parse(decodedJson) as GoogleDeveloperNotification;
     } catch (err) {
-      throw new BadRequestException(`Failed to parse Google RTDN payload: ${err instanceof Error ? err.message : String(err)}`);
+      throw new BadRequestException(
+        `Failed to parse Google RTDN payload: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
 
     const eventId = message.messageId || `google-event-${Date.now()}`;
     const eventTime = notification.eventTimeMillis
       ? new Date(Number(notification.eventTimeMillis))
-      : (message.publishTime ? new Date(message.publishTime) : new Date());
+      : message.publishTime
+        ? new Date(message.publishTime)
+        : new Date();
 
     const sub = notification.subscriptionNotification;
     const originalTransactionId = sub?.purchaseToken || `google-token-${eventId}`;
@@ -118,7 +128,8 @@ export class GooglePaymentProvider implements IPaymentProvider {
       autoRenewEnabled: eventType !== 'CANCEL',
       isRefund: eventType === 'REFUND',
       isRevocation: eventType === 'REVOKE',
-      gracePeriodUntil: sub?.notificationType === 6 ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : undefined,
+      gracePeriodUntil:
+        sub?.notificationType === 6 ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : undefined,
       rawMetadata: {
         packageName: notification.packageName,
         notificationType: sub?.notificationType,

@@ -90,11 +90,7 @@ export function BillingHistoryScreen({ client }: BillingHistoryScreenProps) {
             <Text
               style={[
                 styles.statusText,
-                isSuccess
-                  ? styles.successText
-                  : isRefund
-                  ? styles.refundText
-                  : styles.failedText,
+                isSuccess ? styles.successText : isRefund ? styles.refundText : styles.failedText,
               ]}
             >
               {item.status}

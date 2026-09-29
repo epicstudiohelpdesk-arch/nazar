@@ -20,13 +20,9 @@ export const userRestrictions = pgTable(
       onDelete: 'set null',
     }),
     reasonCode: varchar('reason_code', { length: 64 }).notNull(),
-    startsAt: timestamp('starts_at', { withTimezone: true, mode: 'date' })
-      .notNull()
-      .defaultNow(),
+    startsAt: timestamp('starts_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }), // null = permanent
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'date' }),
     revokedByUserId: uuid('revoked_by_user_id'),
   },

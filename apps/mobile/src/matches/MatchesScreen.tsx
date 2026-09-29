@@ -96,7 +96,8 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
         <Text style={styles.emptyIcon}>💬</Text>
         <Text style={styles.emptyTitle}>No matches yet</Text>
         <Text style={styles.emptySubtitle}>
-          When you and another member like each other, your matches will appear here. Keep exploring!
+          When you and another member like each other, your matches will appear here. Keep
+          exploring!
         </Text>
         {onBack && (
           <TouchableOpacity
@@ -162,9 +163,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
                   />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
-                    <Text style={styles.avatarPlaceholderText}>
-                      {user.displayName.charAt(0)}
-                    </Text>
+                    <Text style={styles.avatarPlaceholderText}>{user.displayName.charAt(0)}</Text>
                   </View>
                 )}
               </View>
