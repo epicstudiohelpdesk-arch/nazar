@@ -153,6 +153,14 @@ export class NotificationEventConsumer {
         await this.handleModerationDecisionApplied(event.id, payload);
         break;
 
+      case 'subscription.created':
+      case 'subscription.renewed':
+      case 'subscription.expired':
+      case 'subscription.refunded':
+      case 'payment.failed':
+        await this.handleBillingEvent(event.id, event.eventType, payload);
+        break;
+
       default:
         // Other events (user.blocked, conversation.closed, etc.) do not trigger direct user push notifications
         break;
@@ -354,6 +362,67 @@ export class NotificationEventConsumer {
         type: 'ACCOUNT_RESTRICTION',
       },
       priority: 'HIGH',
+    });
+  }
+
+  private async handleBillingEvent(
+    eventId: string,
+    eventType: string,
+    payload: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+  ): Promise<void> {
+    const userId = payload.userId as string | undefined;
+    if (!userId) return;
+
+    // Check account restrictions
+    const restrictions = await this.userRestrictionsRepo.findActiveRestrictions(userId);
+    if (restrictions.some((r: { restrictionType: string }) => ['FULL_ACCOUNT', 'ACCOUNT_LOGIN'].includes(r.restrictionType))) {
+      return;
+    }
+
+    // Check preferences
+    const prefs = await this.prefsRepo.getPreferences(userId);
+    if (!prefs.systemNotificationsEnabled) return;
+
+    let title = 'Subscription Update';
+    let body = 'Your subscription status has changed.';
+    let priority: NotificationPriority = 'NORMAL';
+
+    switch (eventType) {
+      case 'subscription.created':
+        title = 'Premium Activated! 🎉';
+        body = 'Welcome to Nazar Premium. Enjoy your new features!';
+        break;
+      case 'subscription.renewed':
+        title = 'Subscription Renewed';
+        body = 'Your Nazar Premium subscription has successfully renewed.';
+        break;
+      case 'subscription.expired':
+        title = 'Subscription Expired';
+        body = 'Your Nazar Premium access has ended. Renew anytime to restore your perks.';
+        break;
+      case 'subscription.refunded':
+        title = 'Refund Processed';
+        body = 'A refund has been processed for your subscription.';
+        break;
+      case 'payment.failed':
+        title = 'Billing Issue';
+        body = 'We could not renew your subscription. Please check your payment method.';
+        priority = 'HIGH';
+        break;
+    }
+
+    await this.createNotificationAndJobs({
+      sourceEventId: eventId,
+      recipientUserId: userId,
+      type: 'SYSTEM_NOTICE',
+      title,
+      body,
+      data: {
+        type: 'SYSTEM_NOTICE',
+        billingEventType: eventType,
+        subscriptionId: payload.subscriptionId,
+      },
+      priority,
     });
   }
 

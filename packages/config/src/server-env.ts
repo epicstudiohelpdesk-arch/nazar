@@ -63,6 +63,15 @@ export const serverEnvSchema = z
     FCM_CLIENT_EMAIL: z.string().optional(),
     FCM_PRIVATE_KEY: z.string().optional(),
     PUSH_PROVIDER_MOCK: z.coerce.boolean().default(false),
+    // Gate 11: Apple & Google Play Billing Provider Config
+    APPLE_BILLING_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
+    APPLE_ISSUER_ID: z.string().optional(),
+    APPLE_KEY_ID: z.string().optional(),
+    APPLE_BUNDLE_ID: z.string().default('com.nazar.app'),
+    APPLE_PRIVATE_KEY: z.string().optional(),
+    GOOGLE_PLAY_PACKAGE_NAME: z.string().default('com.nazar.app'),
+    GOOGLE_SERVICE_ACCOUNT_JSON: z.string().optional(),
+    BILLING_PROVIDER_MOCK: z.coerce.boolean().default(false),
   })
   .refine(
     (data) => {
@@ -86,6 +95,18 @@ export const serverEnvSchema = z
     {
       message: 'PUSH_PROVIDER_MOCK cannot be enabled in production environment',
       path: ['PUSH_PROVIDER_MOCK'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.NODE_ENV === 'production' && data.BILLING_PROVIDER_MOCK) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'BILLING_PROVIDER_MOCK cannot be enabled in production environment',
+      path: ['BILLING_PROVIDER_MOCK'],
     }
   );
 

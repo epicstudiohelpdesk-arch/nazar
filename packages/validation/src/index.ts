@@ -9,3 +9,4 @@ export * from './matches.js';
 export * from './chat.js';
 export * from './safety.js';
 export * from './notifications.js';
+export * from './payments.js';

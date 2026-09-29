@@ -64,6 +64,13 @@
       "when": 1790656236349,
       "tag": "0008_low_big_bertha",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790658077545,
+      "tag": "0009_red_skreet",
+      "breakpoints": true
     }
   ]
 }

@@ -29,3 +29,8 @@ export * from './user-restrictions.js';
 export * from './notification-preferences.js';
 export * from './notifications.js';
 export * from './notification-delivery-jobs.js';
+export * from './products.js';
+export * from './subscriptions.js';
+export * from './payment-transactions.js';
+export * from './entitlements.js';
+export * from './billing-webhook-events.js';

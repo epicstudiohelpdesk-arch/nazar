@@ -224,4 +224,36 @@ export class AppConfigService {
   get pushProviderMock(): boolean {
     return this.env.PUSH_PROVIDER_MOCK;
   }
+
+  get appleBillingEnvironment(): 'sandbox' | 'production' {
+    return this.env.APPLE_BILLING_ENVIRONMENT;
+  }
+
+  get appleIssuerId(): string | undefined {
+    return this.env.APPLE_ISSUER_ID;
+  }
+
+  get appleKeyId(): string | undefined {
+    return this.env.APPLE_KEY_ID;
+  }
+
+  get appleBundleId(): string {
+    return this.env.APPLE_BUNDLE_ID;
+  }
+
+  get applePrivateKey(): string | undefined {
+    return this.env.APPLE_PRIVATE_KEY;
+  }
+
+  get googlePlayPackageName(): string {
+    return this.env.GOOGLE_PLAY_PACKAGE_NAME;
+  }
+
+  get googleServiceAccountJson(): string | undefined {
+    return this.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  }
+
+  get billingProviderMock(): boolean {
+    return this.env.BILLING_PROVIDER_MOCK;
+  }
 }
