@@ -402,7 +402,7 @@ describe('Matches & Concurrency Engine (Gate 07)', () => {
 
   describe('Discovery Exclusion Integration (Requirements 31, 32, 33)', () => {
     it('excludes liked, passed, and matched users from the discovery feed', async () => {
-      const elderAgeOpts = { dateOfBirth: '1948-05-10', minAge: 75, maxAge: 85 };
+      const elderAgeOpts = { dateOfBirth: '1934-01-01', minAge: 91, maxAge: 93 };
       const viewer = await createActiveUser('viewer_excl', elderAgeOpts);
       const candidate1 = await createActiveUser('cand_1', elderAgeOpts);
       const candidate2 = await createActiveUser('cand_2', elderAgeOpts);

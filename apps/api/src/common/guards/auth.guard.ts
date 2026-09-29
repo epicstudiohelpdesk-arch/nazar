@@ -22,6 +22,10 @@ import {
   USER_RESTRICTIONS_REPOSITORY_TOKEN,
   type IUserRestrictionsRepository,
 } from '../../modules/safety/repositories/user-restrictions.repository.interface.js';
+import {
+  USER_REPOSITORY_TOKEN,
+  type IUserRepository,
+} from '../../infrastructure/database/repositories/user.repository.js';
 
 export interface AuthenticatedPrincipal {
   readonly userId: string;
@@ -40,7 +44,10 @@ export class AuthGuard implements CanActivate {
     private readonly sessionRepository: ISessionRepository,
     @Optional()
     @Inject(USER_RESTRICTIONS_REPOSITORY_TOKEN)
-    private readonly userRestrictionsRepo?: IUserRestrictionsRepository
+    private readonly userRestrictionsRepo?: IUserRestrictionsRepository,
+    @Optional()
+    @Inject(USER_REPOSITORY_TOKEN)
+    private readonly userRepo?: IUserRepository
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -142,6 +149,29 @@ export class AuthGuard implements CanActivate {
         throw new ForbiddenException({
           code: ErrorCode.ACCOUNT_SUSPENDED,
           message: 'Account login is temporarily suspended',
+        });
+      }
+    }
+
+    // 3.5. Security Hardening (Gate 16): Verify database account status
+    if (this.userRepo) {
+      const user = await this.userRepo.findById(payload.sub);
+      if (!user || user.status === 'DELETED') {
+        throw new UnauthorizedException({
+          code: ErrorCode.UNAUTHORIZED,
+          message: 'Account no longer exists',
+        });
+      }
+      if (user.status === 'BANNED') {
+        throw new ForbiddenException({
+          code: ErrorCode.ACCOUNT_BANNED,
+          message: 'Account has been permanently banned',
+        });
+      }
+      if (user.status === 'SUSPENDED') {
+        throw new ForbiddenException({
+          code: ErrorCode.ACCOUNT_SUSPENDED,
+          message: 'Account is temporarily suspended',
         });
       }
     }

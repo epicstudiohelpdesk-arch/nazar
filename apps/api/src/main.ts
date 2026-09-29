@@ -29,6 +29,14 @@ export async function bootstrap() {
     helmet({
       contentSecurityPolicy: configService.isProduction ? undefined : false,
       crossOriginEmbedderPolicy: false,
+      crossOriginOpenerPolicy: { policy: 'same-origin' },
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      xContentTypeOptions: true,
+      xDnsPrefetchControl: { allow: false },
+      xFrameOptions: { action: 'deny' },
+      hsts: configService.isProduction
+        ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+        : false,
     })
   );
 
@@ -41,7 +49,7 @@ export async function bootstrap() {
   // 7. Configure CORS
   const corsOrigin =
     configService.corsOrigin === '*'
-      ? '*'
+      ? true
       : configService.corsOrigin.split(',').map((origin) => origin.trim());
 
   app.enableCors({
@@ -54,6 +62,7 @@ export async function bootstrap() {
       'x-request-id',
       'idempotency-key',
       'x-api-version',
+      'x-device-id',
     ],
     exposedHeaders: ['x-request-id', 'x-idempotent-replayed'],
   });

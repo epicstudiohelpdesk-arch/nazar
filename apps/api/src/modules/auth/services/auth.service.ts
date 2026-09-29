@@ -27,6 +27,7 @@ import {
 } from '@platform/api-contracts';
 import { e164PhoneSchema, standardEmailSchema } from '@platform/validation';
 import { AppConfigService } from '../../../config/app-config.service.js';
+import { eq } from 'drizzle-orm';
 import { DatabaseService } from '../../../infrastructure/database/database.service.js';
 import { users, type DeviceRow } from '../../../infrastructure/database/drizzle/schema/index.js';
 import { TOKEN_SERVICE_TOKEN, type ITokenService } from '../tokens/token.interface.js';
@@ -542,6 +543,29 @@ export class AuthService {
       });
     }
 
+    // Security Hardening (Gate 16): Enforce account lifecycle on refresh
+    const userRows = await this.databaseService.client
+      .select({ status: users.status })
+      .from(users)
+      .where(eq(users.id, session.userId))
+      .limit(1);
+
+    const userStatus = userRows[0]?.status;
+    if (userStatus === 'BANNED' || userStatus === 'DELETED') {
+      await this.sessionRepo.revokeSession(session.id, 'ACCOUNT_BANNED');
+      throw new ForbiddenException({
+        code: ErrorCode.ACCOUNT_BANNED,
+        message: 'Your account has been permanently suspended or removed.',
+      });
+    }
+    if (userStatus === 'SUSPENDED') {
+      await this.sessionRepo.revokeSession(session.id, 'ACCOUNT_SUSPENDED');
+      throw new ForbiddenException({
+        code: ErrorCode.ACCOUNT_SUSPENDED,
+        message: 'Your account is temporarily suspended. Please contact support.',
+      });
+    }
+
     // 3. Rotate Refresh Token transactionally
     const newRefreshToken = this.tokenService.generateRefreshToken();
     const newTokenHash = this.tokenService.hashToken(newRefreshToken);
@@ -772,6 +796,27 @@ export class AuthService {
       } else {
         userId = identity.userId;
         await this.userIdentityRepo.updateLastUsed(identity.id, tx);
+
+        // Security Hardening (Gate 16): Enforce user account status on login
+        const userRows = await tx
+          .select({ status: users.status })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+
+        const userStatus = userRows[0]?.status;
+        if (userStatus === 'BANNED' || userStatus === 'DELETED') {
+          throw new ForbiddenException({
+            code: ErrorCode.ACCOUNT_BANNED,
+            message: 'Your account has been permanently suspended or removed.',
+          });
+        }
+        if (userStatus === 'SUSPENDED') {
+          throw new ForbiddenException({
+            code: ErrorCode.ACCOUNT_SUSPENDED,
+            message: 'Your account is temporarily suspended. Please contact support.',
+          });
+        }
       }
 
       // 2. Register/update device if provided

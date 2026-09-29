@@ -6,6 +6,7 @@ const SENSITIVE_KEYS = new Set([
   'password',
   'token',
   'authorization',
+  'auth',
   'secret',
   'otp',
   'code',
@@ -15,11 +16,40 @@ const SENSITIVE_KEYS = new Set([
   'credential',
   'creditcard',
   'cvv',
+  'cvc',
+  'pan',
+  'apikey',
+  'api_key',
+  'privatekey',
+  'private_key',
+  'secretkey',
+  'secret_key',
+  'sessiontoken',
+  'idtoken',
+  'clientsecret',
+  'passkey',
+  'assertion',
+  'signature',
 ]);
+
+const BEARER_REGEX = /Bearer\s+[A-Za-z0-9._~+/-]+=*/gi;
+const JWT_REGEX = /\bey[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]+\b/g;
+const SECRET_KV_REGEX =
+  /(password|secret|token|otp|code|api_?key|auth_?key)\s*[:=]\s*["']?([^"',&\s]+)["']?/gi;
+
+export function redactSensitiveString(text: string): string {
+  return text
+    .replace(BEARER_REGEX, 'Bearer [REDACTED]')
+    .replace(JWT_REGEX, '[REDACTED_JWT]')
+    .replace(SECRET_KV_REGEX, '$1=[REDACTED]');
+}
 
 export function redactSensitiveData(data: unknown): unknown {
   if (data === null || data === undefined) {
     return data;
+  }
+  if (typeof data === 'string') {
+    return redactSensitiveString(data);
   }
   if (typeof data !== 'object') {
     return data;
@@ -30,10 +60,12 @@ export function redactSensitiveData(data: unknown): unknown {
 
   const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-    if (SENSITIVE_KEYS.has(key.toLowerCase())) {
+    if (SENSITIVE_KEYS.has(key.toLowerCase().replace(/[-_]/g, ''))) {
       sanitized[key] = '[REDACTED]';
     } else if (typeof value === 'object' && value !== null) {
       sanitized[key] = redactSensitiveData(value);
+    } else if (typeof value === 'string') {
+      sanitized[key] = redactSensitiveString(value);
     } else {
       sanitized[key] = value;
     }
@@ -81,7 +113,8 @@ export class AppLoggerService implements LoggerService {
       environment: this.environment,
       requestId: RequestContextService.currentRequestId,
       context: context ?? 'Application',
-      message: typeof message === 'string' ? message : redactSensitiveData(message),
+      message:
+        typeof message === 'string' ? redactSensitiveString(message) : redactSensitiveData(message),
       ...(extra ? (redactSensitiveData(extra) as Record<string, unknown>) : {}),
     };
 
