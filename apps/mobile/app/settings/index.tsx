@@ -7,7 +7,9 @@ import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
 import { Icon } from '../../src/design/primitives/Icon.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
+import { useQueryClient } from '@tanstack/react-query';
 import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { clearBillingCaches } from '../../src/billing/useEntitlements.js';
 
 interface SettingsItemProps {
   icon: 'settings' | 'shield' | 'bell' | 'lock' | 'sparkles' | 'flag';
@@ -48,6 +50,7 @@ function SettingsRow({ icon, title, subtitle, onPress, destructive }: SettingsIt
 export default function SettingsHubRoute(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const queryClient = useQueryClient();
   const authClient = getDefaultAuthClient();
 
   const handleLogout = () => {
@@ -60,6 +63,7 @@ export default function SettingsHubRoute(): React.JSX.Element {
           try {
             await authClient.logout();
           } finally {
+            clearBillingCaches(queryClient);
             router.replace('/(auth)/welcome');
           }
         },
@@ -106,7 +110,7 @@ export default function SettingsHubRoute(): React.JSX.Element {
           <SurfaceCard elevation="sm" style={styles.card}>
             <SettingsRow
               icon="sparkles"
-              title="Nazar Gold Subscription"
+              title="Nazar Premium Subscription"
               subtitle="Manage benefits and billing"
               onPress={() => router.push('/billing')}
             />

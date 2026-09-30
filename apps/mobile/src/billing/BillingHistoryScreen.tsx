@@ -1,23 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   FlatList,
-  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { PaymentTransactionResponseDto } from '@platform/api-contracts';
+import { useTheme } from '../design/theme/index.js';
+import { Text } from '../design/primitives/Text.js';
+import { SurfaceCard } from '../design/primitives/SurfaceCard.js';
+import { TopNavHeader } from '../design/components/navigation/TopNavHeader.js';
+import { EmptyState } from '../design/components/feedback/EmptyState.js';
 import type { BillingApiClient } from './billing-api.js';
 
 export interface BillingHistoryScreenProps {
   readonly client: BillingApiClient;
 }
 
-export function BillingHistoryScreen({ client }: BillingHistoryScreenProps) {
+export function BillingHistoryScreen({ client }: BillingHistoryScreenProps): React.JSX.Element {
   const router = useRouter();
+  const { colors } = useTheme();
+
   const [transactions, setTransactions] = useState<PaymentTransactionResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -55,7 +60,7 @@ export function BillingHistoryScreen({ client }: BillingHistoryScreenProps) {
   );
 
   useEffect(() => {
-    loadTransactions(true);
+    void loadTransactions(true);
   }, [client]);
 
   const renderItem = ({ item }: { item: PaymentTransactionResponseDto }) => {
@@ -73,47 +78,86 @@ export function BillingHistoryScreen({ client }: BillingHistoryScreenProps) {
     const isSuccess = item.status === 'SUCCEEDED';
     const isRefund = item.status === 'REFUNDED';
 
+    const getProductName = (code: string): string => {
+      switch (code) {
+        case 'PREMIUM_ANNUAL':
+          return 'Nazar Premium Annual';
+        case 'PREMIUM_MONTHLY':
+          return 'Nazar Premium Monthly';
+        case 'BOOST_ONE_TIME':
+          return 'Profile Boost (24h)';
+        default:
+          return code;
+      }
+    };
+
     return (
-      <View style={styles.transactionCard} testID={`transaction-item-${item.id}`}>
+      <SurfaceCard
+        elevation="sm"
+        style={[
+          styles.transactionCard,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          },
+        ]}
+        testID={`transaction-item-${item.id}`}
+      >
         <View style={styles.cardHeader}>
-          <Text style={styles.productCode}>{item.productCode}</Text>
-          <Text style={styles.amount}>{formattedAmount}</Text>
+          <Text level="title" weight="bold" color="primary">
+            {getProductName(item.productCode)}
+          </Text>
+          <Text level="title" weight="bold" color="primary">
+            {formattedAmount}
+          </Text>
         </View>
+
         <View style={styles.cardFooter}>
-          <Text style={styles.date}>{dateStr}</Text>
+          <Text level="bodySmall" color="secondary">
+            {dateStr}
+          </Text>
           <View
             style={[
               styles.statusBadge,
-              isSuccess ? styles.successBadge : isRefund ? styles.refundBadge : styles.failedBadge,
+              isSuccess
+                ? styles.successBadge
+                : isRefund
+                ? styles.refundBadge
+                : styles.failedBadge,
             ]}
           >
             <Text
+              level="caption"
+              weight="bold"
               style={[
                 styles.statusText,
-                isSuccess ? styles.successText : isRefund ? styles.refundText : styles.failedText,
+                isSuccess
+                  ? styles.successText
+                  : isRefund
+                  ? styles.refundText
+                  : styles.failedText,
               ]}
             >
               {item.status}
             </Text>
           </View>
         </View>
-      </View>
+      </SurfaceCard>
     );
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Billing History</Text>
-        <View style={styles.headerPlaceholder} />
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <TopNavHeader
+        title="Billing History"
+        leftAction="back"
+        onBack={() => router.back()}
+        testID="billing-history-header"
+      />
 
       {isLoading && transactions.length === 0 ? (
         <View style={styles.centerContainer} testID="history-loading">
-          <ActivityIndicator size="large" color="#E11D48" />
+          <ActivityIndicator size="large" color={colors.accent || '#E11D48'} />
         </View>
       ) : (
         <FlatList
@@ -124,23 +168,22 @@ export function BillingHistoryScreen({ client }: BillingHistoryScreenProps) {
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={() => loadTransactions(true)}
-              tintColor="#E11D48"
+              onRefresh={() => void loadTransactions(true)}
+              tintColor={colors.accent || '#E11D48'}
             />
           }
           onEndReached={() => {
             if (hasMore && !isLoading && !isRefreshing) {
-              loadTransactions(false);
+              void loadTransactions(false);
             }
           }}
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
-            <View style={styles.emptyContainer} testID="history-empty">
-              <Text style={styles.emptyTitle}>No Transactions Yet</Text>
-              <Text style={styles.emptySubtitle}>
-                Purchases and membership renewals will appear here.
-              </Text>
-            </View>
+            <EmptyState
+              title="No Transactions Yet"
+              description="Purchases and membership renewals will appear here."
+              testID="history-empty"
+            />
           }
         />
       )}
@@ -151,33 +194,6 @@ export function BillingHistoryScreen({ client }: BillingHistoryScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
-  },
-  backButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  backButtonText: {
-    color: '#38BDF8',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#F8FAFC',
-  },
-  headerPlaceholder: {
-    width: 48,
   },
   centerContainer: {
     flex: 1,
@@ -187,39 +203,23 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     paddingBottom: 40,
+    gap: 12,
   },
   transactionCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    gap: 8,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  productCode: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#F1F5F9',
-  },
-  amount: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#F8FAFC',
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  date: {
-    fontSize: 13,
-    color: '#94A3B8',
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -227,47 +227,25 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   successBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-  },
-  successText: {
-    color: '#34D399',
-    fontSize: 11,
-    fontWeight: '700',
+    backgroundColor: '#DCFCE7',
   },
   refundBadge: {
-    backgroundColor: 'rgba(234, 179, 8, 0.15)',
-  },
-  refundText: {
-    color: '#FBBF24',
-    fontSize: 11,
-    fontWeight: '700',
+    backgroundColor: '#FEF3C7',
   },
   failedBadge: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-  },
-  failedText: {
-    color: '#F87171',
-    fontSize: 11,
-    fontWeight: '700',
+    backgroundColor: '#FEE2E2',
   },
   statusText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
-  emptyContainer: {
-    alignItems: 'center',
-    marginTop: 60,
-    paddingHorizontal: 20,
+  successText: {
+    color: '#15803D',
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#F8FAFC',
-    marginBottom: 8,
+  refundText: {
+    color: '#B45309',
   },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
-    textAlign: 'center',
+  failedText: {
+    color: '#B91C1C',
   },
 });

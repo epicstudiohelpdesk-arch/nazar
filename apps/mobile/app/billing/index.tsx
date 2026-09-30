@@ -1,20 +1,20 @@
 import type React from 'react';
 import { useMemo } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { SubscriptionScreen } from '../../src/billing/SubscriptionScreen';
-import { BillingApiClient } from '../../src/billing/billing-api';
+import { createBillingApi } from '../../src/billing/billing-api';
 import { getDefaultAuthClient } from '../../src/auth/default-client';
 
 export default function BillingRoute(): React.JSX.Element {
   const authClient = getDefaultAuthClient();
+  const params = useLocalSearchParams<{ plan?: string; returnRoute?: string }>();
+  const client = useMemo(() => createBillingApi(authClient), [authClient]);
 
-  const client = useMemo(
-    () =>
-      new BillingApiClient({
-        baseUrl: authClient.getBaseUrl(),
-        getAccessToken: async () => authClient.getStorage().getAccessToken(),
-      }),
-    [authClient]
+  return (
+    <SubscriptionScreen
+      client={client}
+      defaultPlanCode={params.plan}
+      returnRoute={params.returnRoute}
+    />
   );
-
-  return <SubscriptionScreen client={client} />;
 }

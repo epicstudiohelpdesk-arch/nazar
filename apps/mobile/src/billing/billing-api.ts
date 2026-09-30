@@ -9,6 +9,8 @@ import {
   type SubscriptionResponseDto,
   type PaymentTransactionListResponseDto,
 } from '@platform/api-contracts';
+import { getDefaultAuthClient } from '../auth/default-client.js';
+import type { AuthClient } from '../auth/auth-client.js';
 
 export interface BillingApiConfig {
   readonly baseUrl: string;
@@ -114,4 +116,30 @@ export class BillingApiClient {
     );
     return res.data;
   }
+}
+
+export const BILLING_QUERY_KEYS = {
+  root: ['billing'] as const,
+  products: ['billing', 'products'] as const,
+  entitlements: ['billing', 'entitlements'] as const,
+  subscriptions: ['billing', 'subscriptions'] as const,
+  subscription: (id: string) => ['billing', 'subscriptions', id] as const,
+  transactions: ['billing', 'transactions'] as const,
+  transactionHistory: (limit?: number, cursor?: string) =>
+    ['billing', 'transactions', { limit, cursor }] as const,
+};
+
+export function createBillingApi(authClient: AuthClient): BillingApiClient {
+  return new BillingApiClient({
+    baseUrl: authClient.getBaseUrl(),
+    getAccessToken: async () => authClient.getStorage().getAccessToken(),
+  });
+}
+
+let defaultBillingApi: BillingApiClient | null = null;
+export function getDefaultBillingApi(): BillingApiClient {
+  if (!defaultBillingApi) {
+    defaultBillingApi = createBillingApi(getDefaultAuthClient());
+  }
+  return defaultBillingApi;
 }

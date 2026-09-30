@@ -99,6 +99,28 @@ export class BillingManager {
 
     return result;
   }
+
+  clearCache(): void {
+    this.cachedEntitlements = [];
+    this.hasPremiumStatus = false;
+  }
+
+  getManagementUrl(provider?: PaymentProviderType): string {
+    if (provider === 'APPLE_APP_STORE') {
+      return 'https://apps.apple.com/account/subscriptions';
+    }
+    if (provider === 'GOOGLE_PLAY') {
+      return 'https://play.google.com/store/account/subscriptions';
+    }
+    const os = typeof Platform !== 'undefined' && Platform?.OS ? Platform.OS : 'web';
+    if (os === 'ios') {
+      return 'https://apps.apple.com/account/subscriptions';
+    }
+    if (os === 'android') {
+      return 'https://play.google.com/store/account/subscriptions';
+    }
+    return 'https://play.google.com/store/account/subscriptions';
+  }
 }
 
 export const billingManager = new BillingManager();

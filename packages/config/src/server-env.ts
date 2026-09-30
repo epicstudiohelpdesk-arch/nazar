@@ -72,7 +72,23 @@ export const serverEnvSchema = z
     GOOGLE_PLAY_PACKAGE_NAME: z.string().default('com.nazar.app'),
     GOOGLE_SERVICE_ACCOUNT_JSON: z.string().optional(),
     BILLING_PROVIDER_MOCK: z.coerce.boolean().default(false),
+    // Google Gemini AI Configuration
+    GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+    GEMINI_API_KEY: z.string().optional(),
   })
+  .refine(
+    (data) => {
+      if (data.GEMINI_MODEL === 'skimaki-agy-fast' || data.GEMINI_MODEL.includes('skimaki')) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'Invalid GEMINI_MODEL: "skimaki-agy-fast" is not a supported Gemini model for generateContent. Use a verified model such as "gemini-2.5-flash".',
+      path: ['GEMINI_MODEL'],
+    }
+  )
   .refine(
     (data) => {
       if (data.NODE_ENV === 'production' && data.CORS_ORIGIN === '*') {

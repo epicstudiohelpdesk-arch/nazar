@@ -23,6 +23,7 @@ import { MatchCard } from '../design/components/card/MatchCard.js';
 import { createMatchesApi, MATCHES_QUERY_KEYS } from './matches-api.js';
 import type { AuthClient } from '../auth/auth-client.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
+import { PremiumGate } from '../billing/PremiumGate.js';
 
 export interface MatchesScreenProps {
   readonly authClient: AuthClient;
@@ -204,6 +205,29 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
       ) : (
         // Matches List
         <View style={styles.listWrapper}>
+          <View style={styles.premiumBannerWrapper}>
+            <PremiumGate
+              feature="SEE_LIKES"
+              lockedTitle="See Who Liked You"
+              lockedMessage="Unlock Nazar Premium to reveal members who liked you and match with them instantly."
+              onUnlockPress={() => router.push('/billing?plan=PREMIUM_MONTHLY&returnRoute=/matches')}
+            >
+              <SurfaceCard elevation="sm" style={styles.unlockedLikesCard}>
+                <View style={styles.unlockedLikesRow}>
+                  <View style={[styles.badgeIcon, { backgroundColor: theme.colors.accentSoft }]}>
+                    <Icon name="sparkles" size="md" color={theme.colors.accent} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text level="title" weight="bold">See Who Liked You Active</Text>
+                    <Text level="bodySmall" color="secondary">
+                      Incoming likes are prioritized in your discovery feed and match queue.
+                    </Text>
+                  </View>
+                </View>
+              </SurfaceCard>
+            </PremiumGate>
+          </View>
+
           {/* Search Filter Input */}
           <View style={styles.searchContainer}>
             <View
@@ -323,6 +347,26 @@ const styles = StyleSheet.create({
   },
   listWrapper: {
     flex: 1,
+  },
+  premiumBannerWrapper: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  unlockedLikesCard: {
+    padding: 16,
+    borderRadius: 16,
+  },
+  unlockedLikesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  badgeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
     paddingHorizontal: 16,

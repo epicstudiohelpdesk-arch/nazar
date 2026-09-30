@@ -39,6 +39,10 @@ const FORBIDDEN_PII_KEYS = new Set([
   'message',
   'content',
   'preview',
+  'receipt',
+  'receiptData',
+  'purchaseToken',
+  'signedPayload',
 ]);
 
 /**
@@ -188,7 +192,19 @@ export type OnboardingAnalyticsEvent =
   | 'push_registered'
   | 'push_registration_failed'
   | 'notification_navigation_failed'
-  | 'notification_received_foreground';
+  | 'notification_received_foreground'
+  // Subscription & Premium UX (F9)
+  | 'premium_paywall_viewed'
+  | 'premium_feature_locked'
+  | 'premium_product_selected'
+  | 'purchase_started'
+  | 'purchase_cancelled'
+  | 'purchase_failed'
+  | 'purchase_pending'
+  | 'purchase_validated'
+  | 'purchase_restored'
+  | 'entitlement_activated'
+  | 'subscription_management_opened';
 
 /**
  * Tracks an onboarding or auth event with guaranteed PII sanitization.

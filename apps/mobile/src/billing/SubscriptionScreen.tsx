@@ -1,439 +1,600 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
-  Text,
-  TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import type { ProductResponseDto, UserEntitlementDto } from '@platform/api-contracts';
+import type { ProductResponseDto } from '@platform/api-contracts';
+import { useTheme } from '../design/theme/index.js';
+import { Text } from '../design/primitives/Text.js';
+import { Heading } from '../design/primitives/Heading.js';
+import { Icon } from '../design/primitives/Icon.js';
+import { SurfaceCard } from '../design/primitives/SurfaceCard.js';
+import { Button } from '../design/components/button/Button.js';
+import { Banner } from '../design/components/feedback/Banner.js';
+import { TopNavHeader } from '../design/components/navigation/TopNavHeader.js';
+import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import type { BillingApiClient } from './billing-api.js';
 import { billingManager } from './billing-manager.js';
+import {
+  useEntitlements,
+  useProducts,
+  useSubscriptions,
+  usePurchaseMutation,
+  useRestorePurchasesMutation,
+  useBillingResumeSync,
+} from './useEntitlements.js';
 
 export interface SubscriptionScreenProps {
-  readonly client: BillingApiClient;
+  readonly client?: BillingApiClient;
+  readonly onDismiss?: () => void;
+  readonly defaultPlanCode?: string;
+  readonly returnRoute?: string;
 }
 
-export function SubscriptionScreen({ client }: SubscriptionScreenProps) {
+const BENEFIT_ITEMS = [
+  {
+    icon: 'heart' as const,
+    title: 'Unlimited Likes & Swipes',
+    description: 'Connect freely every day without daily swipe caps.',
+  },
+  {
+    icon: 'sparkles' as const,
+    title: 'See Who Liked You',
+    description: 'View members who liked your profile and match with them instantly.',
+  },
+  {
+    icon: 'compass' as const,
+    title: 'Advanced Intent & Lifestyle Filters',
+    description: 'Filter candidates by relationship intent, verified status, and lifestyle.',
+  },
+  {
+    icon: 'refresh' as const,
+    title: 'Unlimited Rewinds',
+    description: 'Accidentally passed on someone? Instantly rewind back.',
+  },
+  {
+    icon: 'star' as const,
+    title: 'Monthly Profile Boost',
+    description: 'Included with Annual: 1 free boost/month to get seen by 10x more members.',
+  },
+];
+
+export function SubscriptionScreen({
+  client,
+  onDismiss,
+  defaultPlanCode = 'PREMIUM_ANNUAL',
+  returnRoute,
+}: SubscriptionScreenProps): React.JSX.Element {
   const router = useRouter();
-  const [products, setProducts] = useState<ProductResponseDto[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<ProductResponseDto | null>(null);
-  const [entitlements, setEntitlements] = useState<UserEntitlementDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isPurchasing, setIsPurchasing] = useState<boolean>(false);
-  const [isRestoring, setIsRestoring] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const { colors } = useTheme();
 
-  const loadData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      billingManager.initialize(client);
+  // Reconcile on resume
+  useBillingResumeSync();
 
-      const [productsRes, ents] = await Promise.all([
-        client.listProducts(),
-        billingManager.refreshEntitlements(),
-      ]);
+  const entitlementsQuery = useEntitlements(client);
+  const productsQuery = useProducts(client);
+  const subscriptionsQuery = useSubscriptions(client);
+  const purchaseMutation = usePurchaseMutation(client);
+  const restoreMutation = useRestorePurchasesMutation(client);
 
-      setProducts([...productsRes.products]);
-      setEntitlements(ents);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-      // Default select the annual plan if available, or first product
-      const annual = productsRes.products.find((p) => p.code === 'PREMIUM_ANNUAL');
-      setSelectedProduct(annual || productsRes.products[0] || null);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load subscription plans');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [client]);
+  const { products, subscriptionProducts, annualProduct, monthlyProduct } = productsQuery;
+  const { activeSubscription, isAutoRenewCancelled, isGracePeriod } = subscriptionsQuery;
+  const isPremiumActive = entitlementsQuery.hasPremium;
 
+  // Track paywall impression
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    trackOnboardingEvent('premium_paywall_viewed', {
+      source: isPremiumActive ? 'management_hub' : 'direct',
+    });
+  }, [isPremiumActive]);
+
+  // Default selection
+  useEffect(() => {
+    if (selectedProductId) return;
+    if (defaultPlanCode === 'PREMIUM_MONTHLY' && monthlyProduct) {
+      setSelectedProductId(monthlyProduct.id);
+    } else if (annualProduct) {
+      setSelectedProductId(annualProduct.id);
+    } else if (subscriptionProducts[0]) {
+      setSelectedProductId(subscriptionProducts[0].id);
+    }
+  }, [defaultPlanCode, annualProduct, monthlyProduct, subscriptionProducts, selectedProductId]);
+
+  const selectedProduct = useMemo(() => {
+    return products.find((p) => p.id === selectedProductId) || annualProduct || subscriptionProducts[0];
+  }, [products, selectedProductId, annualProduct, subscriptionProducts]);
+
+  const handleSelectProduct = (prod: ProductResponseDto) => {
+    setSelectedProductId(prod.id);
+    setErrorMessage(null);
+    trackOnboardingEvent('premium_product_selected', {
+      productId: prod.id,
+      productCode: prod.code,
+    });
+  };
 
   const handlePurchase = async () => {
     if (!selectedProduct) return;
+    setErrorMessage(null);
 
     try {
-      setIsPurchasing(true);
-      setError(null);
+      const result = await purchaseMutation.mutateAsync({
+        productId: selectedProduct.code,
+      });
 
-      const result = await billingManager.purchaseProduct(selectedProduct.code);
-      setEntitlements([...result.effectiveEntitlements]);
-
-      Alert.alert(
-        'Welcome to Premium! 🎉',
-        'Your subscription is active. All premium features are now unlocked.',
-        [{ text: 'Continue', onPress: () => router.back() }]
-      );
+      if (result.verified) {
+        Alert.alert(
+          'Welcome to Nazar Premium! 🎉',
+          'Your subscription is active and all premium features are now unlocked.',
+          [
+            {
+              text: 'Continue',
+              onPress: () => {
+                if (returnRoute) {
+                  router.replace(returnRoute as never);
+                } else if (onDismiss) {
+                  onDismiss();
+                } else {
+                  router.back();
+                }
+              },
+            },
+          ]
+        );
+      }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Purchase verification failed';
-      setError(msg);
-      Alert.alert('Purchase Failed', msg);
-    } finally {
-      setIsPurchasing(false);
+      const message =
+        err instanceof Error ? err.message : 'Purchase could not be verified. Please try again.';
+      setErrorMessage(message);
     }
   };
 
   const handleRestore = async () => {
+    setErrorMessage(null);
     try {
-      setIsRestoring(true);
-      setError(null);
-
-      const result = await billingManager.restorePurchases();
-      setEntitlements([...result.effectiveEntitlements]);
-
+      const result = await restoreMutation.mutateAsync(undefined);
       if (result.restoredCount > 0) {
         Alert.alert(
           'Purchases Restored',
           `Successfully restored ${result.restoredCount} active subscription(s).`
         );
       } else {
-        Alert.alert('No Purchases Found', 'No previous purchases found for this store account.');
+        Alert.alert(
+          'No Purchases Found',
+          'No previous active subscriptions were found for this store account.'
+        );
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to restore purchases';
-      setError(msg);
-      Alert.alert('Restore Failed', msg);
-    } finally {
-      setIsRestoring(false);
+      const message =
+        err instanceof Error ? err.message : 'Could not restore purchases from store.';
+      setErrorMessage(message);
     }
   };
 
-  const isPremiumActive = entitlements.some((e) => e.code === 'PREMIUM' && e.active);
+  const handleManageInStore = () => {
+    trackOnboardingEvent('subscription_management_opened', {
+      plan: activeSubscription?.productCode,
+    });
+    const url = billingManager.getManagementUrl();
+    void Linking.openURL(url).catch(() => {
+      Alert.alert(
+        'Subscription Management',
+        'Please manage your subscriptions directly in your Apple App Store or Google Play account settings.'
+      );
+    });
+  };
 
-  if (isLoading) {
+  const handleBack = () => {
+    if (onDismiss) {
+      onDismiss();
+    } else {
+      router.back();
+    }
+  };
+
+  const isLoading = productsQuery.isLoading || entitlementsQuery.isLoading;
+
+  if (isLoading && products.length === 0) {
     return (
-      <View style={styles.centerContainer} testID="subscription-loading">
-        <ActivityIndicator size="large" color="#E11D48" />
-        <Text style={styles.loadingText}>Loading membership plans...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]} testID="subscription-loading">
+        <ActivityIndicator size="large" color={colors.accent || '#E11D48'} />
+        <Text level="body" color="secondary" style={styles.loadingText}>
+          Loading premium plans...
+        </Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Unlock Nazar Premium</Text>
-        <Text style={styles.subtitle}>
-          Connect faster with high-intent matches and zero daily limits.
-        </Text>
-        {isPremiumActive && (
-          <View style={styles.activeBadge} testID="active-premium-badge">
-            <Text style={styles.activeBadgeText}>ACTIVE MEMBERSHIP</Text>
-          </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <TopNavHeader
+        title="Nazar Premium"
+        leftAction="back"
+        onBack={handleBack}
+        testID="subscription-header"
+      />
+
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Error Banner */}
+        {errorMessage && (
+          <Banner
+            variant="payment_issue"
+            message={errorMessage}
+            isDismissible
+            onDismiss={() => setErrorMessage(null)}
+          />
         )}
-      </View>
 
-      {error && (
-        <View style={styles.errorContainer} testID="subscription-error">
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
-
-      {/* Feature Entitlements List */}
-      <View style={styles.featuresCard}>
-        <Text style={styles.featuresTitle}>What is included:</Text>
-        <View style={styles.featureRow}>
-          <Text style={styles.featureIcon}>✨</Text>
-          <Text style={styles.featureText}>Unlimited Likes & Discovery Swipes</Text>
-        </View>
-        <View style={styles.featureRow}>
-          <Text style={styles.featureIcon}>👀</Text>
-          <Text style={styles.featureText}>See Who Liked You First</Text>
-        </View>
-        <View style={styles.featureRow}>
-          <Text style={styles.featureIcon}>🎯</Text>
-          <Text style={styles.featureText}>Advanced Discovery & Intent Filters</Text>
-        </View>
-        <View style={styles.featureRow}>
-          <Text style={styles.featureIcon}>⏪</Text>
-          <Text style={styles.featureText}>Unlimited Rewinds on Accidental Passes</Text>
-        </View>
-        <View style={styles.featureRow}>
-          <Text style={styles.featureIcon}>🚀</Text>
-          <Text style={styles.featureText}>Monthly Profile Boost to Top Candidates</Text>
-        </View>
-      </View>
-
-      {/* Subscription Plans */}
-      <View style={styles.plansContainer}>
-        {products
-          .filter((p) => p.productType === 'SUBSCRIPTION')
-          .map((prod) => {
-            const isSelected = selectedProduct?.id === prod.id;
-            const isBestValue = prod.code === 'PREMIUM_ANNUAL';
-
-            return (
-              <TouchableOpacity
-                key={prod.id}
-                style={[styles.planCard, isSelected && styles.selectedPlanCard]}
-                onPress={() => setSelectedProduct(prod)}
-                testID={`plan-card-${prod.code}`}
-                accessibilityRole="button"
-                accessibilityLabel={`${prod.name} ${prod.formattedPrice}`}
-              >
-                {isBestValue && (
-                  <View style={styles.bestValueBadge}>
-                    <Text style={styles.bestValueText}>BEST VALUE (SAVE 37%)</Text>
-                  </View>
-                )}
-                <View style={styles.planHeader}>
-                  <Text style={[styles.planName, isSelected && styles.selectedPlanText]}>
-                    {prod.name}
-                  </Text>
-                  <Text style={[styles.planPrice, isSelected && styles.selectedPlanPrice]}>
-                    {prod.formattedPrice}
-                  </Text>
-                </View>
-                <Text style={styles.planDuration}>
-                  {prod.durationDays === 365 ? '12 months billed upfront' : 'Billed monthly'}
+        {/* Active Membership Hub (if user is currently subscribed) */}
+        {isPremiumActive && activeSubscription && (
+          <SurfaceCard
+            elevation="sm"
+            style={[styles.activeCard, { borderColor: colors.accent || '#E11D48' }]}
+            testID="active-subscription-card"
+          >
+            <View style={styles.activeHeader}>
+              <View style={styles.activeBadge}>
+                <Text level="caption" weight="bold" style={styles.activeBadgeText}>
+                  {isGracePeriod ? 'PAYMENT GRACE PERIOD' : isAutoRenewCancelled ? 'ACTIVE (CANCELLED)' : 'ACTIVE SUBSCRIBER'}
                 </Text>
-              </TouchableOpacity>
-            );
-          })}
-      </View>
+              </View>
+              <Heading level="h3" style={{ color: colors.textPrimary }}>
+                {activeSubscription.productCode === 'PREMIUM_ANNUAL'
+                  ? 'Nazar Premium Annual'
+                  : 'Nazar Premium Monthly'}
+              </Heading>
+            </View>
 
-      {/* Action Buttons */}
-      <TouchableOpacity
-        style={[styles.purchaseButton, (isPurchasing || !selectedProduct) && styles.disabledButton]}
-        onPress={handlePurchase}
-        disabled={isPurchasing || !selectedProduct}
-        testID="purchase-button"
-        accessibilityRole="button"
-      >
-        {isPurchasing ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <Text style={styles.purchaseButtonText}>
-            {isPremiumActive ? 'Change Membership Plan' : 'Subscribe Now'}
+            <View style={styles.activeDetails}>
+              {isAutoRenewCancelled ? (
+                <Text level="bodySmall" color="secondary">
+                  Auto-renewal is turned off. Your premium benefits remain active until{' '}
+                  <Text weight="bold">
+                    {new Date(activeSubscription.currentPeriodEnd).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </Text>
+                  .
+                </Text>
+              ) : isGracePeriod ? (
+                <Text level="bodySmall" color="error">
+                  There was an issue processing your renewal payment. Your benefits are temporarily active during the grace period. Please update your payment method in store settings.
+                </Text>
+              ) : (
+                <Text level="bodySmall" color="secondary">
+                  Renews on{' '}
+                  <Text weight="bold">
+                    {new Date(activeSubscription.currentPeriodEnd).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </Text>
+                  .
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.activeActions}>
+              <Button
+                label="Manage in Store"
+                variant="secondary"
+                size="sm"
+                onPress={handleManageInStore}
+                testID="manage-subscription-button"
+              />
+              <Button
+                label="Billing History"
+                variant="tertiary"
+                size="sm"
+                onPress={() => router.push('/billing/history' as never)}
+                testID="view-history-button"
+              />
+            </View>
+          </SurfaceCard>
+        )}
+
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <Heading level="h1" style={styles.heroTitle}>
+            Connect with Intent
+          </Heading>
+          <Text level="body" color="secondary" style={styles.heroSubtitle}>
+            Unlock full clarity, zero limits, and priority exposure with Nazar Premium.
           </Text>
-        )}
-      </TouchableOpacity>
+        </View>
 
-      <TouchableOpacity
-        style={styles.restoreButton}
-        onPress={handleRestore}
-        disabled={isRestoring}
-        testID="restore-purchases-button"
-      >
-        {isRestoring ? (
-          <ActivityIndicator size="small" color="#64748B" />
-        ) : (
-          <Text style={styles.restoreButtonText}>Restore Purchases</Text>
-        )}
-      </TouchableOpacity>
+        {/* Benefits List */}
+        <SurfaceCard elevation="sm" style={styles.benefitsCard}>
+          <Text level="title" weight="bold" color="primary" style={styles.benefitsTitle}>
+            Everything Included
+          </Text>
+          {BENEFIT_ITEMS.map((item, index) => (
+            <View key={index} style={styles.benefitRow}>
+              <View
+                style={[
+                  styles.benefitIconBox,
+                  { backgroundColor: colors.accentSoft || '#FFF1F2' },
+                ]}
+              >
+                <Icon name={item.icon} size={18} color={colors.accent || '#E11D48'} />
+              </View>
+              <View style={styles.benefitText}>
+                <Text level="body" weight="semibold" color="primary">
+                  {item.title}
+                </Text>
+                <Text level="bodySmall" color="secondary">
+                  {item.description}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </SurfaceCard>
 
-      <TouchableOpacity
-        style={styles.historyLink}
-        onPress={() => router.push('/billing/history' as any)} // eslint-disable-line @typescript-eslint/no-explicit-any
-      >
-        <Text style={styles.historyLinkText}>View Billing History</Text>
-      </TouchableOpacity>
+        {/* Plans Selector */}
+        <View style={styles.plansSection}>
+          <Text level="title" weight="bold" color="primary" style={styles.sectionHeader}>
+            Choose Your Plan
+          </Text>
 
-      {/* Terms Notice */}
-      <Text style={styles.termsText}>
-        Subscriptions automatically renew unless canceled at least 24 hours before the end of the
-        current period in App Store / Google Play account settings.
-      </Text>
-    </ScrollView>
+          <View style={styles.plansGrid}>
+            {subscriptionProducts.map((prod) => {
+              const isSelected = selectedProduct?.id === prod.id;
+              const isAnnual = prod.code === 'PREMIUM_ANNUAL';
+
+              return (
+                <TouchableOpacity
+                  key={prod.id}
+                  style={[
+                    styles.planCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: isSelected ? colors.accent || '#E11D48' : colors.border,
+                    },
+                    isSelected && styles.selectedPlanCard,
+                  ]}
+                  onPress={() => handleSelectProduct(prod)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={`${prod.name}, ${prod.formattedPrice || ''}`}
+                  testID={`plan-card-${prod.code}`}
+                >
+                  {isAnnual && (
+                    <View
+                      style={[
+                        styles.bestValueBadge,
+                        { backgroundColor: colors.accent || '#E11D48' },
+                      ]}
+                    >
+                      <Text level="caption" weight="bold" style={styles.bestValueText}>
+                        BEST VALUE (SAVE 37%)
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={styles.planHeader}>
+                    <Text level="title" weight="bold" color="primary">
+                      {isAnnual ? 'Annual' : 'Monthly'}
+                    </Text>
+                    <Text level="heading3" weight="bold" color="primary">
+                      {prod.formattedPrice}
+                    </Text>
+                  </View>
+
+                  <Text level="bodySmall" color="secondary">
+                    {isAnnual ? 'Billed once per year (₹125/mo)' : 'Billed every month'}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Primary CTA */}
+        <Button
+          label={
+            purchaseMutation.isPending
+              ? 'Processing...'
+              : isPremiumActive
+              ? 'Change Plan'
+              : 'Upgrade to Nazar Premium'
+          }
+          variant="primary"
+          size="lg"
+          onPress={handlePurchase}
+          disabled={purchaseMutation.isPending || !selectedProduct}
+          testID="purchase-button"
+        />
+
+        {/* Secondary Actions */}
+        <View style={styles.footerActions}>
+          <TouchableOpacity
+            style={styles.restoreBtn}
+            onPress={handleRestore}
+            disabled={restoreMutation.isPending}
+            testID="restore-purchases-button"
+            accessibilityRole="button"
+            accessibilityLabel="Restore purchases"
+          >
+            {restoreMutation.isPending ? (
+              <ActivityIndicator size="small" color={colors.textSecondary} />
+            ) : (
+              <Text level="bodySmall" weight="semibold" color="secondary">
+                Restore Purchases
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.historyBtn}
+            onPress={() => router.push('/billing/history' as never)}
+            accessibilityRole="button"
+            accessibilityLabel="View billing history"
+          >
+            <Text level="bodySmall" color="tertiary">
+              View Billing History
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Legal & Auto-Renewal Disclosure */}
+        <Text level="caption" color="tertiary" style={styles.legalNotice}>
+          Recurring billing, cancel anytime. Subscriptions automatically renew unless cancelled at least 24 hours prior to the end of the current period in your App Store or Google Play account settings. By tapping Subscribe, you agree to our Terms of Service and Privacy Policy.
+        </Text>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
   },
-  contentContainer: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  centerContainer: {
+  loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
-    padding: 20,
+    justifyContent: 'center',
+    gap: 12,
   },
   loadingText: {
-    marginTop: 12,
-    color: '#94A3B8',
-    fontSize: 14,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 10,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#F8FAFC',
-    textAlign: 'center',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
-    textAlign: 'center',
     marginTop: 8,
-    lineHeight: 20,
+  },
+  content: {
+    padding: 20,
+    gap: 20,
+    paddingBottom: 40,
+  },
+  activeCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    gap: 12,
+  },
+  activeHeader: {
+    gap: 4,
   },
   activeBadge: {
-    marginTop: 12,
-    backgroundColor: '#10B981',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    alignSelf: 'flex-start',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginBottom: 4,
   },
   activeBadgeText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 11,
+    color: '#15803D',
+    fontSize: 10,
     letterSpacing: 0.5,
   },
-  errorContainer: {
-    backgroundColor: '#451A1A',
-    borderColor: '#E11D48',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+  activeDetails: {
+    gap: 4,
   },
-  errorText: {
-    color: '#FCA5A5',
-    fontSize: 13,
+  activeActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  heroSection: {
+    alignItems: 'center',
+    textAlign: 'center',
+    gap: 8,
+    marginVertical: 8,
+  },
+  heroTitle: {
     textAlign: 'center',
   },
-  featuresCard: {
-    backgroundColor: '#1E293B',
+  heroSubtitle: {
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 320,
+  },
+  benefitsCard: {
+    padding: 16,
     borderRadius: 16,
-    padding: 18,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#334155',
+    gap: 16,
   },
-  featuresTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#F1F5F9',
-    marginBottom: 14,
+  benefitsTitle: {
+    marginBottom: 2,
   },
-  featureRow: {
+  benefitRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  benefitIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'center',
   },
-  featureIcon: {
-    fontSize: 16,
-    marginRight: 10,
-  },
-  featureText: {
-    fontSize: 14,
-    color: '#E2E8F0',
+  benefitText: {
     flex: 1,
+    gap: 2,
   },
-  plansContainer: {
-    marginBottom: 20,
+  plansSection: {
+    gap: 12,
+  },
+  sectionHeader: {
+    marginBottom: 4,
+  },
+  plansGrid: {
+    gap: 12,
   },
   planCard: {
-    backgroundColor: '#1E293B',
+    padding: 16,
     borderRadius: 16,
-    padding: 18,
-    marginBottom: 14,
     borderWidth: 2,
-    borderColor: '#334155',
+    gap: 6,
     position: 'relative',
   },
   selectedPlanCard: {
-    borderColor: '#E11D48',
-    backgroundColor: '#231B2D',
+    borderWidth: 2,
   },
   bestValueBadge: {
     position: 'absolute',
     top: -10,
-    right: 16,
-    backgroundColor: '#E11D48',
-    paddingHorizontal: 10,
+    right: 14,
+    paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   bestValueText: {
     color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: '800',
   },
   planHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  planName: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#F8FAFC',
-  },
-  selectedPlanText: {
-    color: '#FFFFFF',
-  },
-  planPrice: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#F8FAFC',
-  },
-  selectedPlanPrice: {
-    color: '#E11D48',
-  },
-  planDuration: {
-    fontSize: 13,
-    color: '#94A3B8',
+  footerActions: {
+    alignItems: 'center',
+    gap: 12,
     marginTop: 4,
   },
-  purchaseButton: {
-    backgroundColor: '#E11D48',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: 12,
+  restoreBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
-  disabledButton: {
-    opacity: 0.6,
+  historyBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
   },
-  purchaseButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  restoreButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  restoreButtonText: {
-    color: '#94A3B8',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  historyLink: {
-    paddingVertical: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  historyLinkText: {
-    color: '#38BDF8',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  termsText: {
-    fontSize: 11,
-    color: '#64748B',
+  legalNotice: {
     textAlign: 'center',
     lineHeight: 16,
+    marginHorizontal: 12,
   },
 });

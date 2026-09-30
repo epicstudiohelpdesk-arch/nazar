@@ -8,6 +8,7 @@ import {
   Dimensions,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -26,6 +27,7 @@ import { createInteractionsApi } from '../interactions/interactions-api.js';
 import { MATCHES_QUERY_KEYS } from '../matches/matches-api.js';
 import type { AuthClient } from '../auth/auth-client.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
+import { useFeatureGate } from '../billing/useEntitlements.js';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.28;
@@ -46,6 +48,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   const router = useRouter();
   const { theme } = useTheme();
   const queryClient = useQueryClient();
+  const { isUnlocked: hasRewinds } = useFeatureGate('UNLIMITED_REWINDS');
 
   const discoveryApi = useMemo(() => createDiscoveryApi(authClient), [authClient]);
   const interactionsApi = useMemo(() => createInteractionsApi(authClient), [authClient]);
@@ -208,6 +211,24 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
   const handleUndo = async () => {
     if (currentIndex <= 0 || isSubmitting) return;
+    if (!hasRewinds) {
+      trackOnboardingEvent('premium_feature_locked', {
+        feature: 'UNLIMITED_REWINDS',
+        surface: 'discovery_undo',
+      });
+      Alert.alert(
+        'Nazar Premium Feature',
+        'Rewinding your last pass or like requires Nazar Premium. Upgrade to unlock unlimited rewinds.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'View Plans',
+            onPress: () => router.push('/billing?plan=PREMIUM_MONTHLY&returnRoute=/discovery'),
+          },
+        ]
+      );
+      return;
+    }
     setIsSubmitting(true);
     try {
       await interactionsApi.undo();

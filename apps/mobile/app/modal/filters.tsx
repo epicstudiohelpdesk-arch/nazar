@@ -14,6 +14,7 @@ import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { getDefaultProfileApi, PROFILE_QUERY_KEYS } from '../../src/profile/profile-api.js';
 import { DISCOVERY_QUERY_KEYS } from '../../src/discovery/discovery-api.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { PremiumGate } from '../../src/billing/PremiumGate.js';
 
 const CANONICAL_DEFAULTS = {
   distanceKm: 50,
@@ -193,21 +194,28 @@ export default function FiltersModalRoute(): React.JSX.Element {
             />
           </SurfaceCard>
 
-          <SurfaceCard elevation="sm" style={styles.card}>
-            <Heading level="h3">Relationship Intent</Heading>
-            <Select
-              label=""
-              value={intentPref}
-              options={[
-                { label: 'Long-term / Marriage', value: 'LONG_TERM' },
-                { label: 'Short-term dating', value: 'SHORT_TERM' },
-                { label: 'Casual exploration', value: 'CASUAL' },
-                { label: 'Friendship & networking', value: 'FRIENDSHIP' },
-                { label: 'Still figuring it out', value: 'NOT_SURE' },
-              ]}
-              onSelectOption={(val) => setIntentPref(val as RelationshipIntent)}
-            />
-          </SurfaceCard>
+          <PremiumGate
+            feature="ADVANCED_DISCOVERY"
+            lockedTitle="Relationship Intent Filters"
+            lockedMessage="Filter your discovery deck by specific dating intentions, marriage goals, and lifestyle preferences with Nazar Premium."
+            onUnlockPress={() => router.push('/billing?plan=PREMIUM_MONTHLY&returnRoute=/modal/filters')}
+          >
+            <SurfaceCard elevation="sm" style={styles.card}>
+              <Heading level="h3">Relationship Intent</Heading>
+              <Select
+                label=""
+                value={intentPref}
+                options={[
+                  { label: 'Long-term / Marriage', value: 'LONG_TERM' },
+                  { label: 'Short-term dating', value: 'SHORT_TERM' },
+                  { label: 'Casual exploration', value: 'CASUAL' },
+                  { label: 'Friendship & networking', value: 'FRIENDSHIP' },
+                  { label: 'Still figuring it out', value: 'NOT_SURE' },
+                ]}
+                onSelectOption={(val) => setIntentPref(val as RelationshipIntent)}
+              />
+            </SurfaceCard>
+          </PremiumGate>
 
           <View style={styles.buttonWrapper}>
             <Button
