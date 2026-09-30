@@ -6,6 +6,7 @@ import type {
   CreateReportRequestDto,
   ReportResponseDto,
 } from '@platform/api-contracts';
+import type { QueryClient } from '@tanstack/react-query';
 import type { AuthClient } from '../auth/auth-client.js';
 import { getDefaultAuthClient } from '../auth/default-client.js';
 
@@ -13,6 +14,18 @@ export const SAFETY_QUERY_KEYS = {
   blocks: ['safety', 'blocks'] as const,
   report: (id: string) => ['safety', 'report', id] as const,
 };
+
+/**
+ * Centrally invalidates all relationship and safety caches across
+ * discovery, matches, messaging, social, and blocked-users list.
+ */
+export function invalidateSafetyCaches(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: SAFETY_QUERY_KEYS.blocks });
+  void queryClient.invalidateQueries({ queryKey: ['discovery'] });
+  void queryClient.invalidateQueries({ queryKey: ['matches'] });
+  void queryClient.invalidateQueries({ queryKey: ['chat'] });
+  void queryClient.invalidateQueries({ queryKey: ['social'] });
+}
 
 export function createSafetyApi(authClient: AuthClient) {
   return {

@@ -204,7 +204,23 @@ export type OnboardingAnalyticsEvent =
   | 'purchase_validated'
   | 'purchase_restored'
   | 'entitlement_activated'
-  | 'subscription_management_opened';
+  | 'subscription_management_opened'
+  // Profile + Settings + Privacy + Safety (F10)
+  | 'logout'
+  | 'delete_account_confirmed'
+  | 'profile_viewed_self'
+  | 'profile_updated'
+  | 'profile_visibility_changed'
+  | 'session_revoked'
+  | 'all_sessions_revoked'
+  | 'device_revoked'
+  | 'user_unblocked'
+  | 'account_deletion_started'
+  | 'account_deleted'
+  | 'privacy_viewed'
+  | 'safety_viewed'
+  | 'blocked_users_viewed'
+  | 'permissions_viewed';
 
 /**
  * Tracks an onboarding or auth event with guaranteed PII sanitization.

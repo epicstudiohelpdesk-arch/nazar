@@ -1,13 +1,21 @@
 import type { PrivateProfileResponse } from '@platform/api-contracts';
+import type { QueryClient } from '@tanstack/react-query';
+import type { AuthClient } from './auth-client.js';
 import { getDefaultAuthClient } from './default-client.js';
 import { getDefaultProfileApi } from '../profile/profile-api.js';
 import { useProfileStore } from '../profile/profile-store.js';
+import { clearBillingCaches } from '../billing/useEntitlements.js';
 import {
   useOnboardingStore,
   determineNextStepFromProfile,
   type OnboardingStep,
 } from './onboarding-store.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
+
+export const AUTH_QUERY_KEYS = {
+  sessions: ['auth', 'sessions'] as const,
+  devices: ['auth', 'devices'] as const,
+};
 
 export type SessionRestoreStatus =
   | 'UNAUTHENTICATED'
@@ -113,12 +121,49 @@ export class SessionService {
   }
 
   /**
+   * Complete account-boundary cleanup on logout.
+   * Purges tokens, store state, billing caches, and all TanStack Query cache.
+   */
+  async purgeAccountSessionAndCaches(queryClient?: QueryClient): Promise<void> {
+    try {
+      await this.authClient.logout();
+    } catch {
+      // Continue cleanup even if server logout request fails
+    }
+    useProfileStore.getState().resetAll();
+    useOnboardingStore.getState().resetOnboardingDraft();
+    if (queryClient) {
+      clearBillingCaches(queryClient);
+      queryClient.clear();
+    }
+    trackOnboardingEvent('logout');
+  }
+
+  /**
    * Delete account and purge session.
    */
   async deleteAccount(): Promise<void> {
     await this.authClient.deleteAccount();
     useProfileStore.getState().resetAll();
     useOnboardingStore.getState().resetOnboardingDraft();
+  }
+
+  /**
+   * Complete account deletion purge.
+   */
+  async purgeDeletedAccount(queryClient?: QueryClient): Promise<void> {
+    try {
+      await this.authClient.deleteAccount();
+    } catch {
+      // Continue cleanup
+    }
+    useProfileStore.getState().resetAll();
+    useOnboardingStore.getState().resetOnboardingDraft();
+    if (queryClient) {
+      clearBillingCaches(queryClient);
+      queryClient.clear();
+    }
+    trackOnboardingEvent('delete_account_confirmed');
   }
 }
 
@@ -129,4 +174,26 @@ export function getDefaultSessionService(): SessionService {
     defaultSessionService = new SessionService();
   }
   return defaultSessionService;
+}
+
+/**
+ * Top-level function for complete account-boundary cleanup on logout.
+ */
+export async function purgeAccountSessionAndCaches(
+  queryClient?: QueryClient,
+  authClient?: AuthClient
+): Promise<void> {
+  const service = authClient ? new SessionService(authClient) : getDefaultSessionService();
+  await service.purgeAccountSessionAndCaches(queryClient);
+}
+
+/**
+ * Top-level function for complete account deletion purge.
+ */
+export async function purgeDeletedAccount(
+  queryClient?: QueryClient,
+  authClient?: AuthClient
+): Promise<void> {
+  const service = authClient ? new SessionService(authClient) : getDefaultSessionService();
+  await service.purgeDeletedAccount(queryClient);
 }

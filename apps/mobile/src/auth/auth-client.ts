@@ -2,6 +2,11 @@ import type {
   ApiResponse,
   RefreshTokenResponse,
   RefreshTokenPayload,
+  SessionItemResponse,
+  RevokeSessionResponse,
+  LogoutResponse,
+  DeviceItemResponse,
+  RevokeDeviceResponse,
 } from '@platform/api-contracts';
 import type { ITokenStorage } from './token-storage.js';
 
@@ -48,6 +53,42 @@ export class AuthClient {
     } finally {
       await this.storage.clearTokens();
     }
+  }
+
+  async logoutAll(): Promise<LogoutResponse> {
+    const res = await this.request<LogoutResponse>('/v1/auth/logout-all', {
+      method: 'POST',
+    });
+    if (!res.success) throw new Error(res.error?.message || 'Failed to revoke all sessions');
+    return res.data;
+  }
+
+  async listSessions(): Promise<SessionItemResponse[]> {
+    const res = await this.request<SessionItemResponse[]>('/v1/auth/sessions');
+    if (!res.success) throw new Error(res.error?.message || 'Failed to list active sessions');
+    return res.data;
+  }
+
+  async revokeSession(sessionId: string): Promise<RevokeSessionResponse> {
+    const res = await this.request<RevokeSessionResponse>(`/v1/auth/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+    if (!res.success) throw new Error(res.error?.message || 'Failed to revoke session');
+    return res.data;
+  }
+
+  async listDevices(): Promise<DeviceItemResponse[]> {
+    const res = await this.request<DeviceItemResponse[]>('/v1/auth/devices');
+    if (!res.success) throw new Error(res.error?.message || 'Failed to list registered devices');
+    return res.data;
+  }
+
+  async revokeDevice(deviceId: string): Promise<RevokeDeviceResponse> {
+    const res = await this.request<RevokeDeviceResponse>(`/v1/auth/devices/${deviceId}`, {
+      method: 'DELETE',
+    });
+    if (!res.success) throw new Error(res.error?.message || 'Failed to revoke device');
+    return res.data;
   }
 
   async deleteAccount(): Promise<{ success: boolean; message: string }> {

@@ -1,15 +1,15 @@
 import React from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
 import { Icon } from '../../src/design/primitives/Icon.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
-import { useQueryClient } from '@tanstack/react-query';
 import { getDefaultAuthClient } from '../../src/auth/default-client.js';
-import { clearBillingCaches } from '../../src/billing/useEntitlements.js';
+import { purgeAccountSessionAndCaches } from '../../src/auth/session-service.js';
 
 interface SettingsItemProps {
   icon: 'settings' | 'shield' | 'bell' | 'lock' | 'sparkles' | 'flag';
@@ -29,8 +29,21 @@ function SettingsRow({ icon, title, subtitle, onPress, destructive }: SettingsIt
       accessibilityRole="button"
       accessibilityLabel={title}
     >
-      <View style={[styles.iconBox, { backgroundColor: destructive ? theme.colors.error + '15' : theme.colors.surfaceMuted }]}>
-        <Icon name={icon} size={20} color={destructive ? theme.colors.error : theme.colors.textPrimary} />
+      <View
+        style={[
+          styles.iconBox,
+          {
+            backgroundColor: destructive
+              ? theme.colors.error + '15'
+              : theme.colors.surfaceMuted,
+          },
+        ]}
+      >
+        <Icon
+          name={icon}
+          size={20}
+          color={destructive ? theme.colors.error : theme.colors.textPrimary}
+        />
       </View>
       <View style={styles.rowText}>
         <Text level="title" color={destructive ? 'error' : 'primary'}>
@@ -61,9 +74,8 @@ export default function SettingsHubRoute(): React.JSX.Element {
         style: 'destructive',
         onPress: async () => {
           try {
-            await authClient.logout();
+            await purgeAccountSessionAndCaches(queryClient, authClient);
           } finally {
-            clearBillingCaches(queryClient);
             router.replace('/(auth)/welcome');
           }
         },
@@ -73,45 +85,57 @@ export default function SettingsHubRoute(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title="Settings"
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="Settings" onBack={() => router.back()} leftAction="back" />
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Account & Security */}
         <View style={styles.section}>
           <Heading level="h3">Account & Security</Heading>
           <SurfaceCard elevation="sm" style={styles.card}>
             <SettingsRow
               icon="lock"
               title="Account & Devices"
-              subtitle="Phone, active sessions, and security"
+              subtitle="Active sessions, devices, and security"
               onPress={() => router.push('/settings/account')}
             />
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
             <SettingsRow
               icon="shield"
               title="Privacy Controls"
-              subtitle="Discovery visibility and location"
+              subtitle="Discovery visibility, ghost mode, and location"
               onPress={() => router.push('/settings/privacy')}
             />
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
             <SettingsRow
               icon="flag"
-              title="Safety & Blocked Users"
-              subtitle="Manage blocks and safety resources"
+              title="Safety & Trust"
+              subtitle="Safe dating guidelines and zero tolerance policy"
               onPress={() => router.push('/settings/safety')}
+            />
+            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+            <SettingsRow
+              icon="shield"
+              title="Blocked Accounts"
+              subtitle="Manage members you have blocked"
+              onPress={() => router.push('/settings/blocked')}
+            />
+            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+            <SettingsRow
+              icon="settings"
+              title="App Permissions"
+              subtitle="Push alerts, camera, and coarse location"
+              onPress={() => router.push('/settings/permissions')}
             />
           </SurfaceCard>
         </View>
 
+        {/* Preferences & Membership */}
         <View style={styles.section}>
           <Heading level="h3">Preferences & Membership</Heading>
           <SurfaceCard elevation="sm" style={styles.card}>
             <SettingsRow
               icon="sparkles"
               title="Nazar Premium Subscription"
-              subtitle="Manage benefits and billing"
+              subtitle="Manage benefits, tiers, and billing"
               onPress={() => router.push('/billing')}
             />
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
@@ -124,6 +148,7 @@ export default function SettingsHubRoute(): React.JSX.Element {
           </SurfaceCard>
         </View>
 
+        {/* Actions */}
         <View style={styles.section}>
           <Heading level="h3">Actions</Heading>
           <SurfaceCard elevation="sm" style={styles.card}>
@@ -136,7 +161,7 @@ export default function SettingsHubRoute(): React.JSX.Element {
             <SettingsRow
               icon="lock"
               title="Delete Account"
-              subtitle="Permanently remove your account and data"
+              subtitle="Permanently remove your account and all data"
               destructive
               onPress={() => router.push('/settings/delete-account')}
             />

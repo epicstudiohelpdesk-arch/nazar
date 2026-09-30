@@ -3,8 +3,7 @@ import { View, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Dialog } from '../../src/design/components/modal/Dialog.js';
-import { getDefaultSafetyApi } from '../../src/safety/safety-api.js';
-import { DISCOVERY_QUERY_KEYS } from '../../src/discovery/discovery-api.js';
+import { getDefaultSafetyApi, invalidateSafetyCaches } from '../../src/safety/safety-api.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 
 export default function BlockModalRoute(): React.JSX.Element {
@@ -23,13 +22,13 @@ export default function BlockModalRoute(): React.JSX.Element {
     setIsSubmitting(true);
     try {
       await safetyApi.blockUser(targetUserId, {
-        reason: 'Blocked via mobile discovery',
+        reason: 'Blocked via mobile safety action',
       });
 
       trackOnboardingEvent('block_completed', { targetUserId });
 
-      // Invalidate discovery feed so blocked member is immediately evicted
-      queryClient.invalidateQueries({ queryKey: DISCOVERY_QUERY_KEYS.feed });
+      // Invalidate discovery, matches, messaging, and blocks cache
+      invalidateSafetyCaches(queryClient);
 
       Alert.alert(
         'Account Blocked',
