@@ -984,11 +984,16 @@ export const Icon: React.FC<IconProps> = ({
     }
   };
 
+  const isAccessible = Boolean(accessibilityLabel);
+
   return (
     <View
       style={[{ width: dimension, height: dimension }, style]}
-      accessibilityRole="image"
-      accessibilityLabel={accessibilityLabel || `${name} icon`}
+      accessible={isAccessible}
+      accessibilityRole={isAccessible ? 'image' : undefined}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityElementsHidden={!isAccessible}
+      importantForAccessibility={isAccessible ? 'yes' : 'no-hide-descendants'}
       testID={testID || `icon-${name}`}
     >
       {renderIconContent()}

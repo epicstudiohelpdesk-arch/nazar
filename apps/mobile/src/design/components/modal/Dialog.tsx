@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Modal,
   View,
@@ -11,6 +11,8 @@ import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
 import { Icon } from '../../primitives/Icon.js';
 import { Button } from '../button/Button.js';
+import { haptics } from '../../haptics/index.js';
+import { announceAccessibility } from '../../a11y/index.js';
 
 export type DialogVariant = 'confirm' | 'destructive' | 'warning' | 'info';
 
@@ -42,6 +44,15 @@ export const Dialog: React.FC<DialogProps> = ({
   testID,
 }) => {
   const { colors, radii, spacing, shadows } = useTheme();
+
+  useEffect(() => {
+    if (visible) {
+      announceAccessibility(`${title}. ${message}`);
+      if (variant === 'destructive') {
+        haptics.warning();
+      }
+    }
+  }, [visible, title, message, variant]);
 
   const isDestructive = variant === 'destructive';
 
@@ -120,17 +131,29 @@ export const Dialog: React.FC<DialogProps> = ({
               variant={isDestructive ? 'destructive' : 'primary'}
               fullWidth={true}
               loading={isSubmitting}
-              onPress={onConfirm}
+              onPress={() => {
+                if (isDestructive) {
+                  haptics.error();
+                } else {
+                  haptics.medium();
+                }
+                onConfirm();
+              }}
             />
 
-            <Button
-              label={cancelLabel}
-              variant="tertiary"
-              fullWidth={true}
-              disabled={isSubmitting}
-              onPress={onCancel}
-              style={{ marginTop: 6 }}
-            />
+            {Boolean(cancelLabel) && (
+              <Button
+                label={cancelLabel}
+                variant="tertiary"
+                fullWidth={true}
+                disabled={isSubmitting}
+                onPress={() => {
+                  haptics.selection();
+                  onCancel();
+                }}
+                style={{ marginTop: 6 }}
+              />
+            )}
           </View>
         </View>
       </View>

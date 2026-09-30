@@ -5,3 +5,6 @@ export * from './components/index.js';
 export * from './patterns/index.js';
 export * from './localization/index.js';
 export * from './a11y/index.js';
+export * from './motion/index.js';
+export * from './haptics/index.js';
+

@@ -31,6 +31,7 @@ export default function TabsLayout(): React.JSX.Element {
         options={{
           title: 'Discover',
           tabBarLabel: 'Discover',
+          tabBarAccessibilityLabel: 'Discover tab, browse recommendations',
           tabBarIcon: ({ color, size }) => (
             <Icon name="sparkles" size={size || 22} color={color as string} />
           ),
@@ -41,6 +42,7 @@ export default function TabsLayout(): React.JSX.Element {
         options={{
           title: 'Matches',
           tabBarLabel: 'Matches',
+          tabBarAccessibilityLabel: 'Matches tab, your mutual connections',
           tabBarIcon: ({ color, size }) => (
             <Icon name="heart" size={size || 22} color={color as string} />
           ),
@@ -51,6 +53,7 @@ export default function TabsLayout(): React.JSX.Element {
         options={{
           title: 'Messages',
           tabBarLabel: 'Messages',
+          tabBarAccessibilityLabel: 'Messages tab, active conversations',
           tabBarIcon: ({ color, size }) => (
             <Icon name="message" size={size || 22} color={color as string} />
           ),
@@ -61,6 +64,7 @@ export default function TabsLayout(): React.JSX.Element {
         options={{
           title: 'Explore',
           tabBarLabel: 'Explore',
+          tabBarAccessibilityLabel: 'Explore tab, social communities and events',
           tabBarIcon: ({ color, size }) => (
             <Icon name="search" size={size || 22} color={color as string} />
           ),
@@ -71,6 +75,7 @@ export default function TabsLayout(): React.JSX.Element {
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
+          tabBarAccessibilityLabel: 'Profile tab, your profile, settings, and subscription',
           tabBarIcon: ({ color, size }) => (
             <Icon name="user" size={size || 22} color={color as string} />
           ),

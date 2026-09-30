@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, sql } from 'drizzle-orm';
 import { createTestApp } from './test-app.helper.js';
 import {
   MockEmailProvider,
@@ -403,6 +403,12 @@ describe('Matches & Concurrency Engine (Gate 07)', () => {
   describe('Discovery Exclusion Integration (Requirements 31, 32, 33)', () => {
     it('excludes liked, passed, and matched users from the discovery feed', async () => {
       const elderAgeOpts = { dateOfBirth: '1934-01-01', minAge: 91, maxAge: 93 };
+      await databaseService.client.execute(sql`
+        DELETE FROM user_interactions WHERE actor_user_id IN (SELECT user_id FROM profiles WHERE date_of_birth = '1934-01-01') OR target_user_id IN (SELECT user_id FROM profiles WHERE date_of_birth = '1934-01-01');
+        DELETE FROM matches WHERE user_a_id IN (SELECT user_id FROM profiles WHERE date_of_birth = '1934-01-01') OR user_b_id IN (SELECT user_id FROM profiles WHERE date_of_birth = '1934-01-01');
+        DELETE FROM profile_preferences WHERE user_id IN (SELECT user_id FROM profiles WHERE date_of_birth = '1934-01-01');
+        DELETE FROM profiles WHERE date_of_birth = '1934-01-01';
+      `);
       const viewer = await createActiveUser('viewer_excl', elderAgeOpts);
       const candidate1 = await createActiveUser('cand_1', elderAgeOpts);
       const candidate2 = await createActiveUser('cand_2', elderAgeOpts);

@@ -15,7 +15,11 @@ export class MockSmsProvider implements ISmsProvider {
 
   async sendOtp(phoneNumber: string, otp: string): Promise<void> {
     this.sentOtps.set(phoneNumber, otp);
-    this.logger.debug(`[SMS Simulation] Dispatched OTP to ${phoneNumber}: [REDACTED IN LOGS]`);
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.log(`[DEV AUTH] Verification OTP for ${phoneNumber}: ${otp}`);
+    } else {
+      this.logger.debug(`[SMS Simulation] Dispatched OTP to ${phoneNumber}: [REDACTED IN LOGS]`);
+    }
   }
 
   getLastOtp(phoneNumber: string): string | undefined {

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, SafeAreaView, Animated } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
@@ -9,6 +9,9 @@ import { Button } from '../../src/design/components/button/Button.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { useProfileStore } from '../../src/profile/profile-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { haptics } from '../../src/design/haptics/index.js';
+import { announceAccessibility } from '../../src/design/a11y/index.js';
+import { useReducedMotion } from '../../src/design/motion/index.js';
 
 export default function MatchCelebrationModalRoute(): React.JSX.Element {
   const { matchId, conversationId, targetUserId, userName, userAvatar } = useLocalSearchParams<{
@@ -20,6 +23,10 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
   }>();
   const router = useRouter();
   const { theme } = useTheme();
+  const isReduced = useReducedMotion();
+
+  const scaleAnim = useRef(new Animated.Value(isReduced ? 1 : 0.88)).current;
+  const fadeAnim = useRef(new Animated.Value(isReduced ? 1 : 0)).current;
 
   const profileStore = useProfileStore();
   const myAvatar =
@@ -37,7 +44,26 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
       matchId: matchId || 'unknown',
       targetUserId: targetUserId || undefined,
     });
-  }, [matchId, targetUserId]);
+
+    haptics.success();
+    announceAccessibility(`It's a Match! You and ${matchedName} liked each other's profiles.`);
+
+    if (!isReduced) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 6,
+          tension: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [matchId, targetUserId, matchedName, isReduced, scaleAnim, fadeAnim]);
 
   const handleStartChat = () => {
     const targetChat = conversationId || matchId;
@@ -55,51 +81,60 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backdrop} />
-      <SurfaceCard
-        elevation="lg"
-        style={[styles.dialog, { backgroundColor: theme.colors.surfaceElevated }]}
+      <Animated.View
+        style={{
+          width: '100%',
+          alignItems: 'center',
+          transform: [{ scale: scaleAnim }],
+          opacity: fadeAnim,
+        }}
       >
-        <View style={styles.celebrationBadge}>
-          <Text level="display">💕</Text>
-        </View>
-
-        <Heading level="h1" style={styles.title}>
-          It's a Match!
-        </Heading>
-        <Text level="body" color="secondary" style={styles.subtitle}>
-          You and {matchedName} liked each other's profiles.
-        </Text>
-
-        <View style={styles.avatarRow}>
-          <View style={[styles.avatarRing, { borderColor: theme.colors.accent }]}>
-            <Avatar size="large" uri={myAvatar} name={myName} />
+        <SurfaceCard
+          elevation="lg"
+          style={[styles.dialog, { backgroundColor: theme.colors.surfaceElevated }]}
+        >
+          <View style={styles.celebrationBadge}>
+            <Text level="display">💕</Text>
           </View>
-          <View style={[styles.avatarRing, { borderColor: theme.colors.accent, marginLeft: -16 }]}>
-            <Avatar size="large" uri={matchedAvatar} name={matchedName} />
-          </View>
-        </View>
 
-        <View style={styles.actions}>
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onPress={handleStartChat}
-            accessibilityLabel="Start chat conversation"
-          >
-            Say Hello 💌
-          </Button>
-          <Button
-            variant="secondary"
-            size="lg"
-            fullWidth
-            onPress={handleKeepBrowsing}
-            accessibilityLabel="Keep browsing discovery"
-          >
-            Keep Browsing
-          </Button>
-        </View>
-      </SurfaceCard>
+          <Heading level="h1" style={styles.title}>
+            It's a Match!
+          </Heading>
+          <Text level="body" color="secondary" style={styles.subtitle}>
+            You and {matchedName} liked each other's profiles.
+          </Text>
+
+          <View style={styles.avatarRow}>
+            <View style={[styles.avatarRing, { borderColor: theme.colors.accent }]}>
+              <Avatar size="large" uri={myAvatar} name={myName} />
+            </View>
+            <View style={[styles.avatarRing, { borderColor: theme.colors.accent, marginLeft: -16 }]}>
+              <Avatar size="large" uri={matchedAvatar} name={matchedName} />
+            </View>
+          </View>
+
+          <View style={styles.actions}>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onPress={handleStartChat}
+              accessibilityLabel={`Say hello and message ${matchedName}`}
+            >
+              Say Hello 💌
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
+              onPress={handleKeepBrowsing}
+              accessibilityLabel="Keep browsing discovery profiles"
+            >
+              Keep Browsing
+            </Button>
+          </View>
+        </SurfaceCard>
+      </Animated.View>
     </SafeAreaView>
   );
 }

@@ -10,6 +10,8 @@ import {
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Icon, type IconName } from '../../primitives/Icon.js';
+import { haptics } from '../../haptics/index.js';
+import { ensureMinTouchTarget, MIN_TOUCH_TARGET } from '../../a11y/index.js';
 
 // --- CHIP ---
 export interface ChipProps {
@@ -99,11 +101,17 @@ export const Chip: React.FC<ChipProps> = ({
   );
 
   if (onPress) {
+    const handlePress = () => {
+      haptics.selection();
+      onPress();
+    };
+
     return (
       <TouchableOpacity
-        onPress={onPress}
+        onPress={handlePress}
         disabled={disabled}
         activeOpacity={0.8}
+        hitSlop={isSm ? ensureMinTouchTarget(MIN_TOUCH_TARGET, 32) : ensureMinTouchTarget(MIN_TOUCH_TARGET, 38)}
       >
         {Content}
       </TouchableOpacity>
@@ -178,6 +186,12 @@ export const RadioRow: React.FC<RadioRowProps> = ({
   const { colors, spacing } = useTheme();
   const active = Boolean(isSelected ?? selected);
 
+  const handlePress = () => {
+    if (disabled) return;
+    haptics.selection();
+    onSelect();
+  };
+
   return (
     <TouchableOpacity
       style={[
@@ -191,7 +205,7 @@ export const RadioRow: React.FC<RadioRowProps> = ({
         },
         style,
       ]}
-      onPress={onSelect}
+      onPress={handlePress}
       disabled={disabled}
       activeOpacity={0.7}
       accessibilityRole="radio"
@@ -257,6 +271,12 @@ export const CheckboxRow: React.FC<CheckboxRowProps> = ({
   const { colors, radii, spacing } = useTheme();
   const active = Boolean(isChecked ?? checked);
 
+  const handlePress = () => {
+    if (disabled) return;
+    haptics.selection();
+    onToggle();
+  };
+
   return (
     <TouchableOpacity
       style={[
@@ -270,7 +290,7 @@ export const CheckboxRow: React.FC<CheckboxRowProps> = ({
         },
         style,
       ]}
-      onPress={onToggle}
+      onPress={handlePress}
       disabled={disabled}
       activeOpacity={0.7}
       accessibilityRole="checkbox"
@@ -333,7 +353,11 @@ export const Toggle: React.FC<ToggleProps> = ({
 }) => {
   const { colors, spacing } = useTheme();
   const active = Boolean(isEnabled ?? value);
-  const handleToggle = onToggle || onValueChange || (() => {});
+  const handleToggle = (val: boolean) => {
+    haptics.selection();
+    if (onToggle) onToggle(val);
+    if (onValueChange) onValueChange(val);
+  };
 
   if (!label) {
     return (
@@ -398,6 +422,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
+    minHeight: MIN_TOUCH_TARGET,
   },
   radioCircle: {
     width: 22,

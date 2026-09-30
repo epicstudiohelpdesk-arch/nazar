@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
+  Animated,
   ActivityIndicator,
   RefreshControl,
   StyleSheet,
@@ -9,6 +10,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import type { RadiiTokens } from '../../tokens/index.js';
+import { useReducedMotion } from '../../motion/index.js';
 
 export interface SkeletonBoxProps {
   readonly width?: number | string;
@@ -26,9 +28,38 @@ export const SkeletonBox: React.FC<SkeletonBoxProps> = ({
   testID,
 }) => {
   const { colors, radii } = useTheme();
+  const isReduced = useReducedMotion();
+  const pulseAnim = useRef(new Animated.Value(0.5)).current;
+
+  useEffect(() => {
+    if (isReduced) {
+      pulseAnim.setValue(0.65);
+      return;
+    }
+
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.85,
+          duration: 750,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.45,
+          duration: 750,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulse.start();
+    return () => {
+      pulse.stop();
+    };
+  }, [isReduced, pulseAnim]);
 
   return (
-    <View
+    <Animated.View
       style={[
         styles.skeletonBase,
         {
@@ -36,6 +67,7 @@ export const SkeletonBox: React.FC<SkeletonBoxProps> = ({
           height: height as ViewStyle['height'],
           borderRadius: radii[radius],
           backgroundColor: colors.surfaceMuted,
+          opacity: pulseAnim,
         },
         style,
       ]}

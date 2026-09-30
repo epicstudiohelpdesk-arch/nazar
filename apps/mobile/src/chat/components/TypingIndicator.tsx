@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
 import { useTheme } from '../../design/theme/index.js';
 import { Text } from '../../design/primitives/Text.js';
+import { useReducedMotion } from '../../design/motion/index.js';
 
 export interface TypingIndicatorProps {
   readonly isTyping: boolean;
@@ -10,12 +11,20 @@ export interface TypingIndicatorProps {
 
 export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ isTyping, displayName }) => {
   const { colors, radii, spacing } = useTheme();
+  const isReduced = useReducedMotion();
   const anim1 = useRef(new Animated.Value(0.3)).current;
   const anim2 = useRef(new Animated.Value(0.3)).current;
   const anim3 = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
     if (!isTyping) return;
+
+    if (isReduced) {
+      anim1.setValue(0.75);
+      anim2.setValue(0.75);
+      anim3.setValue(0.75);
+      return;
+    }
 
     const createPulse = (anim: Animated.Value, delay: number) => {
       return Animated.loop(

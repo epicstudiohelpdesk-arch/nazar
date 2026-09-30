@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Icon, type IconName, type IconSize } from '../../primitives/Icon.js';
+import { haptics } from '../../haptics/index.js';
+import { ensureMinTouchTarget, MIN_TOUCH_TARGET } from '../../a11y/index.js';
 
 export type IconButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive';
 export type IconButtonSize = 'sm' | 'md' | 'lg';
@@ -121,6 +123,16 @@ export const IconButton: React.FC<IconButtonProps> = ({
   const sz = getSizeStyles();
   const vs = getVariantStyles();
 
+  const handlePress = () => {
+    if (!isInteractive || !onPress) return;
+    if (variant === 'destructive') {
+      haptics.warning();
+    } else {
+      haptics.selection();
+    }
+    onPress();
+  };
+
   return (
     <TouchableOpacity
       style={[
@@ -136,9 +148,10 @@ export const IconButton: React.FC<IconButtonProps> = ({
         },
         style,
       ]}
-      onPress={onPress}
+      onPress={handlePress}
       disabled={!isInteractive}
       activeOpacity={0.8}
+      hitSlop={sz.dimension < MIN_TOUCH_TARGET ? ensureMinTouchTarget(sz.dimension) : undefined}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}

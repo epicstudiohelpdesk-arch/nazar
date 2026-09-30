@@ -11,6 +11,7 @@ import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
 import { Icon } from '../../primitives/Icon.js';
+import { useReducedMotion } from '../../motion/index.js';
 
 export interface BottomSheetProps {
   readonly visible: boolean;
@@ -33,12 +34,13 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const { colors, radii, spacing, shadows } = useTheme();
+  const isReduced = useReducedMotion();
 
   return (
     <Modal
       visible={visible}
       transparent={true}
-      animationType="slide"
+      animationType={isReduced ? 'fade' : 'slide'}
       onRequestClose={onClose}
     >
       <View style={styles.modalRoot} testID={testID}>

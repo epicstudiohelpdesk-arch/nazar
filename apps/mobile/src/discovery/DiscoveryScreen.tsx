@@ -28,6 +28,9 @@ import { MATCHES_QUERY_KEYS } from '../matches/matches-api.js';
 import type { AuthClient } from '../auth/auth-client.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import { useFeatureGate } from '../billing/useEntitlements.js';
+import { haptics } from '../design/haptics/index.js';
+import { announceAccessibility, ensureMinTouchTarget } from '../design/a11y/index.js';
+import { useReducedMotion } from '../design/motion/index.js';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.28;
@@ -49,6 +52,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   const { theme } = useTheme();
   const queryClient = useQueryClient();
   const { isUnlocked: hasRewinds } = useFeatureGate('UNLIMITED_REWINDS');
+  const isReduced = useReducedMotion();
 
   const discoveryApi = useMemo(() => createDiscoveryApi(authClient), [authClient]);
   const interactionsApi = useMemo(() => createInteractionsApi(authClient), [authClient]);
@@ -131,6 +135,9 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
       trackOnboardingEvent('candidate_impression', {
         candidateId: activeCandidate.profile.userId || activeCandidate.profile.id,
       });
+      announceAccessibility(
+        `Viewing profile: ${activeCandidate.profile.displayName}, age ${activeCandidate.profile.age || ''}, ${activeCandidate.profile.city || ''}`
+      );
     }
   }, [activeCandidate]);
 
@@ -186,6 +193,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
     if (!activeCandidate || isSubmitting) return;
     setIsSubmitting(true);
     setErrorMessage(null);
+    haptics.medium();
 
     const targetUserId = activeCandidate.profile.userId || activeCandidate.profile.id;
 
@@ -200,6 +208,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
     if (!activeCandidate || isSubmitting) return;
     setIsSubmitting(true);
     setErrorMessage(null);
+    haptics.selection();
 
     const targetUserId = activeCandidate.profile.userId || activeCandidate.profile.id;
 
@@ -230,6 +239,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
       return;
     }
     setIsSubmitting(true);
+    haptics.selection();
     try {
       await interactionsApi.undo();
       setCurrentIndex((prev) => Math.max(0, prev - 1));
@@ -262,27 +272,39 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
       },
       onPanResponderRelease: (_, gesture) => {
         if (gesture.dx > SWIPE_THRESHOLD) {
-          Animated.timing(position, {
-            toValue: { x: SCREEN_WIDTH + 100, y: gesture.dy },
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
+          if (isReduced) {
             handleLike();
-          });
+          } else {
+            Animated.timing(position, {
+              toValue: { x: SCREEN_WIDTH + 100, y: gesture.dy },
+              duration: 200,
+              useNativeDriver: true,
+            }).start(() => {
+              handleLike();
+            });
+          }
         } else if (gesture.dx < -SWIPE_THRESHOLD) {
-          Animated.timing(position, {
-            toValue: { x: -SCREEN_WIDTH - 100, y: gesture.dy },
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
+          if (isReduced) {
             handlePass();
-          });
+          } else {
+            Animated.timing(position, {
+              toValue: { x: -SCREEN_WIDTH - 100, y: gesture.dy },
+              duration: 200,
+              useNativeDriver: true,
+            }).start(() => {
+              handlePass();
+            });
+          }
         } else {
-          Animated.spring(position, {
-            toValue: { x: 0, y: 0 },
-            friction: 5,
-            useNativeDriver: true,
-          }).start();
+          if (isReduced) {
+            position.setValue({ x: 0, y: 0 });
+          } else {
+            Animated.spring(position, {
+              toValue: { x: 0, y: 0 },
+              friction: 5,
+              useNativeDriver: true,
+            }).start();
+          }
         }
       },
     })
@@ -541,6 +563,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             ]}
             onPress={handleUndo}
             disabled={currentIndex === 0 || isSubmitting}
+            hitSlop={ensureMinTouchTarget(44, 44)}
             accessibilityRole="button"
             accessibilityLabel="Undo last pass or like"
             testID="discovery-undo-btn"
@@ -582,6 +605,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                 activeCandidate.profile.userId || activeCandidate.profile.id
               )
             }
+            hitSlop={ensureMinTouchTarget(44, 44)}
             accessibilityRole="button"
             accessibilityLabel={`View full profile for ${activeCandidate.profile.displayName}`}
             testID="discovery-info-btn"

@@ -24,14 +24,16 @@ describe('Performance: Query Plan Verification, PostGIS & N+1 Prevention', () =>
     // Clean any prior perf data and seed fresh dataset
     await purgePerfDataset(databaseService.drizzle);
     perfData = await seedPerfDataset(databaseService.drizzle);
-  });
+  }, 60000);
 
   afterAll(async () => {
     if (databaseService) {
       await purgePerfDataset(databaseService.drizzle);
     }
-    await app.close();
-  });
+    if (app) {
+      await app.close();
+    }
+  }, 60000);
 
   it('1. PostGIS Spatial Discovery Query Plan leverages GIST and composite indexes (< 25ms)', async () => {
     const client = databaseService.client;

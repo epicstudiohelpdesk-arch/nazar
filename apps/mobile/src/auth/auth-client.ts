@@ -106,9 +106,19 @@ export class AuthClient {
   }
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
-    const url = endpoint.startsWith('http')
-      ? endpoint
-      : `${this.baseUrl}/${endpoint.replace(/^\/+/, '')}`;
+    let base = this.baseUrl.replace(/\/+$/, '');
+    const path = endpoint.replace(/^\/+/, '');
+
+    // Strip redundant /api/v1, /v1, or /api from base if endpoint already includes v1/
+    if (base.endsWith('/api/v1')) {
+      base = base.slice(0, -7);
+    } else if (base.endsWith('/v1') && path.startsWith('v1/')) {
+      base = base.slice(0, -3);
+    } else if (base.endsWith('/api')) {
+      base = base.slice(0, -4);
+    }
+
+    const url = endpoint.startsWith('http') ? endpoint : `${base}/${path}`;
 
     const headers = new Headers(options.headers || {});
     if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {

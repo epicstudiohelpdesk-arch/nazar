@@ -3,6 +3,8 @@ import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../design/theme/index.js';
 import { Text } from '../../design/primitives/Text.js';
 import { Icon } from '../../design/primitives/Icon.js';
+import { haptics } from '../../design/haptics/index.js';
+import { ensureMinTouchTarget } from '../../design/a11y/index.js';
 
 export interface MessageComposerProps {
   readonly value: string;
@@ -85,8 +87,12 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
             marginLeft: spacing.sm,
           },
         ]}
-        onPress={onSend}
+        onPress={() => {
+          haptics.selection();
+          onSend();
+        }}
         disabled={isSendDisabled}
+        hitSlop={ensureMinTouchTarget(40, 40)}
         accessibilityRole="button"
         accessibilityLabel="Send message"
         testID="message-send-btn"

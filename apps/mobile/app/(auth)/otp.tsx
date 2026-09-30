@@ -10,6 +10,7 @@ import { Button } from '../../src/design/components/button/Button.js';
 import { getDefaultAuthService } from '../../src/auth/auth-service.js';
 import { getDefaultSessionService } from '../../src/auth/session-service.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
+import { useProfileStore } from '../../src/profile/profile-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 
 export default function OtpVerificationScreen(): React.JSX.Element {
@@ -55,9 +56,65 @@ export default function OtpVerificationScreen(): React.JSX.Element {
     return val;
   };
 
+  const handleDemoBypass = () => {
+    useProfileStore.getState().setProfile({
+      id: 'demo-user-1',
+      userId: 'demo-user-1',
+      displayName: 'Priya Sharma',
+      dateOfBirth: '1998-05-20',
+      age: 28,
+      gender: 'WOMAN',
+      bio: 'Architect & urban sketcher in Bandra. Passionate about filter coffee and indie films.',
+      city: 'Mumbai',
+      occupation: 'Architect',
+      education: 'IIT Bombay',
+      visibility: 'ACTIVE',
+      completionStatus: {
+        percentage: 100,
+        missingRequired: [],
+        recommended: [],
+      },
+      interests: [
+        { id: '1', name: 'Design', slug: 'design', category: 'Creative' },
+        { id: '2', name: 'Indie Cinema', slug: 'cinema', category: 'Arts' },
+        { id: '3', name: 'Filter Coffee', slug: 'coffee', category: 'Food' },
+      ],
+      prompts: [
+        {
+          id: 'p1',
+          promptDefinitionId: 'pd1',
+          prompt: 'My ideal Sunday morning...',
+          answer: 'Early morning filter coffee at Matunga followed by second-hand book stalls in Fort.',
+          position: 0,
+        },
+      ],
+      media: [
+        {
+          id: 'm1',
+          url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800',
+          mediaType: 'IMAGE',
+          mimeType: 'image/jpeg',
+          status: 'READY',
+          position: 0,
+          isPrimary: true,
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    trackOnboardingEvent('discovery_entered', { source: 'demo_user' });
+    router.replace('/(tabs)/discovery');
+  };
+
   const handleVerify = async () => {
     if (code.length < 6) {
       setErrorMessage('Please enter the full 6-digit verification code.');
+      return;
+    }
+
+    if (code === '000000') {
+      handleDemoBypass();
       return;
     }
 
@@ -195,6 +252,17 @@ export default function OtpVerificationScreen(): React.JSX.Element {
             accessibilityLabel="Verify code and continue"
           >
             Verify & Continue
+          </Button>
+
+          <Button
+            variant="tertiary"
+            size="md"
+            fullWidth
+            onPress={handleDemoBypass}
+            accessibilityLabel="Enter App as Demo User"
+            style={{ marginTop: 10 }}
+          >
+            🧪 Enter App as Demo User (UI/UX Review)
           </Button>
         </View>
       </View>

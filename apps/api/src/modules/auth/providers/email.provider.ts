@@ -15,7 +15,11 @@ export class MockEmailProvider implements IEmailProvider {
 
   async sendVerificationCode(email: string, code: string): Promise<void> {
     this.sentCodes.set(email, code);
-    this.logger.debug(`[Email Simulation] Sent verification code to ${email}: [REDACTED IN LOGS]`);
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.log(`[DEV AUTH] Verification Code for ${email}: ${code}`);
+    } else {
+      this.logger.debug(`[Email Simulation] Sent verification code to ${email}: [REDACTED IN LOGS]`);
+    }
   }
 
   getLastCode(email: string): string | undefined {
