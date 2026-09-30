@@ -106,7 +106,16 @@ export type OnboardingAnalyticsEvent =
   | 'report_started'
   | 'report_submitted'
   | 'block_started'
-  | 'block_completed';
+  | 'block_completed'
+  // Matches & Connections (F5)
+  | 'matches_viewed'
+  | 'likes_viewed'
+  | 'incoming_like_opened'
+  | 'like_back_sent'
+  | 'match_opened'
+  | 'match_profile_opened'
+  | 'unmatch_started'
+  | 'unmatch_completed';
 
 /**
  * Tracks an onboarding or auth event with guaranteed PII sanitization.

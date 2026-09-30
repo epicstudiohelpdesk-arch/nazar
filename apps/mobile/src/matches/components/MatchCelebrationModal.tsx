@@ -1,6 +1,11 @@
 import React from 'react';
-import { Modal, View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
-import { colors, spacing, typography } from '@platform/ui';
+import { Modal, View, StyleSheet, SafeAreaView } from 'react-native';
+import { useTheme } from '../../design/theme/ThemeContext.js';
+import { Heading } from '../../design/primitives/Heading.js';
+import { Text } from '../../design/primitives/Text.js';
+import { Avatar } from '../../design/primitives/Avatar.js';
+import { Button } from '../../design/components/button/Button.js';
+import { SurfaceCard } from '../../design/primitives/SurfaceCard.js';
 
 export interface MatchedCelebrationUser {
   readonly displayName: string;
@@ -14,21 +19,41 @@ export interface MatchCelebrationModalProps {
   readonly visible: boolean;
   readonly matchedUser: MatchedCelebrationUser | null;
   readonly matchId: string | null;
+  readonly myAvatarUrl?: string | null;
+  readonly myName?: string;
   readonly onClose: () => void;
-  readonly onViewMatches?: () => void;
+  readonly onStartChat?: (matchId: string) => void;
   readonly testID?: string;
 }
 
 export const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
   visible,
   matchedUser,
+  matchId,
+  myAvatarUrl,
+  myName = 'You',
   onClose,
-  onViewMatches,
+  onStartChat,
   testID = 'match-celebration-modal',
 }) => {
+  const { theme } = useTheme();
+
   if (!visible || !matchedUser) {
     return null;
   }
+
+  const effectiveMyAvatar =
+    myAvatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500';
+  const effectiveMatchedAvatar =
+    matchedUser.primaryPhotoUrl ||
+    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500';
+
+  const handleMessage = () => {
+    onClose();
+    if (onStartChat && matchId) {
+      onStartChat(matchId);
+    }
+  };
 
   return (
     <Modal
@@ -38,175 +63,104 @@ export const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
       onRequestClose={onClose}
       testID={testID}
     >
-      <SafeAreaView style={styles.overlay}>
-        <View style={styles.modalContent}>
-          {/* Confetti / Celebration Header */}
-          <Text style={styles.celebrationEmoji}>✨ 🎉 ✨</Text>
-          <Text style={styles.title}>It's a Match!</Text>
-          <Text style={styles.subtitle}>You and {matchedUser.displayName} liked each other.</Text>
-
-          {/* Photo */}
-          <View style={styles.photoContainer}>
-            {matchedUser.primaryPhotoUrl ? (
-              <Image
-                source={{ uri: matchedUser.primaryPhotoUrl }}
-                style={styles.photo}
-                resizeMode="cover"
-                accessibilityLabel={`${matchedUser.displayName}'s photo`}
-              />
-            ) : (
-              <View style={styles.photoPlaceholder}>
-                <Text style={styles.photoPlaceholderText}>{matchedUser.displayName.charAt(0)}</Text>
-              </View>
-            )}
+      <SafeAreaView style={styles.container}>
+        <View style={styles.backdrop} />
+        <SurfaceCard
+          elevation="lg"
+          style={[styles.dialog, { backgroundColor: theme.colors.surfaceElevated }]}
+        >
+          <View style={styles.celebrationBadge}>
+            <Text level="display">💕</Text>
           </View>
 
-          <Text style={styles.userName}>
-            {matchedUser.displayName}
-            {matchedUser.age ? `, ${matchedUser.age}` : ''}
+          <Heading level="h1" style={styles.title}>
+            It's a Match!
+          </Heading>
+          <Text level="body" color="secondary" style={styles.subtitle}>
+            You and {matchedUser.displayName} liked each other's profiles.
           </Text>
 
-          {matchedUser.city ? (
-            <Text style={styles.userLocation}>
-              📍 {matchedUser.city}
-              {matchedUser.countryCode ? `, ${matchedUser.countryCode}` : ''}
-            </Text>
-          ) : null}
-
-          {/* Action Buttons */}
-          <View style={styles.buttonsContainer}>
-            {onViewMatches && (
-              <TouchableOpacity
-                style={styles.primaryButton}
-                onPress={() => {
-                  onClose();
-                  onViewMatches();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="View Matches list"
-                testID="match-view-matches-btn"
-              >
-                <Text style={styles.primaryButtonText}>View Matches</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="Keep browsing discovery feed"
-              testID="match-keep-browsing-btn"
-            >
-              <Text style={styles.secondaryButtonText}>Keep Browsing</Text>
-            </TouchableOpacity>
+          <View style={styles.avatarRow}>
+            <View style={[styles.avatarRing, { borderColor: theme.colors.accent }]}>
+              <Avatar size="large" uri={effectiveMyAvatar} name={myName} />
+            </View>
+            <View style={[styles.avatarRing, { borderColor: theme.colors.accent, marginLeft: -16 }]}>
+              <Avatar
+                size="large"
+                uri={effectiveMatchedAvatar}
+                name={matchedUser.displayName}
+              />
+            </View>
           </View>
-        </View>
+
+          <View style={styles.actions}>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onPress={handleMessage}
+              accessibilityLabel="Start conversation"
+              testID="matchCelebration.message"
+            >
+              Say Hello 💌
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
+              onPress={onClose}
+              accessibilityLabel="Keep browsing connections"
+              testID="matchCelebration.keepBrowsing"
+            >
+              Keep Browsing
+            </Button>
+          </View>
+        </SurfaceCard>
       </SafeAreaView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.xl,
+    padding: 24,
   },
-  modalContent: {
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+  },
+  dialog: {
     width: '100%',
-    maxWidth: 380,
-    backgroundColor: colors.neutral[50],
-    borderRadius: spacing.xl,
-    padding: spacing.xl,
+    maxWidth: 340,
+    borderRadius: 24,
+    padding: 24,
     alignItems: 'center',
-    shadowColor: colors.neutral[900],
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 10,
+    gap: 16,
   },
-  celebrationEmoji: {
-    fontSize: 32,
-    marginBottom: spacing.xs,
+  celebrationBadge: {
+    marginBottom: -4,
   },
   title: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.bold as '700',
-    color: colors.primary[600],
     textAlign: 'center',
-    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[700],
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    lineHeight: 22,
   },
-  photoContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    overflow: 'hidden',
-    borderWidth: 4,
-    borderColor: colors.primary[500],
-    marginBottom: spacing.md,
-    backgroundColor: colors.neutral[200],
+  avatarRow: {
+    flexDirection: 'row',
+    marginVertical: 12,
   },
-  photo: {
-    width: '100%',
-    height: '100%',
-  },
-  photoPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: colors.primary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoPlaceholderText: {
-    fontSize: 48,
-    fontWeight: typography.fontWeight.bold as '700',
-    color: colors.primary[600],
-  },
-  userName: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold as '700',
-    color: colors.neutral[900],
-    marginBottom: spacing.xs,
-  },
-  userLocation: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[700],
-    marginBottom: spacing.xl,
-  },
-  buttonsContainer: {
-    width: '100%',
-    gap: spacing.sm,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary[600],
-    paddingVertical: spacing.md,
+  avatarRing: {
+    borderWidth: 3,
     borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  primaryButtonText: {
-    color: colors.neutral[50],
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold as '600',
-  },
-  secondaryButton: {
-    backgroundColor: colors.neutral[200],
-    paddingVertical: spacing.md,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    color: colors.neutral[800],
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold as '600',
+  actions: {
+    width: '100%',
+    gap: 10,
+    marginTop: 8,
   },
 });

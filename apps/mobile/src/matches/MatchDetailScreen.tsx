@@ -1,26 +1,35 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   Image,
+  Dimensions,
   ActivityIndicator,
   TouchableOpacity,
   Alert,
   StyleSheet,
   SafeAreaView,
-  Dimensions,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { colors, spacing, typography } from '@platform/ui';
+import { useRouter } from 'expo-router';
 import type { MatchDetailDto } from '@platform/api-contracts';
+import { useTheme } from '../design/theme/ThemeContext.js';
+import { TopNavHeader } from '../design/components/navigation/TopNavHeader.js';
+import { Heading } from '../design/primitives/Heading.js';
+import { Text } from '../design/primitives/Text.js';
+import { Icon } from '../design/primitives/Icon.js';
+import { Badge } from '../design/primitives/Badge.js';
+import { Button } from '../design/components/button/Button.js';
+import { IconButton } from '../design/components/button/IconButton.js';
+import { SurfaceCard } from '../design/primitives/SurfaceCard.js';
 import { createMatchesApi, MATCHES_QUERY_KEYS } from './matches-api.js';
+import { createChatApi } from '../chat/chat-api.js';
 import type { AuthClient } from '../auth/auth-client.js';
+import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 
-const windowWidth =
-  typeof Dimensions !== 'undefined' && typeof Dimensions.get === 'function'
-    ? (Dimensions.get('window')?.width ?? 375)
-    : 375;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const PHOTO_WIDTH = SCREEN_WIDTH - 32;
+const PHOTO_HEIGHT = Math.round(PHOTO_WIDTH * 1.25);
 
 export interface MatchDetailScreenProps {
   readonly authClient: AuthClient;
@@ -35,31 +44,76 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
   onBack,
   onUnmatched,
 }) => {
+  const router = useRouter();
+  const { theme } = useTheme();
   const queryClient = useQueryClient();
+
   const matchesApi = useMemo(() => createMatchesApi(authClient), [authClient]);
-  const [unmatchError, setUnmatchError] = useState<string | null>(null);
+  const chatApi = useMemo(() => createChatApi(authClient), [authClient]);
 
-  const { data, isLoading, isError, error, refetch } = useQuery<MatchDetailDto, Error>({
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [isNavigatingChat, setIsNavigatingChat] = useState(false);
+
+  // Fetch Match Details
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery<MatchDetailDto, Error>({
     queryKey: MATCHES_QUERY_KEYS.detail(matchId),
-    queryFn: () => matchesApi.getMatchDetail(matchId),
+    queryFn: async () => {
+      if (!matchId) throw new Error('Missing match ID');
+      return matchesApi.getMatchDetail(matchId);
+    },
+    enabled: Boolean(matchId),
   });
 
+  // Track profile opened
+  useEffect(() => {
+    if (matchId) {
+      trackOnboardingEvent('match_profile_opened', { matchId });
+    }
+  }, [matchId]);
+
+  // Unmatch Mutation
   const unmatchMutation = useMutation({
-    mutationFn: (reason?: string) => matchesApi.unmatch(matchId, { reason }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MATCHES_QUERY_KEYS.all });
-      onUnmatched?.();
-      onBack();
+    mutationFn: async (reason?: string) => {
+      trackOnboardingEvent('unmatch_started', { matchId });
+      return matchesApi.unmatch(matchId, { reason });
     },
-    onError: (err: Error) => {
-      setUnmatchError(err.message || 'Failed to unmatch');
+    onSuccess: () => {
+      trackOnboardingEvent('unmatch_completed', { matchId });
+      queryClient.invalidateQueries({ queryKey: MATCHES_QUERY_KEYS.all });
+
+      Alert.alert(
+        'Connection Ended',
+        'You have unmatched this user. Your chat and mutual match have been removed.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (onUnmatched) {
+                onUnmatched();
+              } else {
+                onBack();
+              }
+            },
+          },
+        ]
+      );
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to unmatch connection';
+      Alert.alert('Action Failed', msg);
     },
   });
 
-  const handleUnmatch = () => {
+  const handleConfirmUnmatch = () => {
     Alert.alert(
-      'Unmatch Confirmation',
-      'Are you sure you want to unmatch? You will no longer be able to message each other.',
+      'Unmatch this connection?',
+      'You will no longer be able to view their profile, message each other, or see each other in match lists.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -71,37 +125,70 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
     );
   };
 
+  const handleStartMessage = async () => {
+    if (!data) return;
+    setIsNavigatingChat(true);
+    trackOnboardingEvent('match_message_clicked', {
+      matchId,
+      targetUserId: data.otherUser.userId,
+    });
+
+    try {
+      // Look up conversation associated with this match
+      const convList = await chatApi.getConversations({ limit: 50 });
+      const existingConv = convList.items.find((c) => c.matchId === matchId);
+      const targetRoute = existingConv ? existingConv.id : matchId;
+      router.push(`/chat/${targetRoute}`);
+    } catch {
+      // Fallback navigation with matchId
+      router.push(`/chat/${matchId}`);
+    } finally {
+      setIsNavigatingChat(false);
+    }
+  };
+
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary[600]} />
-        <Text style={styles.loadingText}>Loading match details...</Text>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <TopNavHeader title="Connection" leftAction="back" onBack={onBack} />
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.colors.accent} />
+          <Text level="bodySmall" color="secondary" style={{ marginTop: 12 }}>
+            Loading connection details...
+          </Text>
+        </View>
       </SafeAreaView>
     );
   }
 
   if (isError || !data) {
     return (
-      <SafeAreaView style={styles.centerContainer}>
-        <Text style={styles.errorTitle}>Unable to load match profile</Text>
-        <Text style={styles.errorSubtitle}>
-          {error?.message || 'Match not found or access denied.'}
-        </Text>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => refetch()}>
-          <Text style={styles.primaryButtonText}>Retry</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryButton} onPress={onBack}>
-          <Text style={styles.secondaryButtonText}>Go Back</Text>
-        </TouchableOpacity>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <TopNavHeader title="Connection" leftAction="back" onBack={onBack} />
+        <View style={styles.centerContainer}>
+          <Icon name="warning" size="lg" color={theme.colors.warning} />
+          <Heading level="h2" style={{ marginTop: 12, textAlign: 'center' }}>
+            Connection Unavailable
+          </Heading>
+          <Text level="body" color="secondary" style={styles.messageText}>
+            {error?.message || 'This connection is no longer active or has been dissolved.'}
+          </Text>
+          <Button
+            variant="secondary"
+            size="md"
+            onPress={() => refetch()}
+            style={{ marginTop: 16 }}
+            accessibilityLabel="Retry loading connection"
+          >
+            Retry
+          </Button>
+        </View>
       </SafeAreaView>
     );
   }
 
   const { otherUser, matchedAt, status } = data;
-  const primaryPhoto =
-    otherUser.media.find((m) => m.isPrimary) ||
-    (otherUser.media.length > 0 ? otherUser.media[0] : null);
-
+  const photos = (otherUser.media || []).map((m) => m.url);
   const formattedDate = new Date(matchedAt).toLocaleDateString(undefined, {
     month: 'long',
     day: 'numeric',
@@ -109,143 +196,233 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={onBack}
-          style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{otherUser.displayName}</Text>
-        <TouchableOpacity
-          onPress={handleUnmatch}
-          disabled={unmatchMutation.isPending || status === 'UNMATCHED'}
-          style={styles.unmatchHeaderBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Unmatch"
-        >
-          <Text style={styles.unmatchHeaderText}>Unmatch</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {unmatchError ? (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorBannerText}>{unmatchError}</Text>
-          </View>
-        ) : null}
-
-        {/* Primary Media Photo */}
-        <View style={styles.photoContainer}>
-          {primaryPhoto?.url ? (
-            <Image
-              source={{ uri: primaryPhoto.url }}
-              style={styles.photo}
-              resizeMode="cover"
-              accessibilityLabel={`${otherUser.displayName}'s primary photo`}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Top Header */}
+      <TopNavHeader
+        title={otherUser.displayName}
+        leftAction="back"
+        onBack={onBack}
+        rightAction={
+          <View style={styles.headerActions}>
+            <IconButton
+              icon="flag"
+              size="sm"
+              variant="tertiary"
+              accessibilityLabel="Report member"
+              onPress={() => router.push(`/modal/report?targetId=${otherUser.userId}`)}
+              testID="matches.match.report"
             />
-          ) : (
-            <View style={styles.photoPlaceholder}>
-              <Text style={styles.photoPlaceholderText}>{otherUser.displayName.charAt(0)}</Text>
+            <IconButton
+              icon="more"
+              size="sm"
+              variant="tertiary"
+              accessibilityLabel="Block member"
+              onPress={() => router.push(`/modal/block?targetUserId=${otherUser.userId}`)}
+              testID="matches.match.block"
+            />
+          </View>
+        }
+      />
+
+      <View style={styles.bodyWrapper}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Photo Carousel */}
+          {photos.length > 0 ? (
+            <View style={styles.galleryContainer}>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onScroll={(e) => {
+                  const offset = e.nativeEvent.contentOffset.x;
+                  const index = Math.round(offset / PHOTO_WIDTH);
+                  if (index !== activePhotoIndex) {
+                    setActivePhotoIndex(index);
+                  }
+                }}
+                scrollEventThrottle={16}
+                style={styles.photoScroll}
+              >
+                {photos.map((photoUrl, idx) => (
+                  <View key={`${photoUrl}-${idx}`} style={styles.photoSlide}>
+                    <Image
+                      source={{ uri: photoUrl }}
+                      style={styles.photoImage}
+                      resizeMode="cover"
+                      accessibilityLabel={`${otherUser.displayName}'s photo ${idx + 1}`}
+                    />
+                  </View>
+                ))}
+              </ScrollView>
+
+              {/* Matched Date Ribbon */}
+              <View
+                style={[
+                  styles.matchedRibbon,
+                  { backgroundColor: 'rgba(0, 0, 0, 0.7)', borderColor: theme.colors.accent },
+                ]}
+              >
+                <Icon name="heart" size="tiny" color={theme.colors.accent} />
+                <Text level="caption" style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                  Matched on {formattedDate}
+                </Text>
+              </View>
+
+              {/* Pagination Dots */}
+              {photos.length > 1 && (
+                <View style={styles.dotsRow}>
+                  {photos.map((_, idx) => (
+                    <View
+                      key={`dot-${idx}`}
+                      style={[
+                        styles.dot,
+                        idx === activePhotoIndex
+                          ? [styles.activeDot, { backgroundColor: theme.colors.accent }]
+                          : { backgroundColor: 'rgba(255, 255, 255, 0.5)' },
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
             </View>
-          )}
-
-          <View style={styles.matchedBadge}>
-            <Text style={styles.matchedBadgeText}>Matched on {formattedDate}</Text>
-          </View>
-        </View>
-
-        {/* User Details */}
-        <View style={styles.detailsContainer}>
-          <View style={styles.nameAgeRow}>
-            <Text style={styles.displayName}>{otherUser.displayName}</Text>
-            <Text style={styles.age}>, {otherUser.age}</Text>
-          </View>
-
-          {otherUser.city ? (
-            <Text style={styles.locationText}>
-              📍 {otherUser.city}
-              {otherUser.countryCode ? `, ${otherUser.countryCode}` : ''}
-            </Text>
           ) : null}
 
-          {otherUser.occupation || otherUser.education ? (
-            <Text style={styles.occupationText}>
-              💼 {otherUser.occupation || otherUser.education}
-            </Text>
+          {/* Profile Identity Details */}
+          <View style={styles.identitySection}>
+            <View style={styles.nameRow}>
+              <Heading level="h1" style={styles.nameText}>
+                {otherUser.displayName}, {otherUser.age}
+              </Heading>
+              <Badge variant="success" icon="checkCircle" label="Verified" size="sm" />
+            </View>
+
+            {/* Coarse Location */}
+            {(otherUser.city || otherUser.countryCode) && (
+              <View style={styles.locationRow}>
+                <Icon name="location" size="sm" color={theme.colors.textSecondary} />
+                <Text level="body" color="secondary">
+                  {[otherUser.city, otherUser.countryCode].filter(Boolean).join(', ')}
+                </Text>
+              </View>
+            )}
+
+            {/* Occupation & Education */}
+            {(otherUser.occupation || otherUser.education) && (
+              <View style={styles.detailsRow}>
+                {otherUser.occupation && (
+                  <View style={styles.detailItem}>
+                    <Icon name="user" size="sm" color={theme.colors.textSecondary} />
+                    <Text level="bodySmall" color="secondary">
+                      {otherUser.occupation}
+                    </Text>
+                  </View>
+                )}
+                {otherUser.education && (
+                  <View style={styles.detailItem}>
+                    <Icon name="sparkles" size="sm" color={theme.colors.textSecondary} />
+                    <Text level="bodySmall" color="secondary">
+                      {otherUser.education}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* Bio Surface Card */}
+          {otherUser.bio ? (
+            <SurfaceCard elevation="sm" style={styles.bioCard}>
+              <Heading level="h3" style={{ marginBottom: 6 }}>
+                About Me
+              </Heading>
+              <Text level="body" style={styles.bioText}>
+                {otherUser.bio}
+              </Text>
+            </SurfaceCard>
           ) : null}
 
-          {/* Bio */}
-          {otherUser.bio ? <Text style={styles.bio}>{otherUser.bio}</Text> : null}
+          {/* Prompts Section */}
+          {otherUser.prompts && otherUser.prompts.length > 0 ? (
+            <View style={styles.section}>
+              {otherUser.prompts.map((p, idx) => (
+                <SurfaceCard key={`prm-${idx}`} elevation="sm" style={styles.promptCard}>
+                  <Text level="caption" color="accent" style={styles.promptQuestion}>
+                    {p.prompt}
+                  </Text>
+                  <Heading level="h3" style={styles.promptAnswer}>
+                    {p.answer}
+                  </Heading>
+                </SurfaceCard>
+              ))}
+            </View>
+          ) : null}
 
-          {/* Interests */}
+          {/* Interests Section */}
           {otherUser.interests && otherUser.interests.length > 0 ? (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Interests</Text>
-              <View style={styles.interestsRow}>
+              <Heading level="h3" style={styles.sectionTitle}>
+                Interests & Passions
+              </Heading>
+              <View style={styles.interestsContainer}>
                 {otherUser.interests.map((interest) => (
-                  <View key={interest.id} style={styles.interestChip}>
-                    <Text style={styles.interestText}>{interest.name}</Text>
+                  <View
+                    key={interest.id}
+                    style={[
+                      styles.interestChip,
+                      {
+                        backgroundColor: theme.colors.surfaceMuted,
+                        borderColor: theme.colors.border,
+                      },
+                    ]}
+                  >
+                    <Text level="caption" style={{ color: theme.colors.textPrimary, fontWeight: '600' }}>
+                      {interest.name}
+                    </Text>
                   </View>
                 ))}
               </View>
             </View>
           ) : null}
 
-          {/* Prompts */}
-          {otherUser.prompts && otherUser.prompts.length > 0 ? (
-            <View style={styles.section}>
-              {otherUser.prompts.map((prompt) => (
-                <View key={prompt.id} style={styles.promptCard}>
-                  <Text style={styles.promptQuestion}>{prompt.prompt}</Text>
-                  <Text style={styles.promptAnswer}>{prompt.answer}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {/* Additional Photos */}
-          {otherUser.media.length > 1 ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>More Photos</Text>
-              <View style={styles.photoGrid}>
-                {otherUser.media.slice(1).map((media) => (
-                  <Image
-                    key={media.id}
-                    source={{ uri: media.url }}
-                    style={styles.gridPhoto}
-                    resizeMode="cover"
-                  />
-                ))}
-              </View>
-            </View>
-          ) : null}
-
-          {/* Danger zone / Unmatch button */}
-          <View style={styles.dangerSection}>
+          {/* Unmatch Link */}
+          <View style={styles.dangerZone}>
             <TouchableOpacity
-              style={styles.unmatchButton}
-              onPress={handleUnmatch}
+              onPress={handleConfirmUnmatch}
               disabled={unmatchMutation.isPending || status === 'UNMATCHED'}
               accessibilityRole="button"
               accessibilityLabel={`Unmatch ${otherUser.displayName}`}
-              testID="unmatch-confirm-btn"
+              testID="matches.match.unmatch"
             >
-              {unmatchMutation.isPending ? (
-                <ActivityIndicator size="small" color={colors.status.error} />
-              ) : (
-                <Text style={styles.unmatchButtonText}>
-                  {status === 'UNMATCHED' ? 'Already Unmatched' : 'Unmatch User'}
-                </Text>
-              )}
+              <Text level="bodySmall" style={{ color: theme.colors.error, fontWeight: '600' }}>
+                {status === 'UNMATCHED' ? 'Connection Dissolved' : 'Unmatch this member'}
+              </Text>
             </TouchableOpacity>
           </View>
+        </ScrollView>
+
+        {/* Bottom Floating Message Bar */}
+        <View
+          style={[
+            styles.bottomActionBar,
+            {
+              backgroundColor: theme.colors.background,
+              borderTopColor: theme.colors.border,
+            },
+          ]}
+        >
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            isLoading={isNavigatingChat}
+            onPress={handleStartMessage}
+            accessibilityLabel={`Send message to ${otherUser.displayName}`}
+            testID="matches.match.message"
+          >
+            Send Message 💬
+          </Button>
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -253,248 +430,168 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
   },
-  header: {
+  headerActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.neutral[50],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
-  },
-  backButton: {
-    padding: spacing.xs,
-  },
-  backButtonText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.primary[600],
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold as '700',
-    color: colors.neutral[900],
-  },
-  unmatchHeaderBtn: {
-    padding: spacing.xs,
-  },
-  unmatchHeaderText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.status.error,
-    fontWeight: '500',
-  },
-  scrollContent: {
-    paddingBottom: spacing.xxl,
-  },
-  errorBanner: {
-    backgroundColor: '#fee2e2',
-    padding: spacing.md,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    borderRadius: spacing.sm,
-  },
-  errorBannerText: {
-    color: colors.status.error,
-    fontSize: typography.fontSize.xs,
-    textAlign: 'center',
-  },
-  photoContainer: {
-    width: windowWidth,
-    height: 420,
-    backgroundColor: colors.neutral[200],
-    position: 'relative',
-  },
-  photo: {
-    width: '100%',
-    height: '100%',
-  },
-  photoPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: colors.primary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoPlaceholderText: {
-    fontSize: 64,
-    fontWeight: typography.fontWeight.bold as '700',
-    color: colors.primary[600],
-  },
-  matchedBadge: {
-    position: 'absolute',
-    bottom: spacing.md,
-    left: spacing.lg,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 999,
-  },
-  matchedBadgeText: {
-    color: colors.neutral[50],
-    fontSize: typography.fontSize.xs,
-    fontWeight: '600',
-  },
-  detailsContainer: {
-    padding: spacing.lg,
-    backgroundColor: colors.neutral[50],
-    borderTopLeftRadius: spacing.lg,
-    borderTopRightRadius: spacing.lg,
-    marginTop: -spacing.md,
-  },
-  nameAgeRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: spacing.xs,
-  },
-  displayName: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold as '700',
-    color: colors.neutral[900],
-  },
-  age: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.semibold as '600',
-    color: colors.neutral[700],
-  },
-  locationText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[700],
-    marginBottom: spacing.xs,
-  },
-  occupationText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[700],
-    marginBottom: spacing.sm,
-  },
-  bio: {
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[800],
-    lineHeight: 22,
-    marginVertical: spacing.sm,
-  },
-  section: {
-    marginTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold as '700',
-    color: colors.neutral[700],
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
-  },
-  interestsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  interestChip: {
-    backgroundColor: colors.primary[50],
-    borderColor: colors.primary[100],
-    borderWidth: 1,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: 999,
-  },
-  interestText: {
-    color: colors.primary[700],
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.medium as '500',
-  },
-  promptCard: {
-    backgroundColor: colors.neutral[100],
-    borderRadius: spacing.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  promptQuestion: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold as '700',
-    color: colors.primary[700],
-    marginBottom: spacing.xs,
-  },
-  promptAnswer: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[800],
-    fontStyle: 'italic',
-    lineHeight: 20,
-  },
-  photoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  gridPhoto: {
-    width: (windowWidth - spacing.lg * 2 - spacing.sm) / 2,
-    height: 180,
-    borderRadius: spacing.md,
-  },
-  dangerSection: {
-    marginTop: spacing.xxl,
-    alignItems: 'center',
-  },
-  unmatchButton: {
-    borderWidth: 1,
-    borderColor: colors.status.error,
-    borderRadius: 999,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    minWidth: 180,
-    alignItems: 'center',
-  },
-  unmatchButtonText: {
-    color: colors.status.error,
-    fontSize: typography.fontSize.sm,
-    fontWeight: '600',
+    gap: 4,
   },
   centerContainer: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.xl,
+    paddingHorizontal: 32,
   },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[700],
-  },
-  errorTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold as '700',
-    color: colors.status.error,
-    marginBottom: spacing.xs,
-  },
-  errorSubtitle: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[700],
+  messageText: {
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginTop: 8,
+    lineHeight: 22,
   },
-  primaryButton: {
-    backgroundColor: colors.primary[600],
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: 999,
-    marginBottom: spacing.sm,
+  bodyWrapper: {
+    flex: 1,
   },
-  primaryButtonText: {
-    color: colors.neutral[50],
-    fontWeight: typography.fontWeight.semibold as '600',
-    fontSize: typography.fontSize.sm,
+  content: {
+    padding: 16,
+    paddingBottom: 110,
+    gap: 16,
   },
-  secondaryButton: {
-    backgroundColor: colors.neutral[200],
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: 999,
+  galleryContainer: {
+    width: PHOTO_WIDTH,
+    height: PHOTO_HEIGHT,
+    borderRadius: 24,
+    overflow: 'hidden',
+    position: 'relative',
+    alignSelf: 'center',
   },
-  secondaryButtonText: {
-    color: colors.neutral[800],
-    fontWeight: typography.fontWeight.semibold as '600',
-    fontSize: typography.fontSize.sm,
+  photoScroll: {
+    width: PHOTO_WIDTH,
+    height: PHOTO_HEIGHT,
+  },
+  photoSlide: {
+    width: PHOTO_WIDTH,
+    height: PHOTO_HEIGHT,
+  },
+  photoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  matchedRibbon: {
+    position: 'absolute',
+    top: 14,
+    left: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  dotsRow: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  activeDot: {
+    width: 24,
+    height: 8,
+    borderRadius: 4,
+  },
+  identitySection: {
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  nameText: {
+    flexShrink: 1,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  detailsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 4,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  bioCard: {
+    padding: 16,
+    borderRadius: 16,
+  },
+  bioText: {
+    lineHeight: 22,
+  },
+  section: {
+    gap: 12,
+  },
+  sectionTitle: {
+    paddingHorizontal: 4,
+  },
+  promptCard: {
+    padding: 18,
+    borderRadius: 16,
+    gap: 6,
+  },
+  promptQuestion: {
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  promptAnswer: {
+    fontWeight: '500',
+    lineHeight: 24,
+  },
+  interestsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  interestChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  dangerZone: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginTop: 8,
+  },
+  bottomActionBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 8,
   },
 });

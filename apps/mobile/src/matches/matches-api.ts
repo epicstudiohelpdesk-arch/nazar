@@ -5,6 +5,7 @@ import type {
   UnmatchRequestDto,
 } from '@platform/api-contracts';
 import type { AuthClient } from '../auth/auth-client.js';
+import { getDefaultAuthClient } from '../auth/default-client.js';
 
 export const MATCHES_QUERY_KEYS = {
   all: ['matches'] as const,
@@ -57,3 +58,12 @@ export function createMatchesApi(authClient: AuthClient) {
 }
 
 export type MatchesApi = ReturnType<typeof createMatchesApi>;
+
+let defaultMatchesApi: MatchesApi | null = null;
+
+export function getDefaultMatchesApi(): MatchesApi {
+  if (!defaultMatchesApi) {
+    defaultMatchesApi = createMatchesApi(getDefaultAuthClient());
+  }
+  return defaultMatchesApi;
+}

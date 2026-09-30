@@ -17,7 +17,7 @@ export default function MatchDetailRoute(): React.JSX.Element {
       authClient={authClient}
       matchId={matchId}
       onBack={() => router.back()}
-      onUnmatched={() => router.replace('/matches')}
+      onUnmatched={() => router.replace('/(tabs)/matches')}
     />
   );
 }
