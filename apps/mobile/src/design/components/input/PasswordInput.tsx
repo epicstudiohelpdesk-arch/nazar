@@ -23,3 +23,5 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
     />
   );
 };
+
+export const PasswordField = PasswordInput;

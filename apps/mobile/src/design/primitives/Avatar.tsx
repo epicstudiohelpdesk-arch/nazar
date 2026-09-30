@@ -4,7 +4,7 @@ import { useTheme } from '../theme/index.js';
 import { Text } from './Text.js';
 import { Icon } from './Icon.js';
 
-export type AvatarSize = 'tiny' | 'small' | 'medium' | 'large' | 'xlarge' | number;
+export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'tiny' | 'small' | 'medium' | 'large' | 'xlarge' | number;
 
 export interface AvatarProps {
   readonly uri?: string | null;
@@ -13,21 +13,27 @@ export interface AvatarProps {
   readonly isOnline?: boolean;
   readonly isVerified?: boolean;
   readonly isLoading?: boolean;
+  readonly status?: 'active' | 'busy' | 'away';
   readonly style?: ViewStyle;
   readonly testID?: string;
 }
 
-const resolveAvatarDimension = (size: AvatarSize): number => {
+export const resolveAvatarDimension = (size: AvatarSize): number => {
   if (typeof size === 'number') return size;
   switch (size) {
+    case 'xs':
     case 'tiny':
       return 24;
+    case 'sm':
     case 'small':
       return 32;
+    case 'md':
     case 'medium':
       return 44;
+    case 'lg':
     case 'large':
       return 64;
+    case 'xl':
     case 'xlarge':
       return 96;
     default:
@@ -38,24 +44,35 @@ const resolveAvatarDimension = (size: AvatarSize): number => {
 export const Avatar: React.FC<AvatarProps> = ({
   uri,
   name = 'Nazar',
-  size = 'medium',
+  size = 'md',
   isOnline,
   isVerified,
   isLoading = false,
+  status,
   style,
   testID,
 }) => {
   const { colors } = useTheme();
   const dimension = resolveAvatarDimension(size);
   const initials = name
-    .split(' ')
+    .trim()
+    .split(/\s+/)
     .map((w) => w.charAt(0))
     .join('')
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || 'N';
 
   const badgeOffset = dimension > 44 ? 2 : 0;
   const badgeSize = Math.max(8, Math.round(dimension * 0.26));
+
+  const resolveStatusColor = (): string | undefined => {
+    if (status === 'active' || isOnline === true) return colors.success;
+    if (status === 'busy') return colors.error;
+    if (status === 'away') return colors.warning;
+    return undefined;
+  };
+
+  const statusColor = resolveStatusColor();
 
   return (
     <View
@@ -100,8 +117,8 @@ export const Avatar: React.FC<AvatarProps> = ({
         </Text>
       )}
 
-      {/* Online presence dot - strictly rendered only when backend boolean is provided */}
-      {isOnline === true && (
+      {/* Online presence / status indicator */}
+      {statusColor && (
         <View
           style={[
             styles.onlineBadge,
@@ -109,13 +126,13 @@ export const Avatar: React.FC<AvatarProps> = ({
               width: badgeSize,
               height: badgeSize,
               borderRadius: badgeSize / 2,
-              backgroundColor: colors.success,
+              backgroundColor: statusColor,
               borderColor: colors.surface,
               bottom: badgeOffset,
               right: badgeOffset,
             },
           ]}
-          accessibilityLabel="Online now"
+          accessibilityLabel={status ? `Status: ${status}` : 'Online now'}
         />
       )}
 
@@ -142,6 +159,13 @@ export const Avatar: React.FC<AvatarProps> = ({
     </View>
   );
 };
+
+// Convenience Size Variants
+export const AvatarXS: React.FC<Omit<AvatarProps, 'size'>> = (props) => <Avatar size="xs" {...props} />;
+export const AvatarSM: React.FC<Omit<AvatarProps, 'size'>> = (props) => <Avatar size="sm" {...props} />;
+export const AvatarMD: React.FC<Omit<AvatarProps, 'size'>> = (props) => <Avatar size="md" {...props} />;
+export const AvatarLG: React.FC<Omit<AvatarProps, 'size'>> = (props) => <Avatar size="lg" {...props} />;
+export const AvatarXL: React.FC<Omit<AvatarProps, 'size'>> = (props) => <Avatar size="xl" {...props} />;
 
 const styles = StyleSheet.create({
   container: {

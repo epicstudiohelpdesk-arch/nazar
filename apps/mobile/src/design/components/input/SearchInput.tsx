@@ -91,3 +91,5 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
 });
+
+export const SearchField = SearchInput;

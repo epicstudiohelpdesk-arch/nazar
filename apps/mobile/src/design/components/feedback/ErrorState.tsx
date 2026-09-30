@@ -168,6 +168,43 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   );
 };
 
+// Convenience Error State Components
+export interface InlineErrorProps {
+  readonly message: string;
+  readonly onRetry?: () => void;
+  readonly style?: ViewStyle;
+}
+
+export const InlineError: React.FC<InlineErrorProps> = ({ message, onRetry, style }) => {
+  const { colors, spacing } = useTheme();
+
+  return (
+    <View style={[styles.inlineError, { paddingVertical: spacing.xs }, style]} accessibilityRole="alert">
+      <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xs }} />
+      <Text variant="caption" style={{ color: colors.error, flex: 1 }}>
+        {message}
+      </Text>
+      {onRetry && (
+        <Button
+          label="Retry"
+          variant="tertiary"
+          size="sm"
+          onPress={onRetry}
+          textStyle={{ color: colors.accent, fontWeight: 'bold' }}
+        />
+      )}
+    </View>
+  );
+};
+
+export const NetworkErrorState: React.FC<Omit<ErrorStateProps, 'type'>> = (props) => (
+  <ErrorState type="network_unavailable" {...props} />
+);
+
+export const RetryState: React.FC<ErrorStateProps> = (props) => (
+  <ErrorState {...props} />
+);
+
 const styles = StyleSheet.create({
   container: {
     width: '100%',
@@ -180,5 +217,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+  },
+  inlineError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
   },
 });

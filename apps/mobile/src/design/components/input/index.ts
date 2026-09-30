@@ -9,3 +9,4 @@ export * from './Slider.js';
 export * from './DateSelector.js';
 export * from './ChipSelector.js';
 export * from './ImagePickerTrigger.js';
+export * from './SelectionRows.js';

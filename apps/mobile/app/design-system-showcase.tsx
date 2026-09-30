@@ -45,6 +45,42 @@ import {
   ProfileCardSkeleton,
   ProgressBar,
   OfflineBanner,
+  DisplayText,
+  HeadingText,
+  TitleText,
+  BodyText,
+  BodySmallText,
+  CaptionText,
+  NumericText,
+  Stack,
+  Row,
+  Spacer,
+  Divider,
+  PrimaryButton,
+  SecondaryButton,
+  DestructiveButton,
+  Chip,
+  SelectableChip,
+  RadioRow,
+  CheckboxRow,
+  Toggle,
+  ChatMessageBubble,
+  ChatTypingIndicator,
+  UnreadDivider,
+  ConversationRow,
+  MatchAvatarPair,
+  SocialPostCard,
+  CommunityFeedCard,
+  EventFeedCard,
+  SubscriptionStatus,
+  SettingsRow,
+  SettingsToggleRow,
+  SettingsSection,
+  Banner,
+  ConnectionIndicator,
+  SyncIndicator,
+  InlineError,
+  Toast,
 } from '../src/design/index.js';
 
 export default function DesignSystemShowcaseScreen(): React.JSX.Element {
@@ -63,6 +99,11 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
   const [selectedInterests, setSelectedInterests] = useState<string[]>(['art', 'coffee']);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedChip, setSelectedChip] = useState('art');
+  const [radioSelected, setRadioSelected] = useState('opt1');
+  const [checkboxVal, setCheckboxVal] = useState(true);
+  const [toggleVal, setToggleVal] = useState(true);
+  const [toastVisible, setToastVisible] = useState(false);
 
   const interestOptions = [
     { id: 'art', label: 'Architecture & Art' },
@@ -419,6 +460,12 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
             isNew={true}
           />
 
+          <MatchAvatarPair
+            userName="You"
+            partnerName="Rohan"
+            style={{ marginVertical: 12 }}
+          />
+
           <ConversationCard
             id="convo-1"
             name="Pooja Mehta"
@@ -539,6 +586,228 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
           <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>Loading Skeleton</Text>
           <SkeletonBox height={24} width="70%" style={{ marginBottom: 8 }} />
           <ProfileCardSkeleton />
+        </SurfaceCard>
+
+        {/* 12. Primitives & Semantic Typography */}
+        <SurfaceCard p="md" style={styles.sectionCard}>
+          <Heading level="h3">Primitives & Semantic Typography</Heading>
+
+          <Stack gap="xs" style={{ marginTop: 12 }}>
+            <DisplayText>Display Text (36px Bold)</DisplayText>
+            <HeadingText level="h1">Heading 1 (30px Bold)</HeadingText>
+            <HeadingText level="h2">Heading 2 (24px Bold)</HeadingText>
+            <HeadingText level="h3">Heading 3 (20px SemiBold)</HeadingText>
+            <TitleText>Title Text (18px Medium)</TitleText>
+            <BodyText>Body Text (16px Regular) — Nazar connects people through shared cultural context.</BodyText>
+            <BodySmallText>Body Small Text (14px Regular) — Subtle editorial notes and secondary hints.</BodySmallText>
+            <CaptionText>Caption Text (12px Medium) — Timestamps and badges</CaptionText>
+            <NumericText>₹1,499.00 / mo</NumericText>
+          </Stack>
+
+          <Divider style={{ marginVertical: 16 }} />
+
+          <Text variant="label" style={{ marginBottom: 8 }}>Stack & Row Layout Primitives</Text>
+          <Row align="center" justify="space-between" style={{ backgroundColor: colors.surfaceMuted, padding: 8, borderRadius: 8 }}>
+            <Text variant="bodySmall">Left Element</Text>
+            <Spacer size="md" />
+            <Text variant="bodySmall" weight="bold" style={{ color: colors.accent }}>Right Element</Text>
+          </Row>
+        </SurfaceCard>
+
+        {/* 13. Selection Controls & Extended Buttons */}
+        <SurfaceCard p="md" style={styles.sectionCard}>
+          <Heading level="h3">Selection Controls & Buttons</Heading>
+
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 8 }}>Convenience Buttons</Text>
+          <Row style={{ gap: 8, flexWrap: 'wrap' }}>
+            <PrimaryButton label="Primary" size="sm" onPress={() => {}} />
+            <SecondaryButton label="Secondary" size="sm" onPress={() => {}} />
+            <DestructiveButton label="Destructive" size="sm" onPress={() => {}} />
+          </Row>
+
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Chips & Tags</Text>
+          <Row style={{ gap: 8, flexWrap: 'wrap' }}>
+            <SelectableChip
+              label="Architecture"
+              selected={selectedChip === 'art'}
+              onPress={() => setSelectedChip('art')}
+            />
+            <SelectableChip
+              label="Filter Coffee"
+              selected={selectedChip === 'coffee'}
+              onPress={() => setSelectedChip('coffee')}
+            />
+            <Chip label="Static Tag" />
+          </Row>
+
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Radio, Checkbox & Toggle</Text>
+          <RadioRow
+            label="Daily Digest"
+            description="Receive one curated batch every morning"
+            selected={radioSelected === 'opt1'}
+            onSelect={() => setRadioSelected('opt1')}
+          />
+          <RadioRow
+            label="Instant Alerts"
+            description="Receive notifications immediately upon activity"
+            selected={radioSelected === 'opt2'}
+            onSelect={() => setRadioSelected('opt2')}
+          />
+          <CheckboxRow
+            label="Accept Safety Community Guidelines"
+            checked={checkboxVal}
+            onToggle={() => setCheckboxVal(!checkboxVal)}
+          />
+          <Row align="center" justify="space-between" style={{ paddingVertical: 10 }}>
+            <Text variant="body">Incognito Profile Mode</Text>
+            <Toggle value={toggleVal} onValueChange={(val) => setToggleVal(val)} />
+          </Row>
+        </SurfaceCard>
+
+        {/* 14. Messaging & Chat Patterns */}
+        <SurfaceCard p="md" style={styles.sectionCard}>
+          <Heading level="h3">Messaging & Chat Patterns</Heading>
+
+          <View style={{ marginTop: 12, gap: 10 }}>
+            <ConversationRow
+              id="c1"
+              partnerName="Priya Sen"
+              partnerPhoto="https://images.unsplash.com/photo-1534528741775-53994a69daeb"
+              lastMessage="Looking forward to the gallery exhibition tomorrow!"
+              lastMessageTime="2m ago"
+              unreadCount={2}
+              isOnline={true}
+              isVerified={true}
+              onPress={() => {}}
+            />
+
+            <UnreadDivider label="Today" />
+
+            <ChatMessageBubble
+              id="m1"
+              text="Hey! Have you been to the new café in Kala Ghoda?"
+              timestamp="10:30 AM"
+              isOutgoing={false}
+            />
+
+            <ChatMessageBubble
+              id="m2"
+              text="Yes! Their pour-over is exceptional. Want to visit this Saturday?"
+              timestamp="10:32 AM"
+              isOutgoing={true}
+              status="delivered"
+            />
+
+            <ChatTypingIndicator partnerName="Priya" />
+          </View>
+        </SurfaceCard>
+
+        {/* 15. Social, Community & Event Patterns */}
+        <SurfaceCard p="md" style={styles.sectionCard}>
+          <Heading level="h3">Social, Community & Event Patterns</Heading>
+
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 8 }}>Social Post Pattern</Text>
+          <SocialPostCard
+            id="sp1"
+            authorName="Kabir Mehta"
+            authorBadge="Top Contributor"
+            content="Early morning walk around Marine Drive with crisp sea breeze. Mumbai winter at its best."
+            timestamp="1h ago"
+            likesCount={24}
+            commentsCount={5}
+            isLiked={true}
+            onLike={() => {}}
+          />
+
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Community Feed Pattern</Text>
+          <CommunityFeedCard
+            id="comm1"
+            name="Bombay Heritage Enthusiasts"
+            description="Preserving Art Deco and Victorian Gothic stories across Mumbai."
+            memberCount={1240}
+            isMember={true}
+            onPress={() => {}}
+          />
+
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Event Feed Pattern</Text>
+          <EventFeedCard
+            id="evt1"
+            title="Indie Film Screening & Discussion"
+            month="NOV"
+            day="14"
+            venue="Harkat Studios, Versova"
+            city="Mumbai"
+            attendingCount={42}
+            status="upcoming"
+            rsvpStatus="going"
+            onRSVP={() => {}}
+          />
+        </SurfaceCard>
+
+        {/* 16. Settings, Safety & Banners */}
+        <SurfaceCard p="md" style={styles.sectionCard}>
+          <Heading level="h3">Settings, Safety & Banners</Heading>
+
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 8 }}>Status Banners</Text>
+          <Banner
+            variant="info"
+            message="Identity Verification Underway"
+            description="Your photo selfie is currently in manual queue verification."
+            style={{ marginBottom: 8 }}
+          />
+          <Banner
+            variant="account_warning"
+            message="Location Precision Active"
+            description="Approximate distance is active to protect neighborhood privacy."
+            style={{ marginBottom: 8 }}
+          />
+
+          <Row align="center" style={{ gap: 12, marginVertical: 8 }}>
+            <ConnectionIndicator isConnected={true} />
+            <SyncIndicator isSyncing={false} />
+          </Row>
+
+          <InlineError message="Password must contain at least one special character." />
+
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Subscription Status Pattern</Text>
+          <SubscriptionStatus
+            tierName="Nazar Premium"
+            expiryDate="Nov 30, 2026"
+            isActive={true}
+            onManage={() => {}}
+          />
+
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Settings Section Pattern</Text>
+          <SettingsSection title="Privacy & Security">
+            <SettingsRow
+              label="Blocked Profiles"
+              description="3 profiles currently blocked"
+              icon="lock"
+              onPress={() => {}}
+            />
+            <SettingsToggleRow
+              label="Incognito Discovery"
+              description="Only people you like can view your profile"
+              icon="eye"
+              isEnabled={true}
+              onToggle={() => {}}
+              isLast={true}
+            />
+          </SettingsSection>
+
+          <Button
+            label={toastVisible ? 'Hide Toast Preview' : 'Trigger Toast Notification'}
+            variant="secondary"
+            onPress={() => setToastVisible(!toastVisible)}
+            style={{ marginTop: 8 }}
+          />
+          {toastVisible && (
+            <Toast
+              message="Profile preferences updated successfully"
+              type="success"
+              onClose={() => setToastVisible(false)}
+            />
+          )}
         </SurfaceCard>
       </ScrollView>
 

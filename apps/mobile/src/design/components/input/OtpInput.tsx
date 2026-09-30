@@ -121,6 +121,8 @@ export const OtpInput: React.FC<OtpInputProps> = ({
   );
 };
 
+export const OTPField = OtpInput;
+
 const styles = StyleSheet.create({
   container: {
     width: '100%',

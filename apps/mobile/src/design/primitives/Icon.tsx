@@ -21,6 +21,13 @@ export type IconName =
   | 'check'
   | 'plus'
   | 'sparkles'
+  | 'sparkle'
+  | 'compass'
+  | 'attachment'
+  | 'mic'
+  | 'checkCircle'
+  | 'alertCircle'
+  | 'thumbsUp'
   | 'user'
   | 'bell'
   | 'lock'
@@ -484,6 +491,7 @@ export const Icon: React.FC<IconProps> = ({
         );
       }
 
+      case 'sparkle':
       case 'sparkles':
       case 'star': {
         return (
@@ -496,6 +504,157 @@ export const Icon: React.FC<IconProps> = ({
                 borderColor: iconColor,
                 transform: [{ rotate: '45deg' }],
                 borderRadius: 2,
+              }}
+            />
+          </View>
+        );
+      }
+
+      case 'compass': {
+        return (
+          <View style={[styles.center, { width: dimension, height: dimension }]}>
+            <View
+              style={{
+                width: dimension * 0.72,
+                height: dimension * 0.72,
+                borderRadius: (dimension * 0.72) / 2,
+                borderWidth: strokeWidth,
+                borderColor: iconColor,
+              }}
+            />
+            <View
+              style={{
+                width: dimension * 0.32,
+                height: dimension * 0.32,
+                borderLeftWidth: strokeWidth,
+                borderTopWidth: strokeWidth,
+                borderColor: iconColor,
+                transform: [{ rotate: '45deg' }],
+              }}
+            />
+          </View>
+        );
+      }
+
+      case 'attachment': {
+        return (
+          <View style={[styles.center, { width: dimension, height: dimension }]}>
+            <View
+              style={{
+                width: dimension * 0.45,
+                height: dimension * 0.65,
+                borderRadius: dimension * 0.22,
+                borderWidth: strokeWidth,
+                borderColor: iconColor,
+                transform: [{ rotate: '-45deg' }],
+              }}
+            />
+          </View>
+        );
+      }
+
+      case 'mic': {
+        return (
+          <View style={[styles.center, { width: dimension, height: dimension }]}>
+            <View
+              style={{
+                width: dimension * 0.32,
+                height: dimension * 0.48,
+                borderRadius: dimension * 0.16,
+                borderWidth: strokeWidth,
+                borderColor: iconColor,
+              }}
+            />
+            <View
+              style={{
+                width: dimension * 0.52,
+                height: dimension * 0.28,
+                borderBottomLeftRadius: dimension * 0.26,
+                borderBottomRightRadius: dimension * 0.26,
+                borderWidth: strokeWidth,
+                borderTopWidth: 0,
+                borderColor: iconColor,
+                marginTop: 2,
+              }}
+            />
+          </View>
+        );
+      }
+
+      case 'checkCircle': {
+        return (
+          <View style={[styles.center, { width: dimension, height: dimension }]}>
+            <View
+              style={{
+                width: dimension * 0.76,
+                height: dimension * 0.76,
+                borderRadius: (dimension * 0.76) / 2,
+                borderWidth: strokeWidth,
+                borderColor: iconColor,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <View
+                style={{
+                  width: dimension * 0.24,
+                  height: dimension * 0.4,
+                  borderColor: iconColor,
+                  borderRightWidth: strokeWidth,
+                  borderBottomWidth: strokeWidth,
+                  transform: [{ rotate: '45deg' }, { translateY: -dimension * 0.05 }],
+                }}
+              />
+            </View>
+          </View>
+        );
+      }
+
+      case 'alertCircle': {
+        return (
+          <View style={[styles.center, { width: dimension, height: dimension }]}>
+            <View
+              style={{
+                width: dimension * 0.76,
+                height: dimension * 0.76,
+                borderRadius: (dimension * 0.76) / 2,
+                borderWidth: strokeWidth,
+                borderColor: iconColor,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <View style={{ width: strokeWidth, height: dimension * 0.24, backgroundColor: iconColor, marginBottom: 2 }} />
+              <View style={{ width: strokeWidth, height: strokeWidth, backgroundColor: iconColor, borderRadius: strokeWidth / 2 }} />
+            </View>
+          </View>
+        );
+      }
+
+      case 'thumbsUp': {
+        return (
+          <View style={[styles.center, { width: dimension, height: dimension }]}>
+            <View
+              style={{
+                width: dimension * 0.5,
+                height: dimension * 0.45,
+                borderWidth: strokeWidth,
+                borderColor: iconColor,
+                borderTopRightRadius: 4,
+                borderBottomRightRadius: 4,
+              }}
+            />
+            <View
+              style={{
+                position: 'absolute',
+                left: dimension * 0.2,
+                top: dimension * 0.2,
+                width: dimension * 0.2,
+                height: dimension * 0.35,
+                borderWidth: strokeWidth,
+                borderColor: iconColor,
+                borderTopLeftRadius: 4,
+                transform: [{ rotate: '-20deg' }],
               }}
             />
           </View>

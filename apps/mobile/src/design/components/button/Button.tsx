@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   TouchableOpacity,
   ActivityIndicator,
@@ -22,6 +22,8 @@ export interface ButtonProps {
   readonly variant?: ButtonVariant;
   readonly size?: ButtonSize;
   readonly icon?: IconName;
+  readonly leftIcon?: IconName;
+  readonly rightIcon?: IconName;
   readonly iconPosition?: 'left' | 'right';
   readonly fullWidth?: boolean;
   readonly loading?: boolean;
@@ -43,6 +45,8 @@ export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
   icon,
+  leftIcon,
+  rightIcon,
   iconPosition = 'left',
   fullWidth = false,
   loading = false,
@@ -57,10 +61,23 @@ export const Button: React.FC<ButtonProps> = ({
   testID,
 }) => {
   const { colors, radii, spacing } = useTheme();
+  const lastPressTime = useRef<number>(0);
 
   const isSpinning = loading || isLoading;
   const isInteractive = !disabled && !isSpinning && !success && !error;
   const buttonText = (typeof children === 'string' ? children : undefined) || label || '';
+
+  const effectiveLeftIcon = leftIcon || (iconPosition === 'left' ? icon : undefined);
+  const effectiveRightIcon = rightIcon || (iconPosition === 'right' ? icon : undefined);
+
+  const handlePress = () => {
+    if (!isInteractive || !onPress) return;
+    const now = Date.now();
+    // Prevent accidental rapid double tap within 400ms
+    if (now - lastPressTime.current < 400) return;
+    lastPressTime.current = now;
+    onPress();
+  };
 
   const getSizeStyles = () => {
     switch (size) {
@@ -164,7 +181,7 @@ export const Button: React.FC<ButtonProps> = ({
         },
         style,
       ]}
-      onPress={onPress}
+      onPress={handlePress}
       disabled={!isInteractive}
       activeOpacity={0.8}
       accessibilityRole="button"
@@ -200,9 +217,9 @@ export const Button: React.FC<ButtonProps> = ({
         </View>
       ) : (
         <View style={styles.contentRow}>
-          {icon && iconPosition === 'left' && (
+          {effectiveLeftIcon && (
             <Icon
-              name={icon}
+              name={effectiveLeftIcon}
               size={sz.iconSize}
               color={vs.text}
               style={{ marginRight: spacing.xs }}
@@ -214,9 +231,9 @@ export const Button: React.FC<ButtonProps> = ({
           >
             {buttonText}
           </Text>
-          {icon && iconPosition === 'right' && (
+          {effectiveRightIcon && (
             <Icon
-              name={icon}
+              name={effectiveRightIcon}
               size={sz.iconSize}
               color={vs.text}
               style={{ marginLeft: spacing.xs }}
@@ -224,6 +241,74 @@ export const Button: React.FC<ButtonProps> = ({
           )}
         </View>
       )}
+    </TouchableOpacity>
+  );
+};
+
+// Semantic Convenience Buttons
+export const PrimaryButton: React.FC<ButtonProps> = (props) => (
+  <Button variant="primary" {...props} />
+);
+
+export const SecondaryButton: React.FC<ButtonProps> = (props) => (
+  <Button variant="secondary" {...props} />
+);
+
+export const TertiaryButton: React.FC<ButtonProps> = (props) => (
+  <Button variant="tertiary" {...props} />
+);
+
+export const DestructiveButton: React.FC<ButtonProps> = (props) => (
+  <Button variant="destructive" {...props} />
+);
+
+export const TextButton: React.FC<ButtonProps> = ({ style, ...props }) => (
+  <Button
+    variant="tertiary"
+    style={[{ paddingHorizontal: 0, minHeight: 32 }, style]}
+    {...props}
+  />
+);
+
+export interface FloatingActionButtonProps {
+  readonly icon: IconName;
+  readonly onPress: () => void;
+  readonly label?: string;
+  readonly style?: StyleProp<ViewStyle>;
+  readonly testID?: string;
+  readonly disabled?: boolean;
+}
+
+export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
+  icon,
+  onPress,
+  label,
+  style,
+  testID,
+  disabled = false,
+}) => {
+  const { colors, radii, shadows } = useTheme();
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.fab,
+        {
+          backgroundColor: colors.accent,
+          borderRadius: radii.radiusFull,
+          ...shadows.shadowMD,
+          opacity: disabled ? 0.5 : 1,
+        },
+        style,
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel={label || `Floating action: ${icon}`}
+      testID={testID}
+    >
+      <Icon name={icon} size="md" color={colors.textInverse} />
     </TouchableOpacity>
   );
 };
@@ -237,5 +322,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  fab: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
   },
 });

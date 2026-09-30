@@ -138,6 +138,19 @@ export const Dialog: React.FC<DialogProps> = ({
   );
 };
 
+// Semantic Convenience Dialogs
+export const AlertDialog: React.FC<Omit<DialogProps, 'variant' | 'cancelLabel'>> = (props) => (
+  <Dialog variant="info" cancelLabel="" {...props} />
+);
+
+export const ConfirmationDialog: React.FC<Omit<DialogProps, 'variant'>> = (props) => (
+  <Dialog variant="confirm" {...props} />
+);
+
+export const DestructiveDialog: React.FC<Omit<DialogProps, 'variant'>> = (props) => (
+  <Dialog variant="destructive" {...props} />
+);
+
 const styles = StyleSheet.create({
   modalRoot: {
     flex: 1,

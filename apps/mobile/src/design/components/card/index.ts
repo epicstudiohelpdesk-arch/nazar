@@ -1,5 +1,6 @@
 export { SurfaceCard, type SurfaceCardProps } from '../../primitives/SurfaceCard.js';
 export * from './ProfileCard.js';
+export * from './CompactProfileCard.js';
 export * from './MediaCard.js';
 export * from './MatchCard.js';
 export * from './ConversationCard.js';

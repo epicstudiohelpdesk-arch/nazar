@@ -5,3 +5,4 @@ export * from './Icon.js';
 export * from './Avatar.js';
 export * from './Badge.js';
 export * from './SurfaceCard.js';
+export * from './ImageView.js';
