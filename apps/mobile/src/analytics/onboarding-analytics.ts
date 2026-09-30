@@ -173,7 +173,22 @@ export type OnboardingAnalyticsEvent =
   | 'post_deleted'
   | 'post_reaction_failed'
   | 'social_report_submitted'
-  | 'social_block_submitted';
+  | 'social_block_submitted'
+  // Notifications & Activity Center (F8)
+  | 'notifications_center_viewed'
+  | 'notification_opened'
+  | 'notification_marked_read'
+  | 'notifications_marked_all_read'
+  | 'notification_settings_viewed'
+  | 'notification_preference_changed'
+  | 'push_permission_prompted'
+  | 'push_permission_granted'
+  | 'push_permission_denied'
+  | 'push_permission_unavailable'
+  | 'push_registered'
+  | 'push_registration_failed'
+  | 'notification_navigation_failed'
+  | 'notification_received_foreground';
 
 /**
  * Tracks an onboarding or auth event with guaranteed PII sanitization.

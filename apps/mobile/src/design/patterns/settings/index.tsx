@@ -184,6 +184,11 @@ export interface SettingsToggleProps {
   readonly onToggle: (value: boolean) => void;
   readonly isLast?: boolean;
   readonly testID?: string;
+  /**
+   * Disables the row while its own mutation is in flight. Kept local to the row
+   * so one slow preference write does not block the rest of the form.
+   */
+  readonly isBusy?: boolean;
 }
 
 export const SettingsToggle: React.FC<SettingsToggleProps> = ({
@@ -194,6 +199,7 @@ export const SettingsToggle: React.FC<SettingsToggleProps> = ({
   onToggle,
   isLast = false,
   testID,
+  isBusy = false,
 }) => {
   const { colors, spacing } = useTheme();
 
@@ -230,7 +236,12 @@ export const SettingsToggle: React.FC<SettingsToggleProps> = ({
         )}
       </View>
 
-      <Toggle isEnabled={isEnabled} onToggle={onToggle} />
+      <Toggle
+        isEnabled={isEnabled}
+        onToggle={onToggle}
+        disabled={isBusy}
+        label={`${label}${description ? `, ${description}` : ''}`}
+      />
     </View>
   );
 };

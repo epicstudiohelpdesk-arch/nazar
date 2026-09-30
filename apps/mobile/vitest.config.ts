@@ -13,6 +13,8 @@ export default defineConfig({
         __dirname,
         'tests/mocks/react-native-safe-area-context.ts'
       ),
+      'expo-notifications': path.resolve(__dirname, 'tests/mocks/expo-notifications.ts'),
+      'expo-device': path.resolve(__dirname, 'tests/mocks/expo-device.ts'),
     },
   },
 });

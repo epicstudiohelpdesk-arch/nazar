@@ -1,126 +1,84 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Switch } from 'react-native';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../src/design/theme/ThemeContext.js';
-import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
-import { Heading } from '../../src/design/primitives/Heading.js';
-import { Text } from '../../src/design/primitives/Text.js';
-import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { useTheme } from '../../src/design/theme/index.js';
+import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { createNotificationsApi } from '../../src/notifications/notifications-api.js';
+import type { PushPermissionState } from '../../src/notifications/push-permissions.js';
+import {
+  configurePushRuntime,
+  getCurrentPushPermission,
+  probePushDevice,
+  requestPushPermission,
+} from '../../src/notifications/push-runtime.js';
+import { NotificationSettingsScreen } from '../../src/notifications/NotificationSettingsScreen.js';
 
 export default function NotificationSettingsRoute(): React.JSX.Element {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { colors } = useTheme();
+  const authClient = getDefaultAuthClient();
+  const client = useMemo(() => createNotificationsApi(authClient), [authClient]);
 
-  const [newMatches, setNewMatches] = useState(true);
-  const [messages, setMessages] = useState(true);
-  const [likesReceived, setLikesReceived] = useState(true);
-  const [events, setEvents] = useState(false);
+  const [permission, setPermission] = useState<PushPermissionState>('not_requested');
+  const [isEnabling, setIsEnabling] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      await configurePushRuntime();
+      const current = await getCurrentPushPermission();
+      if (!cancelled) setPermission(current);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    trackOnboardingEvent('notification_settings_viewed', { source: 'settings' });
+  }, []);
+
+  const handleEnable = useCallback(async () => {
+    setIsEnabling(true);
+    trackOnboardingEvent('push_permission_prompted', { surface: 'settings' });
+    try {
+      const result = await requestPushPermission();
+      setPermission(result);
+      if (result === 'granted' || result === 'provisional') {
+        trackOnboardingEvent('push_permission_granted', { surface: 'settings' });
+        const snapshot = await probePushDevice();
+        if (snapshot.pushToken && snapshot.descriptor) {
+          try {
+            await client.registerDevice({
+              ...snapshot.descriptor,
+              pushToken: snapshot.pushToken,
+            });
+            trackOnboardingEvent('push_registered', { platform: snapshot.descriptor.platform });
+          } catch {
+            trackOnboardingEvent('push_registration_failed', {
+              platform: snapshot.descriptor.platform,
+            });
+          }
+        }
+      } else if (result === 'denied' || result === 'blocked') {
+        trackOnboardingEvent('push_permission_denied', { surface: 'settings', state: result });
+      }
+    } finally {
+      setIsEnabling(false);
+    }
+  }, [client]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title="Notification Preferences"
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+      <NotificationSettingsScreen
+        client={client}
+        pushPermission={permission}
+        onEnablePush={() => void handleEnable()}
+        isEnablingPush={isEnabling}
         onBack={() => router.back()}
-        leftAction="back"
       />
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.section}>
-          <Heading level="h3">Push Notifications</Heading>
-          <SurfaceCard elevation="sm" style={styles.card}>
-            <View style={styles.switchRow}>
-              <View style={styles.textCol}>
-                <Text level="title">New Matches</Text>
-                <Text level="bodySmall" color="secondary">
-                  Notify me when someone mutually matches with me.
-                </Text>
-              </View>
-              <Switch
-                value={newMatches}
-                onValueChange={setNewMatches}
-                trackColor={{ false: theme.colors.surfaceMuted, true: theme.colors.accent }}
-              />
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-
-            <View style={styles.switchRow}>
-              <View style={styles.textCol}>
-                <Text level="title">Chat Messages</Text>
-                <Text level="bodySmall" color="secondary">
-                  Notify me when a match sends me a message.
-                </Text>
-              </View>
-              <Switch
-                value={messages}
-                onValueChange={setMessages}
-                trackColor={{ false: theme.colors.surfaceMuted, true: theme.colors.accent }}
-              />
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-
-            <View style={styles.switchRow}>
-              <View style={styles.textCol}>
-                <Text level="title">Likes Received</Text>
-                <Text level="bodySmall" color="secondary">
-                  Notify me when new people like my profile.
-                </Text>
-              </View>
-              <Switch
-                value={likesReceived}
-                onValueChange={setLikesReceived}
-                trackColor={{ false: theme.colors.surfaceMuted, true: theme.colors.accent }}
-              />
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-
-            <View style={styles.switchRow}>
-              <View style={styles.textCol}>
-                <Text level="title">Singles Events & Mixers</Text>
-                <Text level="bodySmall" color="secondary">
-                  Notify me about upcoming cultural events in my city.
-                </Text>
-              </View>
-              <Switch
-                value={events}
-                onValueChange={setEvents}
-                trackColor={{ false: theme.colors.surfaceMuted, true: theme.colors.accent }}
-              />
-            </View>
-          </SurfaceCard>
-        </View>
-      </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    gap: 24,
-  },
-  section: {
-    gap: 12,
-  },
-  card: {
-    padding: 16,
-    gap: 16,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  textCol: {
-    flex: 1,
-    gap: 4,
-  },
-  divider: {
-    height: 1,
-  },
-});

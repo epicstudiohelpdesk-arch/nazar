@@ -1,305 +1,260 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, StyleSheet, RefreshControl, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import type { NotificationResponseDto } from '@platform/api-contracts';
+import { useTheme } from '../design/theme/index.js';
+import { Text } from '../design/primitives/Text.js';
+import { TopNavHeader } from '../design/components/navigation/TopNavHeader.js';
+import { Button } from '../design/components/button/Button.js';
+import { Banner } from '../design/components/feedback/Banner.js';
+import { EmptyState } from '../design/components/feedback/EmptyState.js';
+import { ErrorState } from '../design/components/feedback/ErrorState.js';
+import { SkeletonCard, Spinner } from '../design/components/feedback/LoadingSkeleton.js';
+import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import type { NotificationsApiClient } from './notifications-api.js';
-import { notificationManager } from './notification-manager.js';
+import {
+  buildNotificationViewModel,
+  type NotificationViewModel,
+} from './notification-state.js';
+import type { PushPermissionState } from './push-permissions.js';
+import { NotificationRow } from './components/NotificationRow.js';
+import { UnreadBadge } from './components/UnreadBadge.js';
+import { PushPermissionCard } from './components/PushPermissionCard.js';
+import {
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotificationsFeed,
+  useUnreadCount,
+} from './useNotifications.js';
 
 export interface NotificationsScreenProps {
   readonly client: NotificationsApiClient;
+  readonly pushPermission: PushPermissionState;
+  readonly onEnablePush: () => void;
+  readonly isEnablingPush?: boolean;
+  /** Hides the permission card, e.g. once push is granted. */
+  readonly showPermissionCard?: boolean;
 }
 
-export function NotificationsScreen({ client }: NotificationsScreenProps) {
+const SKELETON_ROWS = 6;
+
+/**
+ * The Activity Center.
+ *
+ * Rows are rendered in the order the server sent them and are never re-sorted
+ * locally. A row tap marks the notification read and, when the notification
+ * carries a resolvable target, navigates through the shared allowlist; a read
+ * that fails still navigates, because the user's intent was to open the content
+ * and the read state is reconciled separately.
+ */
+export function NotificationsScreen({
+  client,
+  pushPermission,
+  onEnablePush,
+  isEnablingPush = false,
+  showPermissionCard = true,
+}: NotificationsScreenProps): React.JSX.Element {
   const router = useRouter();
-  const [items, setItems] = useState<NotificationResponseDto[]>([]);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState<boolean>(false);
+  const { colors, spacing } = useTheme();
 
-  const loadNotifications = useCallback(
-    async (refresh: boolean = false) => {
-      try {
-        if (refresh) setIsRefreshing(true);
-        else setIsLoading(true);
+  const feed = useNotificationsFeed(client);
+  const unread = useUnreadCount(client);
+  const markRead = useMarkNotificationRead(client);
+  const markAllRead = useMarkAllNotificationsRead(client);
 
-        const cursor = refresh ? undefined : nextCursor || undefined;
-        const res = await client.listNotifications({ limit: 20, cursor });
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  // `Date.now()` is captured once per mount pass so a list render does not
+  // produce a different relative timestamp for every row on each tick.
+  const [now] = useState(() => Date.now());
 
-        if (refresh) {
-          setItems([...res.items]);
-        } else {
-          setItems((prev) => [...prev, ...res.items]);
-        }
-
-        setNextCursor(res.nextCursor);
-        setHasMore(res.hasMore);
-        setUnreadCount(res.totalUnreadCount);
-      } catch (err: unknown) {
-        console.error('Failed to load notifications:', err);
-      } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    },
-    [client, nextCursor]
+  const viewModels = useMemo(
+    () => feed.notifications.map((n) => buildNotificationViewModel(n, now)),
+    [feed.notifications, now]
   );
 
-  useEffect(() => {
-    loadNotifications(true);
-  }, [client]);
+  const handlePress = useCallback(
+    (viewModel: NotificationViewModel) => {
+      const { notification, resolved } = viewModel;
+      trackOnboardingEvent('notifications_center_viewed', { source: 'activity_center' });
 
-  const handleMarkAllRead = async () => {
-    try {
-      await client.markAllAsRead();
-      setItems((prev) =>
-        prev.map((item) => ({ ...item, readAt: item.readAt || new Date().toISOString() }))
-      );
-      setUnreadCount(0);
-    } catch (err: unknown) {
-      console.error('Failed to mark all read:', err);
-    }
-  };
-
-  const handleItemPress = async (item: NotificationResponseDto) => {
-    if (!item.readAt) {
-      try {
-        await client.markAsRead(item.id);
-        setItems((prev) =>
-          prev.map((i) => (i.id === item.id ? { ...i, readAt: new Date().toISOString() } : i))
-        );
-        setUnreadCount((c) => Math.max(0, c - 1));
-      } catch (err: unknown) {
-        console.error('Failed to mark notification read:', err);
+      if (viewModel.isUnread) {
+        setPendingId(notification.id);
+        // The destination is authoritative for access, so a read failure must
+        // not strand the user on the list.
+        markRead.mutate(notification.id, {
+          onSettled: () => setPendingId(null),
+        });
       }
-    }
 
-    // Resolve deep link route and navigate
-    const route = notificationManager.resolveDeepLinkRoute({
-      type: item.type,
-      ...(item.data as Record<string, unknown>),
-    });
+      if (resolved.destination) {
+        trackOnboardingEvent('notification_opened', {
+          notification_type: notification.type,
+          destination_kind: resolved.destination.kind,
+        });
+        router.push(resolved.destination.route as never);
+        return;
+      }
 
-    if (route && route !== '/notifications') {
-      router.push(route as any); // eslint-disable-line @typescript-eslint/no-explicit-any
-    }
-  };
+      if (resolved.reason === 'malformed_target_id' || resolved.reason === 'unknown_type') {
+        trackOnboardingEvent('notification_navigation_failed', {
+          notification_type: notification.type,
+          reason: resolved.reason,
+        });
+      }
+    },
+    [markRead, router]
+  );
 
-  const renderItem = ({ item }: { item: NotificationResponseDto }) => {
-    const isUnread = !item.readAt;
+  const handleMarkAll = useCallback(() => {
+    markAllRead.mutate();
+  }, [markAllRead]);
 
-    let badgeColor = '#6366f1';
-    let badgeText = 'Notice';
+  const isInitialLoading = feed.isLoading && viewModels.length === 0;
 
-    if (item.type === 'NEW_MATCH') {
-      badgeColor = '#ec4899';
-      badgeText = 'Match';
-    } else if (item.type === 'NEW_MESSAGE') {
-      badgeColor = '#3b82f6';
-      badgeText = 'Message';
-    } else if (item.type === 'NEW_LIKE') {
-      badgeColor = '#f59e0b';
-      badgeText = 'Like';
-    } else if (item.type === 'ACCOUNT_RESTRICTION' || item.type === 'SECURITY_ALERT') {
-      badgeColor = '#ef4444';
-      badgeText = 'Security';
-    }
+  const header = (
+    <View style={{ gap: spacing.md, paddingBottom: spacing.md }}>
+      {showPermissionCard && pushPermission !== 'granted' && (
+        <PushPermissionCard
+          permission={pushPermission}
+          onEnable={onEnablePush}
+          isBusy={isEnablingPush}
+        />
+      )}
 
-    return (
-      <TouchableOpacity
-        style={[styles.itemContainer, isUnread && styles.itemUnread]}
-        onPress={() => handleItemPress(item)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.itemHeader}>
-          <View style={[styles.badge, { backgroundColor: badgeColor }]}>
-            <Text style={styles.badgeText}>{badgeText}</Text>
-          </View>
-          {isUnread && <View style={styles.unreadDot} />}
+      {unread.count > 0 && (
+        <View style={styles.markAllRow}>
+          <Text variant="bodySmall" color="secondary">
+            {unread.count === 1 ? '1 unread' : `${unread.count} unread`}
+          </Text>
+          <Button
+            label="Mark all read"
+            variant="tertiary"
+            size="sm"
+            onPress={handleMarkAll}
+            isLoading={markAllRead.isPending}
+            accessibilityLabel="Mark all notifications as read"
+            accessibilityHint={`Marks all ${unread.count} unread notifications as read`}
+            testID="mark-all-read"
+          />
         </View>
+      )}
 
-        <Text style={[styles.itemTitle, isUnread && styles.itemTitleBold]}>{item.title}</Text>
-        <Text style={styles.itemBody} numberOfLines={2}>
-          {item.body}
-        </Text>
-        <Text style={styles.itemTime}>
-          {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>Notifications</Text>
-          {unreadCount > 0 && (
-            <View style={styles.unreadCountBadge}>
-              <Text style={styles.unreadCountText}>{unreadCount}</Text>
-            </View>
-          )}
-        </View>
-        {unreadCount > 0 && (
-          <TouchableOpacity onPress={handleMarkAllRead}>
-            <Text style={styles.markAllText}>Mark all as read</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {isLoading && items.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#6366f1" />
-        </View>
-      ) : items.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <Text style={styles.emptyTitle}>All caught up!</Text>
-          <Text style={styles.emptySubtitle}>You have no new notifications right now.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={() => loadNotifications(true)}
-              tintColor="#6366f1"
-            />
-          }
-          onEndReached={() => {
-            if (hasMore && !isLoading && !isRefreshing) {
-              loadNotifications(false);
-            }
-          }}
-          onEndReachedThreshold={0.3}
-          contentContainerStyle={styles.listContent}
+      {feed.isStale && (
+        <Banner
+          variant="offline"
+          message="Showing your last synced activity"
+          description="Pull down to try again."
+          actionLabel="Retry"
+          onAction={feed.refetch}
+          testID="notifications-stale-banner"
         />
       )}
     </View>
   );
+
+  return (
+    <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]} edges={['top']}>
+      <TopNavHeader
+        title="Activity"
+        rightAction={
+          unread.count > 0 ? <UnreadBadge count={unread.count} testID="activity-center-badge" /> : undefined
+        }
+      />
+
+      {isInitialLoading ? (
+        <View style={[styles.skeletonList, { paddingHorizontal: spacing.md }]}>
+          {Array.from({ length: SKELETON_ROWS }, (_, index) => (
+            <SkeletonCard key={index} />
+          ))}
+        </View>
+      ) : feed.error ? (
+        <View style={styles.centered}>
+          <ErrorState
+            type="unknown"
+            message={feed.error}
+            onRetry={feed.refetch}
+          />
+        </View>
+      ) : (
+        <FlatList
+          data={viewModels}
+          keyExtractor={(item) => item.notification.id}
+          renderItem={({ item }) => (
+            <NotificationRow
+              viewModel={item}
+              onPress={handlePress}
+              isBusy={pendingId === item.notification.id}
+            />
+          )}
+          ListHeaderComponent={header}
+          ListEmptyComponent={
+            <View style={styles.centered}>
+              <EmptyState
+                type="no_notifications"
+                title="You're all caught up"
+                description="New matches, messages, likes and community activity will appear here."
+                primaryAction={{
+                  label: 'Review preferences',
+                  onPress: () => router.push('/settings/notifications' as never),
+                }}
+              />
+            </View>
+          }
+          ListFooterComponent={
+            feed.isFetchingNextPage ? (
+              <View style={styles.footer}>
+                <Spinner size="small" />
+              </View>
+            ) : viewModels.length > 0 && !feed.hasMore ? (
+              <View style={styles.footer}>
+                <Text variant="caption" color="tertiary">
+                  That's everything from the last 30 days.
+                </Text>
+              </View>
+            ) : null
+          }
+          onEndReached={feed.loadMore}
+          onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl
+              refreshing={feed.isRefreshing}
+              onRefresh={feed.refetch}
+              tintColor={colors.accent}
+            />
+          }
+          contentContainerStyle={
+            viewModels.length === 0 ? styles.emptyList : { paddingBottom: spacing.xl }
+          }
+        />
+      )}
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: '#0f172a',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  skeletonList: {
+    gap: 12,
+    paddingVertical: 16,
+  },
+  centered: {
+    flexGrow: 1,
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  unreadCountBadge: {
-    backgroundColor: '#ef4444',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  unreadCountText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  markAllText: {
-    color: '#6366f1',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  listContent: {
-    paddingVertical: 8,
-  },
-  itemContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
-  },
-  itemUnread: {
-    backgroundColor: '#1e293b',
-  },
-  itemHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  badgeText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#3b82f6',
-  },
-  itemTitle: {
-    fontSize: 16,
-    color: '#e2e8f0',
-    marginBottom: 4,
-  },
-  itemTitleBold: {
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  itemBody: {
-    fontSize: 14,
-    color: '#94a3b8',
-    lineHeight: 20,
-    marginBottom: 6,
-  },
-  itemTime: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  centerContainer: {
-    flex: 1,
     justifyContent: 'center',
+    padding: 24,
+  },
+  emptyList: {
+    flexGrow: 1,
+  },
+  markAllRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    justifyContent: 'space-between',
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#94a3b8',
-    textAlign: 'center',
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 24,
   },
 });

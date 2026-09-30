@@ -20,6 +20,13 @@ export class ChatSocketManager {
     ) => void
   > = new Set();
   private typingListeners: Set<(event: RealtimeEvent<TypingEventPayload>) => void> = new Set();
+  /**
+   * Notification delivery reuses this socket rather than opening a second
+   * connection. The Gate 10 chat gateway does not emit a notification event
+   * today, so the registry is inert until the API publishes one; the Activity
+   * Center refreshes on app resume in the meantime.
+   */
+  private notificationListeners: Set<(event: unknown) => void> = new Set();
 
   getConnectionState(): SocketConnectionState {
     return this.connectionState;
@@ -109,6 +116,12 @@ export class ChatSocketManager {
         listener(event);
       }
     });
+
+    this.socket.on('notification.created', (event: unknown) => {
+      for (const listener of this.notificationListeners) {
+        listener(event);
+      }
+    });
   }
 
   disconnect(): void {
@@ -169,6 +182,11 @@ export class ChatSocketManager {
   onTyping(listener: (event: RealtimeEvent<TypingEventPayload>) => void): () => void {
     this.typingListeners.add(listener);
     return () => this.typingListeners.delete(listener);
+  }
+
+  onNotificationCreated(listener: (event: unknown) => void): () => void {
+    this.notificationListeners.add(listener);
+    return () => this.notificationListeners.delete(listener);
   }
 }
 
