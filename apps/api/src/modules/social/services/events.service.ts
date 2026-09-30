@@ -268,8 +268,10 @@ export class EventsService {
       locationName: event.locationName,
       locationAddress: canViewPrivateLocation ? event.locationAddress : null,
       locationUrl: canViewPrivateLocation ? event.locationUrl : null,
-      latitude: event.latitude,
-      longitude: event.longitude,
+      // Coordinates are precise enough to identify the venue, so they are
+      // redacted alongside the address they belong to.
+      latitude: canViewPrivateLocation ? event.latitude : null,
+      longitude: canViewPrivateLocation ? event.longitude : null,
       capacity: event.capacity,
       attendeeCount: event.attendeeCount,
       waitlistCount: event.waitlistCount,
@@ -774,8 +776,8 @@ export class EventsService {
         locationName: e.locationName,
         locationAddress: isOrganizer ? e.locationAddress : null,
         locationUrl: isOrganizer ? e.locationUrl : null,
-        latitude: e.latitude,
-        longitude: e.longitude,
+        latitude: isOrganizer ? e.latitude : null,
+        longitude: isOrganizer ? e.longitude : null,
         capacity: e.capacity,
         attendeeCount: e.attendeeCount,
         waitlistCount: e.waitlistCount,

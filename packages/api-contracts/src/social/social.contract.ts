@@ -136,7 +136,11 @@ export interface UpdateCommunityRequestDto {
   readonly name?: string;
   readonly description?: string;
   readonly privacy?: CommunityPrivacy;
-  readonly rules?: readonly string[];
+  /**
+   * `null` clears the published rules. Omitting the key leaves them untouched,
+   * which is what the `PATCH` service distinguishes on.
+   */
+  readonly rules?: readonly string[] | null;
   readonly avatarMediaId?: string | null;
   readonly coverMediaId?: string | null;
 }

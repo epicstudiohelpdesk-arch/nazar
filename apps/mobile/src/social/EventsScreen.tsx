@@ -1,234 +1,251 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import type { EventDto, EventType } from '@platform/api-contracts';
+import { useTheme } from '../design/theme/index.js';
+import { Text } from '../design/primitives/Text.js';
+import { Icon } from '../design/primitives/Icon.js';
+import { EventCard } from '../design/components/card/EventCard.js';
+import { TopNavHeader } from '../design/components/navigation/TopNavHeader.js';
+import { Button } from '../design/components/button/Button.js';
+import { EmptyState } from '../design/components/feedback/EmptyState.js';
+import { ErrorState } from '../design/components/feedback/ErrorState.js';
+import { SkeletonBox } from '../design/components/feedback/LoadingSkeleton.js';
+import { SocialLoadMoreButton } from './components/SocialPostList.js';
+import { type SocialApiClient, SOCIAL_QUERY_KEYS } from './social-api.js';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
-import type { EventDto } from '@platform/api-contracts';
-import type { SocialApiClient } from './social-api.js';
+  byId,
+  describeSocialError,
+  flattenPages,
+  formatEventDateLabel,
+  getNextCursorPageParam,
+  socialRoutes,
+  toEventCardRsvp,
+} from './social-state.js';
+import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 
 export interface EventsScreenProps {
   readonly client: SocialApiClient;
-  readonly onSelectEvent?: (eventId: string) => void;
-  readonly onCreateEvent?: () => void;
+  /** Locks the list to one community when reached from a community detail. */
+  readonly communityId?: string;
+  readonly onBack?: () => void;
 }
 
-export function EventsScreen({ client, onSelectEvent, onCreateEvent }: EventsScreenProps) {
-  const [events, setEvents] = useState<EventDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState<boolean>(false);
+type EventFilter = 'ALL' | EventType;
 
-  const loadEvents = useCallback(
-    async (refresh: boolean = false) => {
-      try {
-        if (refresh) setIsRefreshing(true);
-        else setIsLoading(true);
+const PAGE_SIZE = 20;
 
-        const cursor = refresh ? undefined : nextCursor || undefined;
-        const res = await client.discoverEvents({ limit: 20, cursor });
+const FILTERS: readonly { key: EventFilter; label: string }[] = [
+  { key: 'ALL', label: 'All' },
+  { key: 'ONLINE', label: 'Online' },
+  { key: 'PHYSICAL', label: 'In person' },
+];
 
-        if (refresh) {
-          setEvents([...res.items]);
-        } else {
-          setEvents((prev) => [...prev, ...res.items]);
-        }
+/**
+ * Event discovery.
+ *
+ * The `type` filter is a server query parameter, not a client-side filter, so
+ * the list never shows a partial page that would look like a complete result.
+ * `GET /v1/events` returns only `PUBLISHED` events, ordered by `startAt ASC`.
+ */
+export const EventsScreen: React.FC<EventsScreenProps> = ({ client, communityId, onBack }) => {
+  const router = useRouter();
+  const { colors, spacing } = useTheme();
+  const [filter, setFilter] = useState<EventFilter>('ALL');
 
-        setNextCursor(res.nextCursor || null);
-        setHasMore(res.hasMore);
-      } catch (err: unknown) {
-        console.error('Failed to load events:', err);
-      } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    },
-    [client, nextCursor]
-  );
+  const query = useInfiniteQuery({
+    queryKey: SOCIAL_QUERY_KEYS.events({
+      communityId,
+      type: filter === 'ALL' ? undefined : filter,
+    }),
+    queryFn: ({ pageParam }) =>
+      client.discoverEvents({
+        limit: PAGE_SIZE,
+        cursor: pageParam,
+        communityId,
+        type: filter === 'ALL' ? undefined : filter,
+      }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: getNextCursorPageParam,
+  });
 
-  useEffect(() => {
-    loadEvents(true);
-  }, [client]);
+  const events = flattenPages(query.data?.pages, byId) as EventDto[];
 
-  const formatDate = (isoString: string) => {
-    try {
-      const d = new Date(isoString);
-      return d.toLocaleDateString(undefined, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return isoString;
-    }
-  };
-
-  const renderEventCard = ({ item }: { item: EventDto }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => onSelectEvent?.(item.id)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.dateBadge}>
-        <Text style={styles.dateBadgeText}>{formatDate(item.startAt)}</Text>
+  if (query.isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <TopNavHeader title="Events" onBack={onBack} />
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonBox key={i} width="100%" height={96} radius="radiusLG" />
+          ))}
+        </View>
       </View>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.location}>
-        📍 {item.locationName} · {item.type}
-      </Text>
-      <View style={styles.metaRow}>
-        <Text style={styles.attendees}>
-          👥 {item.attendeeCount} going
-          {item.capacity ? ` / ${item.capacity} max` : ''}
-        </Text>
-        {item.currentUserRsvp ? <Text style={styles.rsvpBadge}>{item.currentUserRsvp}</Text> : null}
+    );
+  }
+
+  if (query.isError) {
+    const view = describeSocialError(query.error);
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <TopNavHeader title="Events" onBack={onBack} />
+        <ErrorState
+          type={view.stateType}
+          title={view.title}
+          message={view.message}
+          onRetry={view.isRetryable ? () => void query.refetch() : undefined}
+          testID="events-error"
+        />
       </View>
-    </TouchableOpacity>
-  );
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Events</Text>
-        {onCreateEvent ? (
-          <TouchableOpacity style={styles.createBtn} onPress={onCreateEvent}>
-            <Text style={styles.createBtnText}>+ Event</Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <TopNavHeader
+        title="Events"
+        onBack={onBack}
+        rightAction={
+          <Button
+            label="Host"
+            icon="plus"
+            size="sm"
+            variant="tertiary"
+            onPress={() => router.push(socialRoutes.createEvent(communityId))}
+            accessibilityLabel="Host an event"
+            testID="events-create-btn"
+          />
+        }
+      />
 
-      {isLoading && events.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+      {!communityId ? (
+        <View
+          style={[styles.filterBar, { borderBottomColor: colors.border }]}
+          accessibilityRole="tablist"
+        >
+          {FILTERS.map((f) => (
+            <TouchableOpacity
+              key={f.key}
+              style={[
+                styles.filterChip,
+                {
+                  backgroundColor: filter === f.key ? colors.accentSoft : 'transparent',
+                  borderColor: filter === f.key ? colors.accent : colors.border,
+                  borderRadius: 999,
+                  paddingHorizontal: spacing.md,
+                },
+              ]}
+              onPress={() => setFilter(f.key)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: filter === f.key }}
+              accessibilityLabel={f.label}
+              testID={`events-filter-${f.key.toLowerCase()}`}
+            >
+              <Text
+                variant="caption"
+                weight="semibold"
+                color={filter === f.key ? 'accent' : 'secondary'}
+              >
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-      ) : (
-        <FlatList
-          data={events}
-          keyExtractor={(item) => item.id}
-          renderItem={renderEventCard}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={() => loadEvents(true)}
-              tintColor="#007AFF"
+      ) : null}
+
+      <FlatList
+        data={events}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={{ marginBottom: spacing.md }}>
+            <EventCard
+              id={item.id}
+              title={item.title}
+              dateFormatted={formatEventDateLabel(item.startAt)}
+              location={item.type === 'ONLINE' ? 'Online' : item.locationName}
+              attendeeCount={item.attendeeCount}
+              rsvpStatus={toEventCardRsvp(item.currentUserRsvp)}
+              onPress={() => {
+                trackOnboardingEvent('event_viewed', { event_id: item.id, event_type: item.type });
+                router.push(socialRoutes.event(item.id));
+              }}
             />
-          }
-          onEndReached={() => {
-            if (hasMore && !isLoading && !isRefreshing) {
-              loadEvents(false);
+          </View>
+        )}
+        contentContainerStyle={events.length === 0 ? styles.emptyContent : styles.content}
+        refreshing={query.isRefetching && !query.isFetchingNextPage}
+        onRefresh={() => void query.refetch()}
+        onEndReachedThreshold={0.5}
+        onEndReached={() => {
+          if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
+        }}
+        ListEmptyComponent={
+          <EmptyState
+            type="noEvents"
+            title={filter === 'ALL' ? 'No upcoming events' : 'No matching events'}
+            description={
+              filter === 'ALL'
+                ? 'Published events will appear here as soon as organisers schedule them.'
+                : 'Try a different filter to see more events.'
             }
-          }}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No upcoming events discovered.</Text>
-            </View>
-          }
-        />
-      )}
+            testID="events-empty"
+          />
+        }
+        ListFooterComponent={
+          <View style={styles.footer}>
+            <SocialLoadMoreButton
+              hasMore={query.hasNextPage}
+              isFetching={query.isFetchingNextPage}
+              onPress={() => void query.fetchNextPage()}
+            />
+            {events.length > 0 ? (
+              <View style={[styles.legend, { marginTop: spacing.sm }]}>
+                <Icon name="info" size="tiny" color={colors.textTertiary} />
+                <Text variant="caption" color="tertiary" style={{ marginLeft: 6 }}>
+                  Sorted by start time. Draft and cancelled events are not listed.
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        }
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={8}
+        windowSize={9}
+        removeClippedSubviews
+      />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
   },
-  header: {
+  filterBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    gap: 8,
+    padding: 12,
+    borderBottomWidth: 1,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  createBtn: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 12,
+  filterChip: {
+    borderWidth: 1,
     paddingVertical: 6,
-    borderRadius: 14,
   },
-  createBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 13,
+  content: {
+    padding: 16,
   },
-  centerContainer: {
-    flex: 1,
+  emptyContent: {
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    padding: 24,
   },
-  card: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 12,
-    marginVertical: 6,
-    padding: 14,
-    borderRadius: 12,
-    shadowColor: '#000000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 3,
-    elevation: 1,
+  footer: {
+    paddingVertical: 16,
   },
-  dateBadge: {
-    marginBottom: 6,
-  },
-  dateBadgeText: {
-    color: '#007AFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#1C1C1E',
-    marginBottom: 4,
-  },
-  location: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginBottom: 10,
-  },
-  metaRow: {
+  legend: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E5E5EA',
-    paddingTop: 8,
-  },
-  attendees: {
-    fontSize: 13,
-    color: '#3A3A3C',
-  },
-  rsvpBadge: {
-    backgroundColor: '#E5F1FF',
-    color: '#007AFF',
-    fontWeight: '600',
-    fontSize: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: '#8E8E93',
-    fontSize: 15,
+    justifyContent: 'center',
   },
 });

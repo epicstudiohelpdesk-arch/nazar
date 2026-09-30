@@ -22,15 +22,68 @@ import type {
   CreateRsvpRequestDto,
   EventRsvpStatus,
   EventAttendeeListResponseDto,
+  EventType,
 } from '@platform/api-contracts';
+import { SocialApiError } from './social-state.js';
 
 export interface SocialApiConfig {
   readonly baseUrl: string;
   readonly getAccessToken: () => Promise<string | null>;
+  /** Injectable for tests. Defaults to the global `fetch`. */
+  readonly fetchFn?: typeof fetch;
+}
+
+interface SocialEnvelopeShape {
+  readonly success?: boolean;
+  readonly data?: unknown;
+  readonly error?: {
+    readonly statusCode?: number;
+    readonly code?: string;
+    readonly message?: string;
+    readonly details?: readonly { field: string; message: string; code?: string }[];
+  };
+  readonly requestId?: string;
+}
+
+/**
+ * Converts a fetch `Response` into data or a typed {@link SocialApiError}.
+ *
+ * Previously this threw `new Error(rawServerMessage)`, which discarded the
+ * machine-readable `code`. Screens now branch on the code (for example
+ * `EVENT_FULL` and `RSVP_NOT_ALLOWED`) instead of string-matching messages.
+ */
+async function parseSocialResponse<T>(res: Response): Promise<{ success: boolean; data: T }> {
+  let body: SocialEnvelopeShape = {};
+  try {
+    body = (await res.json()) as SocialEnvelopeShape;
+  } catch {
+    body = {};
+  }
+
+  if (res.ok && body.success === true) {
+    return { success: true, data: body.data as T };
+  }
+
+  if (res.ok && body.data !== undefined) {
+    // Tolerate a 200 that omits the envelope flag but still carries data.
+    return { success: true, data: body.data as T };
+  }
+
+  throw new SocialApiError({
+    code: body.error?.code ?? `HTTP_${res.status}`,
+    statusCode: body.error?.statusCode ?? res.status,
+    message: body.error?.message ?? res.statusText ?? 'Request failed',
+    details: body.error?.details ?? [],
+    requestId: body.requestId,
+  });
 }
 
 export class SocialApiClient {
-  constructor(private readonly config: SocialApiConfig) {}
+  private readonly fetch: typeof fetch;
+
+  constructor(private readonly config: SocialApiConfig) {
+    this.fetch = config.fetchFn ?? globalThis.fetch.bind(globalThis);
+  }
 
   private async fetchWithAuth<T>(
     endpoint: string,
@@ -46,19 +99,12 @@ export class SocialApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const res = await fetch(`${this.config.baseUrl}${endpoint}`, {
+    const res = await this.fetch(`${this.config.baseUrl}${endpoint}`, {
       ...options,
       headers,
     });
 
-    if (!res.ok) {
-      const errorBody = await res.json().catch(() => ({}));
-      throw new Error(
-        errorBody?.message || errorBody?.code || `HTTP error ${res.status}: ${res.statusText}`
-      );
-    }
-
-    return res.json();
+    return parseSocialResponse<T>(res);
   }
 
   // ----------------------------------------------------
@@ -265,6 +311,27 @@ export class SocialApiClient {
     return res.data;
   }
 
+  /** OWNER/ADMIN only. Approves a PENDING membership into ACTIVE. */
+  async approveMembership(
+    communityId: string,
+    userId: string
+  ): Promise<{ status: CommunityMembershipStatus }> {
+    const res = await this.fetchWithAuth<{ status: CommunityMembershipStatus }>(
+      `/v1/communities/${communityId}/members/${userId}/approve`,
+      { method: 'POST' }
+    );
+    return res.data;
+  }
+
+  /** OWNER/ADMIN only. Bans an ACTIVE member. */
+  async banMember(communityId: string, userId: string): Promise<{ success: boolean }> {
+    const res = await this.fetchWithAuth<{ success: boolean }>(
+      `/v1/communities/${communityId}/members/${userId}/ban`,
+      { method: 'POST' }
+    );
+    return res.data;
+  }
+
   async getCommunityFeed(
     id: string,
     query: { limit?: number; cursor?: string } = {}
@@ -293,7 +360,7 @@ export class SocialApiClient {
   }
 
   async discoverEvents(
-    query: { limit?: number; cursor?: string; communityId?: string; type?: string } = {}
+    query: { limit?: number; cursor?: string; communityId?: string; type?: EventType } = {}
   ): Promise<EventListResponseDto> {
     const params = new URLSearchParams();
     if (query.limit) params.set('limit', String(query.limit));
@@ -355,4 +422,64 @@ export class SocialApiClient {
     );
     return res.data;
   }
+}
+
+export const SOCIAL_QUERY_KEYS = {
+  /**
+   * Prefix keys. Invalidation matches by key prefix, and a single list key such
+   * as `events({ communityId })` is a *sibling* of `events()` rather than a child
+   * of it, so invalidating one filtered list would silently leave the others
+   * stale. Mutations invalidate these roots instead.
+   */
+  feedLists: ['social', 'feed'] as const,
+  communityLists: ['social', 'communities'] as const,
+  eventLists: ['social', 'events'] as const,
+  feed: (communityId?: string) => ['social', 'feed', communityId ?? 'global'] as const,
+  post: (id: string) => ['social', 'post', id] as const,
+  comments: (postId: string) => ['social', 'comments', postId] as const,
+  userCommunities: ['social', 'communities', 'user'] as const,
+  discoverCommunities: ['social', 'communities', 'discover'] as const,
+  community: (id: string) => ['social', 'community', id] as const,
+  communityMembers: (id: string) => ['social', 'community', id, 'members'] as const,
+  communityFeed: (id: string) => ['social', 'community', id, 'feed'] as const,
+  events: (params?: { communityId?: string; type?: string }) =>
+    ['social', 'events', params ?? {}] as const,
+  event: (id: string) => ['social', 'event', id] as const,
+  eventAttendees: (id: string) => ['social', 'event', id, 'attendees'] as const,
+  /**
+   * The detail screen shows a short, non-paginated attendee preview while
+   * `eventAttendees` backs an infinite roster. The two cache different shapes,
+   * so they must not share a key.
+   */
+  eventAttendeePreview: (id: string) => ['social', 'event', id, 'attendee-preview'] as const,
+  /**
+   * The Explore landing page renders short previews of the four main lists.
+   * Those are single-page responses with a different shape from the infinite
+   * queries on the full screens, so each preview gets its own key instead of
+   * poisoning the list caches with partial data.
+   */
+  homePreview: {
+    feed: ['social', 'home', 'feed'] as const,
+    events: ['social', 'home', 'events'] as const,
+    myCommunities: ['social', 'home', 'my-communities'] as const,
+    discoverCommunities: ['social', 'home', 'discover-communities'] as const,
+  },
+};
+
+import { getDefaultAuthClient } from '../auth/default-client.js';
+import type { AuthClient } from '../auth/auth-client.js';
+
+export function createSocialApi(authClient: AuthClient): SocialApiClient {
+  return new SocialApiClient({
+    baseUrl: authClient.getBaseUrl(),
+    getAccessToken: async () => authClient.getStorage().getAccessToken(),
+  });
+}
+
+let defaultSocialApi: SocialApiClient | null = null;
+export function getDefaultSocialApi(): SocialApiClient {
+  if (!defaultSocialApi) {
+    defaultSocialApi = createSocialApi(getDefaultAuthClient());
+  }
+  return defaultSocialApi;
 }

@@ -207,6 +207,97 @@ describe('Events, Capacity & RSVP Engine (Gate 12)', () => {
         'Flat 402, Signature Towers, 5th Block Koramangala'
       );
     });
+
+    it('redacts precise coordinates alongside the address they belong to', async () => {
+      // Coordinates identify a venue as precisely as a street address does, so
+      // leaving them visible would defeat the address redaction entirely.
+      const organizer = await createActiveUser('coords_org');
+      const attendee = await createActiveUser('coords_attendee');
+      const outsider = await createActiveUser('coords_outsider');
+
+      const createRes = await request(app.getHttpServer())
+        .post('/v1/events')
+        .set('Authorization', `Bearer ${organizer.accessToken}`)
+        .send({
+          title: 'Laneway Photo Walk',
+          description: 'Shooting the old city alleys at golden hour',
+          type: 'PHYSICAL',
+          startAt: '2026-12-08T16:00:00.000Z',
+          endAt: '2026-12-08T19:00:00.000Z',
+          locationName: 'KR Market, Gate 1',
+          locationAddress: 'Kalasipalya Road, Bengaluru 560002',
+          locationUrl: 'https://maps.google.com/?q=kr-market',
+          latitude: 12.9591,
+          longitude: 77.6764,
+          capacity: 25,
+        });
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.data.id as string;
+
+      // 1. The organizer, who is auto-RSVP'd GOING, keeps the coordinates.
+      const orgView = await request(app.getHttpServer())
+        .get(`/v1/events/${eventId}`)
+        .set('Authorization', `Bearer ${organizer.accessToken}`);
+      expect(orgView.body.data.latitude).toBe(12.9591);
+      expect(orgView.body.data.longitude).toBe(77.6764);
+
+      // 2. An outsider gets the coarse name and nothing that pins the venue down.
+      const outsiderView = await request(app.getHttpServer())
+        .get(`/v1/events/${eventId}`)
+        .set('Authorization', `Bearer ${outsider.accessToken}`);
+      expect(outsiderView.status).toBe(200);
+      expect(outsiderView.body.data.locationName).toBe('KR Market, Gate 1');
+      expect(outsiderView.body.data.locationAddress).toBeNull();
+      expect(outsiderView.body.data.latitude).toBeNull();
+      expect(outsiderView.body.data.longitude).toBeNull();
+
+      // 3. The discovery list must not leak what the detail view withholds. The
+      // list is ordered by `startAt ASC` and the test database accumulates events
+      // across runs, so the event is found by walking the cursor rather than by
+      // assuming it is on the first page.
+      let outsiderListItem: Record<string, unknown> | undefined;
+      let cursor: string | null = null;
+      for (let page = 0; page < 10 && !outsiderListItem; page += 1) {
+        const res: request.Response = await request(app.getHttpServer())
+          .get(`/v1/events?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`)
+          .set('Authorization', `Bearer ${outsider.accessToken}`);
+        expect(res.status).toBe(200);
+        outsiderListItem = res.body.data.items.find(
+          (e: { id: string }) => e.id === eventId
+        );
+        cursor = res.body.data.nextCursor ?? null;
+      }
+      expect(outsiderListItem).toBeDefined();
+      expect(outsiderListItem?.locationAddress).toBeNull();
+      expect(outsiderListItem?.latitude).toBeNull();
+      expect(outsiderListItem?.longitude).toBeNull();
+
+      // 4. INTERESTED is not a confirmed place, so it must not unlock the address.
+      await request(app.getHttpServer())
+        .post(`/v1/events/${eventId}/rsvp`)
+        .set('Authorization', `Bearer ${attendee.accessToken}`)
+        .send({ status: 'INTERESTED' });
+
+      const interestedView = await request(app.getHttpServer())
+        .get(`/v1/events/${eventId}`)
+        .set('Authorization', `Bearer ${attendee.accessToken}`);
+      expect(interestedView.body.data.currentUserRsvp).toBe('INTERESTED');
+      expect(interestedView.body.data.locationAddress).toBeNull();
+      expect(interestedView.body.data.latitude).toBeNull();
+      expect(interestedView.body.data.longitude).toBeNull();
+
+      // 5. Only a confirmed GOING attendee sees the exact coordinates.
+      await request(app.getHttpServer())
+        .post(`/v1/events/${eventId}/rsvp`)
+        .set('Authorization', `Bearer ${attendee.accessToken}`)
+        .send({ status: 'GOING' });
+
+      const attendeeView = await request(app.getHttpServer())
+        .get(`/v1/events/${eventId}`)
+        .set('Authorization', `Bearer ${attendee.accessToken}`);
+      expect(attendeeView.body.data.latitude).toBe(12.9591);
+      expect(attendeeView.body.data.longitude).toBe(77.6764);
+    });
   });
 
   describe('Capacity Enforcement & Deterministic FIFO Waitlist Promotion', () => {

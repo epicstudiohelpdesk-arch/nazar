@@ -1,268 +1,267 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter, useFocusEffect } from 'expo-router';
 import type { CommunityDto } from '@platform/api-contracts';
-import type { SocialApiClient } from './social-api.js';
+import { useTheme } from '../design/theme/index.js';
+import { Text } from '../design/primitives/Text.js';
+import { Icon } from '../design/primitives/Icon.js';
+import { Button } from '../design/components/button/Button.js';
+import { CommunityCard } from '../design/components/card/CommunityCard.js';
+import { TopNavHeader } from '../design/components/navigation/TopNavHeader.js';
+import { EmptyState } from '../design/components/feedback/EmptyState.js';
+import { ErrorState } from '../design/components/feedback/ErrorState.js';
+import { SkeletonBox } from '../design/components/feedback/LoadingSkeleton.js';
+import { SocialLoadMoreButton } from './components/SocialPostList.js';
+import { type SocialApiClient, SOCIAL_QUERY_KEYS } from './social-api.js';
+import {
+  byId,
+  describeSocialError,
+  flattenPages,
+  getNextCursorPageParam,
+  socialRoutes,
+} from './social-state.js';
+import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 
 export interface CommunitiesScreenProps {
   readonly client: SocialApiClient;
-  readonly onSelectCommunity?: (communityId: string) => void;
-  readonly onCreateCommunity?: () => void;
+  readonly initialTab?: CommunityListTab;
+  readonly onBack?: () => void;
 }
 
-export function CommunitiesScreen({
+export type CommunityListTab = 'mine' | 'discover';
+
+const PAGE_SIZE = 20;
+
+const TAB_LABELS: Record<CommunityListTab, string> = {
+  mine: 'My communities',
+  discover: 'Discover',
+};
+
+/**
+ * Community list with the two server-backed views.
+ *
+ * There is no search endpoint, so no search box is offered. A client-side filter
+ * over the first page would silently fail to match communities that have not
+ * been paginated in yet, which is worse than offering no search at all.
+ */
+export const CommunitiesScreen: React.FC<CommunitiesScreenProps> = ({
   client,
-  onSelectCommunity,
-  onCreateCommunity,
-}: CommunitiesScreenProps) {
-  const [activeTab, setActiveTab] = useState<'my' | 'discover'>('my');
-  const [myCommunities, setMyCommunities] = useState<CommunityDto[]>([]);
-  const [discoverCommunities, setDiscoverCommunities] = useState<CommunityDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  initialTab = 'mine',
+  onBack,
+}) => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { colors, spacing } = useTheme();
+  const [tab, setTab] = useState<CommunityListTab>(initialTab);
 
-  const loadData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const [userList, discoverList] = await Promise.all([
-        client.getUserCommunities({ limit: 20 }),
-        client.discoverCommunities({ limit: 20 }),
-      ]);
-      setMyCommunities([...userList.items]);
-      setDiscoverCommunities([...discoverList.items]);
-    } catch (err: unknown) {
-      console.error('Failed to load communities:', err);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [client]);
+  const query = useInfiniteQuery({
+    queryKey:
+      tab === 'mine' ? SOCIAL_QUERY_KEYS.userCommunities : SOCIAL_QUERY_KEYS.discoverCommunities,
+    queryFn: ({ pageParam }) =>
+      tab === 'mine'
+        ? client.getUserCommunities({ limit: PAGE_SIZE, cursor: pageParam })
+        : client.discoverCommunities({ limit: PAGE_SIZE, cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: getNextCursorPageParam,
+  });
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Refetch on focus so membership changes made on a detail screen show up in
+  // "My communities" as soon as the user comes back, rather than after the
+  // 5 minute stale window.
+  // `refetch` is referentially stable in TanStack Query, so this runs on mount and
+  // on every return to this screen without refetching on every render. Switching
+  // tabs changes the query key, which refetches on its own.
+  const { refetch } = query;
+  useFocusEffect(
+    React.useCallback(() => {
+      void refetch();
+    }, [refetch])
+  );
 
-  const handleJoin = async (communityId: string) => {
-    try {
-      const res = await client.joinCommunity(communityId);
-      if (res.status === 'ACTIVE') {
-        loadData();
-      }
-    } catch (err: unknown) {
-      console.error('Failed to join community:', err);
-    }
+  const communities = flattenPages(query.data?.pages, byId) as CommunityDto[];
+
+  const onJoin = () => {
+    void queryClient.invalidateQueries({ queryKey: SOCIAL_QUERY_KEYS.userCommunities });
+    void queryClient.invalidateQueries({ queryKey: SOCIAL_QUERY_KEYS.discoverCommunities });
   };
 
-  const renderCommunityCard = ({ item }: { item: CommunityDto }) => {
-    const isMember = myCommunities.some((c) => c.id === item.id);
+  if (query.isLoading) {
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => onSelectCommunity?.(item.id)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.cardInfo}>
-          <Text style={styles.communityName}>{item.name}</Text>
-          <Text style={styles.communityDesc} numberOfLines={2}>
-            {item.description}
-          </Text>
-          <Text style={styles.memberCount}>
-            👥 {item.memberCount} members · {item.privacy}
-          </Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <TopNavHeader title="Communities" onBack={onBack} />
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonBox key={i} width="100%" height={96} radius="radiusLG" />
+          ))}
         </View>
-
-        {!isMember && activeTab === 'discover' ? (
-          <TouchableOpacity style={styles.joinButton} onPress={() => handleJoin(item.id)}>
-            <Text style={styles.joinButtonText}>Join</Text>
-          </TouchableOpacity>
-        ) : null}
-      </TouchableOpacity>
+      </View>
     );
-  };
+  }
 
-  const currentList = activeTab === 'my' ? myCommunities : discoverCommunities;
+  if (query.isError) {
+    const view = describeSocialError(query.error);
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <TopNavHeader title="Communities" onBack={onBack} />
+        <ErrorState
+          type={view.stateType}
+          title={view.title}
+          message={view.message}
+          onRetry={view.isRetryable ? () => void query.refetch() : undefined}
+          testID="communities-error"
+        />
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Communities</Text>
-        {onCreateCommunity ? (
-          <TouchableOpacity style={styles.createBtn} onPress={onCreateCommunity}>
-            <Text style={styles.createBtnText}>+ New</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <TopNavHeader
+        title="Communities"
+        onBack={onBack}
+        rightAction={
+          <Button
+            label="New"
+            icon="plus"
+            size="sm"
+            variant="tertiary"
+            onPress={() => router.push(socialRoutes.createCommunity())}
+            accessibilityLabel="Create a community"
+            testID="communities-create-btn"
+          />
+        }
+      />
+
+      <View
+        style={[styles.tabBar, { borderBottomColor: colors.border }]}
+        accessibilityRole="tablist"
+      >
+        {(Object.keys(TAB_LABELS) as CommunityListTab[]).map((key) => (
+          <TouchableOpacity
+            key={key}
+            style={[
+              styles.tab,
+              tab === key && { borderBottomColor: colors.accent, borderBottomWidth: 2 },
+            ]}
+            onPress={() => setTab(key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === key }}
+            accessibilityLabel={TAB_LABELS[key]}
+            testID={`communities-tab-${key}`}
+          >
+            <Text
+              variant="caption"
+              weight={tab === key ? 'bold' : 'medium'}
+              color={tab === key ? 'accent' : 'secondary'}
+            >
+              {TAB_LABELS[key]}
+            </Text>
           </TouchableOpacity>
-        ) : null}
+        ))}
       </View>
 
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'my' && styles.activeTab]}
-          onPress={() => setActiveTab('my')}
-        >
-          <Text style={[styles.tabText, activeTab === 'my' && styles.activeTabText]}>
-            My Communities
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'discover' && styles.activeTab]}
-          onPress={() => setActiveTab('discover')}
-        >
-          <Text style={[styles.tabText, activeTab === 'discover' && styles.activeTabText]}>
-            Discover
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {isLoading && currentList.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
-      ) : (
-        <FlatList
-          data={currentList}
-          keyExtractor={(item) => item.id}
-          renderItem={renderCommunityCard}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={() => {
-                setIsRefreshing(true);
-                loadData();
+      <FlatList
+        data={communities}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={{ marginBottom: spacing.md }}>
+            <CommunityCard
+              id={item.id}
+              name={item.name}
+              description={item.description}
+              memberCount={item.memberCount}
+              isJoined={tab === 'mine'}
+              onPress={() => {
+                trackOnboardingEvent('community_viewed', { communityId: item.id });
+                router.push(socialRoutes.community(item.id));
               }}
-              tintColor="#007AFF"
+              onJoinPress={onJoin}
             />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {activeTab === 'my'
-                  ? 'You haven’t joined any communities yet.'
-                  : 'No communities available to discover.'}
-              </Text>
-            </View>
-          }
-        />
-      )}
+          </View>
+        )}
+        contentContainerStyle={communities.length === 0 ? styles.emptyContent : styles.content}
+        refreshing={query.isRefetching && !query.isFetchingNextPage}
+        onRefresh={() => void query.refetch()}
+        onEndReachedThreshold={0.5}
+        onEndReached={() => {
+          if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
+        }}
+        ListEmptyComponent={
+          tab === 'mine' ? (
+            <EmptyState
+              type="noCommunities"
+              title="You have not joined any communities"
+              description="Explore communities to find people who share your interests."
+              primaryAction={{ label: 'Discover communities', onPress: () => setTab('discover') }}
+              testID="communities-empty"
+            />
+          ) : (
+            <EmptyState
+              type="noCommunities"
+              title="No communities to show"
+              description="Check back soon, or start one of your own."
+              primaryAction={{
+                label: 'Create a community',
+                onPress: () => router.push(socialRoutes.createCommunity()),
+              }}
+              testID="communities-discover-empty"
+            />
+          )
+        }
+        ListFooterComponent={
+          <View style={styles.footer}>
+            <SocialLoadMoreButton
+              hasMore={query.hasNextPage}
+              isFetching={query.isFetchingNextPage}
+              onPress={() => void query.fetchNextPage()}
+            />
+            {communities.length > 0 ? (
+              <View style={[styles.legend, { marginTop: spacing.sm }]}>
+                <Icon name="info" size="tiny" color={colors.textTertiary} />
+                <Text variant="caption" color="tertiary" style={{ marginLeft: 6 }}>
+                  Order is set by Nazar, not by your device.
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        }
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={8}
+        windowSize={9}
+        removeClippedSubviews
+      />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  createBtn: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  createBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 13,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    borderBottomWidth: 1,
   },
   tab: {
+    flex: 1,
     paddingVertical: 12,
-    marginRight: 24,
+    alignItems: 'center',
   },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#007AFF',
+  content: {
+    padding: 16,
   },
-  tabText: {
-    fontSize: 15,
-    color: '#8E8E93',
-  },
-  activeTabText: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  centerContainer: {
-    flex: 1,
+  emptyContent: {
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    padding: 24,
   },
-  card: {
+  footer: {
+    paddingVertical: 16,
+  },
+  legend: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 12,
-    marginVertical: 6,
-    padding: 14,
-    borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  communityName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1C1C1E',
-    marginBottom: 4,
-  },
-  communityDesc: {
-    fontSize: 14,
-    color: '#3A3A3C',
-    lineHeight: 18,
-    marginBottom: 6,
-  },
-  memberCount: {
-    fontSize: 12,
-    color: '#8E8E93',
-  },
-  joinButton: {
-    backgroundColor: '#34C759',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-    marginLeft: 12,
-  },
-  joinButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: '#8E8E93',
-    fontSize: 15,
-    textAlign: 'center',
+    justifyContent: 'center',
   },
 });

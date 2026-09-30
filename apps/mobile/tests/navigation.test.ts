@@ -32,8 +32,16 @@ import EditProfileRoute from '../app/profile/edit.js';
 import ProfilePreviewRoute from '../app/profile/preview.js';
 import PostDetailRoute from '../app/social/post/[postId].js';
 import CreatePostRoute from '../app/social/create-post.js';
-import CommunityDetailRoute from '../app/social/community/[communityId].js';
-import EventDetailRoute from '../app/social/event/[eventId].js';
+import CommunityDetailRoute from '../app/social/community/[communityId]/index.js';
+import CommunityFeedRoute from '../app/social/community/[communityId]/feed.js';
+import CommunityMembersRoute from '../app/social/community/[communityId]/members.js';
+import CreateCommunityRoute from '../app/social/communities/create.js';
+import CommunitiesRoute from '../app/social/communities.js';
+import SocialFeedRoute from '../app/social/feed.js';
+import EventsRoute from '../app/social/events.js';
+import CreateEventRoute from '../app/social/events/create.js';
+import EventDetailRoute from '../app/social/event/[eventId]/index.js';
+import EventAttendeesRoute from '../app/social/event/[eventId]/attendees.js';
 
 // Settings & Modals
 import SettingsHubRoute from '../app/settings/index.js';
@@ -90,6 +98,38 @@ describe('Frontend F1: Information Architecture & Navigation', () => {
       expect(typeof CreatePostRoute).toBe('function');
       expect(typeof CommunityDetailRoute).toBe('function');
       expect(typeof EventDetailRoute).toBe('function');
+    });
+
+    it('should export every F7 social, community and event route', () => {
+      expect(typeof SocialFeedRoute).toBe('function');
+      expect(typeof CommunitiesRoute).toBe('function');
+      expect(typeof CreateCommunityRoute).toBe('function');
+      expect(typeof CommunityFeedRoute).toBe('function');
+      expect(typeof CommunityMembersRoute).toBe('function');
+      expect(typeof EventsRoute).toBe('function');
+      expect(typeof CreateEventRoute).toBe('function');
+      expect(typeof EventAttendeesRoute).toBe('function');
+    });
+
+    it('should keep social collections plural and details singular', () => {
+      // The API and the rest of the app both use plural collections and singular
+      // details; a mismatched path is a silent deep-link break.
+      for (const relativePath of [
+        'app/social/feed.tsx',
+        'app/social/communities.tsx',
+        'app/social/communities/create.tsx',
+        'app/social/events.tsx',
+        'app/social/events/create.tsx',
+        'app/social/create-post.tsx',
+        'app/social/community/[communityId]/index.tsx',
+        'app/social/community/[communityId]/feed.tsx',
+        'app/social/community/[communityId]/members.tsx',
+        'app/social/event/[eventId]/index.tsx',
+        'app/social/event/[eventId]/attendees.tsx',
+        'app/social/post/[postId].tsx',
+      ]) {
+        expect(fs.existsSync(path.join(projectRoot, relativePath))).toBe(true);
+      }
     });
 
     it('should export all settings screens', () => {

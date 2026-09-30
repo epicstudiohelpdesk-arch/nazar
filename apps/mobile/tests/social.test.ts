@@ -1,13 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SocialApiClient } from '../src/social/social-api.js';
+import { describeSocialError, SocialApiError } from '../src/social/social-state.js';
 import type {
   PostDto,
   PostFeedResponseDto,
   PostCommentDto,
   CommunityDto,
   CommunityListResponseDto,
+  CommunityMemberListResponseDto,
   EventDto,
   EventListResponseDto,
+  EventAttendeeListResponseDto,
 } from '@platform/api-contracts';
 
 describe('Mobile Social, Communities & Events Client', () => {
@@ -137,6 +140,17 @@ describe('Mobile Social, Communities & Events Client', () => {
       );
     });
 
+    it('should get single post by id', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockPost }),
+      });
+
+      const post = await client.getPost('post-1');
+      expect(post.id).toBe('post-1');
+      expect(post.author?.displayName).toBe('Aarav Patel');
+    });
+
     it('should add reaction idempotently', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -155,6 +169,16 @@ describe('Mobile Social, Communities & Events Client', () => {
       });
 
       const res = await client.removeReaction('post-1', 'LIKE');
+      expect(res.success).toBe(true);
+    });
+
+    it('should delete post successfully', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: { success: true } }),
+      });
+
+      const res = await client.deletePost('post-1');
       expect(res.success).toBe(true);
     });
   });
@@ -180,6 +204,16 @@ describe('Mobile Social, Communities & Events Client', () => {
       const comment = await client.addComment('post-1', { content: 'Breathtaking view!' });
       expect(comment.id).toBe('comment-1');
       expect(comment.content).toBe('Breathtaking view!');
+    });
+
+    it('should delete a comment', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: { success: true } }),
+      });
+
+      const res = await client.deleteComment('post-1', 'comment-1');
+      expect(res.success).toBe(true);
     });
   });
 
@@ -224,6 +258,33 @@ describe('Mobile Social, Communities & Events Client', () => {
       const res = await client.leaveCommunity('comm-1');
       expect(res.success).toBe(true);
     });
+
+    it('should fetch community members list', async () => {
+      const membersResp: CommunityMemberListResponseDto = {
+        items: [
+          {
+            id: 'mem-1',
+            communityId: 'comm-1',
+            userId: 'user-1',
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            user: { userId: 'user-1', displayName: 'Deepa' },
+            joinedAt: '2026-09-01T00:00:00.000Z',
+          },
+        ],
+        nextCursor: null,
+        hasMore: false,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: membersResp }),
+      });
+
+      const members = await client.listCommunityMembers('comm-1');
+      expect(members.items).toHaveLength(1);
+      expect(members.items[0]?.user?.displayName).toBe('Deepa');
+    });
   });
 
   describe('Events & RSVP API', () => {
@@ -254,6 +315,16 @@ describe('Mobile Social, Communities & Events Client', () => {
       expect(rsvp.status).toBe('GOING');
     });
 
+    it('should handle authoritative WAITLISTED status from backend when event is full', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: { status: 'WAITLISTED' } }),
+      });
+
+      const rsvp = await client.rsvpEvent('event-1', { status: 'GOING' });
+      expect(rsvp.status).toBe('WAITLISTED');
+    });
+
     it('should handle RSVP cancel', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -262,6 +333,79 @@ describe('Mobile Social, Communities & Events Client', () => {
 
       const res = await client.cancelRsvp('event-1');
       expect(res.success).toBe(true);
+    });
+
+    it('should fetch event attendee list', async () => {
+      const attendeeList: EventAttendeeListResponseDto = {
+        items: [
+          {
+            id: 'rsvp-1',
+            eventId: 'event-1',
+            userId: 'user-1',
+            user: { userId: 'user-1', displayName: 'Rahul' },
+            status: 'GOING',
+            createdAt: '2026-09-29T00:00:00.000Z',
+          },
+        ],
+        nextCursor: null,
+        hasMore: false,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: attendeeList }),
+      });
+
+      const attendees = await client.listEventAttendees('event-1');
+      expect(attendees.items).toHaveLength(1);
+      expect(attendees.items[0]?.user?.displayName).toBe('Rahul');
+    });
+
+    it('should surface the enveloped backend error for a failed request', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        json: async () => ({
+          success: false,
+          error: {
+            statusCode: 400,
+            code: 'RSVP_NOT_ALLOWED',
+            message: 'Event is closed for RSVPs',
+            timestamp: '2026-09-29T10:00:00.000Z',
+          },
+        }),
+      });
+
+      const err = await client
+        .rsvpEvent('event-closed', { status: 'GOING' })
+        .then(() => null)
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(SocialApiError);
+      expect((err as SocialApiError).code).toBe('RSVP_NOT_ALLOWED');
+      expect((err as SocialApiError).message).toBe('Event is closed for RSVPs');
+      // The user-facing copy must come from the deliberate mapping, not the raw
+      // server string.
+      expect(describeSocialError(err).kind).toBe('event_over');
+    });
+
+    it('should fall back to the status text when the error envelope is missing', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: async () => ({}),
+      });
+
+      const err = await client
+        .rsvpEvent('event-1', { status: 'GOING' })
+        .then(() => null)
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(SocialApiError);
+      expect((err as SocialApiError).message).toBe('Internal Server Error');
+      expect(describeSocialError(err).kind).toBe('unknown');
     });
   });
 });
