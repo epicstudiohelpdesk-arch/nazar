@@ -10,8 +10,8 @@ export default function DiscoverTabRoute(): React.JSX.Element {
   return (
     <DiscoveryScreen
       authClient={authClient}
-      onOpenProfile={() => router.push('/profile/edit')}
-      onOpenMatches={() => router.push('/matches')}
+      onOpenProfile={(userId) => router.push(`/profile/${userId}`)}
+      onOpenMatches={() => router.push('/(tabs)/matches')}
     />
   );
 }

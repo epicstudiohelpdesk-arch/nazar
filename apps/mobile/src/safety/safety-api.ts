@@ -7,6 +7,7 @@ import type {
   ReportResponseDto,
 } from '@platform/api-contracts';
 import type { AuthClient } from '../auth/auth-client.js';
+import { getDefaultAuthClient } from '../auth/default-client.js';
 
 export const SAFETY_QUERY_KEYS = {
   blocks: ['safety', 'blocks'] as const,
@@ -85,4 +86,15 @@ export function createSafetyApi(authClient: AuthClient) {
       return res.data;
     },
   };
+}
+
+export type SafetyApi = ReturnType<typeof createSafetyApi>;
+
+let defaultSafetyApi: SafetyApi | null = null;
+
+export function getDefaultSafetyApi(): SafetyApi {
+  if (!defaultSafetyApi) {
+    defaultSafetyApi = createSafetyApi(getDefaultAuthClient());
+  }
+  return defaultSafetyApi;
 }

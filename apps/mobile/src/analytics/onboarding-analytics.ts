@@ -90,7 +90,23 @@ export type OnboardingAnalyticsEvent =
   | 'onboarding_completed'
   | 'discovery_entered'
   | 'session_restored'
-  | 'session_restore_failed';
+  | 'session_restore_failed'
+  // Discovery & Interactions (F4)
+  | 'discovery_viewed'
+  | 'candidate_impression'
+  | 'profile_opened'
+  | 'profile_media_opened'
+  | 'like_sent'
+  | 'pass_sent'
+  | 'match_created'
+  | 'match_celebration_viewed'
+  | 'match_message_clicked'
+  | 'filter_opened'
+  | 'filter_applied'
+  | 'report_started'
+  | 'report_submitted'
+  | 'block_started'
+  | 'block_completed';
 
 /**
  * Tracks an onboarding or auth event with guaranteed PII sanitization.

@@ -13,6 +13,7 @@ import type {
   MediaUploadRequestPayload,
   ReorderMediaPayload,
   ProfileStateChangeResponse,
+  PublicProfileResponse,
 } from '@platform/api-contracts';
 import type { AuthClient } from '../auth/auth-client.js';
 import { getDefaultAuthClient } from '../auth/default-client.js';
@@ -45,6 +46,12 @@ export function createProfileApi(authClient: AuthClient, customFetch?: typeof fe
     // ----------------------------------------------------
     async getMyProfile(): Promise<PrivateProfileResponse> {
       const res = await authClient.request<PrivateProfileResponse>('/v1/profiles/me');
+      if (!res.success) throw new Error(res.error.message);
+      return res.data;
+    },
+
+    async getPublicProfile(profileId: string): Promise<PublicProfileResponse> {
+      const res = await authClient.request<PublicProfileResponse>(`/v1/profiles/${profileId}`);
       if (!res.success) throw new Error(res.error.message);
       return res.data;
     },

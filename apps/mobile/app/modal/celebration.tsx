@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
@@ -7,19 +7,45 @@ import { Text } from '../../src/design/primitives/Text.js';
 import { Avatar } from '../../src/design/primitives/Avatar.js';
 import { Button } from '../../src/design/components/button/Button.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
+import { useProfileStore } from '../../src/profile/profile-store.js';
+import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 
 export default function MatchCelebrationModalRoute(): React.JSX.Element {
-  const { matchId, conversationId, userName } = useLocalSearchParams<{
+  const { matchId, conversationId, targetUserId, userName, userAvatar } = useLocalSearchParams<{
     matchId?: string;
     conversationId?: string;
+    targetUserId?: string;
     userName?: string;
+    userAvatar?: string;
   }>();
   const router = useRouter();
   const { theme } = useTheme();
 
+  const profileStore = useProfileStore();
+  const myAvatar =
+    profileStore.media.find((m) => m.isPrimary)?.url ||
+    profileStore.media[0]?.url ||
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500';
+  const myName = profileStore.profile?.displayName || 'You';
+
+  const matchedAvatar =
+    userAvatar || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500';
+  const matchedName = userName ? decodeURIComponent(userName) : 'Your Match';
+
+  useEffect(() => {
+    trackOnboardingEvent('match_celebration_viewed', {
+      matchId: matchId || 'unknown',
+      targetUserId: targetUserId || undefined,
+    });
+  }, [matchId, targetUserId]);
+
   const handleStartChat = () => {
-    const targetChat = conversationId || matchId || 'conv-new';
-    router.replace(`/chat/${targetChat}`);
+    const targetChat = conversationId || matchId;
+    if (targetChat) {
+      router.replace(`/chat/${targetChat}`);
+    } else {
+      router.replace('/(tabs)/matches');
+    }
   };
 
   const handleKeepBrowsing = () => {
@@ -29,7 +55,10 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backdrop} />
-      <SurfaceCard elevation="lg" style={[styles.dialog, { backgroundColor: theme.colors.surfaceElevated }]}>
+      <SurfaceCard
+        elevation="lg"
+        style={[styles.dialog, { backgroundColor: theme.colors.surfaceElevated }]}
+      >
         <View style={styles.celebrationBadge}>
           <Text level="display">💕</Text>
         </View>
@@ -38,23 +67,15 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
           It's a Match!
         </Heading>
         <Text level="body" color="secondary" style={styles.subtitle}>
-          You and {userName || 'each other'} liked each other's profiles.
+          You and {matchedName} liked each other's profiles.
         </Text>
 
         <View style={styles.avatarRow}>
           <View style={[styles.avatarRing, { borderColor: theme.colors.accent }]}>
-            <Avatar
-              size="large"
-              uri="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500"
-              name="Me"
-            />
+            <Avatar size="large" uri={myAvatar} name={myName} />
           </View>
           <View style={[styles.avatarRing, { borderColor: theme.colors.accent, marginLeft: -16 }]}>
-            <Avatar
-              size="large"
-              uri="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500"
-              name={userName || 'Match'}
-            />
+            <Avatar size="large" uri={matchedAvatar} name={matchedName} />
           </View>
         </View>
 

@@ -1,28 +1,44 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog } from '../../src/design/components/modal/Dialog.js';
-import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { getDefaultSafetyApi } from '../../src/safety/safety-api.js';
+import { DISCOVERY_QUERY_KEYS } from '../../src/discovery/discovery-api.js';
+import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 
 export default function BlockModalRoute(): React.JSX.Element {
   const { targetUserId } = useLocalSearchParams<{ targetUserId: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const safetyApi = getDefaultSafetyApi();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const authClient = getDefaultAuthClient();
 
   const handleConfirmBlock = async () => {
+    if (!targetUserId) {
+      router.back();
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      if (targetUserId) {
-        await authClient.request(`/v1/safety/blocking/${targetUserId}/block`, {
-          method: 'POST',
-        });
-      }
-      Alert.alert('Account Blocked', 'This user has been blocked and removed from your views.');
-      router.replace('/(tabs)/discovery');
-    } catch {
-      Alert.alert('Account Blocked', 'This user has been blocked.');
-      router.replace('/(tabs)/discovery');
+      await safetyApi.blockUser(targetUserId, {
+        reason: 'Blocked via mobile discovery',
+      });
+
+      trackOnboardingEvent('block_completed', { targetUserId });
+
+      // Invalidate discovery feed so blocked member is immediately evicted
+      queryClient.invalidateQueries({ queryKey: DISCOVERY_QUERY_KEYS.feed });
+
+      Alert.alert(
+        'Account Blocked',
+        'This user has been blocked. They will no longer appear in your feeds, searches, or messages.',
+        [{ text: 'OK', onPress: () => router.replace('/(tabs)/discovery') }]
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to block user';
+      Alert.alert('Action Failed', msg);
     } finally {
       setIsSubmitting(false);
     }

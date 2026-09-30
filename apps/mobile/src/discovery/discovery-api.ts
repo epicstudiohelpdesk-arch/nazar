@@ -1,8 +1,10 @@
 import type { DiscoveryResponseDto, DiscoveryQueryDto } from '@platform/api-contracts';
 import type { AuthClient } from '../auth/auth-client.js';
+import { getDefaultAuthClient } from '../auth/default-client.js';
 
 export const DISCOVERY_QUERY_KEYS = {
   feed: ['discovery', 'feed'] as const,
+  feedWithFilters: (filtersHash: string) => ['discovery', 'feed', filtersHash] as const,
 };
 
 export function createDiscoveryApi(authClient: AuthClient) {
@@ -26,4 +28,15 @@ export function createDiscoveryApi(authClient: AuthClient) {
       return res.data;
     },
   };
+}
+
+export type DiscoveryApi = ReturnType<typeof createDiscoveryApi>;
+
+let defaultDiscoveryApi: DiscoveryApi | null = null;
+
+export function getDefaultDiscoveryApi(): DiscoveryApi {
+  if (!defaultDiscoveryApi) {
+    defaultDiscoveryApi = createDiscoveryApi(getDefaultAuthClient());
+  }
+  return defaultDiscoveryApi;
 }

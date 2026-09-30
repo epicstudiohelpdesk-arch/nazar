@@ -4,6 +4,7 @@ import type {
   InteractionHistoryResponseDto,
 } from '@platform/api-contracts';
 import type { AuthClient } from '../auth/auth-client.js';
+import { getDefaultAuthClient } from '../auth/default-client.js';
 
 export const INTERACTIONS_QUERY_KEYS = {
   history: ['interactions', 'history'] as const,
@@ -61,3 +62,12 @@ export function createInteractionsApi(authClient: AuthClient) {
 }
 
 export type InteractionsApi = ReturnType<typeof createInteractionsApi>;
+
+let defaultInteractionsApi: InteractionsApi | null = null;
+
+export function getDefaultInteractionsApi(): InteractionsApi {
+  if (!defaultInteractionsApi) {
+    defaultInteractionsApi = createInteractionsApi(getDefaultAuthClient());
+  }
+  return defaultInteractionsApi;
+}
