@@ -6,24 +6,77 @@ import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
 import { Button } from '../../src/design/components/button/Button.js';
 import { Icon } from '../../src/design/primitives/Icon.js';
+import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 
 export default function WelcomeScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
 
+  const handleGetStarted = () => {
+    trackOnboardingEvent('onboarding_started', { entryPoint: 'get_started' });
+    router.push('/(auth)/login');
+  };
+
+  const handleSignIn = () => {
+    trackOnboardingEvent('onboarding_started', { entryPoint: 'sign_in' });
+    router.push('/(auth)/login');
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
         <View style={styles.brandHero}>
-          <View style={[styles.iconCircle, { backgroundColor: theme.colors.accentSoft }]}>
+          <View
+            style={[
+              styles.iconCircle,
+              {
+                backgroundColor: theme.colors.accentSoft,
+                borderColor: theme.colors.accent,
+                borderWidth: 1,
+              },
+            ]}
+          >
             <Icon name="sparkles" size={44} color={theme.colors.accent} />
           </View>
-          <Heading level="display" style={styles.title}>
+          <Heading level="display" style={[styles.title, { color: theme.colors.textPrimary }]}>
             Nazar
           </Heading>
           <Text level="bodyLarge" color="secondary" style={styles.tagline}>
-            Authentic, modern Indian dating built for genuine connection.
+            Meaningful connections, rooted in culture and authentic intent.
           </Text>
+
+          <View style={styles.featurePills}>
+            <View
+              style={[
+                styles.featurePill,
+                { backgroundColor: theme.colors.surfaceMuted, borderColor: theme.colors.border },
+              ]}
+            >
+              <Text level="caption" style={{ color: theme.colors.textSecondary, fontWeight: '600' }}>
+                Verified Profiles
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.featurePill,
+                { backgroundColor: theme.colors.surfaceMuted, borderColor: theme.colors.border },
+              ]}
+            >
+              <Text level="caption" style={{ color: theme.colors.textSecondary, fontWeight: '600' }}>
+                Intentional Dating
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.featurePill,
+                { backgroundColor: theme.colors.surfaceMuted, borderColor: theme.colors.border },
+              ]}
+            >
+              <Text level="caption" style={{ color: theme.colors.textSecondary, fontWeight: '600' }}>
+                Zero Noise
+              </Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.actions}>
@@ -31,7 +84,7 @@ export default function WelcomeScreen(): React.JSX.Element {
             variant="primary"
             size="lg"
             fullWidth
-            onPress={() => router.push('/(auth)/login')}
+            onPress={handleGetStarted}
             accessibilityLabel="Get Started with phone or email"
           >
             Get Started
@@ -41,14 +94,14 @@ export default function WelcomeScreen(): React.JSX.Element {
             variant="secondary"
             size="lg"
             fullWidth
-            onPress={() => router.push('/(auth)/login')}
+            onPress={handleSignIn}
             accessibilityLabel="I already have an account, sign in"
           >
             Sign In
           </Button>
 
           <Text level="caption" color="tertiary" style={styles.legalNotice}>
-            By signing up, you agree to our Terms of Service and Privacy Policy. You must be 18+ to join.
+            By continuing, you agree to Nazar's Terms of Service and Privacy Policy. You must be 18+ to join.
           </Text>
         </View>
       </View>
@@ -73,9 +126,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
@@ -86,8 +139,21 @@ const styles = StyleSheet.create({
   },
   tagline: {
     textAlign: 'center',
-    maxWidth: 280,
+    maxWidth: 290,
     lineHeight: 24,
+  },
+  featurePills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 28,
+  },
+  featurePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
   },
   actions: {
     gap: 12,

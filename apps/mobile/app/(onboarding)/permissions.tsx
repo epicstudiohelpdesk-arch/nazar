@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, SafeAreaView, ScrollView, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
@@ -9,25 +9,54 @@ import { Icon } from '../../src/design/primitives/Icon.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { Button } from '../../src/design/components/button/Button.js';
 import { ProgressBar } from '../../src/design/components/feedback/ProgressBar.js';
-import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
+import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 
 export default function OnboardingPermissionsScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
-  const [isActivating, setIsActivating] = useState(false);
-  const authClient = getDefaultAuthClient();
 
-  const handleFinish = async () => {
-    setIsActivating(true);
-    try {
-      await authClient.request('/v1/profiles/me/activate', { method: 'POST' });
-      router.replace('/(tabs)/discovery');
-    } catch {
-      // In dev/mock fallback: proceed to discovery
-      router.replace('/(tabs)/discovery');
-    } finally {
-      setIsActivating(false);
+  const { permissionsStatus, setPermissionStatus } = useOnboardingStore();
+
+  const [locationGranted, setLocationGranted] = useState(
+    permissionsStatus.location === 'granted'
+  );
+  const [notificationsGranted, setNotificationsGranted] = useState(
+    permissionsStatus.push === 'granted'
+  );
+
+  useEffect(() => {
+    trackOnboardingEvent('permissions_prompted');
+  }, []);
+
+  const handleToggleLocation = () => {
+    const next = !locationGranted;
+    setLocationGranted(next);
+    setPermissionStatus('location', next ? 'granted' : 'denied');
+    if (next) {
+      trackOnboardingEvent('permission_granted', { type: 'location' });
+    } else {
+      trackOnboardingEvent('permission_denied', { type: 'location' });
     }
+  };
+
+  const handleToggleNotifications = () => {
+    const next = !notificationsGranted;
+    setNotificationsGranted(next);
+    setPermissionStatus('push', next ? 'granted' : 'denied');
+    if (next) {
+      trackOnboardingEvent('permission_granted', { type: 'push' });
+    } else {
+      trackOnboardingEvent('permission_denied', { type: 'push' });
+    }
+  };
+
+  const handleOpenSettings = () => {
+    Linking.openSettings().catch(() => {});
+  };
+
+  const handleContinue = () => {
+    router.push('/(onboarding)/preview');
   };
 
   return (
@@ -37,40 +66,138 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
         onBack={() => router.back()}
         leftAction="back"
       />
-      <ProgressBar progress={1.0} style={styles.progressBar} />
+      <ProgressBar progress={0.9} style={styles.progressBar} />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text level="label" color="accent">FINAL STEP</Text>
+          <Text level="label" color="accent">
+            STEP 6 OF 6
+          </Text>
           <Heading level="h1">Trust & Permissions</Heading>
           <Text level="body" color="secondary">
-            To give you a safe, relevant dating experience, Nazar needs two key permissions.
+            Nazar needs a couple of key permissions to curate relevant matches and notify you when you connect.
           </Text>
         </View>
 
-        <View style={styles.permissionsList}>
-          <SurfaceCard elevation="sm" style={styles.permCard}>
-            <View style={[styles.iconCircle, { backgroundColor: theme.colors.accentSoft }]}>
-              <Icon name="location" size={24} color={theme.colors.accent} />
+        <View style={styles.cardsContainer}>
+          {/* Location Permission */}
+          <SurfaceCard
+            elevation="none"
+            style={[
+              styles.permissionCard,
+              {
+                borderColor: locationGranted ? theme.colors.accent : theme.colors.border,
+                backgroundColor: locationGranted
+                  ? theme.colors.accentSoft
+                  : theme.colors.surface,
+              },
+            ]}
+          >
+            <View style={styles.cardHeader}>
+              <View
+                style={[
+                  styles.iconBadge,
+                  { backgroundColor: locationGranted ? theme.colors.accent : theme.colors.surfaceMuted },
+                ]}
+              >
+                <Icon
+                  name="location"
+                  size={24}
+                  color={locationGranted ? '#FFFFFF' : theme.colors.accent}
+                />
+              </View>
+              <View style={styles.cardTitleBox}>
+                <Text level="title" style={{ color: theme.colors.textPrimary }}>
+                  Location Services
+                </Text>
+                <Text level="caption" style={{ color: locationGranted ? theme.colors.accentStrong : theme.colors.textSecondary }}>
+                  {locationGranted ? '✓ Enabled' : 'Recommended'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.permText}>
-              <Text level="title">Location Services</Text>
-              <Text level="bodySmall" color="secondary">
-                Find potential matches in your city or neighborhood. Your exact coordinates are never shared.
-              </Text>
+
+            <Text level="bodySmall" color="secondary" style={styles.benefitText}>
+              Find people in your city or neighborhood. Your exact coordinates are never shared with anyone.
+            </Text>
+
+            <View style={styles.actionRow}>
+              <Button
+                variant={locationGranted ? 'secondary' : 'primary'}
+                size="md"
+                onPress={handleToggleLocation}
+                accessibilityLabel={locationGranted ? 'Revoke location access' : 'Allow location access'}
+              >
+                {locationGranted ? 'Access Allowed' : 'Allow Location'}
+              </Button>
             </View>
           </SurfaceCard>
 
-          <SurfaceCard elevation="sm" style={styles.permCard}>
-            <View style={[styles.iconCircle, { backgroundColor: theme.colors.accentSoft }]}>
-              <Icon name="bell" size={24} color={theme.colors.accent} />
+          {/* Push Notifications Permission */}
+          <SurfaceCard
+            elevation="none"
+            style={[
+              styles.permissionCard,
+              {
+                borderColor: notificationsGranted ? theme.colors.accent : theme.colors.border,
+                backgroundColor: notificationsGranted
+                  ? theme.colors.accentSoft
+                  : theme.colors.surface,
+              },
+            ]}
+          >
+            <View style={styles.cardHeader}>
+              <View
+                style={[
+                  styles.iconBadge,
+                  { backgroundColor: notificationsGranted ? theme.colors.accent : theme.colors.surfaceMuted },
+                ]}
+              >
+                <Icon
+                  name="bell"
+                  size={24}
+                  color={notificationsGranted ? '#FFFFFF' : theme.colors.accent}
+                />
+              </View>
+              <View style={styles.cardTitleBox}>
+                <Text level="title" style={{ color: theme.colors.textPrimary }}>
+                  Push Notifications
+                </Text>
+                <Text level="caption" style={{ color: notificationsGranted ? theme.colors.accentStrong : theme.colors.textSecondary }}>
+                  {notificationsGranted ? '✓ Enabled' : 'Recommended'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.permText}>
-              <Text level="title">Push Notifications</Text>
-              <Text level="bodySmall" color="secondary">
-                Get alerted the moment someone likes your profile, a mutual match happens, or you receive a message.
+
+            <Text level="bodySmall" color="secondary" style={styles.benefitText}>
+              Get notified immediately when someone likes your profile, a mutual match happens, or a message arrives.
+            </Text>
+
+            <View style={styles.actionRow}>
+              <Button
+                variant={notificationsGranted ? 'secondary' : 'primary'}
+                size="md"
+                onPress={handleToggleNotifications}
+                accessibilityLabel={notificationsGranted ? 'Revoke notifications' : 'Allow notifications'}
+              >
+                {notificationsGranted ? 'Notifications Allowed' : 'Allow Notifications'}
+              </Button>
+            </View>
+          </SurfaceCard>
+
+          {/* Privacy Note */}
+          <SurfaceCard
+            elevation="none"
+            style={[styles.privacyCard, { backgroundColor: theme.colors.surfaceMuted, borderColor: theme.colors.border }]}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <Icon name="lock" size={16} color={theme.colors.accent} />
+              <Text level="title" style={{ color: theme.colors.textPrimary, fontWeight: '700' }}>
+                Privacy Promise
               </Text>
             </View>
+            <Text level="caption" color="secondary">
+              You can adjust these permissions anytime in your device settings.
+            </Text>
           </SurfaceCard>
         </View>
 
@@ -79,11 +206,21 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
             variant="primary"
             size="lg"
             fullWidth
-            isLoading={isActivating}
-            onPress={handleFinish}
-            accessibilityLabel="Allow permissions and enter Nazar"
+            onPress={handleContinue}
+            accessibilityLabel="Continue to Profile Preview"
           >
-            Enter Nazar ✨
+            Continue to Preview
+          </Button>
+
+          <Button
+            variant="tertiary"
+            size="md"
+            fullWidth
+            onPress={handleOpenSettings}
+            accessibilityLabel="Open device settings"
+            style={{ marginTop: 8 }}
+          >
+            Device Settings
           </Button>
         </View>
       </ScrollView>
@@ -101,34 +238,50 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 40,
   },
   header: {
     marginTop: 8,
     gap: 6,
   },
-  permissionsList: {
+  cardsContainer: {
     marginVertical: 24,
     gap: 16,
   },
-  permCard: {
-    flexDirection: 'row',
+  permissionCard: {
     padding: 16,
-    gap: 16,
-    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
   },
-  iconCircle: {
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  iconBadge: {
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  permText: {
+  cardTitleBox: {
     flex: 1,
-    gap: 4,
+  },
+  benefitText: {
+    lineHeight: 20,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  privacyCard: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   buttonWrapper: {
-    marginTop: 16,
+    marginTop: 12,
   },
 });

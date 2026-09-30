@@ -1,170 +1,242 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, spacing, typography } from '@platform/ui';
+import { useTheme } from '../src/design/theme/ThemeContext.js';
+import { Heading } from '../src/design/primitives/Heading.js';
+import { Text } from '../src/design/primitives/Text.js';
+import { Icon } from '../src/design/primitives/Icon.js';
+import { Button } from '../src/design/components/button/Button.js';
+import { getDefaultSessionService } from '../src/auth/session-service.js';
+import { trackOnboardingEvent } from '../src/analytics/onboarding-analytics.js';
 
-export default function IndexScreen(): React.JSX.Element {
+export default function AppLaunchScreen(): React.JSX.Element {
   const router = useRouter();
+  const { theme } = useTheme();
+  const sessionService = getDefaultSessionService();
+
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [offlineError, setOfflineError] = useState<string | null>(null);
+  const [showQAMenu, setShowQAMenu] = useState(false);
+
+  const bootstrapApp = async () => {
+    setIsBootstrapping(true);
+    setOfflineError(null);
+
+    try {
+      const result = await sessionService.restoreSession();
+
+      if (result.status === 'ACTIVE') {
+        trackOnboardingEvent('discovery_entered', { source: 'cold_launch_active' });
+        router.replace('/(tabs)/discovery');
+        return;
+      }
+
+      if (result.status === 'INCOMPLETE') {
+        const targetStep = result.nextStep || 'intro';
+        const stepRoutes: Record<string, `/(onboarding)/${string}`> = {
+          'profile-setup': '/(onboarding)/profile-setup',
+          'photos': '/(onboarding)/photos',
+          'interests': '/(onboarding)/interests',
+          'prompts': '/(onboarding)/prompts',
+          'preferences': '/(onboarding)/preferences',
+          'permissions': '/(onboarding)/permissions',
+          'preview': '/(onboarding)/preview',
+        };
+        const route = stepRoutes[targetStep] || '/(onboarding)/intro';
+        router.replace(route);
+        return;
+      }
+
+      if (result.status === 'PAUSED') {
+        // Active session with paused profile -> go to discovery or profile
+        router.replace('/(tabs)/discovery');
+        return;
+      }
+
+      if (result.status === 'OFFLINE') {
+        setOfflineError(result.error || 'Network offline. Tap retry to connect.');
+        setIsBootstrapping(false);
+        return;
+      }
+
+      // UNAUTHENTICATED or EXPIRED
+      router.replace('/(auth)/welcome');
+    } catch {
+      // In case of unhandled bootstrap exception, default to welcome
+      router.replace('/(auth)/welcome');
+    } finally {
+      setIsBootstrapping(false);
+    }
+  };
+
+  useEffect(() => {
+    void bootstrapApp();
+  }, []);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Nazar Platform</Text>
-      <Text style={styles.subtitle}>
-        Dating & Spatial Social Discovery (Release Candidate v1.0.0)
-      </Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.content}>
+        <View style={styles.brandHero}>
+          <View
+            style={[
+              styles.iconCircle,
+              {
+                backgroundColor: theme.colors.accentSoft,
+                borderColor: theme.colors.accent,
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <Icon name="sparkles" size={48} color={theme.colors.accent} />
+          </View>
+          <Heading level="display" style={{ color: theme.colors.textPrimary, textAlign: 'center' }}>
+            Nazar
+          </Heading>
+          <Text level="body" color="secondary" style={styles.tagline}>
+            Authentic, intentional Indian connection
+          </Text>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push('/(tabs)/discovery')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to discovery feed"
-        >
-          <Text style={styles.primaryButtonText}>Start Discovery ✨</Text>
-        </TouchableOpacity>
+          {isBootstrapping && (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="small" color={theme.colors.accent} />
+              <Text level="caption" color="tertiary" style={{ marginTop: 8 }}>
+                Restoring session...
+              </Text>
+            </View>
+          )}
 
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/(auth)/welcome')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to welcome landing"
-        >
-          <Text style={styles.secondaryButtonText}>Welcome / Sign Up 🚀</Text>
-        </TouchableOpacity>
+          {offlineError && (
+            <View style={styles.errorContainer}>
+              <Text level="bodySmall" style={{ color: theme.colors.warning, textAlign: 'center' }}>
+                {offlineError}
+              </Text>
+              <Button
+                variant="secondary"
+                size="md"
+                onPress={bootstrapApp}
+                accessibilityLabel="Retry connecting to server"
+                style={{ marginTop: 12 }}
+              >
+                Retry Connection
+              </Button>
+              <Button
+                variant="tertiary"
+                size="sm"
+                onPress={() => router.replace('/(auth)/welcome')}
+                accessibilityLabel="Continue to welcome screen"
+                style={{ marginTop: 8 }}
+              >
+                Continue Offline
+              </Button>
+            </View>
+          )}
+        </View>
 
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/(onboarding)/profile-setup')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to onboarding flow"
-        >
-          <Text style={styles.secondaryButtonText}>Onboarding Flow 📝</Text>
-        </TouchableOpacity>
+        {/* Developer / QA Showcase Access */}
+        <View style={styles.qaFooter}>
+          <TouchableOpacity
+            onPress={() => setShowQAMenu(!showQAMenu)}
+            accessibilityRole="button"
+            accessibilityLabel="Toggle developer navigation links"
+          >
+            <Text level="caption" color="tertiary">
+              Nazar v1.0.0 • {showQAMenu ? 'Hide Dev Menu' : 'Dev Links'}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/matches')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to matches"
-        >
-          <Text style={styles.secondaryButtonText}>View Matches 💕</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/conversations')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to messages"
-        >
-          <Text style={styles.secondaryButtonText}>Open Messages 💌</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/(tabs)/explore')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to explore"
-        >
-          <Text style={styles.secondaryButtonText}>Explore / Communities 🌍</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/(tabs)/profile')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to my profile"
-        >
-          <Text style={styles.secondaryButtonText}>My Profile 👤</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/billing')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to billing"
-        >
-          <Text style={styles.secondaryButtonText}>Billing & Premium 👑</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/notifications')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to notifications"
-        >
-          <Text style={styles.secondaryButtonText}>Notifications 🔔</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/settings')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to settings hub"
-        >
-          <Text style={styles.secondaryButtonText}>Settings Hub ⚙️</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.secondaryButton, { backgroundColor: '#FDF0EC', borderColor: '#D84315', borderWidth: 1 }]}
-          onPress={() => router.push('/design-system-showcase')}
-          accessibilityRole="button"
-          accessibilityLabel="Go to design system showcase"
-        >
-          <Text style={[styles.secondaryButtonText, { color: '#D84315' }]}>Design System QA 🎨</Text>
-        </TouchableOpacity>
+          {showQAMenu && (
+            <View style={styles.qaLinks}>
+              <TouchableOpacity
+                onPress={() => router.push('/design-system-showcase')}
+                style={styles.qaLink}
+              >
+                <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '600' }}>
+                  🎨 Design System Showcase
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/(auth)/welcome')}
+                style={styles.qaLink}
+              >
+                <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '600' }}>
+                  🚀 Welcome Screen
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/(onboarding)/intro')}
+                style={styles.qaLink}
+              >
+                <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '600' }}>
+                  📝 Onboarding Intro
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/discovery')}
+                style={styles.qaLink}
+              >
+                <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '600' }}>
+                  ✨ Discovery Tab
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    backgroundColor: colors.neutral[50],
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+    paddingVertical: 32,
+  },
+  brandHero: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.xl,
-    paddingVertical: 48,
   },
-  title: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.bold as '700',
-    color: colors.primary[600],
-    marginBottom: spacing.xs,
+  iconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
-  subtitle: {
-    fontSize: typography.fontSize.sm,
-    color: colors.neutral[700],
-    marginBottom: spacing.xxl,
+  tagline: {
     textAlign: 'center',
+    marginTop: 8,
+    maxWidth: 260,
   },
-  buttonContainer: {
-    width: '100%',
-    maxWidth: 320,
-    gap: spacing.md,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary[600],
-    paddingVertical: spacing.md,
-    borderRadius: 999,
+  loaderContainer: {
+    marginTop: 28,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  primaryButtonText: {
-    color: colors.neutral[50],
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold as '600',
-  },
-  secondaryButton: {
-    backgroundColor: colors.neutral[200],
-    paddingVertical: spacing.md,
-    borderRadius: 999,
+  errorContainer: {
+    marginTop: 24,
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'center',
+    maxWidth: 300,
   },
-  secondaryButtonText: {
-    color: colors.neutral[800],
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold as '600',
+  qaFooter: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  qaLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 8,
+  },
+  qaLink: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
 });

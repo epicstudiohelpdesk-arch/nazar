@@ -15,7 +15,17 @@ import type {
   ProfileStateChangeResponse,
 } from '@platform/api-contracts';
 import type { AuthClient } from '../auth/auth-client.js';
+import { getDefaultAuthClient } from '../auth/default-client.js';
 import { useProfileStore } from './profile-store.js';
+
+let defaultProfileApi: ProfileApiClient | null = null;
+
+export function getDefaultProfileApi(): ProfileApiClient {
+  if (!defaultProfileApi) {
+    defaultProfileApi = createProfileApi(getDefaultAuthClient());
+  }
+  return defaultProfileApi;
+}
 
 export const PROFILE_QUERY_KEYS = {
   me: ['profile', 'me'] as const,
