@@ -1,57 +1,85 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@platform/ui';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { SocketConnectionState } from '../chat-socket.js';
+import { useTheme } from '../../design/theme/index.js';
+import { Text } from '../../design/primitives/Text.js';
+import { Avatar } from '../../design/primitives/Avatar.js';
+import { Icon } from '../../design/primitives/Icon.js';
 
-interface ChatHeaderProps {
+export interface ChatHeaderProps {
   readonly displayName: string;
   readonly age?: number;
   readonly avatarUrl?: string | null;
+  readonly isVerified?: boolean;
   readonly connectionState: SocketConnectionState;
   readonly onBack: () => void;
   readonly onReport?: () => void;
   readonly onBlock?: () => void;
+  readonly onUnmatch?: () => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
   displayName,
   age,
   avatarUrl,
+  isVerified,
   connectionState,
   onBack,
   onReport,
   onBlock,
+  onUnmatch,
 }) => {
+  const insets = useSafeAreaInsets();
+  const { colors, spacing } = useTheme();
+
   const renderStatusIndicator = () => {
     switch (connectionState) {
       case 'connected':
         return (
           <View style={styles.statusRow}>
-            <View style={[styles.statusDot, styles.statusOnline]} />
-            <Text style={styles.statusText}>Active now</Text>
+            <View style={[styles.statusDot, { backgroundColor: colors.success }]} />
+            <Text variant="caption" style={{ color: colors.textSecondary, fontSize: 11 }}>
+              Active now
+            </Text>
           </View>
         );
       case 'connecting':
       case 'reconnecting':
         return (
           <View style={styles.statusRow}>
-            <View style={[styles.statusDot, styles.statusReconnecting]} />
-            <Text style={styles.statusText}>Reconnecting...</Text>
+            <View style={[styles.statusDot, { backgroundColor: colors.warning }]} />
+            <Text variant="caption" style={{ color: colors.warning, fontSize: 11 }}>
+              Reconnecting...
+            </Text>
           </View>
         );
       case 'disconnected':
       default:
         return (
           <View style={styles.statusRow}>
-            <View style={[styles.statusDot, styles.statusOffline]} />
-            <Text style={styles.statusText}>Offline</Text>
+            <View style={[styles.statusDot, { backgroundColor: colors.textTertiary }]} />
+            <Text variant="caption" style={{ color: colors.textTertiary, fontSize: 11 }}>
+              Offline
+            </Text>
           </View>
         );
     }
   };
 
   return (
-    <View style={styles.header}>
+    <View
+      style={[
+        styles.header,
+        {
+          paddingTop: Math.max(insets.top, 10),
+          backgroundColor: colors.surface,
+          borderBottomColor: colors.border,
+          paddingHorizontal: spacing.sm,
+          paddingBottom: spacing.sm,
+        },
+      ]}
+    >
       <TouchableOpacity
         onPress={onBack}
         style={styles.backButton}
@@ -59,49 +87,66 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         accessibilityLabel="Go back"
         testID="chat-back-btn"
       >
-        <Text style={styles.backButtonText}>←</Text>
+        <Icon name="back" size="md" color={colors.textPrimary} />
       </TouchableOpacity>
 
       <View style={styles.participantInfo}>
-        <View style={styles.avatarContainer}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarInitials}>{displayName.substring(0, 1).toUpperCase()}</Text>
-            </View>
-          )}
-        </View>
+        <Avatar
+          uri={avatarUrl}
+          name={displayName}
+          size="sm"
+          isVerified={isVerified}
+          isOnline={connectionState === 'connected'}
+          style={{ marginRight: spacing.sm }}
+        />
         <View style={styles.titleContainer}>
-          <Text style={styles.nameText}>
-            {displayName}
-            {age ? `, ${age}` : ''}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text
+              variant="body"
+              weight="bold"
+              style={{ color: colors.textPrimary }}
+              numberOfLines={1}
+            >
+              {displayName}
+              {age ? `, ${age}` : ''}
+            </Text>
+          </View>
           {renderStatusIndicator()}
         </View>
       </View>
 
       <View style={styles.actionContainer}>
+        {onUnmatch && (
+          <TouchableOpacity
+            onPress={onUnmatch}
+            style={styles.actionBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Unmatch"
+            testID="chat-unmatch-btn"
+          >
+            <Icon name="trash" size="sm" color={colors.textTertiary} />
+          </TouchableOpacity>
+        )}
         {onReport && (
           <TouchableOpacity
             onPress={onReport}
-            style={styles.safetyButton}
+            style={styles.actionBtn}
             accessibilityRole="button"
             accessibilityLabel="Report user"
             testID="chat-report-btn"
           >
-            <Text style={styles.safetyIcon}>🚩</Text>
+            <Icon name="flag" size="sm" color={colors.textTertiary} />
           </TouchableOpacity>
         )}
         {onBlock && (
           <TouchableOpacity
             onPress={onBlock}
-            style={styles.safetyButton}
+            style={styles.actionBtn}
             accessibilityRole="button"
             accessibilityLabel="Block user"
             testID="chat-block-btn"
           >
-            <Text style={styles.safetyIcon}>🚫</Text>
+            <Icon name="shield" size="sm" color={colors.textTertiary} />
           </TouchableOpacity>
         )}
       </View>
@@ -111,94 +156,44 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
   },
   backButton: {
-    padding: spacing.xs,
-    marginRight: spacing.xs,
-  },
-  backButtonText: {
-    fontSize: 22,
-    color: colors.neutral[900],
-    fontWeight: 'bold',
+    padding: 8,
+    marginRight: 4,
   },
   participantInfo: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarContainer: {
-    marginRight: spacing.sm,
-  },
-  avatarImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.neutral[200],
-  },
-  avatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitials: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.primary[700],
-  },
   titleContainer: {
+    flex: 1,
     justifyContent: 'center',
   },
-  nameText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: '600',
-    color: colors.neutral[900],
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: 1,
   },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginRight: 4,
-  },
-  statusOnline: {
-    backgroundColor: colors.status.success,
-  },
-  statusReconnecting: {
-    backgroundColor: colors.status.warning,
-  },
-  statusOffline: {
-    backgroundColor: colors.neutral[400],
-  },
-  statusText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.neutral[400],
+    marginRight: 5,
   },
   actionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginLeft: 'auto',
   },
-  safetyButton: {
-    padding: spacing.xs,
-    borderRadius: 8,
-    backgroundColor: colors.neutral[100],
-  },
-  safetyIcon: {
-    fontSize: 16,
+  actionBtn: {
+    padding: 6,
+    marginLeft: 2,
   },
 });

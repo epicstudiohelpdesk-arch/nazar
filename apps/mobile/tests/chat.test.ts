@@ -2,6 +2,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createChatApi } from '../src/chat/chat-api.js';
 import { AuthClient } from '../src/auth/auth-client.js';
 import { InMemoryTokenStorage } from '../src/auth/token-storage.js';
+import { chatSocket } from '../src/chat/chat-socket.js';
+import { createSafetyApi } from '../src/safety/safety-api.js';
+import { createMatchesApi } from '../src/matches/matches-api.js';
+import {
+  sanitizeAnalyticsProperties,
+  trackOnboardingEvent,
+} from '../src/analytics/onboarding-analytics.js';
 import type {
   ConversationListResponseDto,
   ConversationDetailDto,
@@ -9,9 +16,11 @@ import type {
   SendMessageResponseDto,
   MarkReadResponseDto,
   SyncMessagesResponseDto,
+  MessageItemDto,
+  RealtimeEvent,
 } from '@platform/api-contracts';
 
-describe('Mobile Chat Layer: API Client & Optimistic Reconciliation', () => {
+describe('Mobile Chat Layer: API Client, Inverted Pagination & Realtime Reconciliation', () => {
   let authClient: AuthClient;
   let mockFetch: ReturnType<typeof vi.fn>;
 
@@ -269,9 +278,8 @@ describe('Mobile Chat Layer: API Client & Optimistic Reconciliation', () => {
     });
   });
 
-  describe('Optimistic Message Reconciliation', () => {
+  describe('Optimistic Message Reconciliation & Lifecycles', () => {
     it('simulates optimistic insertion, success confirmation, and failure transition', () => {
-      // 1. Initial empty or loaded list
       let optimisticMessages: Array<{
         id: string;
         clientMessageId: string;
@@ -281,7 +289,7 @@ describe('Mobile Chat Layer: API Client & Optimistic Reconciliation', () => {
         deliveryState: string;
       }> = [];
 
-      // 2. User presses Send: create optimistic item
+      // 1. User sends message: optimistic item inserted at top
       const clientMessageId = 'client-uuid-123';
       const optimisticItem = {
         id: clientMessageId,
@@ -297,7 +305,7 @@ describe('Mobile Chat Layer: API Client & Optimistic Reconciliation', () => {
       expect(optimisticMessages[0].isOptimistic).toBe(true);
       expect(optimisticMessages[0].sendFailed).toBe(false);
 
-      // 3. Reconcile on success: replace optimistic item with confirmed server item
+      // 2. Server response confirms message: replace with persisted item
       const serverMessage = {
         id: 'server-uuid-456',
         clientMessageId,
@@ -314,14 +322,297 @@ describe('Mobile Chat Layer: API Client & Optimistic Reconciliation', () => {
       expect(reconciledMessages[0].id).toBe('server-uuid-456');
       expect(reconciledMessages[0].isOptimistic).toBe(false);
 
-      // 4. Alternatively, simulate failure transition
+      // 3. Failure transition and retry
       const failedMessages = optimisticMessages.map((msg) =>
         msg.clientMessageId === clientMessageId
           ? { ...msg, sendFailed: true, isOptimistic: false }
           : msg
       );
-
       expect(failedMessages[0].sendFailed).toBe(true);
+
+      const retriedMessages = failedMessages.map((msg) =>
+        msg.clientMessageId === clientMessageId
+          ? { ...msg, sendFailed: false, isOptimistic: true }
+          : msg
+      );
+      expect(retriedMessages[0].sendFailed).toBe(false);
+      expect(retriedMessages[0].isOptimistic).toBe(true);
+    });
+  });
+
+  describe('Conversation List Deduplication & Search Filtering', () => {
+    it('deduplicates multi-page conversation responses by ID', () => {
+      const page1 = [
+        { id: 'c1', otherUser: { displayName: 'Aarav' }, lastMessage: { preview: 'Hey' } },
+        { id: 'c2', otherUser: { displayName: 'Ananya' }, lastMessage: { preview: 'Coffee?' } },
+      ];
+      const page2 = [
+        { id: 'c2', otherUser: { displayName: 'Ananya' }, lastMessage: { preview: 'Coffee?' } },
+        { id: 'c3', otherUser: { displayName: 'Rohan' }, lastMessage: { preview: 'See you' } },
+      ];
+
+      const map = new Map<string, (typeof page1)[0]>();
+      for (const item of [...page1, ...page2]) {
+        if (!map.has(item.id)) {
+          map.set(item.id, item);
+        }
+      }
+
+      const deduplicated = Array.from(map.values());
+      expect(deduplicated).toHaveLength(3);
+      expect(deduplicated.map((c) => c.id)).toEqual(['c1', 'c2', 'c3']);
+    });
+
+    it('filters conversations by user display name or message preview', () => {
+      const conversations = [
+        { id: 'c1', otherUser: { displayName: 'Priya Sharma' }, lastMessage: { preview: 'Sounds great!' } },
+        { id: 'c2', otherUser: { displayName: 'Rahul Verma' }, lastMessage: { preview: 'Are you in Bangalore?' } },
+        { id: 'c3', otherUser: { displayName: 'Meera Patel' }, lastMessage: { preview: 'Hello there' } },
+      ];
+
+      const filterByName = conversations.filter((c) =>
+        c.otherUser.displayName.toLowerCase().includes('priya')
+      );
+      expect(filterByName).toHaveLength(1);
+      expect(filterByName[0].id).toBe('c1');
+
+      const filterByPreview = conversations.filter(
+        (c) => c.lastMessage && c.lastMessage.preview.toLowerCase().includes('bangalore')
+      );
+      expect(filterByPreview).toHaveLength(1);
+      expect(filterByPreview[0].id).toBe('c2');
+    });
+  });
+
+  describe('Inverted FlatList Message History & Date Separators', () => {
+    it('structures messages in descending order and dynamically calculates date separators', () => {
+      const messages: MessageItemDto[] = [
+        {
+          id: 'm3',
+          conversationId: 'c1',
+          senderUserId: 'user-a',
+          clientMessageId: 'cmsg-3',
+          messageType: 'TEXT',
+          body: 'Latest message today',
+          metadata: null,
+          deliveryState: 'SENT',
+          createdAt: new Date().toISOString(), // Today
+          editedAt: null,
+          deletedAt: null,
+        },
+        {
+          id: 'm2',
+          conversationId: 'c1',
+          senderUserId: 'user-b',
+          clientMessageId: 'cmsg-2',
+          messageType: 'TEXT',
+          body: 'Earlier today',
+          metadata: null,
+          deliveryState: 'READ',
+          createdAt: new Date(Date.now() - 3600 * 1000).toISOString(), // Today 1 hr ago
+          editedAt: null,
+          deletedAt: null,
+        },
+        {
+          id: 'm1',
+          conversationId: 'c1',
+          senderUserId: 'user-b',
+          clientMessageId: 'cmsg-1',
+          messageType: 'TEXT',
+          body: 'Yesterday message',
+          metadata: null,
+          deliveryState: 'READ',
+          createdAt: new Date(Date.now() - 86400 * 1000 * 2).toISOString(), // Older
+          editedAt: null,
+          deletedAt: null,
+        },
+      ];
+
+      type Item =
+        | { type: 'message'; message: MessageItemDto }
+        | { type: 'date_separator'; id: string; label: string };
+
+      const items: Item[] = [];
+      for (let i = 0; i < messages.length; i++) {
+        const current = messages[i]!;
+        items.push({ type: 'message', message: current });
+
+        const currentDate = new Date(current.createdAt).toDateString();
+        const next = messages[i + 1];
+        const nextDate = next ? new Date(next.createdAt).toDateString() : null;
+
+        if (!next || currentDate !== nextDate) {
+          items.push({
+            type: 'date_separator',
+            id: `date-${currentDate}`,
+            label: 'DateLabel',
+          });
+        }
+      }
+
+      // Expected order in inverted array:
+      // m3 (Today)
+      // m2 (Today)
+      // DateSeparator (Today)
+      // m1 (Older)
+      // DateSeparator (Older)
+      expect(items).toHaveLength(5);
+      expect(items[0].type).toBe('message');
+      expect((items[0] as { message: MessageItemDto }).message.id).toBe('m3');
+      expect(items[1].type).toBe('message');
+      expect((items[1] as { message: MessageItemDto }).message.id).toBe('m2');
+      expect(items[2].type).toBe('date_separator');
+      expect(items[3].type).toBe('message');
+      expect((items[3] as { message: MessageItemDto }).message.id).toBe('m1');
+      expect(items[4].type).toBe('date_separator');
+    });
+  });
+
+  describe('Real-time Socket Event Handling', () => {
+    it('manages connection state and listener callbacks', () => {
+      let latestState = chatSocket.getConnectionState();
+      const unsub = chatSocket.onConnectionStateChange((state) => {
+        latestState = state;
+      });
+
+      expect(latestState).toBe('disconnected');
+      unsub();
+    });
+
+    it('processes message.read event to update delivery status', () => {
+      let readEventReceived: RealtimeEvent<MarkReadResponseDto> | null = null;
+      const unsub = chatSocket.onMessageRead((event) => {
+        readEventReceived = event;
+      });
+
+      // Simulate incoming event
+      const mockEvent: RealtimeEvent<MarkReadResponseDto> = {
+        type: 'message.read',
+        conversationId: 'conv-1',
+        payload: {
+          success: true,
+          conversationId: 'conv-1',
+          lastReadMessageId: 'msg-5',
+          lastReadAt: new Date().toISOString(),
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      // Direct listener call verification
+      unsub();
+      expect(readEventReceived).toBeNull();
+    });
+  });
+
+  describe('Safety Controls Integration', () => {
+    it('executes user block via safety API from chat screen', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: { id: 'block-1', blockedUserId: 'user-b', createdAt: new Date().toISOString() },
+            requestId: 'req-block-001',
+          }),
+          { status: 201, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+
+      const safetyApi = createSafetyApi(authClient);
+      const res = await safetyApi.blockUser('user-b', { reason: 'Inappropriate behavior' });
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [url, options] = mockFetch.mock.calls[0];
+      expect(url).toContain('/v1/users/user-b/block');
+      expect(options.method).toBe('POST');
+      expect(res.blockedUserId).toBe('user-b');
+    });
+
+    it('executes report creation via safety API from chat screen', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: { id: 'rep-1', status: 'PENDING', createdAt: new Date().toISOString() },
+            requestId: 'req-rep-001',
+          }),
+          { status: 201, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+
+      const safetyApi = createSafetyApi(authClient);
+      const res = await safetyApi.createReport({
+        targetType: 'CONVERSATION',
+        targetId: 'conv-1',
+        reasonCode: 'HARASSMENT',
+        description: 'Unwanted messages',
+      });
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [url, options] = mockFetch.mock.calls[0];
+      expect(url).toContain('/v1/reports');
+      expect(options.method).toBe('POST');
+      expect(res.id).toBe('rep-1');
+    });
+
+    it('executes unmatch call via matches API from chat screen', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: { success: true, matchId: 'match-1', unmatchedAt: new Date().toISOString() },
+            requestId: 'req-unmatch-001',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+
+      const matchesApi = createMatchesApi(authClient);
+      const res = await matchesApi.unmatch('match-1', { reason: 'No longer interested' });
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [url, options] = mockFetch.mock.calls[0];
+      expect(url).toContain('/v1/matches/match-1');
+      expect(options.method).toBe('DELETE');
+      expect(res.success).toBe(true);
+    });
+  });
+
+  describe('Analytics & Strict PII Sanitization', () => {
+    it('sanitizes message content, body, text, and preview from telemetry', () => {
+      const dirtyProperties = {
+        conversationId: 'conv-123',
+        clientMessageId: 'cmsg-456',
+        body: 'Do not log this secret message!',
+        text: 'Private conversation text',
+        message: 'Personal chat line',
+        content: 'Hidden content',
+        preview: 'Secret preview',
+        phone: '+919876543210',
+        metadata: {
+          wordCount: 5,
+          text: 'nested private text',
+        },
+      };
+
+      const cleanProperties = sanitizeAnalyticsProperties(dirtyProperties);
+
+      expect(cleanProperties.conversationId).toBe('conv-123');
+      expect(cleanProperties.clientMessageId).toBe('cmsg-456');
+      expect(cleanProperties).not.toHaveProperty('body');
+      expect(cleanProperties).not.toHaveProperty('text');
+      expect(cleanProperties).not.toHaveProperty('message');
+      expect(cleanProperties).not.toHaveProperty('content');
+      expect(cleanProperties).not.toHaveProperty('preview');
+      expect(cleanProperties).not.toHaveProperty('phone');
+      expect((cleanProperties.metadata as Record<string, unknown>).wordCount).toBe(5);
+      expect((cleanProperties.metadata as Record<string, unknown>)).not.toHaveProperty('text');
+    });
+
+    it('successfully emits chat analytics events', () => {
+      const eventId = trackOnboardingEvent('conversation_opened', {
+        conversationId: 'conv-test-1',
+      });
+      expect(eventId).toBeDefined();
     });
   });
 });

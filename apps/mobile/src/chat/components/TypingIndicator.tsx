@@ -1,25 +1,112 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@platform/ui';
+import React, { useEffect, useRef } from 'react';
+import { View, Animated, StyleSheet } from 'react-native';
+import { useTheme } from '../../design/theme/index.js';
+import { Text } from '../../design/primitives/Text.js';
 
-interface TypingIndicatorProps {
+export interface TypingIndicatorProps {
   readonly isTyping: boolean;
   readonly displayName?: string;
 }
 
 export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ isTyping, displayName }) => {
+  const { colors, radii, spacing } = useTheme();
+  const anim1 = useRef(new Animated.Value(0.3)).current;
+  const anim2 = useRef(new Animated.Value(0.3)).current;
+  const anim3 = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    if (!isTyping) return;
+
+    const createPulse = (anim: Animated.Value, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 400,
+            delay,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0.3,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
+
+    const pulse1 = createPulse(anim1, 0);
+    const pulse2 = createPulse(anim2, 200);
+    const pulse3 = createPulse(anim3, 400);
+
+    pulse1.start();
+    pulse2.start();
+    pulse3.start();
+
+    return () => {
+      pulse1.stop();
+      pulse2.stop();
+      pulse3.stop();
+    };
+  }, [isTyping, anim1, anim2, anim3]);
+
   if (!isTyping) {
     return null;
   }
 
+  const label = displayName ? `${displayName} is typing...` : 'Typing...';
+
   return (
-    <View style={styles.container}>
-      <View style={styles.bubble}>
-        <Text style={styles.text}>{displayName ? `${displayName} is typing` : 'Typing'}</Text>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingHorizontal: spacing.md,
+          paddingVertical: spacing.xs,
+        },
+      ]}
+      accessibilityRole="text"
+      accessibilityLabel={label}
+      testID="typing-indicator"
+    >
+      <View
+        style={[
+          styles.bubble,
+          {
+            backgroundColor: colors.surfaceMuted,
+            borderColor: colors.border,
+            borderRadius: radii.radiusFull,
+            paddingHorizontal: spacing.md,
+            paddingVertical: 6,
+          },
+        ]}
+      >
+        <Text
+          variant="caption"
+          weight="medium"
+          style={{ color: colors.textSecondary, marginRight: spacing.xs, fontSize: 12 }}
+        >
+          {label}
+        </Text>
         <View style={styles.dotsRow}>
-          <View style={[styles.dot, styles.dot1]} />
-          <View style={[styles.dot, styles.dot2]} />
-          <View style={[styles.dot, styles.dot3]} />
+          <Animated.View
+            style={[
+              styles.dot,
+              { backgroundColor: colors.accent, opacity: anim1 },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.dot,
+              { backgroundColor: colors.accent, opacity: anim2 },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.dot,
+              { backgroundColor: colors.accent, opacity: anim3 },
+            ]}
+          />
         </View>
       </View>
     </View>
@@ -28,35 +115,23 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ isTyping, disp
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
     flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
   },
   bubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[100],
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: 8,
-  },
-  text: {
-    fontSize: typography.fontSize.xs,
-    color: colors.neutral[700],
-    marginRight: spacing.xs,
+    borderWidth: 1,
   },
   dotsRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.neutral[400],
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     marginHorizontal: 1.5,
   },
-  dot1: { opacity: 0.4 },
-  dot2: { opacity: 0.7 },
-  dot3: { opacity: 1 },
 });

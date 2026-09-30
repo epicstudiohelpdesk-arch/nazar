@@ -1,20 +1,25 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View,
-  Text,
   FlatList,
-  TouchableOpacity,
-  Image,
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { colors, spacing, typography } from '@platform/ui';
 import type { ConversationItemDto } from '@platform/api-contracts';
+import { useTheme } from '../design/theme/index.js';
+import { TopNavHeader } from '../design/components/navigation/TopNavHeader.js';
+import { SearchInput } from '../design/components/input/SearchInput.js';
+import { ConversationCard } from '../design/components/card/ConversationCard.js';
+import { EmptyState } from '../design/components/feedback/EmptyState.js';
+import { ErrorState } from '../design/components/feedback/ErrorState.js';
+import { SkeletonBox } from '../design/components/feedback/LoadingSkeleton.js';
 import { getDefaultAuthClient } from '../auth/default-client.js';
 import { createChatApi, CHAT_QUERY_KEYS } from './chat-api.js';
+import { chatSocket } from './chat-socket.js';
+import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import type { AuthClient } from '../auth/auth-client.js';
 
 export interface ConversationsScreenProps {
@@ -26,28 +31,94 @@ export interface ConversationsScreenProps {
 export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
   authClient,
   onSelectConversation,
+  onBack,
 }) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { colors, spacing } = useTheme();
+
+  const [searchQuery, setSearchQuery] = useState('');
+
   const effectiveClient = useMemo(() => authClient || getDefaultAuthClient(), [authClient]);
   const chatApi = useMemo(() => createChatApi(effectiveClient), [effectiveClient]);
 
-  const { data, isLoading, isRefetching, refetch, error } = useQuery({
+  // Analytics on mount
+  useEffect(() => {
+    trackOnboardingEvent('conversations_viewed');
+  }, []);
+
+  // Listen to WebSocket events to invalidate conversation list
+  useEffect(() => {
+    const unsubMsg = chatSocket.onMessageCreated(() => {
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations });
+    });
+    const unsubRead = chatSocket.onMessageRead(() => {
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations });
+    });
+
+    return () => {
+      unsubMsg();
+      unsubRead();
+    };
+  }, [queryClient]);
+
+  // Infinite Query for Conversations
+  const {
+    data,
+    isLoading,
+    isRefetching,
+    refetch,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    error,
+  } = useInfiniteQuery({
     queryKey: CHAT_QUERY_KEYS.conversations,
-    queryFn: () => chatApi.getConversations({ limit: 50 }),
+    queryFn: ({ pageParam }) =>
+      chatApi.getConversations({ limit: 20, cursor: pageParam as string | undefined }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 
+  // Flatten and deduplicate conversations across pages
+  const allConversations = useMemo(() => {
+    if (!data?.pages) return [];
+    const map = new Map<string, ConversationItemDto>();
+    for (const page of data.pages) {
+      for (const item of page.items) {
+        if (!map.has(item.id)) {
+          map.set(item.id, item);
+        }
+      }
+    }
+    return Array.from(map.values());
+  }, [data]);
+
+  // Filter conversations by search query
+  const filteredConversations = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return allConversations;
+    return allConversations.filter(
+      (c) =>
+        c.otherUser.displayName.toLowerCase().includes(query) ||
+        (c.lastMessage?.preview && c.lastMessage.preview.toLowerCase().includes(query))
+    );
+  }, [allConversations, searchQuery]);
+
   const handleSelectConversation = useCallback(
-    (item: ConversationItemDto) => {
+    (conversationId: string) => {
+      trackOnboardingEvent('conversation_opened', { conversationId });
       if (onSelectConversation) {
-        onSelectConversation(item.id);
+        onSelectConversation(conversationId);
       } else {
-        router.push(`/chat/${item.id}` as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+        router.push(`/chat/${conversationId}` as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       }
     },
     [router, onSelectConversation]
   );
 
-  const formatTimestamp = (isoString: string) => {
+  const formatTimestamp = (isoString?: string) => {
+    if (!isoString) return '';
     try {
       const d = new Date(isoString);
       const now = new Date();
@@ -65,107 +136,129 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
     }
   };
 
-  const renderConversationItem = ({ item }: { item: ConversationItemDto }) => {
-    const avatarUrl = item.otherUser.primaryMedia?.url;
-    const lastPreview = item.lastMessage?.preview || 'Matched! Say hello 👋';
-    const timestamp = item.lastMessage ? formatTimestamp(item.lastMessage.sentAt) : '';
+  const renderConversationItem = useCallback(
+    ({ item }: { item: ConversationItemDto }) => {
+      const avatarUrl = item.otherUser.primaryMedia?.url;
+      const lastPreview = item.lastMessage?.preview || 'Matched! Say hello 👋';
+      const timestamp = item.lastMessage ? formatTimestamp(item.lastMessage.sentAt) : '';
 
-    return (
-      <TouchableOpacity
-        style={styles.itemContainer}
-        onPress={() => handleSelectConversation(item)}
-        activeOpacity={0.7}
-        testID={`conv-item-${item.id}`}
-      >
-        <View style={styles.avatarWrapper}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarInitials}>
-                {item.otherUser.displayName.substring(0, 1).toUpperCase()}
-              </Text>
-            </View>
-          )}
-          {item.unreadCount > 0 && <View style={styles.unreadDot} />}
-        </View>
+      return (
+        <ConversationCard
+          id={item.id}
+          name={item.otherUser.displayName}
+          avatarUrl={avatarUrl}
+          lastMessage={lastPreview}
+          timestamp={timestamp}
+          unreadCount={item.unreadCount}
+          onPress={() => handleSelectConversation(item.id)}
+          testID={`conv-item-${item.id}`}
+        />
+      );
+    },
+    [handleSelectConversation]
+  );
 
-        <View style={styles.contentWrapper}>
-          <View style={styles.nameRow}>
-            <Text style={styles.nameText}>
-              {item.otherUser.displayName}
-              {item.otherUser.age ? `, ${item.otherUser.age}` : ''}
-            </Text>
-            {timestamp ? <Text style={styles.timeText}>{timestamp}</Text> : null}
-          </View>
-
-          <View style={styles.previewRow}>
-            <Text
-              style={[styles.previewText, item.unreadCount > 0 ? styles.previewUnread : null]}
-              numberOfLines={1}
-            >
-              {lastPreview}
-            </Text>
-            {item.unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{item.unreadCount}</Text>
-              </View>
-            )}
+  const renderSkeletonList = () => (
+    <View style={styles.skeletonContainer}>
+      {Array.from({ length: 5 }, (_, idx) => (
+        <View
+          key={idx}
+          style={[
+            styles.skeletonRow,
+            { borderBottomColor: colors.border, paddingVertical: spacing.md },
+          ]}
+        >
+          <SkeletonBox width={56} height={56} radius="radiusFull" style={{ marginRight: spacing.md }} />
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <SkeletonBox width="50%" height={16} radius="radiusSM" style={{ marginBottom: spacing.xs }} />
+            <SkeletonBox width="80%" height={14} radius="radiusSM" />
           </View>
         </View>
-      </TouchableOpacity>
-    );
+      ))}
+    </View>
+  );
+
+  const handleEndReached = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
   };
 
-  if (isLoading && !isRefetching) {
-    return (
-      <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text style={styles.loadingText}>Loading conversations...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.centeredContainer}>
-        <Text style={styles.errorText}>Failed to load conversations</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const items = data?.items || [];
-
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <TopNavHeader
+        title="Messages"
+        leftAction={onBack ? 'back' : 'none'}
+        onBack={onBack}
+      />
+
+      <View style={[styles.searchWrapper, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]}>
+        <SearchInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search conversations..."
+          onClear={() => setSearchQuery('')}
+        />
       </View>
 
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item.id}
-        renderItem={renderConversationItem}
-        contentContainerStyle={items.length === 0 ? styles.emptyListContent : styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={colors.primary[500]}
-          />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>No messages yet</Text>
-            <Text style={styles.emptySubtitle}>
-              When you match with someone, you can chat with them here!
-            </Text>
-          </View>
-        }
-      />
+      {isLoading && !isRefetching ? (
+        renderSkeletonList()
+      ) : error ? (
+        <ErrorState
+          type="server_error"
+          title="Failed to load conversations"
+          message={error instanceof Error ? error.message : 'Please check your connection and try again.'}
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <FlatList
+          data={filteredConversations}
+          keyExtractor={(item) => item.id}
+          renderItem={renderConversationItem}
+          contentContainerStyle={
+            filteredConversations.length === 0 ? styles.emptyListContent : styles.listContent
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={colors.accent}
+            />
+          }
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={styles.footerLoader}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            searchQuery.trim().length > 0 ? (
+              <EmptyState
+                type="noResults"
+                title="No conversations found"
+                description={`No results matching "${searchQuery}".`}
+                primaryAction={{
+                  label: 'Clear Search',
+                  onPress: () => setSearchQuery(''),
+                }}
+              />
+            ) : (
+              <EmptyState
+                type="noMessages"
+                title="No messages yet"
+                description="When you match with someone, your conversations will appear here."
+                primaryAction={{
+                  label: 'View Matches',
+                  onPress: () => router.push('/(tabs)/matches' as any), // eslint-disable-line @typescript-eslint/no-explicit-any
+                }}
+              />
+            )
+          }
+        />
+      )}
     </View>
   );
 };
@@ -173,157 +266,31 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
   },
-  header: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+  searchWrapper: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
-  },
-  headerTitle: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: 'bold',
-    color: colors.neutral[900],
+    borderBottomColor: 'transparent',
   },
   listContent: {
-    paddingVertical: spacing.xs,
+    paddingBottom: 24,
   },
   emptyListContent: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 24,
   },
-  itemContainer: {
+  skeletonContainer: {
+    paddingHorizontal: 16,
+  },
+  skeletonRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
   },
-  avatarWrapper: {
-    position: 'relative',
-    marginRight: spacing.sm,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.neutral[200],
-  },
-  avatarPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary[100],
+  footerLoader: {
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarInitials: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.primary[700],
-  },
-  unreadDot: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.primary[500],
-    borderWidth: 2,
-    borderColor: '#ffffff',
-  },
-  contentWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  nameRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  nameText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: '600',
-    color: colors.neutral[900],
-  },
-  timeText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.neutral[400],
-  },
-  previewRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  previewText: {
-    flex: 1,
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[400],
-    marginRight: spacing.sm,
-  },
-  previewUnread: {
-    color: colors.neutral[900],
-    fontWeight: '600',
-  },
-  badge: {
-    backgroundColor: colors.primary[500],
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    minWidth: 20,
-    alignItems: 'center',
-  },
-  badgeText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  centeredContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.md,
-  },
-  loadingText: {
-    marginTop: spacing.sm,
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[400],
-  },
-  errorText: {
-    fontSize: typography.fontSize.base,
-    color: colors.status.error,
-    marginBottom: spacing.sm,
-  },
-  retryButton: {
-    backgroundColor: colors.primary[500],
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-  },
-  emptyTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: 'bold',
-    color: colors.neutral[900],
-    marginBottom: spacing.xs,
-  },
-  emptySubtitle: {
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[400],
-    textAlign: 'center',
-    lineHeight: 22,
   },
 });

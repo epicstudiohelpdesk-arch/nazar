@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChatScreen } from '../../src/chat/ChatScreen';
-import { getDefaultAuthClient } from '../../src/auth/default-client';
+import { ChatScreen } from '../../src/chat/ChatScreen.js';
+import { getDefaultAuthClient } from '../../src/auth/default-client.js';
 
 export default function ChatRoute(): React.JSX.Element {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();

@@ -1,12 +1,15 @@
 import React from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@platform/ui';
+import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTheme } from '../../design/theme/index.js';
+import { Text } from '../../design/primitives/Text.js';
+import { Icon } from '../../design/primitives/Icon.js';
 
-interface MessageComposerProps {
+export interface MessageComposerProps {
   readonly value: string;
   readonly onChangeText: (text: string) => void;
   readonly onSend: () => void;
   readonly disabled?: boolean;
+  readonly placeholder?: string;
 }
 
 export const MessageComposer: React.FC<MessageComposerProps> = ({
@@ -14,34 +17,73 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   onChangeText,
   onSend,
   disabled = false,
+  placeholder = 'Say something nice...',
 }) => {
-  const isSendDisabled = disabled || value.trim().length === 0 || value.length > 2000;
+  const { colors, radii, spacing } = useTheme();
+
+  const trimmed = value.trim();
+  const isSendDisabled = disabled || trimmed.length === 0 || value.length > 2000;
   const remainingChars = 2000 - value.length;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.inputContainer}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          paddingHorizontal: spacing.md,
+          paddingVertical: spacing.sm,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            backgroundColor: colors.surfaceMuted,
+            borderColor: colors.border,
+            borderRadius: radii.radiusLG,
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.xs,
+          },
+        ]}
+      >
         <TextInput
-          style={styles.input}
-          placeholder="Say something nice..."
-          placeholderTextColor={colors.neutral[400]}
+          style={[styles.input, { color: colors.textPrimary }]}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textTertiary}
           value={value}
           onChangeText={onChangeText}
           multiline
           maxLength={2000}
           editable={!disabled}
           testID="message-input"
+          accessibilityLabel="Message input"
         />
         {value.length > 1800 && (
-          <Text style={[styles.counterText, remainingChars < 0 ? styles.counterExceeded : null]}>
+          <Text
+            variant="caption"
+            style={{
+              color: remainingChars < 0 ? colors.error : colors.textTertiary,
+              alignSelf: 'flex-end',
+              fontSize: 10,
+              marginTop: 2,
+            }}
+          >
             {remainingChars}
           </Text>
         )}
       </View>
+
       <TouchableOpacity
         style={[
           styles.sendButton,
-          isSendDisabled ? styles.sendButtonDisabled : styles.sendButtonActive,
+          {
+            backgroundColor: isSendDisabled ? colors.surfaceMuted : colors.accent,
+            borderRadius: radii.radiusFull,
+            marginLeft: spacing.sm,
+          },
         ]}
         onPress={onSend}
         disabled={isSendDisabled}
@@ -49,7 +91,11 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         accessibilityLabel="Send message"
         testID="message-send-btn"
       >
-        <Text style={styles.sendButtonText}>Send</Text>
+        <Icon
+          name="send"
+          size="sm"
+          color={isSendDisabled ? colors.textTertiary : colors.textInverse}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -59,56 +105,26 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
+    width: '100%',
   },
   inputContainer: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
-    borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    marginRight: spacing.sm,
     minHeight: 40,
     maxHeight: 120,
     justifyContent: 'center',
   },
   input: {
-    fontSize: typography.fontSize.base,
-    color: colors.neutral[900],
-    paddingTop: 0,
-    paddingBottom: 0,
-  },
-  counterText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.neutral[400],
-    alignSelf: 'flex-end',
-    marginTop: 2,
-  },
-  counterExceeded: {
-    color: colors.status.error,
+    fontSize: 15,
+    paddingTop: 6,
+    paddingBottom: 6,
+    maxHeight: 100,
   },
   sendButton: {
+    width: 40,
     height: 40,
-    paddingHorizontal: spacing.md,
-    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sendButtonActive: {
-    backgroundColor: colors.primary[500],
-  },
-  sendButtonDisabled: {
-    backgroundColor: colors.neutral[200],
-  },
-  sendButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: typography.fontSize.base,
   },
 });

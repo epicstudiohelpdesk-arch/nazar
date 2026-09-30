@@ -1,14 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, spacing, typography } from '@platform/ui';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import type { MessageItemDto, DeliveryState } from '@platform/api-contracts';
+import { useTheme } from '../../design/theme/index.js';
+import { Text } from '../../design/primitives/Text.js';
+import { Icon } from '../../design/primitives/Icon.js';
 
 export interface OptimisticMessageItem extends MessageItemDto {
   readonly isOptimistic?: boolean;
   readonly isFailed?: boolean;
 }
 
-interface MessageBubbleProps {
+export interface MessageBubbleProps {
   readonly message: OptimisticMessageItem;
   readonly isCurrentUser: boolean;
   readonly onRetry?: (message: OptimisticMessageItem) => void;
@@ -19,6 +21,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   isCurrentUser,
   onRetry,
 }) => {
+  const { colors, radii, spacing } = useTheme();
+
   const formatTime = (isoString: string) => {
     try {
       const d = new Date(isoString);
@@ -38,25 +42,84 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         <TouchableOpacity
           onPress={() => onRetry?.(message)}
           style={styles.retryButton}
+          accessibilityRole="button"
           accessibilityLabel="Retry sending message"
+          testID={`retry-msg-${message.clientMessageId || message.id}`}
         >
-          <Text style={styles.statusFailed}>Failed ↺</Text>
+          <View style={styles.retryRow}>
+            <Icon name="warning" size="tiny" color={colors.error} />
+            <Text
+              variant="caption"
+              weight="bold"
+              style={{ color: colors.error, marginLeft: 2, fontSize: 11 }}
+            >
+              Retry
+            </Text>
+          </View>
         </TouchableOpacity>
       );
     }
+
     if (isOptimistic) {
-      return <Text style={styles.statusPending}>⋯</Text>;
+      return (
+        <Text
+          variant="caption"
+          style={{ color: isCurrentUser ? 'rgba(255,255,255,0.7)' : colors.textTertiary, fontSize: 11 }}
+        >
+          ⋯
+        </Text>
+      );
     }
+
     switch (state) {
       case 'READ':
-        return <Text style={styles.statusRead}>✓✓</Text>;
+        return (
+          <View style={styles.checksRow}>
+            <Icon
+              name="check"
+              size="tiny"
+              color={isCurrentUser ? '#93C5FD' : colors.info}
+            />
+            <Icon
+              name="check"
+              size="tiny"
+              color={isCurrentUser ? '#93C5FD' : colors.info}
+              style={{ marginLeft: -6 }}
+            />
+          </View>
+        );
       case 'DELIVERED':
-        return <Text style={styles.statusDelivered}>✓✓</Text>;
+        return (
+          <View style={styles.checksRow}>
+            <Icon
+              name="check"
+              size="tiny"
+              color={isCurrentUser ? 'rgba(255,255,255,0.75)' : colors.textTertiary}
+            />
+            <Icon
+              name="check"
+              size="tiny"
+              color={isCurrentUser ? 'rgba(255,255,255,0.75)' : colors.textTertiary}
+              style={{ marginLeft: -6 }}
+            />
+          </View>
+        );
       case 'SENT':
       default:
-        return <Text style={styles.statusSent}>✓</Text>;
+        return (
+          <Icon
+            name="check"
+            size="tiny"
+            color={isCurrentUser ? 'rgba(255,255,255,0.75)' : colors.textTertiary}
+          />
+        );
     }
   };
+
+  const bubbleBg = isCurrentUser ? colors.accent : colors.surfaceMuted;
+  const bubbleBorder = isCurrentUser ? colors.accent : colors.border;
+  const textColor = isCurrentUser ? colors.textInverse : colors.textPrimary;
+  const timeColor = isCurrentUser ? 'rgba(255,255,255,0.8)' : colors.textTertiary;
 
   return (
     <View
@@ -64,15 +127,29 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         styles.container,
         isCurrentUser ? styles.containerOutgoing : styles.containerIncoming,
       ]}
+      accessibilityRole="text"
+      accessibilityLabel={`${isCurrentUser ? 'You' : 'Partner'}: ${message.body}, ${formatTime(message.createdAt)}`}
     >
-      <View style={[styles.bubble, isCurrentUser ? styles.bubbleOutgoing : styles.bubbleIncoming]}>
-        <Text style={[styles.bodyText, isCurrentUser ? styles.bodyOutgoing : styles.bodyIncoming]}>
+      <View
+        style={[
+          styles.bubble,
+          {
+            backgroundColor: bubbleBg,
+            borderColor: bubbleBorder,
+            borderRadius: radii.radiusLG,
+            borderBottomRightRadius: isCurrentUser ? 4 : radii.radiusLG,
+            borderBottomLeftRadius: !isCurrentUser ? 4 : radii.radiusLG,
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.sm,
+          },
+        ]}
+      >
+        <Text variant="body" style={{ color: textColor, lineHeight: 20 }}>
           {message.body}
         </Text>
+
         <View style={styles.metaRow}>
-          <Text
-            style={[styles.timeText, isCurrentUser ? styles.timeOutgoing : styles.timeIncoming]}
-          >
+          <Text variant="caption" style={{ color: timeColor, fontSize: 11 }}>
             {formatTime(message.createdAt)}
           </Text>
           {isCurrentUser && (
@@ -88,9 +165,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: spacing.xs / 2,
-    paddingHorizontal: spacing.sm,
+    marginVertical: 3,
+    paddingHorizontal: 12,
     flexDirection: 'row',
+    width: '100%',
   },
   containerOutgoing: {
     justifyContent: 'flex-end',
@@ -100,76 +178,34 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: '78%',
-    borderRadius: 16,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    shadowColor: colors.neutral[900],
+    borderWidth: 1,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 1.5,
     elevation: 1,
-  },
-  bubbleOutgoing: {
-    backgroundColor: colors.primary[500],
-    borderBottomRightRadius: 4,
-  },
-  bubbleIncoming: {
-    backgroundColor: colors.neutral[100],
-    borderBottomLeftRadius: 4,
-  },
-  bodyText: {
-    fontSize: typography.fontSize.base,
-    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
-  },
-  bodyOutgoing: {
-    color: '#ffffff',
-  },
-  bodyIncoming: {
-    color: colors.neutral[900],
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    marginTop: spacing.xs,
-  },
-  timeText: {
-    fontSize: typography.fontSize.xs,
-  },
-  timeOutgoing: {
-    color: colors.primary[100],
-  },
-  timeIncoming: {
-    color: colors.neutral[400],
+    marginTop: 4,
   },
   statusIcon: {
-    marginLeft: spacing.xs,
+    marginLeft: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  statusPending: {
-    fontSize: 10,
-    color: colors.primary[100],
+  checksRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  statusSent: {
-    fontSize: 11,
-    color: colors.primary[100],
-    fontWeight: 'bold',
-  },
-  statusDelivered: {
-    fontSize: 11,
-    color: colors.neutral[200],
-    fontWeight: 'bold',
-  },
-  statusRead: {
-    fontSize: 11,
-    color: colors.status.info,
-    fontWeight: 'bold',
-  },
-  statusFailed: {
-    fontSize: 11,
-    color: colors.status.error,
-    fontWeight: 'bold',
+  retryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   retryButton: {
     paddingHorizontal: 2,
+    paddingVertical: 1,
   },
 });

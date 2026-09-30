@@ -34,6 +34,11 @@ const FORBIDDEN_PII_KEYS = new Set([
   'latitude',
   'longitude',
   'coords',
+  'body',
+  'text',
+  'message',
+  'content',
+  'preview',
 ]);
 
 /**
@@ -115,7 +120,22 @@ export type OnboardingAnalyticsEvent =
   | 'match_opened'
   | 'match_profile_opened'
   | 'unmatch_started'
-  | 'unmatch_completed';
+  | 'unmatch_completed'
+  // Messaging & Chat (F6)
+  | 'conversations_viewed'
+  | 'conversation_opened'
+  | 'conversation_closed'
+  | 'message_send_attempted'
+  | 'message_sent'
+  | 'message_send_failed'
+  | 'message_retried'
+  | 'conversation_marked_read'
+  | 'chat_block_started'
+  | 'chat_block_completed'
+  | 'chat_report_started'
+  | 'chat_report_completed'
+  | 'chat_unmatch_started'
+  | 'chat_unmatch_completed';
 
 /**
  * Tracks an onboarding or auth event with guaranteed PII sanitization.

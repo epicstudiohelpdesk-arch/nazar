@@ -6,22 +6,27 @@ import {
   Platform,
   StyleSheet,
   ActivityIndicator,
-  Text,
+  Alert,
 } from 'react-native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { colors, spacing, typography } from '@platform/ui';
+import type { ReportReasonCode, ReportTargetType, MessageItemDto } from '@platform/api-contracts';
+import { useTheme } from '../design/theme/index.js';
+import { Text } from '../design/primitives/Text.js';
+import { ErrorState } from '../design/components/feedback/ErrorState.js';
+import { OfflineBanner } from '../design/components/feedback/OfflineBanner.js';
 import { getDefaultAuthClient } from '../auth/default-client.js';
 import { createChatApi, CHAT_QUERY_KEYS } from './chat-api.js';
 import { chatSocket, type SocketConnectionState } from './chat-socket.js';
 import { createSafetyApi } from '../safety/safety-api.js';
+import { getDefaultMatchesApi } from '../matches/matches-api.js';
 import { ReportModal } from '../safety/components/ReportModal.js';
 import { BlockModal } from '../safety/components/BlockModal.js';
-import type { ReportReasonCode, ReportTargetType } from '@platform/api-contracts';
 import { ChatHeader } from './components/ChatHeader.js';
 import { MessageBubble, type OptimisticMessageItem } from './components/MessageBubble.js';
 import { MessageComposer } from './components/MessageComposer.js';
 import { TypingIndicator } from './components/TypingIndicator.js';
+import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import type { AuthClient } from '../auth/auth-client.js';
 
 export interface ChatScreenProps {
@@ -30,14 +35,38 @@ export interface ChatScreenProps {
   readonly onBack?: () => void;
 }
 
+type ChatListItem =
+  | { type: 'message'; message: OptimisticMessageItem }
+  | { type: 'date_separator'; id: string; label: string };
+
+function formatDateLabel(isoString: string): string {
+  try {
+    const d = new Date(isoString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diffDays = Math.round((today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) {
+      return d.toLocaleDateString([], { weekday: 'long' });
+    }
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+
 export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClient, onBack }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const flatListRef = useRef<FlatList>(null);
+  const { colors, radii } = useTheme();
 
   const effectiveClient = useMemo(() => authClient || getDefaultAuthClient(), [authClient]);
   const chatApi = useMemo(() => createChatApi(effectiveClient), [effectiveClient]);
   const safetyApi = useMemo(() => createSafetyApi(effectiveClient), [effectiveClient]);
+  const matchesApi = useMemo(() => getDefaultMatchesApi(), []);
 
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -49,33 +78,86 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [isBlockModalVisible, setIsBlockModalVisible] = useState(false);
 
+  const lastTypingEmittedRef = useRef<number>(0);
+  const lastMarkedReadMessageIdRef = useRef<string | null>(null);
+
   // 1. Load conversation detail
-  const { data: conversation } = useQuery({
+  const {
+    data: conversation,
+    isLoading: isLoadingConversation,
+    error: conversationError,
+  } = useQuery({
     queryKey: CHAT_QUERY_KEYS.conversation(conversationId),
     queryFn: () => chatApi.getConversationDetail(conversationId),
     enabled: Boolean(conversationId),
   });
 
-  // 2. Load message history
-  const { data: messagesData, isLoading: isLoadingMessages } = useQuery({
+  // 2. Load message history using useInfiniteQuery (cursor pagination)
+  const {
+    data: messagesData,
+    isLoading: isLoadingMessages,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    error: messagesError,
+  } = useInfiniteQuery({
     queryKey: CHAT_QUERY_KEYS.messages(conversationId),
-    queryFn: () => chatApi.getMessages(conversationId, { limit: 50 }),
+    queryFn: ({ pageParam }) =>
+      chatApi.getMessages(conversationId, { limit: 30, cursor: pageParam as string | undefined }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: Boolean(conversationId),
   });
 
-  // Combine server messages (reverse order for ascending display) + optimistic messages
-  const serverMessages = messagesData?.items ? [...messagesData.items].reverse() : [];
-  const allMessages: OptimisticMessageItem[] = [...serverMessages, ...optimisticMessages];
-
-  // 3. Mark last message as read upon opening
+  // Analytics on mount & unmount
   useEffect(() => {
-    if (serverMessages.length > 0) {
-      const lastMsg = serverMessages[serverMessages.length - 1];
-      if (lastMsg && lastMsg.senderUserId !== conversation?.otherUser.userId) {
-        chatApi.markRead(conversationId, lastMsg.id).catch(() => {});
+    trackOnboardingEvent('conversation_opened', { conversationId });
+    return () => {
+      trackOnboardingEvent('conversation_closed', { conversationId });
+    };
+  }, [conversationId]);
+
+  // Combine & deduplicate server messages in descending order (newest first)
+  const serverMessages = useMemo(() => {
+    if (!messagesData?.pages) return [];
+    const seen = new Set<string>();
+    const list: MessageItemDto[] = [];
+    for (const page of messagesData.pages) {
+      for (const item of page.items) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          list.push(item);
+        }
       }
     }
-  }, [conversationId, serverMessages.length, conversation?.otherUser.userId, chatApi]);
+    return list;
+  }, [messagesData]);
+
+  // Combined messages for inverted display (optimistic at top/index 0 + server messages)
+  const allMessages: OptimisticMessageItem[] = useMemo(() => {
+    const serverClientIds = new Set(serverMessages.map((m) => m.clientMessageId).filter(Boolean));
+    const activeOptimistic = optimisticMessages.filter(
+      (m) => !serverClientIds.has(m.clientMessageId)
+    );
+    return [...activeOptimistic, ...serverMessages];
+  }, [optimisticMessages, serverMessages]);
+
+  // 3. Mark last message as read upon opening or receiving new message
+  useEffect(() => {
+    if (serverMessages.length > 0 && conversation?.otherUser.userId) {
+      const newestIncoming = serverMessages.find(
+        (m) => m.senderUserId === conversation.otherUser.userId
+      );
+      if (newestIncoming && lastMarkedReadMessageIdRef.current !== newestIncoming.id) {
+        lastMarkedReadMessageIdRef.current = newestIncoming.id;
+        chatApi.markRead(conversationId, newestIncoming.id).catch(() => {});
+        trackOnboardingEvent('conversation_marked_read', {
+          conversationId,
+          messageId: newestIncoming.id,
+        });
+      }
+    }
+  }, [conversationId, serverMessages, conversation?.otherUser.userId, chatApi]);
 
   // 4. WebSocket setup & listeners
   useEffect(() => {
@@ -85,18 +167,30 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
       setConnectionState(state);
       if (state === 'connected') {
         queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.messages(conversationId) });
+        queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations });
       }
     });
 
     const unsubMessage = chatSocket.onMessageCreated((event) => {
       if (event.conversationId === conversationId) {
+        // Remove matching optimistic message
         setOptimisticMessages((prev) =>
           prev.filter((m) => m.clientMessageId !== event.payload.clientMessageId)
         );
+
+        // Update message cache
         queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.messages(conversationId) });
         queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations });
 
-        chatApi.markRead(conversationId, event.payload.id).catch(() => {});
+        // If incoming from other user, mark as read
+        if (conversation?.otherUser.userId && event.payload.senderUserId === conversation.otherUser.userId) {
+          lastMarkedReadMessageIdRef.current = event.payload.id;
+          chatApi.markRead(conversationId, event.payload.id).catch(() => {});
+          trackOnboardingEvent('conversation_marked_read', {
+            conversationId,
+            messageId: event.payload.id,
+          });
+        }
       }
     });
 
@@ -119,6 +213,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
     });
 
     return () => {
+      chatSocket.stopTyping(conversationId);
       chatSocket.leaveConversation(conversationId);
       unsubConnection();
       unsubMessage();
@@ -126,7 +221,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
       unsubDelivered();
       unsubTyping();
     };
-  }, [conversationId, queryClient, chatApi]);
+  }, [conversationId, queryClient, chatApi, conversation?.otherUser.userId]);
 
   // 5. Send message handler
   const handleSendMessage = async () => {
@@ -141,15 +236,21 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
       clientMessageId,
       messageType: 'TEXT',
       body: trimmed,
+      metadata: null,
       deliveryState: 'SENT',
       createdAt: new Date().toISOString(),
+      editedAt: null,
+      deletedAt: null,
       isOptimistic: true,
+      isFailed: false,
     };
 
     setInputText('');
+    lastTypingEmittedRef.current = 0;
     chatSocket.stopTyping(conversationId);
-    setOptimisticMessages((prev) => [...prev, newOptimisticMsg]);
+    setOptimisticMessages((prev) => [newOptimisticMsg, ...prev]);
     setIsSending(true);
+    trackOnboardingEvent('message_send_attempted', { conversationId, clientMessageId });
 
     try {
       const res = await chatApi.sendMessage(conversationId, {
@@ -159,27 +260,26 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
       });
 
       setOptimisticMessages((prev) => prev.filter((m) => m.clientMessageId !== clientMessageId));
-      queryClient.setQueryData(CHAT_QUERY_KEYS.messages(conversationId), (old: any) => {
-        // eslint-disable-line @typescript-eslint/no-explicit-any
-        if (!old) return { items: [res.message], hasMore: false };
-        return {
-          ...old,
-          items: [res.message, ...(old.items || [])],
-        };
-      });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.messages(conversationId) });
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations });
+      trackOnboardingEvent('message_sent', { conversationId, messageId: res.message.id });
     } catch {
       setOptimisticMessages((prev) =>
         prev.map((m) =>
           m.clientMessageId === clientMessageId ? { ...m, isOptimistic: false, isFailed: true } : m
         )
       );
+      trackOnboardingEvent('message_send_failed', { conversationId, clientMessageId });
     } finally {
       setIsSending(false);
     }
   };
 
   const handleRetry = async (failedMsg: OptimisticMessageItem) => {
+    trackOnboardingEvent('message_retried', {
+      conversationId,
+      clientMessageId: failedMsg.clientMessageId,
+    });
     setOptimisticMessages((prev) =>
       prev.map((m) =>
         m.clientMessageId === failedMsg.clientMessageId
@@ -190,7 +290,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
 
     try {
       const res = await chatApi.sendMessage(conversationId, {
-        clientMessageId: failedMsg.clientMessageId,
+        clientMessageId: failedMsg.clientMessageId || `cmsg_${Date.now()}`,
         body: failedMsg.body,
         messageType: failedMsg.messageType,
       });
@@ -198,11 +298,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
       setOptimisticMessages((prev) =>
         prev.filter((m) => m.clientMessageId !== failedMsg.clientMessageId)
       );
-      queryClient.setQueryData(CHAT_QUERY_KEYS.messages(conversationId), (old: any) => {
-        // eslint-disable-line @typescript-eslint/no-explicit-any
-        if (!old) return { items: [res.message], hasMore: false };
-        return { ...old, items: [res.message, ...(old.items || [])] };
-      });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.messages(conversationId) });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations });
+      trackOnboardingEvent('message_sent', { conversationId, messageId: res.message.id });
     } catch {
       setOptimisticMessages((prev) =>
         prev.map((m) =>
@@ -217,8 +315,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
   const handleTextChange = (text: string) => {
     setInputText(text);
     if (text.length > 0) {
-      chatSocket.startTyping(conversationId);
+      const now = Date.now();
+      if (now - lastTypingEmittedRef.current > 2000) {
+        lastTypingEmittedRef.current = now;
+        chatSocket.startTyping(conversationId);
+      }
     } else {
+      lastTypingEmittedRef.current = 0;
       chatSocket.stopTyping(conversationId);
     }
   };
@@ -231,20 +334,67 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
     }
   };
 
-  const renderItem = useCallback(
-    ({ item }: { item: OptimisticMessageItem }) => {
-      const isCurrentUser =
-        item.isOptimistic ||
-        item.senderUserId === 'me' ||
-        (conversation ? item.senderUserId !== conversation.otherUser.userId : true);
+  // Build list items with date separators
+  const listItems: ChatListItem[] = useMemo(() => {
+    const items: ChatListItem[] = [];
+    for (let i = 0; i < allMessages.length; i++) {
+      const current = allMessages[i];
+      if (!current) continue;
+      items.push({ type: 'message', message: current });
 
-      return <MessageBubble message={item} isCurrentUser={isCurrentUser} onRetry={handleRetry} />;
+      const currentDate = new Date(current.createdAt).toDateString();
+      const next = allMessages[i + 1];
+      const nextDate = next ? new Date(next.createdAt).toDateString() : null;
+
+      if (!next || currentDate !== nextDate) {
+        items.push({
+          type: 'date_separator',
+          id: `date-${currentDate}-${i}`,
+          label: formatDateLabel(current.createdAt),
+        });
+      }
+    }
+    return items;
+  }, [allMessages]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: ChatListItem }) => {
+      if (item.type === 'date_separator') {
+        return (
+          <View style={styles.dateSeparatorRow}>
+            <View
+              style={[
+                styles.dateSeparatorPill,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderColor: colors.border,
+                  borderRadius: radii.radiusFull,
+                },
+              ]}
+            >
+              <Text variant="caption" weight="medium" style={{ color: colors.textTertiary, fontSize: 11 }}>
+                {item.label}
+              </Text>
+            </View>
+          </View>
+        );
+      }
+
+      const msg = item.message;
+      const isCurrentUser =
+        msg.isOptimistic ||
+        msg.senderUserId === 'me' ||
+        (conversation ? msg.senderUserId !== conversation.otherUser.userId : true);
+
+      return <MessageBubble message={msg} isCurrentUser={isCurrentUser} onRetry={handleRetry} />;
     },
-    [conversation]
+    [conversation, colors, radii, handleRetry]
   );
 
   const handleBlockConfirm = async (targetUserId: string, reason?: string) => {
+    trackOnboardingEvent('chat_block_started', { conversationId, targetUserId });
     await safetyApi.blockUser(targetUserId, { reason });
+    trackOnboardingEvent('chat_block_completed', { conversationId, targetUserId });
     queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations });
     queryClient.removeQueries({ queryKey: CHAT_QUERY_KEYS.conversation(conversationId) });
     handleBack();
@@ -256,17 +406,94 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
     reasonCode: ReportReasonCode;
     notes?: string;
   }) => {
+    trackOnboardingEvent('chat_report_started', { conversationId, reasonCode: data.reasonCode });
     await safetyApi.createReport({
       targetType: data.targetType,
       targetId: data.targetId,
       reasonCode: data.reasonCode,
       description: data.notes || undefined,
     });
+    trackOnboardingEvent('chat_report_completed', { conversationId, reasonCode: data.reasonCode });
   };
+
+  const handleUnmatch = () => {
+    if (!conversation) return;
+    Alert.alert(
+      `Unmatch with ${conversation.otherUser.displayName}?`,
+      'You will no longer be able to message each other, and this conversation will be permanently removed.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unmatch',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              trackOnboardingEvent('chat_unmatch_started', {
+                conversationId,
+                matchId: conversation.matchId,
+              });
+              await matchesApi.unmatch(conversation.matchId);
+              trackOnboardingEvent('chat_unmatch_completed', {
+                conversationId,
+                matchId: conversation.matchId,
+              });
+              queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations });
+              queryClient.removeQueries({ queryKey: CHAT_QUERY_KEYS.conversation(conversationId) });
+              queryClient.invalidateQueries({ queryKey: ['matches'] });
+              handleBack();
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : 'Failed to unmatch';
+              Alert.alert('Error', msg);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEndReached = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
+  if (conversationError) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ChatHeader
+          displayName="Conversation"
+          connectionState="disconnected"
+          onBack={handleBack}
+        />
+        <ErrorState
+          type="content_unavailable"
+          title="Conversation Unavailable"
+          message="This conversation could not be found or has ended."
+          retryLabel="Go Back"
+          onRetry={handleBack}
+        />
+      </View>
+    );
+  }
+
+  if (isLoadingConversation && !conversation) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ChatHeader
+          displayName="Loading..."
+          connectionState="connecting"
+          onBack={handleBack}
+        />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
     >
@@ -278,26 +505,49 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
         onBack={handleBack}
         onReport={() => setIsReportModalVisible(true)}
         onBlock={() => setIsBlockModalVisible(true)}
+        onUnmatch={conversation?.matchId ? handleUnmatch : undefined}
       />
 
-      {connectionState === 'reconnecting' && (
-        <View style={styles.reconnectBanner}>
-          <Text style={styles.reconnectText}>Connecting to chat...</Text>
-        </View>
+      {connectionState !== 'connected' && (
+        <OfflineBanner
+          status={connectionState === 'reconnecting' ? 'reconnecting' : 'offline'}
+          onRetrySync={() => {
+            if (conversation?.id) {
+              chatSocket.joinConversation(conversation.id);
+            }
+          }}
+        />
       )}
 
-      {isLoadingMessages ? (
+      {messagesError && !messagesData ? (
+        <ErrorState
+          type="server_error"
+          title="Failed to load messages"
+          message="Could not retrieve chat history. Please try again."
+          onRetry={() =>
+            queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.messages(conversationId) })
+          }
+        />
+      ) : isLoadingMessages && !messagesData ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : (
         <FlatList
-          ref={flatListRef}
-          data={allMessages}
-          keyExtractor={(item) => item.id}
+          inverted
+          data={listItems}
+          keyExtractor={(item) => (item.type === 'message' ? item.message.id : item.id)}
           renderItem={renderItem}
           contentContainerStyle={styles.messageList}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.2}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={styles.paginationLoader}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : null
+          }
         />
       )}
 
@@ -311,6 +561,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
         onChangeText={handleTextChange}
         onSend={handleSendMessage}
         disabled={isSending || conversation?.status === 'CLOSED'}
+        placeholder={conversation?.status === 'CLOSED' ? 'This conversation is closed' : 'Say something nice...'}
       />
 
       {conversation && (
@@ -339,26 +590,28 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  reconnectBanner: {
-    backgroundColor: colors.status.warning,
-    paddingVertical: spacing.xs,
-    alignItems: 'center',
-  },
-  reconnectText: {
-    color: '#ffffff',
-    fontSize: typography.fontSize.xs,
-    fontWeight: 'bold',
-  },
   messageList: {
-    paddingVertical: spacing.xs,
+    paddingVertical: 12,
     flexGrow: 1,
-    justifyContent: 'flex-end',
+  },
+  dateSeparatorRow: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  dateSeparatorPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderWidth: 1,
+  },
+  paginationLoader: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
