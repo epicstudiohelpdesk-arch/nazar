@@ -7,6 +7,7 @@ import type {
   RestorePurchasesResultDto,
 } from '@platform/api-contracts';
 import type { BillingApiClient } from './billing-api.js';
+import { getMobileConfig } from '../config/mobile-config.js';
 
 export class BillingManager {
   private client: BillingApiClient | null = null;
@@ -64,6 +65,12 @@ export class BillingManager {
 
     const provider = this.getNativeProvider();
     const transactionId = mockToken || `tx-${Platform.OS}-${Date.now()}`;
+    let environment: 'SANDBOX' | 'PRODUCTION' = 'SANDBOX';
+    try {
+      environment = getMobileConfig().EXPO_PUBLIC_APP_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX';
+    } catch {
+      environment = 'SANDBOX';
+    }
 
     // Server-authoritative purchase verification
     const result = await this.client.verifyPurchase({
@@ -71,7 +78,7 @@ export class BillingManager {
       productId,
       transactionId,
       purchaseToken: transactionId,
-      environment: 'SANDBOX',
+      environment,
     });
 
     // Update cached entitlements
@@ -87,11 +94,18 @@ export class BillingManager {
     }
 
     const provider = this.getNativeProvider();
+    let environment: 'SANDBOX' | 'PRODUCTION' = 'SANDBOX';
+    try {
+      environment = getMobileConfig().EXPO_PUBLIC_APP_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX';
+    } catch {
+      environment = 'SANDBOX';
+    }
+
     const result = await this.client.restorePurchases({
       provider,
       receiptData: receiptOrToken,
       purchaseTokens: receiptOrToken ? [receiptOrToken] : [],
-      environment: 'SANDBOX',
+      environment,
     });
 
     this.cachedEntitlements = [...result.effectiveEntitlements];
