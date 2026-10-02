@@ -15,6 +15,7 @@ export default defineConfig({
       ),
       'expo-notifications': path.resolve(__dirname, 'tests/mocks/expo-notifications.ts'),
       'expo-device': path.resolve(__dirname, 'tests/mocks/expo-device.ts'),
+      'expo-linear-gradient': path.resolve(__dirname, 'tests/mocks/expo-linear-gradient.ts'),
     },
   },
 });

@@ -4,8 +4,8 @@
   "androidVersionCode": 10000,
   "iosBuildNumber": "10000",
   "environment": "production",
-  "commit": "1d112c2a6e13953fec7b616d2f11b3ed8da9a0cf",
-  "buildTimestamp": "2026-10-01T03:01:04.506Z",
+  "commit": "3cf44e989153331e76f930f1931f56b4ee1e39ae",
+  "buildTimestamp": "2026-10-01T04:22:21.222Z",
   "apiCompatibilityVersion": "v1",
   "mobileConfigurationVersion": "1.0.0",
   "bundleIdentifier": "com.nazar.app",
@@ -35,9 +35,9 @@
   },
   "artifacts": [
     {
-      "path": "dist/_expo/static/js/ios/entry-f207e0fcc2c5b1852c39a5dda7344c0b.js",
-      "sizeBytes": 2534408,
-      "sha256": "6c9992e6f1c418ade01edffe133dba3acc731d383f739eb7ad03a7bbd109f478"
+      "path": "dist/_expo/static/js/ios/entry-8d5c6ef2ecb7ea215341432a4fecc9fc.js",
+      "sizeBytes": 2545652,
+      "sha256": "71b516d55393d8123815e1dcf446cb7bd9b4cd1e31cea2f4d55278c1fd881272"
     },
     {
       "path": "dist/assets/017bc6ba3fc25503e5eb5e53826d48a8",
@@ -157,7 +157,7 @@
     {
       "path": "dist/metadata.json",
       "sizeBytes": 1589,
-      "sha256": "ad0688bfc4ed0f3d1a79efe45bf55a44cb45599154626941236ac3184585c70e"
+      "sha256": "79c93af420794a45b5702c72558337a6a8c8212a5d77fce7225916ed501183e8"
     }
   ]
 }
