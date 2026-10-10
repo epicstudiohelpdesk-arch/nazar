@@ -45,7 +45,7 @@ jobs:
 
       - name: Start Database & Cache Containers
         run: |
-          docker compose up -d --wait postgres redis minio
+          docker compose up -d --wait postgres redis
           docker compose ps
 
       - name: Run Database Migrations
