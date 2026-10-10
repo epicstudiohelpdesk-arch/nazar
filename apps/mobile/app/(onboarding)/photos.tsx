@@ -87,9 +87,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
       // Select next sample photo URL for authentic display
       const nextIndex = draftPhotos.length % SAMPLE_PORTRAITS.length;
       const fallbackUrl = SAMPLE_PORTRAITS[nextIndex] ?? SAMPLE_PORTRAITS[0]!;
-      const displayUrl = completedItem.url.startsWith('http')
-        ? completedItem.url
-        : fallbackUrl;
+      const displayUrl = completedItem.url.startsWith('http') ? completedItem.url : fallbackUrl;
 
       addDraftPhoto({
         id: completedItem.id,
@@ -160,11 +158,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title=""
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.3} style={styles.progressBar} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -217,7 +211,10 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
         {/* Quality Guidelines Callout */}
         <SurfaceCard
           elevation="none"
-          style={[styles.tipsCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceMuted }]}
+          style={[
+            styles.tipsCard,
+            { borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceMuted },
+          ]}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <Icon name="sparkles" size={16} color={theme.colors.accent} />
@@ -226,9 +223,8 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
             </Text>
           </View>
           <Text level="caption" color="secondary" style={{ lineHeight: 18 }}>
-            • Clear lighting with your face unobstructed.{'\n'}
-            • Individual portraits work best as your primary photo.{'\n'}
-            • Show activities, travels, or spaces you love in slots 2–6.
+            • Clear lighting with your face unobstructed.{'\n'}• Individual portraits work best as
+            your primary photo.{'\n'}• Show activities, travels, or spaces you love in slots 2–6.
           </Text>
         </SurfaceCard>
 

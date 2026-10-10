@@ -169,7 +169,12 @@ export const ConversationListSkeleton: React.FC<{ count?: number }> = ({ count =
     <View style={{ width: '100%' }}>
       {Array.from({ length: count }, (_, i) => (
         <View key={i} style={[styles.convoRow, { marginVertical: spacing.sm }]}>
-          <SkeletonBox width={48} height={48} radius="radiusFull" style={{ marginRight: spacing.md }} />
+          <SkeletonBox
+            width={48}
+            height={48}
+            radius="radiusFull"
+            style={{ marginRight: spacing.md }}
+          />
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <SkeletonBox width="50%" height={16} radius="radiusSM" style={{ marginBottom: 6 }} />
             <SkeletonBox width="80%" height={14} radius="radiusSM" />
@@ -187,12 +192,7 @@ export interface SpinnerProps {
   readonly testID?: string;
 }
 
-export const Spinner: React.FC<SpinnerProps> = ({
-  size = 'small',
-  color,
-  style,
-  testID,
-}) => {
+export const Spinner: React.FC<SpinnerProps> = ({ size = 'small', color, style, testID }) => {
   const { colors } = useTheme();
   return (
     <View style={[styles.spinnerWrapper, style]} testID={testID}>

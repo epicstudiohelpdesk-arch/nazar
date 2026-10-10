@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  FlatList,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+import { View, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { PaymentTransactionResponseDto } from '@platform/api-contracts';
 import { useTheme } from '../design/theme/index.js';
@@ -119,11 +113,7 @@ export function BillingHistoryScreen({ client }: BillingHistoryScreenProps): Rea
           <View
             style={[
               styles.statusBadge,
-              isSuccess
-                ? styles.successBadge
-                : isRefund
-                ? styles.refundBadge
-                : styles.failedBadge,
+              isSuccess ? styles.successBadge : isRefund ? styles.refundBadge : styles.failedBadge,
             ]}
           >
             <Text
@@ -131,11 +121,7 @@ export function BillingHistoryScreen({ client }: BillingHistoryScreenProps): Rea
               weight="bold"
               style={[
                 styles.statusText,
-                isSuccess
-                  ? styles.successText
-                  : isRefund
-                  ? styles.refundText
-                  : styles.failedText,
+                isSuccess ? styles.successText : isRefund ? styles.refundText : styles.failedText,
               ]}
             >
               {item.status}

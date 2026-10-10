@@ -64,7 +64,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       return (
         <Text
           variant="caption"
-          style={{ color: isCurrentUser ? 'rgba(255,255,255,0.7)' : colors.textTertiary, fontSize: 11 }}
+          style={{
+            color: isCurrentUser ? 'rgba(255,255,255,0.7)' : colors.textTertiary,
+            fontSize: 11,
+          }}
         >
           ⋯
         </Text>
@@ -75,11 +78,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       case 'READ':
         return (
           <View style={styles.checksRow}>
-            <Icon
-              name="check"
-              size="tiny"
-              color={isCurrentUser ? '#93C5FD' : colors.info}
-            />
+            <Icon name="check" size="tiny" color={isCurrentUser ? '#93C5FD' : colors.info} />
             <Icon
               name="check"
               size="tiny"

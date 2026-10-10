@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  View,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { TouchableOpacity, View, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Icon, type IconName } from '../../primitives/Icon.js';
@@ -41,11 +36,7 @@ export const BottomNavItem: React.FC<BottomNavItemProps> = ({
       testID={testID}
     >
       <View style={styles.iconWrapper}>
-        <Icon
-          name={icon}
-          size="md"
-          color={isSelected ? colors.accent : colors.textTertiary}
-        />
+        <Icon name={icon} size="md" color={isSelected ? colors.accent : colors.textTertiary} />
         {badgeCount > 0 && (
           <View
             style={[

@@ -38,9 +38,10 @@ flowchart TD
 ```
 
 ### Contextual Permission Principles
-* **Location:** Requested on the permissions screen with clear copy: *"Nazar needs location access to find matches and community mixers near your neighborhood. Your exact coordinates are never revealed."*
-* **Camera / Photos:** Requested only when the user taps an empty photo slot on `/(onboarding)/photos`.
-* **Push Notifications:** Requested after profile activation so the user understands the value: *"Get notified immediately when someone likes you or messages your profile."*
+
+- **Location:** Requested on the permissions screen with clear copy: _"Nazar needs location access to find matches and community mixers near your neighborhood. Your exact coordinates are never revealed."_
+- **Camera / Photos:** Requested only when the user taps an empty photo slot on `/(onboarding)/photos`.
+- **Push Notifications:** Requested after profile activation so the user understands the value: _"Get notified immediately when someone likes you or messages your profile."_
 
 ---
 
@@ -70,13 +71,13 @@ flowchart TD
     ViewCard --> TapCard[Tap ProfileCard to open detail]
     TapCard --> FullDetail[/profile/:userId]
     FullDetail --> ReadBio[Read Bio, Cultural Interests & Prompts]
-    
+
     FullDetail --> Decision{User Choice}
     ViewCard --> Decision
-    
+
     Decision -- Pass --> CallPass[POST /v1/interactions/:id/pass]
     CallPass --> NextCard[Animate out & load next candidate]
-    
+
     Decision -- Like --> CallLike[POST /v1/interactions/:id/like]
     CallLike --> CheckMatch{Matched == true?}
     CheckMatch -- No --> NextCard
@@ -94,11 +95,11 @@ flowchart TD
     LikeSuccess[Mutual Like Confirmed] --> CelebrationModal[/modal/celebration]
     CelebrationModal --> ShowAvatars[Display Both Avatars & Names]
     CelebrationModal --> ActionChoice{User Selection}
-    
+
     ActionChoice -- 'Say Hello' --> StartChat[/chat/:conversationId]
     ActionChoice -- 'Keep Browsing' --> DismissModal[Dismiss Modal]
     ActionChoice -- 'Close' --> DismissModal
-    
+
     DismissModal --> ReturnDiscovery[/(tabs)/discovery]
     StartChat --> MessageInput[Focus Message Input]
 ```
@@ -112,20 +113,20 @@ flowchart TD
     EntryChoice{Entry Point} --> MatchDetail[/matches/:matchId]
     EntryChoice --> ConvList[/(tabs)/messages]
     EntryChoice --> DeepLink[nazar://chat/:conversationId]
-    
+
     MatchDetail -- 'Chat' --> OpenChat[/chat/:conversationId]
     ConvList -- Tap Row --> OpenChat
     DeepLink --> OpenChat
-    
+
     OpenChat --> LoadHistory[GET /v1/chat/:id/messages]
     LoadHistory --> ConnectWs[Connect WebSocket Room]
     ConnectWs --> MarkRead[POST /v1/chat/:id/read]
-    
+
     OpenChat --> TypeMsg[User types text]
     TypeMsg --> SendWs[Emit 'chat:message' or POST HTTP fallback]
     SendWs --> OptimisticUI[Insert bubble with 'Sending' status]
     OptimisticUI --> AckReceived[Mark 'Delivered']
-    
+
     OpenChat --> BackPress[User taps Back or Android Hardware Back]
     BackPress --> TargetDestination[/(tabs)/messages]
 ```
@@ -142,7 +143,7 @@ User safety is paramount in a dating environment. Reporting and blocking actions
 flowchart TD
     UserSurface[Profile / Chat / Post] --> TapMore[Tap '...' More Action]
     TapMore --> SafetyAction{Select Action}
-    
+
     SafetyAction -- Report --> OpenReport[/modal/report]
     OpenReport --> SelectReason[Select Category: Harassment / Fake / Inappropriate]
     SelectReason --> AddNotes[Optional Text Details]
@@ -151,7 +152,7 @@ flowchart TD
     ReportAck --> PromptBlock{Also block this user?}
     PromptBlock -- Yes --> CallBlock
     PromptBlock -- No --> CloseSheet[Dismiss Modal]
-    
+
     SafetyAction -- Block --> OpenBlock[/modal/block]
     OpenBlock --> ConfirmBlock[Confirm Block Dialog]
     ConfirmBlock --> CallBlock[POST /v1/safety/blocking/:userId/block]
@@ -168,7 +169,7 @@ flowchart TD
     Trigger{Upsell Trigger} --> LikesTeaser[Blurred Likes Grid]
     Trigger --> ProfileBadge[Nazar Gold Banner in Profile]
     Trigger --> SettingsMenu[Settings -> Subscription]
-    
+
     Trigger --> Paywall[/billing]
     Paywall --> LoadTiers[GET /v1/billing/products]
     LoadTiers --> SelectPlan[User selects 1-Month / 6-Month Gold Plan]
@@ -178,7 +179,7 @@ flowchart TD
     VerifyReceipt --> UpdateEntitlements[Sync TanStack ['entitlements'] cache]
     UpdateEntitlements --> SuccessBanner[Display 'Welcome to Nazar Gold!']
     SuccessBanner --> DismissPaywall[Dismiss / Return to Previous Screen]
-    
+
     NativeIAP -- Cancelled --> StayOnPaywall[Remain on paywall without error]
 ```
 
@@ -208,12 +209,12 @@ flowchart TD
 flowchart TD
     IncomingLink[Universal Link: https://nazar.app/chat/c-100] --> AppOpen
     AppOpen --> CheckAuth{Is User Authenticated?}
-    
+
     CheckAuth -- No --> CacheTarget[Store Pending Route: /chat/c-100]
     CacheTarget --> AuthFlow[Redirect to /(auth)/login]
     AuthFlow --> OnAuthSuccess[Authentication Succeeded]
     OnAuthSuccess --> PopTarget[Navigate to cached target: /chat/c-100]
-    
+
     CheckAuth -- Yes --> VerifyOwnership[API validates permission to view resource]
     VerifyOwnership -- Allowed --> RenderTarget[Render /chat/c-100]
     VerifyOwnership -- Forbidden/Deleted --> SafeFallback[Show 'Resource Unavailable' Toast & route to /(tabs)/messages]
@@ -228,12 +229,12 @@ flowchart TD
     NetworkStatus{Connectivity Monitor} --> Offline[Connection Lost]
     Offline --> ShowBanner[Display Non-intrusive OfflineBanner]
     Offline --> ReadRequests[Serve from TanStack Query cache]
-    
+
     Offline --> UserAction{User Interaction}
     UserAction -- Like/Pass --> OptimisticDiscovery[Advance card deck & queue mutation]
     UserAction -- Send Message --> OutboxQueue[Save to local outbox marked 'Pending']
     UserAction -- Edit Profile --> SaveDraft[Save draft in Zustand store]
-    
+
     NetworkStatus --> Reconnected[Connection Restored]
     Reconnected --> BannerSyncing[Banner: 'Syncing...']
     BannerSyncing --> FlushOutbox[Flush queued mutations & outbox messages]

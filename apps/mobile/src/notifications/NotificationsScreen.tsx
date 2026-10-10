@@ -12,10 +12,7 @@ import { ErrorState } from '../design/components/feedback/ErrorState.js';
 import { SkeletonCard, Spinner } from '../design/components/feedback/LoadingSkeleton.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import type { NotificationsApiClient } from './notifications-api.js';
-import {
-  buildNotificationViewModel,
-  type NotificationViewModel,
-} from './notification-state.js';
+import { buildNotificationViewModel, type NotificationViewModel } from './notification-state.js';
 import type { PushPermissionState } from './push-permissions.js';
 import { NotificationRow } from './components/NotificationRow.js';
 import { UnreadBadge } from './components/UnreadBadge.js';
@@ -157,7 +154,9 @@ export function NotificationsScreen({
       <TopNavHeader
         title="Activity"
         rightAction={
-          unread.count > 0 ? <UnreadBadge count={unread.count} testID="activity-center-badge" /> : undefined
+          unread.count > 0 ? (
+            <UnreadBadge count={unread.count} testID="activity-center-badge" />
+          ) : undefined
         }
       />
 
@@ -169,11 +168,7 @@ export function NotificationsScreen({
         </View>
       ) : feed.error ? (
         <View style={styles.centered}>
-          <ErrorState
-            type="unknown"
-            message={feed.error}
-            onRetry={feed.refetch}
-          />
+          <ErrorState type="unknown" message={feed.error} onRetry={feed.refetch} />
         </View>
       ) : (
         <FlatList

@@ -60,9 +60,7 @@ export const SurfaceCard: React.FC<SurfaceCardProps> = ({
   const radiusVal = radii[radius];
   const shadowStyle = resolveElevation();
 
-  const resolvedBorderColor = selected
-    ? colors.accent
-    : borderColor || colors.border;
+  const resolvedBorderColor = selected ? colors.accent : borderColor || colors.border;
 
   const cardStyle: ViewStyle = {
     backgroundColor: bg || colors.surface,

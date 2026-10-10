@@ -4,14 +4,7 @@ import { useTheme } from '../theme/index.js';
 import { Text } from './Text.js';
 import { Icon, type IconName } from './Icon.js';
 
-export type BadgeVariant =
-  | 'accent'
-  | 'neutral'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'info'
-  | 'gold';
+export type BadgeVariant = 'accent' | 'neutral' | 'success' | 'warning' | 'error' | 'info' | 'gold';
 
 export interface BadgeProps {
   readonly label: string;

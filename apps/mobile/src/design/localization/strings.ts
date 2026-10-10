@@ -57,7 +57,8 @@ export const defaultStrings = {
     safetyCenter: 'Trust & Safety',
     reportUser: 'Report Profile',
     blockUser: 'Block User',
-    blockConfirm: 'Are you sure you want to block this profile? They will not be able to message you or see your profile.',
+    blockConfirm:
+      'Are you sure you want to block this profile? They will not be able to message you or see your profile.',
     verifiedBadge: 'Verified Identity',
     restrictedContent: 'Restricted Content',
   },

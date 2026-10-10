@@ -18,12 +18,7 @@ export const AUTH_QUERY_KEYS = {
 };
 
 export type SessionRestoreStatus =
-  | 'UNAUTHENTICATED'
-  | 'ACTIVE'
-  | 'INCOMPLETE'
-  | 'PAUSED'
-  | 'EXPIRED'
-  | 'OFFLINE';
+  'UNAUTHENTICATED' | 'ACTIVE' | 'INCOMPLETE' | 'PAUSED' | 'EXPIRED' | 'OFFLINE';
 
 export interface SessionRestoreResult {
   status: SessionRestoreStatus;

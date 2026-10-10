@@ -14,7 +14,8 @@ import { useTheme } from '../theme/index.js';
 import { Text } from './Text.js';
 import { Icon, type IconName } from './Icon.js';
 
-export type ImageAspectRatio = 'square' | 'portrait' | 'landscape' | 'fullBleed' | 'thumbnail' | number;
+export type ImageAspectRatio =
+  'square' | 'portrait' | 'landscape' | 'fullBleed' | 'thumbnail' | number;
 
 export interface ImageViewProps extends Omit<RNImageProps, 'source'> {
   readonly uri?: string | null;
@@ -72,13 +73,14 @@ export const ImageView: React.FC<ImageViewProps> = ({
     }
   };
 
-  const resolvedBorderRadius = typeof rounded === 'number'
-    ? rounded
-    : rounded
-    ? aspectRatio === 'thumbnail'
-      ? radii.radiusMD
-      : radii.radiusLG
-    : 0;
+  const resolvedBorderRadius =
+    typeof rounded === 'number'
+      ? rounded
+      : rounded
+        ? aspectRatio === 'thumbnail'
+          ? radii.radiusMD
+          : radii.radiusLG
+        : 0;
 
   return (
     <View

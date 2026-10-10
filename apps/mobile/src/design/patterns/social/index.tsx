@@ -52,10 +52,18 @@ export const AuthorRow: React.FC<AuthorRowProps> = ({
             <View
               style={[
                 styles.authorBadge,
-                { backgroundColor: colors.accentSoft, borderRadius: radii.radiusFull, marginLeft: spacing.xs },
+                {
+                  backgroundColor: colors.accentSoft,
+                  borderRadius: radii.radiusFull,
+                  marginLeft: spacing.xs,
+                },
               ]}
             >
-              <Text variant="caption" weight="bold" style={{ color: colors.accentStrong, fontSize: 10 }}>
+              <Text
+                variant="caption"
+                weight="bold"
+                style={{ color: colors.accentStrong, fontSize: 10 }}
+              >
                 {badge}
               </Text>
             </View>
@@ -95,11 +103,7 @@ export const ReactionButton: React.FC<ReactionButtonProps> = ({
       accessibilityRole="button"
       accessibilityLabel={`${count} reactions. ${isReacted ? 'You liked this' : 'Like post'}`}
     >
-      <Icon
-        name="heart"
-        size="sm"
-        color={isReacted ? colors.accent : colors.textTertiary}
-      />
+      <Icon name="heart" size="sm" color={isReacted ? colors.accent : colors.textTertiary} />
       <Text
         variant="caption"
         weight="semibold"
@@ -210,9 +214,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         {content}
       </Text>
 
-      {mediaUrl && (
-        <SocialMediaPreview uri={mediaUrl} style={{ marginBottom: spacing.sm }} />
-      )}
+      {mediaUrl && <SocialMediaPreview uri={mediaUrl} style={{ marginBottom: spacing.sm }} />}
 
       {/* Action Footer (Reactions & Comments) */}
       <View style={[styles.footerRow, { borderTopColor: colors.border, paddingTop: spacing.xs }]}>
@@ -225,7 +227,11 @@ export const PostCard: React.FC<PostCardProps> = ({
           accessibilityLabel={`${commentsCount} comments`}
         >
           <Icon name="message" size="sm" color={colors.textTertiary} />
-          <Text variant="caption" weight="medium" style={{ color: colors.textSecondary, marginLeft: 6 }}>
+          <Text
+            variant="caption"
+            weight="medium"
+            style={{ color: colors.textSecondary, marginLeft: 6 }}
+          >
             {commentsCount}
           </Text>
         </TouchableOpacity>
@@ -260,7 +266,11 @@ export const CommentRow: React.FC<CommentRowProps> = ({
       <Avatar uri={authorPhoto} name={authorName} size="xs" />
       <View style={[styles.commentBody, { marginLeft: spacing.sm }]}>
         <View style={styles.commentHeader}>
-          <Text variant="title" weight="semibold" style={{ color: colors.textPrimary, fontSize: 13 }}>
+          <Text
+            variant="title"
+            weight="semibold"
+            style={{ color: colors.textPrimary, fontSize: 13 }}
+          >
             {authorName}
           </Text>
           <Text variant="caption" style={{ color: colors.textTertiary, fontSize: 11 }}>
@@ -297,7 +307,12 @@ export const CommentComposer: React.FC<CommentComposerProps> = ({
   };
 
   return (
-    <View style={[styles.composerContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+    <View
+      style={[
+        styles.composerContainer,
+        { backgroundColor: colors.surface, borderTopColor: colors.border },
+      ]}
+    >
       <TextInput
         value={text}
         onChangeText={setText}
@@ -327,7 +342,11 @@ export const CommentComposer: React.FC<CommentComposerProps> = ({
         accessibilityRole="button"
         accessibilityLabel="Post comment"
       >
-        <Icon name="send" size="tiny" color={text.trim() ? colors.textInverse : colors.textTertiary} />
+        <Icon
+          name="send"
+          size="tiny"
+          color={text.trim() ? colors.textInverse : colors.textTertiary}
+        />
       </TouchableOpacity>
     </View>
   );

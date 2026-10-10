@@ -83,11 +83,7 @@ export const MediaView: React.FC<MediaViewProps> = ({
       {uri && !hasError ? (
         <Image
           source={{ uri }}
-          style={[
-            styles.image,
-            { borderRadius },
-            isBlurred && styles.blurred,
-          ]}
+          style={[styles.image, { borderRadius }, isBlurred && styles.blurred]}
           resizeMode="cover"
           onLoadStart={() => setIsLoading(true)}
           onLoadEnd={() => setIsLoading(false)}

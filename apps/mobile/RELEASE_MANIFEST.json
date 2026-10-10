@@ -28,10 +28,7 @@
     "apiBaseUrl": "https://api.nazar.app/v1",
     "wsUrl": "wss://api.nazar.app",
     "deepLinkScheme": "nazar",
-    "deepLinkDomains": [
-      "nazar.app",
-      "links.nazar.app"
-    ]
+    "deepLinkDomains": ["nazar.app", "links.nazar.app"]
   },
   "artifacts": [
     {

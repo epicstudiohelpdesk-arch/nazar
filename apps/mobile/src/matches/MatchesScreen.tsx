@@ -174,7 +174,10 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
       ) : allMatches.length === 0 ? (
         // Empty State
         <View style={styles.emptyContainer}>
-          <SurfaceCard elevation="none" style={[styles.emptyCard, { borderColor: theme.colors.border }]}>
+          <SurfaceCard
+            elevation="none"
+            style={[styles.emptyCard, { borderColor: theme.colors.border }]}
+          >
             <View
               style={[
                 styles.emptyIconCircle,
@@ -187,7 +190,8 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
               Your connections start here
             </Heading>
             <Text level="body" color="secondary" style={styles.messageText}>
-              When you and another member mutually like each other, your connections will appear here. Keep exploring profiles!
+              When you and another member mutually like each other, your connections will appear
+              here. Keep exploring profiles!
             </Text>
             <Button
               variant="primary"
@@ -210,7 +214,9 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
               feature="SEE_LIKES"
               lockedTitle="See Who Liked You"
               lockedMessage="Unlock Nazar Premium to reveal members who liked you and match with them instantly."
-              onUnlockPress={() => router.push('/billing?plan=PREMIUM_MONTHLY&returnRoute=/matches')}
+              onUnlockPress={() =>
+                router.push('/billing?plan=PREMIUM_MONTHLY&returnRoute=/matches')
+              }
             >
               <SurfaceCard elevation="sm" style={styles.unlockedLikesCard}>
                 <View style={styles.unlockedLikesRow}>
@@ -218,7 +224,9 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
                     <Icon name="sparkles" size="md" color={theme.colors.accent} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text level="title" weight="bold">See Who Liked You Active</Text>
+                    <Text level="title" weight="bold">
+                      See Who Liked You Active
+                    </Text>
                     <Text level="bodySmall" color="secondary">
                       Incoming likes are prioritized in your discovery feed and match queue.
                     </Text>

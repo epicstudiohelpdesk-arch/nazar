@@ -26,6 +26,7 @@ Discovery / Filters / Matches Surface
 ```
 
 ### Core Architecture Principles
+
 1. **Server Authority**: The backend is solely authoritative for product identifiers, prices, currencies, transaction verification, entitlement grants, expirations, and cancellation states. The frontend never determines premium status from local receipt presence, client timers, or optimistic flags.
 2. **Zero Price/Plan Fabrication**: The client only displays products returned directly by `GET /v1/billing/products` seeded from Gate 11. No synthetic currencies, fictional discounts, or unverified tiers are ever introduced.
 3. **Graceful Degradation & Transparency**: Users in payment grace periods or with cancelled auto-renewal receive clear, non-punitive system guidance and deep links directly to their native OS subscription management settings.
@@ -39,22 +40,22 @@ Inspection of `@platform/api-contracts` (Gate 11 payments module):
 
 ### Production Catalog Specifications
 
-| Product Code | Type | Duration | Price (INR) | Minor Units | Granted Entitlement Codes |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `PREMIUM_MONTHLY` | Subscription | 30 Days | ₹199 | `19900` | `PREMIUM`, `SEE_LIKES`, `UNLIMITED_LIKES`, `ADVANCED_DISCOVERY`, `UNLIMITED_REWINDS` |
-| `PREMIUM_ANNUAL` | Subscription | 365 Days | ₹1,499 | `149900` | `PREMIUM`, `SEE_LIKES`, `UNLIMITED_LIKES`, `ADVANCED_DISCOVERY`, `PROFILE_BOOST`, `UNLIMITED_REWINDS` |
-| `BOOST_ONE_TIME` | One-Time Consumable | 1 Day | ₹49 | `4900` | `PROFILE_BOOST` |
+| Product Code      | Type                | Duration | Price (INR) | Minor Units | Granted Entitlement Codes                                                                             |
+| :---------------- | :------------------ | :------- | :---------- | :---------- | :---------------------------------------------------------------------------------------------------- |
+| `PREMIUM_MONTHLY` | Subscription        | 30 Days  | ₹199        | `19900`     | `PREMIUM`, `SEE_LIKES`, `UNLIMITED_LIKES`, `ADVANCED_DISCOVERY`, `UNLIMITED_REWINDS`                  |
+| `PREMIUM_ANNUAL`  | Subscription        | 365 Days | ₹1,499      | `149900`    | `PREMIUM`, `SEE_LIKES`, `UNLIMITED_LIKES`, `ADVANCED_DISCOVERY`, `PROFILE_BOOST`, `UNLIMITED_REWINDS` |
+| `BOOST_ONE_TIME`  | One-Time Consumable | 1 Day    | ₹49         | `4900`      | `PROFILE_BOOST`                                                                                       |
 
 ### API Endpoints Matrix
 
-| Purpose | Method & Path | Request / Query DTO | Response DTO | Mobile Implementation |
-| :--- | :--- | :--- | :--- | :--- |
-| **Catalog Listing** | `GET /v1/billing/products` | None | `ProductListResponseDto` | Cached in `useProducts()` with 15-min staleTime |
-| **Purchase Verification** | `POST /v1/billing/purchases/verify` | `VerifyPurchaseRequestDto` | `PurchaseVerificationResultDto` | `usePurchaseMutation()` invalidates `['billing']` root |
-| **Restore Purchases** | `POST /v1/billing/purchases/restore` | `RestorePurchasesRequestDto` | `RestorePurchasesResultDto` | `useRestorePurchasesMutation()` synchronizes multi-device state |
-| **Entitlements Query** | `GET /v1/billing/entitlements` | None | `EntitlementsListResponseDto` | Centralized `useEntitlements()` hook |
-| **User Subscriptions** | `GET /v1/billing/subscriptions` | None | `SubscriptionListResponseDto` | `useSubscriptions()` filters active, cancelled, & grace states |
-| **Transaction History** | `GET /v1/billing/transactions` | `limit`, `cursor` | `PaymentTransactionListResponseDto` | Infinite paginated list on `/billing/history` |
+| Purpose                   | Method & Path                        | Request / Query DTO          | Response DTO                        | Mobile Implementation                                           |
+| :------------------------ | :----------------------------------- | :--------------------------- | :---------------------------------- | :-------------------------------------------------------------- |
+| **Catalog Listing**       | `GET /v1/billing/products`           | None                         | `ProductListResponseDto`            | Cached in `useProducts()` with 15-min staleTime                 |
+| **Purchase Verification** | `POST /v1/billing/purchases/verify`  | `VerifyPurchaseRequestDto`   | `PurchaseVerificationResultDto`     | `usePurchaseMutation()` invalidates `['billing']` root          |
+| **Restore Purchases**     | `POST /v1/billing/purchases/restore` | `RestorePurchasesRequestDto` | `RestorePurchasesResultDto`         | `useRestorePurchasesMutation()` synchronizes multi-device state |
+| **Entitlements Query**    | `GET /v1/billing/entitlements`       | None                         | `EntitlementsListResponseDto`       | Centralized `useEntitlements()` hook                            |
+| **User Subscriptions**    | `GET /v1/billing/subscriptions`      | None                         | `SubscriptionListResponseDto`       | `useSubscriptions()` filters active, cancelled, & grace states  |
+| **Transaction History**   | `GET /v1/billing/transactions`       | `limit`, `cursor`            | `PaymentTransactionListResponseDto` | Infinite paginated list on `/billing/history`                   |
 
 ---
 
@@ -111,7 +112,7 @@ const { isUnlocked, isLoading } = useFeatureGate('UNLIMITED_REWINDS');
   onUnlockPress={() => router.push('/billing?plan=PREMIUM_MONTHLY&returnRoute=/modal/filters')}
 >
   <RelationshipIntentSelector />
-</PremiumGate>
+</PremiumGate>;
 ```
 
 ### Integrated Touchpoints
@@ -133,6 +134,7 @@ const { isUnlocked, isLoading } = useFeatureGate('UNLIMITED_REWINDS');
 ## 5. Paywall & Store Management Routes
 
 ### `/billing` (`SubscriptionScreen`)
+
 - **Active Subscription Badge**: Dynamically indicates `ACTIVE SUBSCRIBER`, `ACTIVE (CANCELLED)`, or `PAYMENT GRACE PERIOD`.
 - **Store Management Deep Link**: Provides a 1-tap link to the native operating system subscription management interface via `billingManager.getManagementUrl(provider)`:
   - Apple App Store: `https://apps.apple.com/account/subscriptions`
@@ -143,6 +145,7 @@ const { isUnlocked, isLoading } = useFeatureGate('UNLIMITED_REWINDS');
 - **Terms & Store Policy**: Compliant legal disclosures regarding auto-renewal, cancellation policies, and terms of service.
 
 ### `/billing/history` (`BillingHistoryScreen`)
+
 - **Transaction Audit Trail**: Full list of user purchases, renewals, and refunds with status indicators (`SUCCEEDED`, `PENDING`, `FAILED`, `REFUNDED`).
 - **Pagination**: Backed by `GET /v1/billing/transactions` using cursor pagination with pull-to-refresh.
 
@@ -151,13 +154,17 @@ const { isUnlocked, isLoading } = useFeatureGate('UNLIMITED_REWINDS');
 ## 6. Cache Synchronization & Account Session Cleansing
 
 ### App Resume Revalidation
+
 `useBillingResumeSync()` listens to React Native `AppState` changes (`active`). When the user returns from the App Store or Google Play settings, it triggers a background refetch of `BILLING_QUERY_KEYS.root` to reconcile entitlements instantly.
 
 ### Session Boundary Security
+
 Upon user logout or account deletion (`apps/mobile/app/settings/index.tsx`):
+
 ```typescript
 clearBillingCaches(queryClient);
 ```
+
 This purges all in-memory entitlements from `BillingManager` and removes all TanStack Query cache entries under `['billing']`, preventing any entitlement cross-contamination across user accounts.
 
 ---
@@ -165,6 +172,7 @@ This purges all in-memory entitlements from `BillingManager` and removes all Tan
 ## 7. Analytics & Anti-PII Safeguards
 
 Standardized telemetry events defined in `apps/mobile/src/analytics/onboarding-analytics.ts`:
+
 - `premium_paywall_viewed`
 - `premium_feature_locked`
 - `premium_product_selected`

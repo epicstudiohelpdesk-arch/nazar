@@ -17,7 +17,12 @@ interface PermissionRowProps {
   privacyNote: string;
 }
 
-function PermissionCard({ icon, title, description, privacyNote }: PermissionRowProps): React.JSX.Element {
+function PermissionCard({
+  icon,
+  title,
+  description,
+  privacyNote,
+}: PermissionRowProps): React.JSX.Element {
   const { theme } = useTheme();
 
   return (

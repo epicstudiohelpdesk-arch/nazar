@@ -52,39 +52,54 @@ export const AccessibilityInfo = {
 
 export class AnimatedValue {
   constructor(public val: number) {}
-  setValue(v: number) { this.val = v; }
-  interpolate(_config: any) { return this; }
+  setValue(v: number) {
+    this.val = v;
+  }
+  interpolate(_config: any) {
+    return this;
+  }
 }
 
 export class AnimatedValueXY {
   constructor(public val: { x: number; y: number } = { x: 0, y: 0 }) {}
-  setValue(v: { x: number; y: number }) { this.val = v; }
+  setValue(v: { x: number; y: number }) {
+    this.val = v;
+  }
 }
 
 export const Animated = {
   Value: AnimatedValue,
   ValueXY: AnimatedValueXY,
   timing: (_val: any, _config: any) => ({
-    start: (cb?: any) => { cb?.({ finished: true }); },
+    start: (cb?: any) => {
+      cb?.({ finished: true });
+    },
     stop: () => {},
   }),
   spring: (_val: any, _config: any) => ({
-    start: (cb?: any) => { cb?.({ finished: true }); },
+    start: (cb?: any) => {
+      cb?.({ finished: true });
+    },
     stop: () => {},
   }),
   parallel: (_animations: any[]) => ({
-    start: (cb?: any) => { cb?.({ finished: true }); },
+    start: (cb?: any) => {
+      cb?.({ finished: true });
+    },
     stop: () => {},
   }),
   sequence: (_animations: any[]) => ({
-    start: (cb?: any) => { cb?.({ finished: true }); },
+    start: (cb?: any) => {
+      cb?.({ finished: true });
+    },
     stop: () => {},
   }),
   loop: (_animation: any) => ({
-    start: (cb?: any) => { cb?.({ finished: true }); },
+    start: (cb?: any) => {
+      cb?.({ finished: true });
+    },
     stop: () => {},
   }),
   View: (props: React.PropsWithChildren<Record<string, unknown>>) =>
     React.createElement('div', props, props.children),
 };
-

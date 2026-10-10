@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Icon } from '../../primitives/Icon.js';
@@ -56,10 +51,7 @@ export const ChipSelector = <T extends string | number>({
     <View style={[styles.container, style]} testID={testID}>
       {label && (
         <View style={styles.headerRow}>
-          <Text
-            variant="label"
-            style={{ color: hasError ? colors.error : colors.textSecondary }}
-          >
+          <Text variant="label" style={{ color: hasError ? colors.error : colors.textSecondary }}>
             {label}
           </Text>
           {effectiveMax !== undefined && (
@@ -85,9 +77,7 @@ export const ChipSelector = <T extends string | number>({
                 styles.chip,
                 {
                   borderRadius: radii.radiusFull,
-                  backgroundColor: isSelected
-                    ? colors.accentSoft
-                    : colors.surfaceMuted,
+                  backgroundColor: isSelected ? colors.accentSoft : colors.surfaceMuted,
                   borderColor: isSelected ? colors.accent : colors.border,
                   borderWidth: 1,
                   paddingHorizontal: spacing.md,
@@ -125,7 +115,12 @@ export const ChipSelector = <T extends string | number>({
 
       {hasError && (
         <View style={styles.feedbackRow}>
-          <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xxs }} />
+          <Icon
+            name="warning"
+            size="tiny"
+            color={colors.error}
+            style={{ marginRight: spacing.xxs }}
+          />
           <Text variant="caption" style={{ color: colors.error }}>
             {error}
           </Text>

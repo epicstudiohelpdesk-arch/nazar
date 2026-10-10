@@ -19,10 +19,7 @@ export interface GeminiModelInfo {
   readonly supportedGenerationMethods: readonly string[];
 }
 
-export const INVALID_GEMINI_MODELS = new Set([
-  'skimaki-agy-fast',
-  'models/skimaki-agy-fast',
-]);
+export const INVALID_GEMINI_MODELS = new Set(['skimaki-agy-fast', 'models/skimaki-agy-fast']);
 
 @Injectable()
 export class GeminiClientService {
@@ -46,9 +43,7 @@ export class GeminiClientService {
   public validateAndNormalizeModel(modelName: string): string {
     const trimmed = (modelName || '').trim();
     if (!trimmed) {
-      throw new Error(
-        'GEMINI_MODEL configuration is required and cannot be empty.'
-      );
+      throw new Error('GEMINI_MODEL configuration is required and cannot be empty.');
     }
 
     if (INVALID_GEMINI_MODELS.has(trimmed) || trimmed.includes('skimaki')) {
@@ -123,7 +118,9 @@ export class GeminiClientService {
     if (options.temperature !== undefined || options.maxOutputTokens !== undefined) {
       requestBody.generationConfig = {
         ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
-        ...(options.maxOutputTokens !== undefined ? { maxOutputTokens: options.maxOutputTokens } : {}),
+        ...(options.maxOutputTokens !== undefined
+          ? { maxOutputTokens: options.maxOutputTokens }
+          : {}),
       };
     }
 
@@ -137,9 +134,7 @@ export class GeminiClientService {
 
     if (!res.ok) {
       const errBody = (await res.json().catch(() => ({}))) as any;
-      const message =
-        errBody?.error?.message ||
-        `HTTP error ${res.status}: ${res.statusText}`;
+      const message = errBody?.error?.message || `HTTP error ${res.status}: ${res.statusText}`;
 
       if (res.status === 404) {
         throw new Error(
@@ -157,8 +152,7 @@ export class GeminiClientService {
       usageMetadata?: { totalTokenCount?: number };
     };
 
-    const candidateText =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
     return {
       text: candidateText,

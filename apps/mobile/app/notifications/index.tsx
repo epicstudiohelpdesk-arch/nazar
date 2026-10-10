@@ -11,7 +11,10 @@ import {
   requestPushPermission,
 } from '../../src/notifications/push-runtime';
 import { NotificationsScreen } from '../../src/notifications/NotificationsScreen';
-import { useNotificationIngress, useNotificationResumeSync } from '../../src/notifications/useNotifications';
+import {
+  useNotificationIngress,
+  useNotificationResumeSync,
+} from '../../src/notifications/useNotifications';
 
 export default function NotificationsRoute(): React.JSX.Element {
   const authClient = getDefaultAuthClient();

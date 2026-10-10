@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
-import {
-  ScrollView,
-  View,
-  StyleSheet,
-} from 'react-native';
+import { ScrollView, View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   useTheme,
@@ -91,7 +87,9 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
   const [textVal, setTextVal] = useState('Ananya Sharma');
   const [passwordVal, setPasswordVal] = useState('secret123');
   const [otpVal, setOtpVal] = useState('5821');
-  const [bioVal, setBioVal] = useState('Architect & urban sketcher in Bandra. Passionate about heritage buildings, filter coffee, and contemporary indie films.');
+  const [bioVal, setBioVal] = useState(
+    'Architect & urban sketcher in Bandra. Passionate about heritage buildings, filter coffee, and contemporary indie films.'
+  );
   const [searchVal, setSearchVal] = useState('Bandra');
   const [selectedCity, setSelectedCity] = useState('mumbai');
   const [activeTab, setActiveTab] = useState('feed');
@@ -301,11 +299,7 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
             onChangeText={setPasswordVal}
           />
 
-          <OtpInput
-            length={4}
-            value={otpVal}
-            onChangeOtp={setOtpVal}
-          />
+          <OtpInput length={4} value={otpVal} onChangeOtp={setOtpVal} />
 
           <MultilineInput
             label="About Me (Bio)"
@@ -314,10 +308,7 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
             maxLength={300}
           />
 
-          <SearchInput
-            value={searchVal}
-            onChangeText={setSearchVal}
-          />
+          <SearchInput value={searchVal} onChangeText={setSearchVal} />
 
           <Select
             label="Location"
@@ -346,11 +337,7 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
             unit="km"
           />
 
-          <DateSelector
-            label="Date of Birth"
-            value="1998-04-14"
-            onPress={() => {}}
-          />
+          <DateSelector label="Date of Birth" value="1998-04-14" onPress={() => {}} />
 
           <ChipSelector
             label="Interests & Passions"
@@ -440,7 +427,8 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
               prompts: [
                 {
                   question: 'The key to winning me over is',
-                  answer: 'Knowing the best Irani cafe for brun maska and chai on a rainy Sunday morning.',
+                  answer:
+                    'Knowing the best Irani cafe for brun maska and chai on a rainy Sunday morning.',
                 },
               ],
             }}
@@ -460,11 +448,7 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
             isNew={true}
           />
 
-          <MatchAvatarPair
-            userName="You"
-            partnerName="Rohan"
-            style={{ marginVertical: 12 }}
-          />
+          <MatchAvatarPair userName="You" partnerName="Rohan" style={{ marginVertical: 12 }} />
 
           <ConversationCard
             id="convo-1"
@@ -523,11 +507,7 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
               variant="secondary"
               onPress={() => setSheetOpen(true)}
             />
-            <Button
-              label="Open Dialog"
-              variant="destructive"
-              onPress={() => setDialogOpen(true)}
-            />
+            <Button label="Open Dialog" variant="destructive" onPress={() => setDialogOpen(true)} />
           </View>
 
           <BottomSheet
@@ -569,21 +549,31 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
         <SurfaceCard p="md" style={styles.sectionCard}>
           <Heading level="h3">Feedback & System States</Heading>
 
-          <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>Progress Indicator</Text>
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>
+            Progress Indicator
+          </Text>
           <ProgressBar progress={75} label="Profile Completeness" showPercentage={true} />
 
-          <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>Offline Network States</Text>
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>
+            Offline Network States
+          </Text>
           <OfflineBanner status="offline" pendingSyncCount={2} />
           <OfflineBanner status="reconnecting" />
           <OfflineBanner status="failed" onRetrySync={() => {}} />
 
-          <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>Empty States</Text>
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>
+            Empty States
+          </Text>
           <EmptyState type="no_matches" onAction={() => {}} />
 
-          <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>Error States</Text>
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>
+            Error States
+          </Text>
           <ErrorState type="network_unavailable" onRetry={() => {}} />
 
-          <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>Loading Skeleton</Text>
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 4 }}>
+            Loading Skeleton
+          </Text>
           <SkeletonBox height={24} width="70%" style={{ marginBottom: 8 }} />
           <ProfileCardSkeleton />
         </SurfaceCard>
@@ -598,19 +588,31 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
             <HeadingText level="h2">Heading 2 (24px Bold)</HeadingText>
             <HeadingText level="h3">Heading 3 (20px SemiBold)</HeadingText>
             <TitleText>Title Text (18px Medium)</TitleText>
-            <BodyText>Body Text (16px Regular) — Nazar connects people through shared cultural context.</BodyText>
-            <BodySmallText>Body Small Text (14px Regular) — Subtle editorial notes and secondary hints.</BodySmallText>
+            <BodyText>
+              Body Text (16px Regular) — Nazar connects people through shared cultural context.
+            </BodyText>
+            <BodySmallText>
+              Body Small Text (14px Regular) — Subtle editorial notes and secondary hints.
+            </BodySmallText>
             <CaptionText>Caption Text (12px Medium) — Timestamps and badges</CaptionText>
             <NumericText>₹1,499.00 / mo</NumericText>
           </Stack>
 
           <Divider style={{ marginVertical: 16 }} />
 
-          <Text variant="label" style={{ marginBottom: 8 }}>Stack & Row Layout Primitives</Text>
-          <Row align="center" justify="space-between" style={{ backgroundColor: colors.surfaceMuted, padding: 8, borderRadius: 8 }}>
+          <Text variant="label" style={{ marginBottom: 8 }}>
+            Stack & Row Layout Primitives
+          </Text>
+          <Row
+            align="center"
+            justify="space-between"
+            style={{ backgroundColor: colors.surfaceMuted, padding: 8, borderRadius: 8 }}
+          >
             <Text variant="bodySmall">Left Element</Text>
             <Spacer size="md" />
-            <Text variant="bodySmall" weight="bold" style={{ color: colors.accent }}>Right Element</Text>
+            <Text variant="bodySmall" weight="bold" style={{ color: colors.accent }}>
+              Right Element
+            </Text>
           </Row>
         </SurfaceCard>
 
@@ -618,14 +620,18 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
         <SurfaceCard p="md" style={styles.sectionCard}>
           <Heading level="h3">Selection Controls & Buttons</Heading>
 
-          <Text variant="label" style={{ marginTop: 12, marginBottom: 8 }}>Convenience Buttons</Text>
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 8 }}>
+            Convenience Buttons
+          </Text>
           <Row style={{ gap: 8, flexWrap: 'wrap' }}>
             <PrimaryButton label="Primary" size="sm" onPress={() => {}} />
             <SecondaryButton label="Secondary" size="sm" onPress={() => {}} />
             <DestructiveButton label="Destructive" size="sm" onPress={() => {}} />
           </Row>
 
-          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Chips & Tags</Text>
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>
+            Chips & Tags
+          </Text>
           <Row style={{ gap: 8, flexWrap: 'wrap' }}>
             <SelectableChip
               label="Architecture"
@@ -640,7 +646,9 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
             <Chip label="Static Tag" />
           </Row>
 
-          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Radio, Checkbox & Toggle</Text>
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>
+            Radio, Checkbox & Toggle
+          </Text>
           <RadioRow
             label="Daily Digest"
             description="Receive one curated batch every morning"
@@ -706,7 +714,9 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
         <SurfaceCard p="md" style={styles.sectionCard}>
           <Heading level="h3">Social, Community & Event Patterns</Heading>
 
-          <Text variant="label" style={{ marginTop: 12, marginBottom: 8 }}>Social Post Pattern</Text>
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 8 }}>
+            Social Post Pattern
+          </Text>
           <SocialPostCard
             id="sp1"
             authorName="Kabir Mehta"
@@ -719,7 +729,9 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
             onLike={() => {}}
           />
 
-          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Community Feed Pattern</Text>
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>
+            Community Feed Pattern
+          </Text>
           <CommunityFeedCard
             id="comm1"
             name="Bombay Heritage Enthusiasts"
@@ -729,7 +741,9 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
             onPress={() => {}}
           />
 
-          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Event Feed Pattern</Text>
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>
+            Event Feed Pattern
+          </Text>
           <EventFeedCard
             id="evt1"
             title="Indie Film Screening & Discussion"
@@ -748,7 +762,9 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
         <SurfaceCard p="md" style={styles.sectionCard}>
           <Heading level="h3">Settings, Safety & Banners</Heading>
 
-          <Text variant="label" style={{ marginTop: 12, marginBottom: 8 }}>Status Banners</Text>
+          <Text variant="label" style={{ marginTop: 12, marginBottom: 8 }}>
+            Status Banners
+          </Text>
           <Banner
             variant="info"
             message="Identity Verification Underway"
@@ -769,7 +785,9 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
 
           <InlineError message="Password must contain at least one special character." />
 
-          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Subscription Status Pattern</Text>
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>
+            Subscription Status Pattern
+          </Text>
           <SubscriptionStatus
             tierName="Nazar Premium"
             expiryDate="Nov 30, 2026"
@@ -777,7 +795,9 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
             onManage={() => {}}
           />
 
-          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>Settings Section Pattern</Text>
+          <Text variant="label" style={{ marginTop: 16, marginBottom: 8 }}>
+            Settings Section Pattern
+          </Text>
           <SettingsSection title="Privacy & Security">
             <SettingsRow
               label="Blocked Profiles"
@@ -813,12 +833,7 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
 
       {/* Navigation Primitive Demo */}
       <BottomNavBar>
-        <BottomNavItem
-          icon="sparkles"
-          label="Discovery"
-          isSelected={true}
-          onPress={() => {}}
-        />
+        <BottomNavItem icon="sparkles" label="Discovery" isSelected={true} onPress={() => {}} />
         <BottomNavItem
           icon="heart"
           label="Matches"
@@ -833,12 +848,7 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
           badgeCount={1}
           onPress={() => {}}
         />
-        <BottomNavItem
-          icon="user"
-          label="Profile"
-          isSelected={false}
-          onPress={() => {}}
-        />
+        <BottomNavItem icon="user" label="Profile" isSelected={false} onPress={() => {}} />
       </BottomNavBar>
     </View>
   );

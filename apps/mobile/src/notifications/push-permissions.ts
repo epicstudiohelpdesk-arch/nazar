@@ -19,12 +19,7 @@
  * it lets the UI offer "Open Settings" rather than a button that does nothing.
  */
 export type PushPermissionState =
-  | 'not_requested'
-  | 'granted'
-  | 'provisional'
-  | 'denied'
-  | 'blocked'
-  | 'unsupported';
+  'not_requested' | 'granted' | 'provisional' | 'denied' | 'blocked' | 'unsupported';
 
 export const PERMISSION_STATES: readonly PushPermissionState[] = [
   'not_requested',
@@ -41,9 +36,7 @@ export const PERMISSION_STATES: readonly PushPermissionState[] = [
  * "Never asked" is read from `undetermined` rather than from a stored flag, so
  * the state cannot drift from what the OS actually reports.
  */
-export function mapPermissionStatus(
-  status: string | null | undefined
-): PushPermissionState {
+export function mapPermissionStatus(status: string | null | undefined): PushPermissionState {
   switch (status) {
     case 'granted':
       return 'granted';
@@ -102,8 +95,7 @@ export function describePermissionState(
         canRequest: false,
         shouldOfferSystemSettings: true,
         headline: 'Push is quiet',
-        detail:
-          'Notifications arrive silently. Open settings to switch to immediate delivery.',
+        detail: 'Notifications arrive silently. Open settings to switch to immediate delivery.',
         primaryActionLabel: 'Open Settings',
       };
     case 'denied':

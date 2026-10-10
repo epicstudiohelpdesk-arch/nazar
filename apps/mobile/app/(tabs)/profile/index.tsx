@@ -32,10 +32,7 @@ export default function ProfileTabRoute(): React.JSX.Element {
                 icon="bell"
                 size="sm"
                 variant="secondary"
-                accessibilityLabel={buildBadgeA11yLabel(
-                  'Open Activity',
-                  unread.count
-                )}
+                accessibilityLabel={buildBadgeA11yLabel('Open Activity', unread.count)}
                 accessibilityHint="Shows your matches, messages and community activity"
                 onPress={() => router.push('/notifications')}
                 testID="profile-notifications-button"

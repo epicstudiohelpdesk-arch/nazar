@@ -11,21 +11,25 @@ This document specifies the information architecture, API contracts, interaction
 ## 2. Route Architecture & Navigation Boundaries
 
 ### Route Path
+
 ```text
 apps/mobile/app/profile/[userId].tsx
 ```
 
 ### Route Parameters
-| Parameter | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `userId` | `string` (UUID) | Yes | The canonical user ID of the candidate being inspected. |
+
+| Parameter | Type            | Required | Description                                             |
+| :-------- | :-------------- | :------- | :------------------------------------------------------ |
+| `userId`  | `string` (UUID) | Yes      | The canonical user ID of the candidate being inspected. |
 
 ### Navigation Ingress Points
+
 1. **Discovery Feed**: Tapping on the active candidate card body or tapping the chevron/info button in the bottom action bar.
 2. **Matches Grid**: Tapping on a matched member card from `/(tabs)/matches`.
 3. **Explore / Recommendations**: Tapping on curated or community member cards.
 
 ### Navigation Egress Boundaries
+
 1. **Back Navigation**: Left action button in `TopNavHeader` calls `router.back()`.
 2. **Like Action**: Bottom floating action bar Like button triggers like mutation:
    - If mutual match (`matched === true`): transitions to `/modal/celebration?matchId=...`.
@@ -39,11 +43,13 @@ apps/mobile/app/profile/[userId].tsx
 ## 3. Data Dependencies & API Contracts
 
 ### Authoritative Backend Endpoint
+
 ```http
 GET /v1/profiles/:userId
 ```
 
 ### Public Profile Contract (`PublicProfileResponse`)
+
 ```typescript
 export interface PublicProfileResponse {
   readonly id: string;
@@ -63,6 +69,7 @@ export interface PublicProfileResponse {
 ```
 
 ### Strict Privacy & Security Boundaries
+
 - **No Exact Geolocation**: The backend strictly sanitizes location. The mobile client receives only coarse buckets (`city`, `countryCode`, or distance bucket string like `Within 5 km`). Raw latitude and longitude coordinates are **never** present in the payload.
 - **No Direct Identifiers**: Email addresses, phone numbers, and full legal names are excluded from public profile responses.
 - **Media CDN URLs**: All photo URLs reference pre-signed CDN endpoints with cache headers.
@@ -105,6 +112,7 @@ export interface PublicProfileResponse {
 ```
 
 ### Component Hierarchy
+
 - `SafeAreaView` & `TopNavHeader`: Edge-to-edge container with back button and report/block actions.
 - `ScrollView`: Smooth vertical scrolling for profile story with `showsVerticalScrollIndicator={false}`.
 - `PhotoCarousel`: Horizontal `ScrollView` with `pagingEnabled` and dynamic active dot indicators.

@@ -150,11 +150,7 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title=""
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.65} style={styles.progressBar} />
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -207,7 +203,12 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                 "{selectedPromptDef.prompt}"
               </Text>
             </View>
-            <Icon name="chevron" direction={isPickerOpen ? 'up' : 'down'} size="sm" color={theme.colors.accent} />
+            <Icon
+              name="chevron"
+              direction={isPickerOpen ? 'up' : 'down'}
+              size="sm"
+              color={theme.colors.accent}
+            />
           </TouchableOpacity>
 
           {/* Collapsible Questions List */}
@@ -226,9 +227,7 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                     {
                       borderBottomColor: theme.colors.border,
                       backgroundColor:
-                        item.id === selectedPromptDef.id
-                          ? theme.colors.accentSoft
-                          : 'transparent',
+                        item.id === selectedPromptDef.id ? theme.colors.accentSoft : 'transparent',
                     },
                   ]}
                   onPress={() => handleSelectPrompt(item)}

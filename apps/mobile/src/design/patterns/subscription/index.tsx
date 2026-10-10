@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-  type StyleProp,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, type ViewStyle, type StyleProp } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
@@ -169,9 +163,7 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
           )}
         </View>
 
-        {onManage && (
-          <Button label="Manage" variant="secondary" size="sm" onPress={onManage} />
-        )}
+        {onManage && <Button label="Manage" variant="secondary" size="sm" onPress={onManage} />}
       </View>
     </SurfaceCard>
   );

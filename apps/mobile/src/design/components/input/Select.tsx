@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  Modal,
-  FlatList,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { View, TouchableOpacity, Modal, FlatList, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Icon } from '../../primitives/Icon.js';
@@ -96,7 +89,12 @@ export const Select = <T extends string | number>({
 
       {hasError && (
         <View style={styles.feedbackRow}>
-          <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xxs }} />
+          <Icon
+            name="warning"
+            size="tiny"
+            color={colors.error}
+            style={{ marginRight: spacing.xxs }}
+          />
           <Text variant="caption" style={{ color: colors.error }}>
             {error}
           </Text>

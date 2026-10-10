@@ -72,7 +72,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({
                   },
                 ]}
               >
-                <Icon name="sparkles" size="tiny" color={colors.accent} style={{ marginRight: 3 }} />
+                <Icon
+                  name="sparkles"
+                  size="tiny"
+                  color={colors.accent}
+                  style={{ marginRight: 3 }}
+                />
                 <Text variant="caption" weight="bold" style={{ color: colors.accentStrong }}>
                   {compatibilityScore}%
                 </Text>

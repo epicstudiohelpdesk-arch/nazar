@@ -31,7 +31,15 @@ const INTENT_OPTIONS = [
   { label: 'Still figuring it out', value: 'NOT_SURE' },
 ];
 
-const POPULAR_CITIES = ['Mumbai', 'Bengaluru', 'Delhi NCR', 'Pune', 'Hyderabad', 'Kolkata', 'Chennai'];
+const POPULAR_CITIES = [
+  'Mumbai',
+  'Bengaluru',
+  'Delhi NCR',
+  'Pune',
+  'Hyderabad',
+  'Kolkata',
+  'Chennai',
+];
 
 export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const router = useRouter();
@@ -138,11 +146,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title=""
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.15} style={styles.progressBar} />
 
       <ScrollView
@@ -237,7 +241,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                   style={[
                     styles.cityPill,
                     {
-                      backgroundColor: city === c ? theme.colors.accentSoft : theme.colors.surfaceMuted,
+                      backgroundColor:
+                        city === c ? theme.colors.accentSoft : theme.colors.surfaceMuted,
                       borderColor: city === c ? theme.colors.accent : theme.colors.border,
                     },
                   ]}

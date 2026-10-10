@@ -49,12 +49,7 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({
             {name}
           </Heading>
           {category && (
-            <Badge
-              label={category}
-              variant="neutral"
-              size="sm"
-              style={{ marginTop: 4 }}
-            />
+            <Badge label={category} variant="neutral" size="sm" style={{ marginTop: 4 }} />
           )}
         </View>
 

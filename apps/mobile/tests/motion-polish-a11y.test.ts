@@ -79,29 +79,41 @@ describe('Frontend F11: Motion, Micro-interactions, Accessibility & Polish', () 
       const animVal = new Animated.Value(0);
 
       // Normal motion: timing uses provided duration
-      const normalTiming = createSafeTiming(animVal, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: false,
-      }, false);
+      const normalTiming = createSafeTiming(
+        animVal,
+        {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false,
+        },
+        false
+      );
       expect(normalTiming).toBeDefined();
 
       // Reduced motion: timing duration collapses to 0
-      const safeTiming = createSafeTiming(animVal, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: false,
-      }, true);
+      const safeTiming = createSafeTiming(
+        animVal,
+        {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false,
+        },
+        true
+      );
       expect(safeTiming).toBeDefined();
     });
 
     it('converts spring animation to zero-duration timing when reduced motion is enabled', () => {
       const animVal = new Animated.Value(0);
 
-      const safeSpring = createSafeSpring(animVal, {
-        toValue: 1,
-        useNativeDriver: false,
-      }, true);
+      const safeSpring = createSafeSpring(
+        animVal,
+        {
+          toValue: 1,
+          useNativeDriver: false,
+        },
+        true
+      );
       expect(safeSpring).toBeDefined();
     });
   });

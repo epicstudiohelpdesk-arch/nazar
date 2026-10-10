@@ -148,8 +148,7 @@ const DEFAULT_EMPTY_CONFIG: Record<string, StateContent> = {
   },
   generic: {
     title: 'Nothing here yet',
-    description:
-      'This space is currently empty. Explore the app to start building your journey.',
+    description: 'This space is currently empty. Explore the app to start building your journey.',
     actionLabel: 'Continue',
     icon: 'sparkles',
   },
@@ -180,8 +179,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     (actionLabel && onAction
       ? { label: actionLabel, onPress: onAction }
       : defaults.actionLabel && onAction
-      ? { label: defaults.actionLabel, onPress: onAction }
-      : undefined);
+        ? { label: defaults.actionLabel, onPress: onAction }
+        : undefined);
 
   return (
     <View

@@ -14,10 +14,7 @@ import type {
 } from '@platform/api-contracts';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import { chatSocket } from '../chat/chat-socket.js';
-import {
-  NOTIFICATION_QUERY_KEYS,
-  type NotificationsApiClient,
-} from './notifications-api.js';
+import { NOTIFICATION_QUERY_KEYS, type NotificationsApiClient } from './notifications-api.js';
 import {
   invalidateNotificationLists,
   invalidateNotificationReadState,
@@ -148,9 +145,9 @@ export function useUnreadCount(
 
   // Any feed page carries the authoritative total; adopt it so a refresh of the
   // list alone still fixes the badge.
-  const lastPage = queryClient.getQueryData<InfiniteData<NotificationListResponseDto, string | undefined>>(
-    NOTIFICATION_QUERY_KEYS.list
-  )?.pages?.[0];
+  const lastPage = queryClient.getQueryData<
+    InfiniteData<NotificationListResponseDto, string | undefined>
+  >(NOTIFICATION_QUERY_KEYS.list)?.pages?.[0];
   const fromList = lastPage?.totalUnreadCount;
 
   const count = fromList ?? query.data ?? 0;
@@ -272,21 +269,24 @@ export function useUpdateNotificationPreference(client: NotificationsApiClient) 
 export function useReconcileIncomingNotification() {
   const queryClient = useQueryClient();
 
-  return useCallback((notification: NotificationResponseDto) => {
-    queryClient.setQueryData<InfiniteData<NotificationListResponseDto, string | undefined>>(
-      NOTIFICATION_QUERY_KEYS.list,
-      (previous) => {
-        if (!previous || previous.pages.length === 0) return previous;
-        const [first, ...rest] = previous.pages;
-        if (!first) return previous;
-        return {
-          ...previous,
-          pages: [{ ...first, items: upsertNotification(first.items, notification) }, ...rest],
-        };
-      }
-    );
-    invalidateNotificationLists(queryClient);
-  }, [queryClient]);
+  return useCallback(
+    (notification: NotificationResponseDto) => {
+      queryClient.setQueryData<InfiniteData<NotificationListResponseDto, string | undefined>>(
+        NOTIFICATION_QUERY_KEYS.list,
+        (previous) => {
+          if (!previous || previous.pages.length === 0) return previous;
+          const [first, ...rest] = previous.pages;
+          if (!first) return previous;
+          return {
+            ...previous,
+            pages: [{ ...first, items: upsertNotification(first.items, notification) }, ...rest],
+          };
+        }
+      );
+      invalidateNotificationLists(queryClient);
+    },
+    [queryClient]
+  );
 }
 
 /**
@@ -297,9 +297,7 @@ export function useReconcileIncomingNotification() {
  * `ChatSocketManager` rather than a second connection. App resume is the
  * mechanism that actually updates the feed today.
  */
-export function useNotificationIngress(
-  options: { readonly enabled?: boolean } = {}
-) {
+export function useNotificationIngress(options: { readonly enabled?: boolean } = {}) {
   const enabled = options.enabled ?? true;
   const reconcile = useReconcileIncomingNotification();
 

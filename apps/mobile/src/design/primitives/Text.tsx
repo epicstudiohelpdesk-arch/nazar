@@ -22,14 +22,7 @@ export type TextVariant =
   | 'numeric';
 
 export type TextColor =
-  | 'primary'
-  | 'secondary'
-  | 'tertiary'
-  | 'inverse'
-  | 'accent'
-  | 'error'
-  | 'success'
-  | 'warning';
+  'primary' | 'secondary' | 'tertiary' | 'inverse' | 'accent' | 'error' | 'success' | 'warning';
 
 export interface TextProps extends RNTextProps {
   readonly variant?: TextVariant;
@@ -84,8 +77,7 @@ export const Text: React.FC<TextProps> = ({
     'textTransform' in variantStyle
       ? (variantStyle.textTransform as TextStyle['textTransform'])
       : undefined;
-  const letterSpacing =
-    'letterSpacing' in variantStyle ? variantStyle.letterSpacing : undefined;
+  const letterSpacing = 'letterSpacing' in variantStyle ? variantStyle.letterSpacing : undefined;
 
   return (
     <RNText
@@ -133,9 +125,7 @@ export const TitleText: React.FC<SemanticTextProps> = (props) => (
   <Text variant="title" weight="semibold" {...props} />
 );
 
-export const BodyText: React.FC<SemanticTextProps> = (props) => (
-  <Text variant="body" {...props} />
-);
+export const BodyText: React.FC<SemanticTextProps> = (props) => <Text variant="body" {...props} />;
 
 export const BodySmallText: React.FC<SemanticTextProps> = (props) => (
   <Text variant="bodySmall" {...props} />

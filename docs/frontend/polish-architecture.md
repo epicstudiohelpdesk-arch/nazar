@@ -16,12 +16,12 @@ The motion system is centralized in `@platform/ui` (`packages/ui/src/tokens/moti
 export const motion = {
   duration: {
     instant: 0,
-    micro: 100,      // Subtle state toggles, icons
-    fast: 150,       // Button taps, chip selects
-    standard: 250,   // Dialog appearance, cards
-    normal: 250,     // Backwards-compatible standard
-    emphasis: 350,   // Sheet entrance, match celebration
-    slow: 400,       // Modal backdrops, complex transitions
+    micro: 100, // Subtle state toggles, icons
+    fast: 150, // Button taps, chip selects
+    standard: 250, // Dialog appearance, cards
+    normal: 250, // Backwards-compatible standard
+    emphasis: 350, // Sheet entrance, match celebration
+    slow: 400, // Modal backdrops, complex transitions
   },
   spring: {
     damping: 20,
@@ -41,6 +41,7 @@ export const motion = {
 ```
 
 ### 2.2 Animation Principles
+
 - **Hierarchy & Continuity**: Elements transition into place without jarring layout jumps.
 - **Cause & Effect**: User interactions trigger immediate visual and tactile feedback.
 - **Performant Transforms**: All animations leverage `useNativeDriver: true` (opacity, scale, translateY, translateX) to run on the native thread without dropping frames.
@@ -51,6 +52,7 @@ export const motion = {
 ## 3. Reduced-Motion Strategy
 
 Nazar respects the system accessibility preference (`AccessibilityInfo.isReduceMotionEnabled()`):
+
 - **Centralized Hook**: `useReducedMotion()` provides reactive updates when system preferences change.
 - **Safe Duration Helper**: `getSafeDuration(duration)` collapses motion to `0ms` when reduced motion is enabled.
 - **Safe Animation Builders**: `createSafeTiming` and `createSafeSpring` automatically substitute animations with instantaneous 0-duration timing when reduced motion is active.
@@ -67,15 +69,16 @@ Nazar respects the system accessibility preference (`AccessibilityInfo.isReduceM
 
 Haptics are centralized in [`apps/mobile/src/design/haptics/haptic-feedback.ts`](file:///Users/subhamdas/Documents/PROJECTS/nazar/apps/mobile/src/design/haptics/haptic-feedback.ts).
 
-| Category | Sensation / Pattern | Use Cases |
-| :--- | :--- | :--- |
-| **Selection / Light** | 10ms–15ms pulse | Button taps, chip selection, switch toggle, tab switch, message send |
-| **Medium** | 30ms pulse | Discovery Like action, RSVP confirmation, filter submission |
-| **Success** | `[0, 35, 60, 45]` multi-pulse | Match celebration, subscription purchase success |
-| **Warning** | `[0, 40, 50, 40]` alert pulse | Form validation warning, boundary warning, destructive dialog opening |
-| **Error** | `[0, 50, 60, 50, 60, 50]` triple pulse | Account deletion confirmation, block execution, network mutation failure |
+| Category              | Sensation / Pattern                    | Use Cases                                                                |
+| :-------------------- | :------------------------------------- | :----------------------------------------------------------------------- |
+| **Selection / Light** | 10ms–15ms pulse                        | Button taps, chip selection, switch toggle, tab switch, message send     |
+| **Medium**            | 30ms pulse                             | Discovery Like action, RSVP confirmation, filter submission              |
+| **Success**           | `[0, 35, 60, 45]` multi-pulse          | Match celebration, subscription purchase success                         |
+| **Warning**           | `[0, 40, 50, 40]` alert pulse          | Form validation warning, boundary warning, destructive dialog opening    |
+| **Error**             | `[0, 50, 60, 50, 60, 50]` triple pulse | Account deletion confirmation, block execution, network mutation failure |
 
 ### Safeguards:
+
 - **Debouncing**: `100ms` window prevents sensory overload or double-firing when screen and component handlers overlap.
 - **Global Toggle**: `haptics.setEnabled(false)` silences all haptics for low-power or user-disabled settings.
 - **Environment Agnostic**: Gracefully falls back to no-op in Node / unit test environments.

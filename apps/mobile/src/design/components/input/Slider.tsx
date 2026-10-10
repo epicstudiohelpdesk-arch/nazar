@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 
@@ -45,7 +40,10 @@ export const Slider: React.FC<SliderProps> = ({
   const effectiveMax = max ?? maximumValue ?? 100;
   const effectiveChange = onChange || onValueChange || (() => {});
 
-  const percentage = Math.max(0, Math.min(100, ((value - effectiveMin) / (effectiveMax - effectiveMin)) * 100));
+  const percentage = Math.max(
+    0,
+    Math.min(100, ((value - effectiveMin) / (effectiveMax - effectiveMin)) * 100)
+  );
 
   const handleDecrease = () => {
     if (disabled) return;
@@ -87,7 +85,9 @@ export const Slider: React.FC<SliderProps> = ({
           accessibilityRole="button"
           accessibilityLabel={`Decrease ${label || 'value'}`}
         >
-          <Text variant="title" style={{ color: colors.textPrimary }}>-</Text>
+          <Text variant="title" style={{ color: colors.textPrimary }}>
+            -
+          </Text>
         </TouchableOpacity>
 
         {/* Visual Track and Fill */}
@@ -130,7 +130,9 @@ export const Slider: React.FC<SliderProps> = ({
           accessibilityRole="button"
           accessibilityLabel={`Increase ${label || 'value'}`}
         >
-          <Text variant="title" style={{ color: colors.textPrimary }}>+</Text>
+          <Text variant="title" style={{ color: colors.textPrimary }}>
+            +
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

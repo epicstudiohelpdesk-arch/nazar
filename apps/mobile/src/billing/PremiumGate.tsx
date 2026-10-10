@@ -21,10 +21,7 @@ export interface PremiumGateProps {
   readonly testID?: string;
 }
 
-const FEATURE_DESCRIPTIONS: Record<
-  EntitlementCode,
-  { title: string; message: string }
-> = {
+const FEATURE_DESCRIPTIONS: Record<EntitlementCode, { title: string; message: string }> = {
   PREMIUM: {
     title: 'Nazar Premium',
     message: 'Upgrade to Nazar Premium to unlock this experience.',
@@ -119,12 +116,7 @@ export function PremiumGate({
       testID={`${testID}-locked-banner`}
     >
       <View style={styles.headerRow}>
-        <View
-          style={[
-            styles.iconContainer,
-            { backgroundColor: colors.accentSoft || '#FFF1F2' },
-          ]}
-        >
+        <View style={[styles.iconContainer, { backgroundColor: colors.accentSoft || '#FFF1F2' }]}>
           <Icon name="lock" size={20} color={colors.accent || '#E11D48'} />
         </View>
         <View style={styles.textContainer}>

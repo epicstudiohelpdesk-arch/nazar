@@ -26,19 +26,19 @@ The objective is to provide members with a transparent, emotionally warm, and tr
 
 A thorough audit of the production backend (`apps/api`) and contracts (`packages/api-contracts`) was performed prior to implementation:
 
-| Capability | Backend Endpoint | Contract | Status in Mobile |
-| :--- | :--- | :--- | :--- |
-| **Mutual Matches List** | `GET /v1/matches` | `MatchListResponseDto` | **Fully Integrated** with cursor pagination |
-| **Match Detail** | `GET /v1/matches/:matchId` | `MatchDetailDto` | **Fully Integrated** with public components |
-| **Unmatch Connection** | `DELETE /v1/matches/:matchId` | `UnmatchResponseDto` | **Fully Integrated** with confirmation dialog |
-| **Outgoing Interactions** | `GET /v1/interactions` | `InteractionHistoryResponseDto` | Supported via `interactionsApi.getHistory()` |
-| **Like / Reciprocal Match** | `POST /v1/interactions/:userId/like` | `InteractionResponseDto` | **Fully Integrated** with celebration trigger |
-| **Pass Candidate** | `POST /v1/interactions/:userId/pass` | `InteractionResponseDto` | **Fully Integrated** |
-| **Undo Interaction** | `POST /v1/interactions/undo` | `UndoResponseDto` | **Fully Integrated** |
-| **Block Member** | `POST /v1/users/:userId/block` | `BlockUserResponseDto` | **Fully Integrated** with feed eviction |
-| **Report Member** | `POST /v1/reports` | `ReportResponseDto` | **Fully Integrated** with reason codes |
-| **Conversation Access** | `GET /v1/conversations` | `ConversationListResponseDto` | **Fully Integrated** for chat lookup |
-| **Incoming Likes List** | *None* | *None* | **Not Exposed** in backend. Per Section 2, removed from UI to prevent fabricated or empty states. |
+| Capability                  | Backend Endpoint                     | Contract                        | Status in Mobile                                                                                  |
+| :-------------------------- | :----------------------------------- | :------------------------------ | :------------------------------------------------------------------------------------------------ |
+| **Mutual Matches List**     | `GET /v1/matches`                    | `MatchListResponseDto`          | **Fully Integrated** with cursor pagination                                                       |
+| **Match Detail**            | `GET /v1/matches/:matchId`           | `MatchDetailDto`                | **Fully Integrated** with public components                                                       |
+| **Unmatch Connection**      | `DELETE /v1/matches/:matchId`        | `UnmatchResponseDto`            | **Fully Integrated** with confirmation dialog                                                     |
+| **Outgoing Interactions**   | `GET /v1/interactions`               | `InteractionHistoryResponseDto` | Supported via `interactionsApi.getHistory()`                                                      |
+| **Like / Reciprocal Match** | `POST /v1/interactions/:userId/like` | `InteractionResponseDto`        | **Fully Integrated** with celebration trigger                                                     |
+| **Pass Candidate**          | `POST /v1/interactions/:userId/pass` | `InteractionResponseDto`        | **Fully Integrated**                                                                              |
+| **Undo Interaction**        | `POST /v1/interactions/undo`         | `UndoResponseDto`               | **Fully Integrated**                                                                              |
+| **Block Member**            | `POST /v1/users/:userId/block`       | `BlockUserResponseDto`          | **Fully Integrated** with feed eviction                                                           |
+| **Report Member**           | `POST /v1/reports`                   | `ReportResponseDto`             | **Fully Integrated** with reason codes                                                            |
+| **Conversation Access**     | `GET /v1/conversations`              | `ConversationListResponseDto`   | **Fully Integrated** for chat lookup                                                              |
+| **Incoming Likes List**     | _None_                               | _None_                          | **Not Exposed** in backend. Per Section 2, removed from UI to prevent fabricated or empty states. |
 
 > [!IMPORTANT]
 > **Strict API Authority**: Because the backend does not expose an incoming likes endpoint, the client does not fabricate incoming like profiles or render empty, non-functional tabs. The Matches tab serves authoritatively as the mutual connection relationship inbox.
@@ -78,19 +78,21 @@ export const MATCHES_QUERY_KEYS = {
 ```
 
 ### Cache Reconciliation Policy
-| Action | Query Invalidation Target | Rationale |
-| :--- | :--- | :--- |
-| **Reciprocal Like (Match Formed)** | `MATCHES_QUERY_KEYS.all` | Newly formed match appears immediately at the top of the Matches list. |
-| **Unmatch Connection** | `MATCHES_QUERY_KEYS.all`, `MATCHES_QUERY_KEYS.detail(matchId)` | Evicts dissolved connection from list and marks detail cache stale. |
-| **Block Member** | `MATCHES_QUERY_KEYS.all`, `DISCOVERY_QUERY_KEYS.feed`, `CHAT_QUERY_KEYS.conversations` | Complete platform-level exclusion of the blocked user. |
-| **Report Member** | *None required* (unless combined with block) | Report is processed out-of-band by Trust & Safety moderation. |
-| **Pull-to-Refresh** | Refetches active query page without invalidating entire cache. | Smooth local experience without UI flashes. |
+
+| Action                             | Query Invalidation Target                                                              | Rationale                                                              |
+| :--------------------------------- | :------------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| **Reciprocal Like (Match Formed)** | `MATCHES_QUERY_KEYS.all`                                                               | Newly formed match appears immediately at the top of the Matches list. |
+| **Unmatch Connection**             | `MATCHES_QUERY_KEYS.all`, `MATCHES_QUERY_KEYS.detail(matchId)`                         | Evicts dissolved connection from list and marks detail cache stale.    |
+| **Block Member**                   | `MATCHES_QUERY_KEYS.all`, `DISCOVERY_QUERY_KEYS.feed`, `CHAT_QUERY_KEYS.conversations` | Complete platform-level exclusion of the blocked user.                 |
+| **Report Member**                  | _None required_ (unless combined with block)                                           | Report is processed out-of-band by Trust & Safety moderation.          |
+| **Pull-to-Refresh**                | Refetches active query page without invalidating entire cache.                         | Smooth local experience without UI flashes.                            |
 
 ---
 
 ## 5. Screen Specifications & Component Hierarchy
 
 ### A. Matches Screen (`MatchesScreen.tsx`)
+
 - **Container**: `SafeAreaView` with `theme.colors.background`.
 - **Header**: `TopNavHeader` with title "Matches", connection count subtitle, and refresh button.
 - **Search Filter**: Inline search input filtering matches by candidate name or city.
@@ -106,6 +108,7 @@ export const MATCHES_QUERY_KEYS = {
   - Empty: Soft surface card with heart icon circle and "Explore Discovery ✨" button.
 
 ### B. Match Detail Screen (`MatchDetailScreen.tsx`)
+
 - **Container**: Scrollable candidate inspection surface.
 - **Header**: Top navigation bar with Back action, candidate name, Flag (Report), and More (Block) actions.
 - **Photo Carousel**: $4:5$ ratio horizontal paging `ScrollView` with pagination dot indicators and "Matched on <Date>" ribbon.
@@ -119,6 +122,7 @@ export const MATCHES_QUERY_KEYS = {
 ## 6. Match Celebration Consolidation
 
 Consolidated between `app/modal/celebration.tsx` and `src/matches/components/MatchCelebrationModal.tsx`:
+
 - Reusable across Discovery (swiping) and Profile Detail (tapping Like).
 - Displays dual avatar rings:
   - Current user photo from `useProfileStore`.
@@ -133,11 +137,13 @@ Consolidated between `app/modal/celebration.tsx` and `src/matches/components/Mat
 ## 7. Deep Linking & Notification Navigation
 
 ### Supported URI Schemes
+
 1. `nazar://match/:matchId` (Standard push notification payload)
 2. `nazar://matches/:matchId` (Plural alias)
 3. `https://nazar.app/match/:matchId` (Universal link)
 
 ### Deep Link Resolution Flow
+
 ```mermaid
 flowchart TD
     A[Incoming Link: nazar://match/:matchId] --> B{Authenticated?}
@@ -153,6 +159,7 @@ flowchart TD
 ## 8. Analytics & Interaction Telemetry
 
 Events emitted via `trackOnboardingEvent` with automatic PII sanitization:
+
 - `matches_viewed`: Emitted when opening the Matches screen.
 - `match_opened`: Emitted when selecting a match item (`matchId`).
 - `match_profile_opened`: Emitted on viewing match detail (`matchId`).

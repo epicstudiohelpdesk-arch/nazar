@@ -18,9 +18,7 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
 
   const { permissionsStatus, setPermissionStatus } = useOnboardingStore();
 
-  const [locationGranted, setLocationGranted] = useState(
-    permissionsStatus.location === 'granted'
-  );
+  const [locationGranted, setLocationGranted] = useState(permissionsStatus.location === 'granted');
   const [notificationsGranted, setNotificationsGranted] = useState(
     permissionsStatus.push === 'granted'
   );
@@ -61,11 +59,7 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title=""
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.9} style={styles.progressBar} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -75,7 +69,8 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
           </Text>
           <Heading level="h1">Trust & Permissions</Heading>
           <Text level="body" color="secondary">
-            Nazar needs a couple of key permissions to curate relevant matches and notify you when you connect.
+            Nazar needs a couple of key permissions to curate relevant matches and notify you when
+            you connect.
           </Text>
         </View>
 
@@ -87,9 +82,7 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
               styles.permissionCard,
               {
                 borderColor: locationGranted ? theme.colors.accent : theme.colors.border,
-                backgroundColor: locationGranted
-                  ? theme.colors.accentSoft
-                  : theme.colors.surface,
+                backgroundColor: locationGranted ? theme.colors.accentSoft : theme.colors.surface,
               },
             ]}
           >
@@ -97,7 +90,11 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
               <View
                 style={[
                   styles.iconBadge,
-                  { backgroundColor: locationGranted ? theme.colors.accent : theme.colors.surfaceMuted },
+                  {
+                    backgroundColor: locationGranted
+                      ? theme.colors.accent
+                      : theme.colors.surfaceMuted,
+                  },
                 ]}
               >
                 <Icon
@@ -110,14 +107,20 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                 <Text level="title" style={{ color: theme.colors.textPrimary }}>
                   Location Services
                 </Text>
-                <Text level="caption" style={{ color: locationGranted ? theme.colors.accentStrong : theme.colors.textSecondary }}>
+                <Text
+                  level="caption"
+                  style={{
+                    color: locationGranted ? theme.colors.accentStrong : theme.colors.textSecondary,
+                  }}
+                >
                   {locationGranted ? '✓ Enabled' : 'Recommended'}
                 </Text>
               </View>
             </View>
 
             <Text level="bodySmall" color="secondary" style={styles.benefitText}>
-              Find people in your city or neighborhood. Your exact coordinates are never shared with anyone.
+              Find people in your city or neighborhood. Your exact coordinates are never shared with
+              anyone.
             </Text>
 
             <View style={styles.actionRow}>
@@ -125,7 +128,9 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                 variant={locationGranted ? 'secondary' : 'primary'}
                 size="md"
                 onPress={handleToggleLocation}
-                accessibilityLabel={locationGranted ? 'Revoke location access' : 'Allow location access'}
+                accessibilityLabel={
+                  locationGranted ? 'Revoke location access' : 'Allow location access'
+                }
               >
                 {locationGranted ? 'Access Allowed' : 'Allow Location'}
               </Button>
@@ -149,7 +154,11 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
               <View
                 style={[
                   styles.iconBadge,
-                  { backgroundColor: notificationsGranted ? theme.colors.accent : theme.colors.surfaceMuted },
+                  {
+                    backgroundColor: notificationsGranted
+                      ? theme.colors.accent
+                      : theme.colors.surfaceMuted,
+                  },
                 ]}
               >
                 <Icon
@@ -162,14 +171,22 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                 <Text level="title" style={{ color: theme.colors.textPrimary }}>
                   Push Notifications
                 </Text>
-                <Text level="caption" style={{ color: notificationsGranted ? theme.colors.accentStrong : theme.colors.textSecondary }}>
+                <Text
+                  level="caption"
+                  style={{
+                    color: notificationsGranted
+                      ? theme.colors.accentStrong
+                      : theme.colors.textSecondary,
+                  }}
+                >
                   {notificationsGranted ? '✓ Enabled' : 'Recommended'}
                 </Text>
               </View>
             </View>
 
             <Text level="bodySmall" color="secondary" style={styles.benefitText}>
-              Get notified immediately when someone likes your profile, a mutual match happens, or a message arrives.
+              Get notified immediately when someone likes your profile, a mutual match happens, or a
+              message arrives.
             </Text>
 
             <View style={styles.actionRow}>
@@ -177,7 +194,9 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                 variant={notificationsGranted ? 'secondary' : 'primary'}
                 size="md"
                 onPress={handleToggleNotifications}
-                accessibilityLabel={notificationsGranted ? 'Revoke notifications' : 'Allow notifications'}
+                accessibilityLabel={
+                  notificationsGranted ? 'Revoke notifications' : 'Allow notifications'
+                }
               >
                 {notificationsGranted ? 'Notifications Allowed' : 'Allow Notifications'}
               </Button>
@@ -187,7 +206,10 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
           {/* Privacy Note */}
           <SurfaceCard
             elevation="none"
-            style={[styles.privacyCard, { backgroundColor: theme.colors.surfaceMuted, borderColor: theme.colors.border }]}
+            style={[
+              styles.privacyCard,
+              { backgroundColor: theme.colors.surfaceMuted, borderColor: theme.colors.border },
+            ]}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <Icon name="lock" size={16} color={theme.colors.accent} />

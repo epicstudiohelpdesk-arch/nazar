@@ -21,11 +21,7 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title=""
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
@@ -45,12 +41,16 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
             Build your story on Nazar
           </Heading>
           <Text level="body" color="secondary" style={styles.subtitle}>
-            Nazar is curated for intentional connection. Set up your profile in a few thoughtful steps.
+            Nazar is curated for intentional connection. Set up your profile in a few thoughtful
+            steps.
           </Text>
         </View>
 
         <View style={styles.stepsList}>
-          <SurfaceCard elevation="none" style={[styles.stepCard, { borderColor: theme.colors.border }]}>
+          <SurfaceCard
+            elevation="none"
+            style={[styles.stepCard, { borderColor: theme.colors.border }]}
+          >
             <View style={[styles.stepNumberBadge, { backgroundColor: theme.colors.accentSoft }]}>
               <Text level="label" style={{ color: theme.colors.accent, fontWeight: '700' }}>
                 1
@@ -66,7 +66,10 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
             </View>
           </SurfaceCard>
 
-          <SurfaceCard elevation="none" style={[styles.stepCard, { borderColor: theme.colors.border }]}>
+          <SurfaceCard
+            elevation="none"
+            style={[styles.stepCard, { borderColor: theme.colors.border }]}
+          >
             <View style={[styles.stepNumberBadge, { backgroundColor: theme.colors.accentSoft }]}>
               <Text level="label" style={{ color: theme.colors.accent, fontWeight: '700' }}>
                 2
@@ -82,7 +85,10 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
             </View>
           </SurfaceCard>
 
-          <SurfaceCard elevation="none" style={[styles.stepCard, { borderColor: theme.colors.border }]}>
+          <SurfaceCard
+            elevation="none"
+            style={[styles.stepCard, { borderColor: theme.colors.border }]}
+          >
             <View style={[styles.stepNumberBadge, { backgroundColor: theme.colors.accentSoft }]}>
               <Text level="label" style={{ color: theme.colors.accent, fontWeight: '700' }}>
                 3
@@ -98,7 +104,10 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
             </View>
           </SurfaceCard>
 
-          <SurfaceCard elevation="none" style={[styles.stepCard, { borderColor: theme.colors.border }]}>
+          <SurfaceCard
+            elevation="none"
+            style={[styles.stepCard, { borderColor: theme.colors.border }]}
+          >
             <View style={[styles.stepNumberBadge, { backgroundColor: theme.colors.accentSoft }]}>
               <Text level="label" style={{ color: theme.colors.accent, fontWeight: '700' }}>
                 4

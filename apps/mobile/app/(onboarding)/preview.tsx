@@ -44,8 +44,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
 
   const photoUrls = sortedPhotos.map((p) => p.url);
   const primaryUrl =
-    photoUrls[0] ||
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800';
+    photoUrls[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800';
 
   const previewData: ProfileCardData = {
     id: 'preview-me',
@@ -86,11 +85,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title=""
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={1.0} style={styles.progressBar} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -119,10 +114,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
 
         {/* Profile Card Preview */}
         <View style={styles.cardWrapper}>
-          <ProfileCard
-            profile={previewData}
-            context="profilePreview"
-          />
+          <ProfileCard profile={previewData} context="profilePreview" />
         </View>
 
         {/* Quick Edit Links */}

@@ -46,11 +46,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
     [locale]
   );
 
-  return (
-    <LocalizationContext.Provider value={value}>
-      {children}
-    </LocalizationContext.Provider>
-  );
+  return <LocalizationContext.Provider value={value}>{children}</LocalizationContext.Provider>;
 };
 
 export const useTranslation = (): LocalizationContextValue => {

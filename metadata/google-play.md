@@ -53,7 +53,7 @@ Support: support@nazar.app
 
 ## Store Graphics
 
-- **App Icon**: 512 x 512 px PNG (32-bit color, no alpha), `#0F172A` background
+- **App Icon**: 512 x 512 px PNG (32-bit color, no alpha), `#DC0C24` vibrant red background
 - **Feature Graphic**: 1024 x 500 px JPEG or 24-bit PNG
 - **Phone Screenshots**: Minimum 4 screenshots (1080 x 1920 px or 1080 x 2400 px, 16:9 or 9:16 aspect ratio)
   1. Discovery Card Deck ("Discover singles nearby")

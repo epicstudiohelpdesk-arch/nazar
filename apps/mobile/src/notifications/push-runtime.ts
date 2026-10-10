@@ -11,10 +11,7 @@
  * `POST /v1/devices`, never logged, never stored, and never placed in analytics.
  */
 import { Platform } from 'react-native';
-import {
-  buildDeviceDescriptor,
-  type DeviceDescriptor,
-} from './device-identity.js';
+import { buildDeviceDescriptor, type DeviceDescriptor } from './device-identity.js';
 import {
   mapPermissionStatus,
   shouldRegisterDevice,
@@ -48,9 +45,7 @@ interface NotificationsModule {
     data: { importance: number } | null;
   }): Promise<unknown>;
   addNotificationReceivedListener(listener: (event: unknown) => void): PushSubscription;
-  addNotificationResponseReceivedListener(
-    listener: (event: unknown) => void
-  ): PushSubscription;
+  addNotificationResponseReceivedListener(listener: (event: unknown) => void): PushSubscription;
 }
 
 interface DeviceModule {
@@ -205,9 +200,7 @@ export async function probePushDevice(
 
   const isPhysicalDevice = dev?.isDevice ?? false;
 
-  if (
-    !shouldRegisterDevice({ permission, isPhysicalDevice, runtimeAvailable: true })
-  ) {
+  if (!shouldRegisterDevice({ permission, isPhysicalDevice, runtimeAvailable: true })) {
     return {
       permission,
       isPhysicalDevice,
@@ -294,8 +287,9 @@ export function subscribeToPush(listeners: PushListeners): () => void {
     if (listeners.onReceived) {
       subscriptions.push(
         mod.addNotificationReceivedListener((event) => {
-          const content = (event as { notification?: { request?: { content?: { data?: unknown } } } })
-            ?.notification?.request?.content;
+          const content = (
+            event as { notification?: { request?: { content?: { data?: unknown } } } }
+          )?.notification?.request?.content;
           listeners.onReceived?.(content?.data ?? null);
         })
       );
@@ -303,8 +297,9 @@ export function subscribeToPush(listeners: PushListeners): () => void {
     if (listeners.onResponse) {
       subscriptions.push(
         mod.addNotificationResponseReceivedListener((event) => {
-          const content = (event as { notification?: { request?: { content?: { data?: unknown } } } })
-            ?.notification?.request?.content;
+          const content = (
+            event as { notification?: { request?: { content?: { data?: unknown } } } }
+          )?.notification?.request?.content;
           listeners.onResponse?.(content?.data ?? null);
         })
       );

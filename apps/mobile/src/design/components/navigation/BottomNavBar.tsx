@@ -9,11 +9,7 @@ export interface BottomNavBarProps {
   readonly testID?: string;
 }
 
-export const BottomNavBar: React.FC<BottomNavBarProps> = ({
-  children,
-  style,
-  testID,
-}) => {
+export const BottomNavBar: React.FC<BottomNavBarProps> = ({ children, style, testID }) => {
   const insets = useSafeAreaInsets();
   const { colors, shadows } = useTheme();
 

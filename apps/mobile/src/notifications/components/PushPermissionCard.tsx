@@ -5,10 +5,7 @@ import { Text } from '../../design/primitives/Text.js';
 import { Icon } from '../../design/primitives/Icon.js';
 import { Button } from '../../design/components/button/Button.js';
 import { SurfaceCard } from '../../design/primitives/SurfaceCard.js';
-import {
-  describePermissionState,
-  type PushPermissionState,
-} from '../push-permissions.js';
+import { describePermissionState, type PushPermissionState } from '../push-permissions.js';
 
 export interface PushPermissionCardProps {
   readonly permission: PushPermissionState;
@@ -58,9 +55,7 @@ export const PushPermissionCard: React.FC<PushPermissionCardProps> = ({
     >
       <View style={[styles.iconCircle, { backgroundColor: colors.accentSoft }]}>
         <Icon
-          name={
-            permission === 'blocked' || permission === 'denied' ? 'warning' : 'bell'
-          }
+          name={permission === 'blocked' || permission === 'denied' ? 'warning' : 'bell'}
           size="sm"
           color={tone}
         />

@@ -59,11 +59,7 @@ export const RefreshableList = <T,>({
   if (error && (!data || data.length === 0)) {
     return (
       <View style={styles.centerContainer}>
-        <ErrorState
-          type="unknown"
-          message={error}
-          onRetry={onRetry}
-        />
+        <ErrorState type="unknown" message={error} onRetry={onRetry} />
       </View>
     );
   }
@@ -78,9 +74,7 @@ export const RefreshableList = <T,>({
         contentContainerStyle,
       ]}
       refreshControl={
-        onRefresh ? (
-          <PullToRefresh refreshing={isRefreshing} onRefresh={onRefresh} />
-        ) : undefined
+        onRefresh ? <PullToRefresh refreshing={isRefreshing} onRefresh={onRefresh} /> : undefined
       }
       ListEmptyComponent={
         <EmptyState
@@ -141,8 +135,10 @@ export const InfiniteList = <T,>({
 };
 
 // --- SECTION LIST ---
-export interface NazarSectionListProps<ItemT, SectionT = any>
-  extends SectionListProps<ItemT, SectionT> {
+export interface NazarSectionListProps<ItemT, SectionT = any> extends SectionListProps<
+  ItemT,
+  SectionT
+> {
   readonly onRefresh?: () => void;
   readonly isRefreshing?: boolean;
 }
@@ -165,9 +161,7 @@ export const SectionList = <ItemT, SectionT = any>({
       renderSectionHeader={renderSectionHeader}
       style={[{ flex: 1, backgroundColor: colors.background }, style]}
       refreshControl={
-        onRefresh ? (
-          <PullToRefresh refreshing={isRefreshing} onRefresh={onRefresh} />
-        ) : undefined
+        onRefresh ? <PullToRefresh refreshing={isRefreshing} onRefresh={onRefresh} /> : undefined
       }
       stickySectionHeadersEnabled={true}
       {...rest}
@@ -183,12 +177,7 @@ export interface ListScreenProps {
   readonly style?: StyleProp<ViewStyle>;
 }
 
-export const ListScreen: React.FC<ListScreenProps> = ({
-  title,
-  headerSlot,
-  children,
-  style,
-}) => {
+export const ListScreen: React.FC<ListScreenProps> = ({ title, headerSlot, children, style }) => {
   const { colors, spacing } = useTheme();
 
   return (

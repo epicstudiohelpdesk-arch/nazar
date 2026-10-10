@@ -40,10 +40,7 @@ export const UnreadBadge: React.FC<UnreadBadgeProps> = ({
     return (
       <View
         testID={testID}
-        style={[
-          styles.dot,
-          { backgroundColor: colors.accent, borderColor: colors.background },
-        ]}
+        style={[styles.dot, { backgroundColor: colors.accent, borderColor: colors.background }]}
       />
     );
   }

@@ -76,36 +76,48 @@ export default function SafetyHubRoute(): React.JSX.Element {
           <Heading level="h3">Safe Dating Rules</Heading>
           <SurfaceCard elevation="sm" style={styles.card}>
             <View style={styles.guidelineItem}>
-              <Text level="title" color="accent">1. Always Meet in Public</Text>
+              <Text level="title" color="accent">
+                1. Always Meet in Public
+              </Text>
               <Text level="bodySmall" color="secondary">
-                Choose a populated, well-lit café, restaurant, or public gallery for your first few meetings. Never meet at a private residence or secluded location.
+                Choose a populated, well-lit café, restaurant, or public gallery for your first few
+                meetings. Never meet at a private residence or secluded location.
               </Text>
             </View>
 
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
             <View style={styles.guidelineItem}>
-              <Text level="title" color="accent">2. Inform a Friend or Family Member</Text>
+              <Text level="title" color="accent">
+                2. Inform a Friend or Family Member
+              </Text>
               <Text level="bodySmall" color="secondary">
-                Share your date itinerary, location, and the person’s profile details with someone you trust before meeting.
+                Share your date itinerary, location, and the person’s profile details with someone
+                you trust before meeting.
               </Text>
             </View>
 
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
             <View style={styles.guidelineItem}>
-              <Text level="title" color="accent">3. Own Your Transportation</Text>
+              <Text level="title" color="accent">
+                3. Own Your Transportation
+              </Text>
               <Text level="bodySmall" color="secondary">
-                Arrange your own ride to and from the venue. Avoid relying on your date for transportation so you can leave whenever you feel uncomfortable.
+                Arrange your own ride to and from the venue. Avoid relying on your date for
+                transportation so you can leave whenever you feel uncomfortable.
               </Text>
             </View>
 
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
             <View style={styles.guidelineItem}>
-              <Text level="title" color="accent">4. Zero Tolerance for Financial Solicitations</Text>
+              <Text level="title" color="accent">
+                4. Zero Tolerance for Financial Solicitations
+              </Text>
               <Text level="bodySmall" color="secondary">
-                Never send money, wire transfers, crypto, or financial credentials to anyone you meet online. Report any financial requests immediately.
+                Never send money, wire transfers, crypto, or financial credentials to anyone you
+                meet online. Report any financial requests immediately.
               </Text>
             </View>
           </SurfaceCard>
@@ -116,10 +128,12 @@ export default function SafetyHubRoute(): React.JSX.Element {
           <Heading level="h3">Zero Tolerance Policy</Heading>
           <SurfaceCard elevation="sm" style={styles.card}>
             <Text level="body" color="primary">
-              Nazar strictly enforces zero tolerance against harassment, hate speech, impersonation, non-consensual content, and solicitation.
+              Nazar strictly enforces zero tolerance against harassment, hate speech, impersonation,
+              non-consensual content, and solicitation.
             </Text>
             <Text level="bodySmall" color="secondary">
-              Reports submitted in-app are reviewed with high priority. Offending accounts are permanently banned and device-blacklisted.
+              Reports submitted in-app are reviewed with high priority. Offending accounts are
+              permanently banned and device-blacklisted.
             </Text>
           </SurfaceCard>
         </View>

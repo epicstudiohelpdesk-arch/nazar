@@ -18,7 +18,9 @@ export class MockEmailProvider implements IEmailProvider {
     if (process.env.NODE_ENV !== 'production') {
       this.logger.log(`[DEV AUTH] Verification Code for ${email}: ${code}`);
     } else {
-      this.logger.debug(`[Email Simulation] Sent verification code to ${email}: [REDACTED IN LOGS]`);
+      this.logger.debug(
+        `[Email Simulation] Sent verification code to ${email}: [REDACTED IN LOGS]`
+      );
     }
   }
 

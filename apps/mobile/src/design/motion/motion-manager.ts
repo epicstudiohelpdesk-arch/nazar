@@ -6,7 +6,10 @@ let reducedMotionOverride: boolean | null = null;
 let currentReducedMotionState: boolean = false;
 
 // Query initial state on module load safely
-if (typeof AccessibilityInfo !== 'undefined' && typeof AccessibilityInfo.isReduceMotionEnabled === 'function') {
+if (
+  typeof AccessibilityInfo !== 'undefined' &&
+  typeof AccessibilityInfo.isReduceMotionEnabled === 'function'
+) {
   AccessibilityInfo.isReduceMotionEnabled()
     .then((enabled) => {
       currentReducedMotionState = Boolean(enabled);
@@ -53,7 +56,10 @@ export function useReducedMotion(): boolean {
     }
 
     let isMounted = true;
-    if (typeof AccessibilityInfo !== 'undefined' && typeof AccessibilityInfo.isReduceMotionEnabled === 'function') {
+    if (
+      typeof AccessibilityInfo !== 'undefined' &&
+      typeof AccessibilityInfo.isReduceMotionEnabled === 'function'
+    ) {
       AccessibilityInfo.isReduceMotionEnabled()
         .then((enabled) => {
           if (isMounted) setReduced(Boolean(enabled));
@@ -63,9 +69,12 @@ export function useReducedMotion(): boolean {
         });
 
       if (typeof AccessibilityInfo.addEventListener === 'function') {
-        const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled: boolean) => {
-          if (isMounted) setReduced(Boolean(enabled));
-        });
+        const sub = AccessibilityInfo.addEventListener(
+          'reduceMotionChanged',
+          (enabled: boolean) => {
+            if (isMounted) setReduced(Boolean(enabled));
+          }
+        );
         return () => {
           isMounted = false;
           if (sub && typeof sub.remove === 'function') {

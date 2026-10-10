@@ -183,7 +183,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
         queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations });
 
         // If incoming from other user, mark as read
-        if (conversation?.otherUser.userId && event.payload.senderUserId === conversation.otherUser.userId) {
+        if (
+          conversation?.otherUser.userId &&
+          event.payload.senderUserId === conversation.otherUser.userId
+        ) {
           lastMarkedReadMessageIdRef.current = event.payload.id;
           chatApi.markRead(conversationId, event.payload.id).catch(() => {});
           trackOnboardingEvent('conversation_marked_read', {
@@ -372,7 +375,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
                 },
               ]}
             >
-              <Text variant="caption" weight="medium" style={{ color: colors.textTertiary, fontSize: 11 }}>
+              <Text
+                variant="caption"
+                weight="medium"
+                style={{ color: colors.textTertiary, fontSize: 11 }}
+              >
                 {item.label}
               </Text>
             </View>
@@ -460,11 +467,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
   if (conversationError) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ChatHeader
-          displayName="Conversation"
-          connectionState="disconnected"
-          onBack={handleBack}
-        />
+        <ChatHeader displayName="Conversation" connectionState="disconnected" onBack={handleBack} />
         <ErrorState
           type="content_unavailable"
           title="Conversation Unavailable"
@@ -479,11 +482,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
   if (isLoadingConversation && !conversation) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ChatHeader
-          displayName="Loading..."
-          connectionState="connecting"
-          onBack={handleBack}
-        />
+        <ChatHeader displayName="Loading..." connectionState="connecting" onBack={handleBack} />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -561,7 +560,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
         onChangeText={handleTextChange}
         onSend={handleSendMessage}
         disabled={isSending || conversation?.status === 'CLOSED'}
-        placeholder={conversation?.status === 'CLOSED' ? 'This conversation is closed' : 'Say something nice...'}
+        placeholder={
+          conversation?.status === 'CLOSED'
+            ? 'This conversation is closed'
+            : 'Say something nice...'
+        }
       />
 
       {conversation && (

@@ -93,7 +93,12 @@ export const CompactProfileCard: React.FC<CompactProfileCardProps> = ({
 
           {effectiveCity && (
             <View style={styles.metaRow}>
-              <Icon name="location" size="tiny" color={colors.textTertiary} style={{ marginRight: 4 }} />
+              <Icon
+                name="location"
+                size="tiny"
+                color={colors.textTertiary}
+                style={{ marginRight: 4 }}
+              />
               <Text variant="caption" style={{ color: colors.textSecondary }} numberOfLines={1}>
                 {effectiveCity}
               </Text>
@@ -101,7 +106,11 @@ export const CompactProfileCard: React.FC<CompactProfileCardProps> = ({
           )}
 
           {profile.contextualInfo && (
-            <Text variant="caption" style={{ color: colors.accent, marginTop: 2 }} numberOfLines={1}>
+            <Text
+              variant="caption"
+              style={{ color: colors.accent, marginTop: 2 }}
+              numberOfLines={1}
+            >
               {profile.contextualInfo}
             </Text>
           )}

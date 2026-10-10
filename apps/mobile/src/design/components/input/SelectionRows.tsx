@@ -90,11 +90,7 @@ export const Chip: React.FC<ChipProps> = ({
           style={{ marginRight: spacing.xs }}
         />
       )}
-      <Text
-        variant={isSm ? 'caption' : 'bodySmall'}
-        weight="medium"
-        style={{ color: vs.text }}
-      >
+      <Text variant={isSm ? 'caption' : 'bodySmall'} weight="medium" style={{ color: vs.text }}>
         {label}
       </Text>
     </View>
@@ -111,7 +107,11 @@ export const Chip: React.FC<ChipProps> = ({
         onPress={handlePress}
         disabled={disabled}
         activeOpacity={0.8}
-        hitSlop={isSm ? ensureMinTouchTarget(MIN_TOUCH_TARGET, 32) : ensureMinTouchTarget(MIN_TOUCH_TARGET, 38)}
+        hitSlop={
+          isSm
+            ? ensureMinTouchTarget(MIN_TOUCH_TARGET, 32)
+            : ensureMinTouchTarget(MIN_TOUCH_TARGET, 38)
+        }
       >
         {Content}
       </TouchableOpacity>
@@ -233,14 +233,7 @@ export const RadioRow: React.FC<RadioRowProps> = ({
           },
         ]}
       >
-        {active && (
-          <View
-            style={[
-              styles.radioDot,
-              { backgroundColor: colors.accent },
-            ]}
-          />
-        )}
+        {active && <View style={[styles.radioDot, { backgroundColor: colors.accent }]} />}
       </View>
     </TouchableOpacity>
   );
@@ -319,9 +312,7 @@ export const CheckboxRow: React.FC<CheckboxRowProps> = ({
           },
         ]}
       >
-        {active && (
-          <Icon name="check" size="tiny" color="#FFFFFF" strokeWidth={2.5} />
-        )}
+        {active && <Icon name="check" size="tiny" color="#FFFFFF" strokeWidth={2.5} />}
       </View>
     </TouchableOpacity>
   );

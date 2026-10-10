@@ -172,7 +172,9 @@ export class AuthService {
   /**
    * Authenticate via Apple ID token.
    */
-  async loginWithApple(payload: AppleAuthPayload): Promise<AuthOperationResult<AuthTokensResponse>> {
+  async loginWithApple(
+    payload: AppleAuthPayload
+  ): Promise<AuthOperationResult<AuthTokensResponse>> {
     trackOnboardingEvent('auth_submitted', { method: 'apple' });
 
     try {
@@ -289,7 +291,10 @@ export class AuthService {
 
     // Friendly error mappings
     let friendlyMessage = rawMessage;
-    if (rawMessage.toLowerCase().includes('invalid code') || rawMessage.toLowerCase().includes('incorrect')) {
+    if (
+      rawMessage.toLowerCase().includes('invalid code') ||
+      rawMessage.toLowerCase().includes('incorrect')
+    ) {
       friendlyMessage = 'Invalid verification code. Please check and try again.';
     } else if (rawMessage.toLowerCase().includes('expired')) {
       friendlyMessage = 'Verification code expired. Please request a new code.';
@@ -309,7 +314,8 @@ export class AuthService {
 
     return {
       success: false,
-      error: 'Unable to connect to Nazar servers. Please check your internet connection and try again.',
+      error:
+        'Unable to connect to Nazar servers. Please check your internet connection and try again.',
     };
   }
 }

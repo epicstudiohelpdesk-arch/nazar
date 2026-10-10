@@ -40,7 +40,9 @@ interface NotificationsEnvelopeShape {
  * notification is gone" (`NOTIFICATION_NOT_FOUND`) apart from "your session
  * expired", and neither should be shown as raw server text.
  */
-async function parseNotificationsResponse<T>(res: Response): Promise<{ success: boolean; data: T }> {
+async function parseNotificationsResponse<T>(
+  res: Response
+): Promise<{ success: boolean; data: T }> {
   let body: NotificationsEnvelopeShape = {};
   try {
     body = (await res.json()) as NotificationsEnvelopeShape;

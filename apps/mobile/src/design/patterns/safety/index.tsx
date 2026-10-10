@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-  type StyleProp,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, type ViewStyle, type StyleProp } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Icon, type IconName } from '../../primitives/Icon.js';
@@ -131,7 +125,12 @@ export const SafetyActionSheet: React.FC<SafetyActionSheetProps> = ({
           accessibilityRole="button"
           accessibilityLabel={`Block ${targetName}`}
         >
-          <Icon name="shield" size="sm" color={colors.textPrimary} style={{ marginRight: spacing.md }} />
+          <Icon
+            name="shield"
+            size="sm"
+            color={colors.textPrimary}
+            style={{ marginRight: spacing.md }}
+          />
           <View style={{ flex: 1 }}>
             <Text variant="body" weight="semibold" style={{ color: colors.textPrimary }}>
               Block {targetName}
@@ -185,12 +184,20 @@ export const SafetyNotice: React.FC<SafetyNoticeProps> = ({
   return (
     <SurfaceCard p="md" radius="radiusLG" style={style}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-        <Icon name="shield" size="md" color={colors.info} style={{ marginRight: spacing.sm, marginTop: 2 }} />
+        <Icon
+          name="shield"
+          size="md"
+          color={colors.info}
+          style={{ marginRight: spacing.sm, marginTop: 2 }}
+        />
         <View style={{ flex: 1 }}>
           <Text variant="title" weight="semibold" style={{ color: colors.textPrimary }}>
             {title}
           </Text>
-          <Text variant="bodySmall" style={{ color: colors.textSecondary, marginTop: 2, lineHeight: 20 }}>
+          <Text
+            variant="bodySmall"
+            style={{ color: colors.textSecondary, marginTop: 2, lineHeight: 20 }}
+          >
             {message}
           </Text>
         </View>
@@ -206,11 +213,7 @@ export interface ModerationStateProps {
   readonly style?: StyleProp<ViewStyle>;
 }
 
-export const ModerationState: React.FC<ModerationStateProps> = ({
-  status,
-  explanation,
-  style,
-}) => {
+export const ModerationState: React.FC<ModerationStateProps> = ({ status, explanation, style }) => {
   const { colors, radii, spacing } = useTheme();
 
   const getConfig = () => {
@@ -218,7 +221,9 @@ export const ModerationState: React.FC<ModerationStateProps> = ({
       case 'flagged':
         return {
           title: 'Account Under Review',
-          desc: explanation || 'Our trust and safety team is reviewing your profile photos or reported content.',
+          desc:
+            explanation ||
+            'Our trust and safety team is reviewing your profile photos or reported content.',
           icon: 'warning' as IconName,
           color: colors.warning,
           bg: colors.warningSoft,

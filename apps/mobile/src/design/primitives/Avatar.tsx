@@ -4,7 +4,8 @@ import { useTheme } from '../theme/index.js';
 import { Text } from './Text.js';
 import { Icon } from './Icon.js';
 
-export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'tiny' | 'small' | 'medium' | 'large' | 'xlarge' | number;
+export type AvatarSize =
+  'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'tiny' | 'small' | 'medium' | 'large' | 'xlarge' | number;
 
 export interface AvatarProps {
   readonly uri?: string | null;
@@ -54,13 +55,14 @@ export const Avatar: React.FC<AvatarProps> = ({
 }) => {
   const { colors } = useTheme();
   const dimension = resolveAvatarDimension(size);
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w.charAt(0))
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'N';
+  const initials =
+    name
+      .trim()
+      .split(/\s+/)
+      .map((w) => w.charAt(0))
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'N';
 
   const badgeOffset = dimension > 44 ? 2 : 0;
   const badgeSize = Math.max(8, Math.round(dimension * 0.26));
@@ -161,11 +163,21 @@ export const Avatar: React.FC<AvatarProps> = ({
 };
 
 // Convenience Size Variants
-export const AvatarXS: React.FC<Omit<AvatarProps, 'size'>> = (props) => <Avatar size="xs" {...props} />;
-export const AvatarSM: React.FC<Omit<AvatarProps, 'size'>> = (props) => <Avatar size="sm" {...props} />;
-export const AvatarMD: React.FC<Omit<AvatarProps, 'size'>> = (props) => <Avatar size="md" {...props} />;
-export const AvatarLG: React.FC<Omit<AvatarProps, 'size'>> = (props) => <Avatar size="lg" {...props} />;
-export const AvatarXL: React.FC<Omit<AvatarProps, 'size'>> = (props) => <Avatar size="xl" {...props} />;
+export const AvatarXS: React.FC<Omit<AvatarProps, 'size'>> = (props) => (
+  <Avatar size="xs" {...props} />
+);
+export const AvatarSM: React.FC<Omit<AvatarProps, 'size'>> = (props) => (
+  <Avatar size="sm" {...props} />
+);
+export const AvatarMD: React.FC<Omit<AvatarProps, 'size'>> = (props) => (
+  <Avatar size="md" {...props} />
+);
+export const AvatarLG: React.FC<Omit<AvatarProps, 'size'>> = (props) => (
+  <Avatar size="lg" {...props} />
+);
+export const AvatarXL: React.FC<Omit<AvatarProps, 'size'>> = (props) => (
+  <Avatar size="xl" {...props} />
+);
 
 const styles = StyleSheet.create({
   container: {

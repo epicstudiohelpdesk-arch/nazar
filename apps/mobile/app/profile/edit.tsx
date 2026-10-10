@@ -12,10 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type {
-  MediaItemResponse,
-  PromptDefinitionItem,
-} from '@platform/api-contracts';
+import type { MediaItemResponse, PromptDefinitionItem } from '@platform/api-contracts';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
@@ -444,7 +441,11 @@ export default function EditProfileRoute(): React.JSX.Element {
           </Text>
 
           {prompts.map((p, index) => (
-            <SurfaceCard key={`${p.promptDefinitionId}-${index}`} elevation="sm" style={styles.promptCard}>
+            <SurfaceCard
+              key={`${p.promptDefinitionId}-${index}`}
+              elevation="sm"
+              style={styles.promptCard}
+            >
               <TouchableOpacity
                 style={styles.promptQuestionRow}
                 onPress={() => handleOpenPromptPicker(index)}

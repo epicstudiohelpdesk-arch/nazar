@@ -145,6 +145,8 @@ export async function scheduleNotificationAsync(request: {
   return 'scheduled-id';
 }
 
-export function getLastNotificationResponse(): { notification: { request: { content: { data: unknown } } } } | null {
+export function getLastNotificationResponse(): {
+  notification: { request: { content: { data: unknown } } };
+} | null {
   return null;
 }

@@ -52,11 +52,7 @@ export default function SafetyReportModalRoute(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title="Report Member"
-        onBack={() => router.back()}
-        leftAction="close"
-      />
+      <TopNavHeader title="Report Member" onBack={() => router.back()} leftAction="close" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Heading level="h2">Safety Report</Heading>

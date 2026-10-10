@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Icon } from '../../primitives/Icon.js';
@@ -36,9 +31,8 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
 }) => {
   const { colors, radii, spacing } = useTheme();
   const hasError = Boolean(error);
-  const displayValue = value instanceof Date 
-    ? value.toISOString().split('T')[0] 
-    : (value || undefined);
+  const displayValue =
+    value instanceof Date ? value.toISOString().split('T')[0] : value || undefined;
 
   const handlePress = () => {
     if (disabled) return;
@@ -76,7 +70,12 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
         accessibilityRole="button"
         accessibilityLabel={label || placeholder}
       >
-        <Icon name="calendar" size="sm" color={colors.textTertiary} style={{ marginRight: spacing.sm }} />
+        <Icon
+          name="calendar"
+          size="sm"
+          color={colors.textTertiary}
+          style={{ marginRight: spacing.sm }}
+        />
         <Text
           variant="body"
           style={{
@@ -91,7 +90,12 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
 
       {hasError ? (
         <View style={styles.feedbackRow}>
-          <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xxs }} />
+          <Icon
+            name="warning"
+            size="tiny"
+            color={colors.error}
+            style={{ marginRight: spacing.xxs }}
+          />
           <Text variant="caption" style={{ color: colors.error }}>
             {error}
           </Text>

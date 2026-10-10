@@ -1,11 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-  Modal,
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { Modal, View, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
@@ -82,12 +76,7 @@ export const Dialog: React.FC<DialogProps> = ({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onCancel}
-    >
+    <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onCancel}>
       <View style={styles.modalRoot} testID={testID}>
         <TouchableOpacity
           style={[styles.backdrop, { backgroundColor: colors.overlay }]}

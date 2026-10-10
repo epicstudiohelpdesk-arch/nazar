@@ -21,14 +21,7 @@ import {
 } from './notification-payload.js';
 
 export type NotificationCategory =
-  | 'match'
-  | 'message'
-  | 'like'
-  | 'social'
-  | 'community'
-  | 'event'
-  | 'safety'
-  | 'system';
+  'match' | 'message' | 'like' | 'social' | 'community' | 'event' | 'safety' | 'system';
 
 /** Visual tone of a category's leading icon chip. */
 export type NotificationTone = 'accent' | 'info' | 'success' | 'warning' | 'error' | 'neutral';
@@ -147,7 +140,10 @@ export interface NotificationViewModel {
  * client. Expired rows are filtered out by the server, so this normally only
  * fires for a type added server-side before the app is updated.
  */
-export function isNotificationAvailable(notification: NotificationResponseDto, now: number): boolean {
+export function isNotificationAvailable(
+  notification: NotificationResponseDto,
+  now: number
+): boolean {
   if (notification.expiresAt && Date.parse(notification.expiresAt) <= now) {
     return false;
   }
@@ -159,11 +155,7 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
 /** Compact stamp for the row itself. Absolute date once it is no longer "recent". */
-export function formatRelativeTime(
-  createdAt: string,
-  now: number,
-  locale?: string
-): string {
+export function formatRelativeTime(createdAt: string, now: number, locale?: string): string {
   const created = Date.parse(createdAt);
   if (Number.isNaN(created)) return '';
   const delta = Math.max(0, now - created);
@@ -240,9 +232,7 @@ export function buildAccessibilityLabel(
   return parts.filter((part) => part.length > 0).join('. ');
 }
 
-export function buildAccessibilityHint(
-  resolved: ResolvedNotification
-): string {
+export function buildAccessibilityHint(resolved: ResolvedNotification): string {
   if (resolved.destination) {
     return `Double tap to ${resolved.destination.label}.`;
   }
@@ -305,7 +295,9 @@ export function mergeNotificationPages(
     appended.push(notification);
   }
 
-  return appended.length === 0 ? (existing as NotificationResponseDto[]) : [...existing, ...appended];
+  return appended.length === 0
+    ? (existing as NotificationResponseDto[])
+    : [...existing, ...appended];
 }
 
 /**
@@ -370,10 +362,7 @@ export function applyConfirmedReadAll(
  * only replaced when it is genuinely stale, which keeps a concurrent refetch
  * from flickering the badge between two equivalent values.
  */
-export function reconcileUnreadCount(
-  cached: number | undefined,
-  authoritative: number
-): number {
+export function reconcileUnreadCount(cached: number | undefined, authoritative: number): number {
   const safe = Math.max(0, Math.trunc(authoritative));
   return cached === safe ? cached : safe;
 }

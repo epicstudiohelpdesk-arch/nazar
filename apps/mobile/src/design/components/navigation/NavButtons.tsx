@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-  type StyleProp,
-} from 'react-native';
+import { TouchableOpacity, StyleSheet, type ViewStyle, type StyleProp } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Icon, type IconName } from '../../primitives/Icon.js';
@@ -23,12 +18,7 @@ export interface BackButtonProps {
   readonly testID?: string;
 }
 
-export const BackButton: React.FC<BackButtonProps> = ({
-  onPress,
-  color,
-  style,
-  testID,
-}) => {
+export const BackButton: React.FC<BackButtonProps> = ({ onPress, color, style, testID }) => {
   const { colors } = useTheme();
 
   return (
@@ -52,12 +42,7 @@ export interface CloseButtonProps {
   readonly testID?: string;
 }
 
-export const CloseButton: React.FC<CloseButtonProps> = ({
-  onPress,
-  color,
-  style,
-  testID,
-}) => {
+export const CloseButton: React.FC<CloseButtonProps> = ({ onPress, color, style, testID }) => {
   const { colors } = useTheme();
 
   return (

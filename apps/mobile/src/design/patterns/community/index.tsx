@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-  type StyleProp,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, type ViewStyle, type StyleProp } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
@@ -66,7 +60,11 @@ export const MemberAvatarStack: React.FC<MemberAvatarStackProps> = ({
             },
           ]}
         >
-          <Text variant="caption" weight="bold" style={{ color: colors.textSecondary, fontSize: 10 }}>
+          <Text
+            variant="caption"
+            weight="bold"
+            style={{ color: colors.textSecondary, fontSize: 10 }}
+          >
             +{remaining}
           </Text>
         </View>
@@ -123,7 +121,13 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
   const { colors, spacing } = useTheme();
 
   return (
-    <View style={[styles.communityHeader, { backgroundColor: colors.surface, padding: spacing.md }, style]}>
+    <View
+      style={[
+        styles.communityHeader,
+        { backgroundColor: colors.surface, padding: spacing.md },
+        style,
+      ]}
+    >
       <View style={styles.headerTop}>
         <View style={{ flex: 1, marginRight: spacing.md }}>
           <Heading level="h2">{name}</Heading>
@@ -136,7 +140,10 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
       </View>
 
       {description && (
-        <Text variant="body" style={{ color: colors.textPrimary, marginTop: spacing.sm, lineHeight: 22 }}>
+        <Text
+          variant="body"
+          style={{ color: colors.textPrimary, marginTop: spacing.sm, lineHeight: 22 }}
+        >
           {description}
         </Text>
       )}
@@ -232,7 +239,11 @@ export const CommunityPostPreview: React.FC<CommunityPostPreviewProps> = ({
       <Text variant="caption" weight="bold" style={{ color: colors.accent }}>
         {authorName}
       </Text>
-      <Text variant="bodySmall" style={{ color: colors.textPrimary, marginVertical: 2 }} numberOfLines={1}>
+      <Text
+        variant="bodySmall"
+        style={{ color: colors.textPrimary, marginVertical: 2 }}
+        numberOfLines={1}
+      >
         {snippet}
       </Text>
       <Text variant="caption" style={{ color: colors.textTertiary }}>

@@ -148,9 +148,7 @@ describe('Notifications API client', () => {
   });
 
   it('lists and revokes devices', async () => {
-    mockFetch
-      .mockResolvedValueOnce(ok([mockDevice]))
-      .mockResolvedValueOnce(ok({ revoked: true }));
+    mockFetch.mockResolvedValueOnce(ok([mockDevice])).mockResolvedValueOnce(ok({ revoked: true }));
 
     const devices = await client.listDevices();
     expect(devices).toHaveLength(1);
@@ -316,18 +314,19 @@ describe('Notification destination resolution', () => {
 
   it('routes account notices to account settings', () => {
     for (const type of ['ACCOUNT_RESTRICTION', 'SECURITY_ALERT'] as const) {
-      expect(
-        resolveNotificationDestination({ id: 'n1', type, data: {} }).destination?.route
-      ).toBe('/settings/account');
+      expect(resolveNotificationDestination({ id: 'n1', type, data: {} }).destination?.route).toBe(
+        '/settings/account'
+      );
     }
   });
 
   it('does not invent a destination for NEW_LIKE, which carries no target', () => {
     // The Gate 10 consumer writes `{ type: 'NEW_LIKE' }` with no actor or profile
     // id. Routing to discovery would be a guess, so there is no destination.
-    expect(
-      resolveNotificationDestination({ id: 'n1', type: 'NEW_LIKE', data: {} })
-    ).toMatchObject({ destination: null, reason: 'no_target_for_type' });
+    expect(resolveNotificationDestination({ id: 'n1', type: 'NEW_LIKE', data: {} })).toMatchObject({
+      destination: null,
+      reason: 'no_target_for_type',
+    });
   });
 
   it('rejects an id that could escape its path segment', () => {
@@ -498,10 +497,7 @@ describe('Notification presentation', () => {
   const now = new Date('2026-09-29T12:00:00.000Z');
 
   it('states unread in words rather than relying on the dot', () => {
-    const vm = buildNotificationViewModel(
-      notification({ id: 'n1', readAt: null }),
-      now
-    );
+    const vm = buildNotificationViewModel(notification({ id: 'n1', readAt: null }), now);
     expect(vm.isUnread).toBe(true);
     expect(vm.accessibilityLabel).toContain('Unread notification');
   });

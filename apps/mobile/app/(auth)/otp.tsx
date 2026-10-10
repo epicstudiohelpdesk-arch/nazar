@@ -93,12 +93,12 @@ export default function OtpVerificationScreen(): React.JSX.Element {
 
     const stepRoutes: Record<string, `/(onboarding)/${string}`> = {
       'profile-setup': '/(onboarding)/profile-setup',
-      'photos': '/(onboarding)/photos',
-      'interests': '/(onboarding)/interests',
-      'prompts': '/(onboarding)/prompts',
-      'preferences': '/(onboarding)/preferences',
-      'permissions': '/(onboarding)/permissions',
-      'preview': '/(onboarding)/preview',
+      photos: '/(onboarding)/photos',
+      interests: '/(onboarding)/interests',
+      prompts: '/(onboarding)/prompts',
+      preferences: '/(onboarding)/preferences',
+      permissions: '/(onboarding)/permissions',
+      preview: '/(onboarding)/preview',
     };
     const route = stepRoutes[nextStep] || '/(onboarding)/intro';
     router.replace(route);
@@ -127,11 +127,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title=""
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
 
       <View style={styles.content}>
         <View style={styles.formHeader}>

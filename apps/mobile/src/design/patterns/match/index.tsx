@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Modal,
-  StyleSheet,
-  type ViewStyle,
-  type StyleProp,
-} from 'react-native';
+import { View, Modal, StyleSheet, type ViewStyle, type StyleProp } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
@@ -107,7 +101,12 @@ export const MatchCelebration: React.FC<MatchCelebrationProps> = ({
               { backgroundColor: colors.accentSoft, borderRadius: radii.radiusFull },
             ]}
           >
-            <Icon name="sparkles" size="tiny" color={colors.accentStrong} style={{ marginRight: 4 }} />
+            <Icon
+              name="sparkles"
+              size="tiny"
+              color={colors.accentStrong}
+              style={{ marginRight: 4 }}
+            />
             <Text variant="caption" weight="bold" style={{ color: colors.accentStrong }}>
               MUTUAL CONNECTION
             </Text>
@@ -122,7 +121,8 @@ export const MatchCelebration: React.FC<MatchCelebrationProps> = ({
             align="center"
             style={{ color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.lg }}
           >
-            You and {partnerName} appreciate each other. Say something thoughtful to start the story.
+            You and {partnerName} appreciate each other. Say something thoughtful to start the
+            story.
           </Text>
 
           <MatchAvatarPair
@@ -182,13 +182,7 @@ export const MatchAction: React.FC<MatchActionProps> = ({
           style={{ flex: 1 }}
         />
       )}
-      <Button
-        label={chatLabel}
-        variant="primary"
-        size="md"
-        onPress={onChat}
-        style={{ flex: 2 }}
-      />
+      <Button label={chatLabel} variant="primary" size="md" onPress={onChat} style={{ flex: 2 }} />
     </View>
   );
 };

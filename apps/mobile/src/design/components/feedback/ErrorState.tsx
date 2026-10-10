@@ -59,8 +59,7 @@ const ERROR_STATE_CONFIG: Record<ErrorStateType, ErrorContent> = {
   },
   content_unavailable: {
     title: 'Content No Longer Available',
-    message:
-      'This profile, post, or event has been removed or is no longer accessible.',
+    message: 'This profile, post, or event has been removed or is no longer accessible.',
     icon: 'close',
     retryLabel: 'Back to Discovery',
   },
@@ -94,8 +93,7 @@ const ERROR_STATE_CONFIG: Record<ErrorStateType, ErrorContent> = {
   },
   unknown: {
     title: 'Something Went Wrong',
-    message:
-      'An unexpected error occurred. Please try again or restart the application.',
+    message: 'An unexpected error occurred. Please try again or restart the application.',
     icon: 'warning',
     retryLabel: 'Try Again',
   },
@@ -179,7 +177,10 @@ export const InlineError: React.FC<InlineErrorProps> = ({ message, onRetry, styl
   const { colors, spacing } = useTheme();
 
   return (
-    <View style={[styles.inlineError, { paddingVertical: spacing.xs }, style]} accessibilityRole="alert">
+    <View
+      style={[styles.inlineError, { paddingVertical: spacing.xs }, style]}
+      accessibilityRole="alert"
+    >
       <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xs }} />
       <Text variant="caption" style={{ color: colors.error, flex: 1 }}>
         {message}
@@ -201,9 +202,7 @@ export const NetworkErrorState: React.FC<Omit<ErrorStateProps, 'type'>> = (props
   <ErrorState type="network_unavailable" {...props} />
 );
 
-export const RetryState: React.FC<ErrorStateProps> = (props) => (
-  <ErrorState {...props} />
-);
+export const RetryState: React.FC<ErrorStateProps> = (props) => <ErrorState {...props} />;
 
 const styles = StyleSheet.create({
   container: {

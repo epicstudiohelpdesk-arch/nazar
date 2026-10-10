@@ -36,7 +36,9 @@ export function getStepProgress(step: OnboardingStep): number {
 /**
  * Computes the exact onboarding resume step based on authoritative backend profile data.
  */
-export function determineNextStepFromProfile(profile: PrivateProfileResponse | null): OnboardingStep {
+export function determineNextStepFromProfile(
+  profile: PrivateProfileResponse | null
+): OnboardingStep {
   if (!profile) {
     return 'intro';
   }

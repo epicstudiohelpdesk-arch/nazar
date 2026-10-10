@@ -34,12 +34,8 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
   const [selectedGenders, setSelectedGenders] = useState<Gender[]>(
     draftPreferences.genderPreferences || ['MAN']
   );
-  const [maxDistanceKm, setMaxDistanceKm] = useState<number>(
-    draftPreferences.maxDistanceKm || 50
-  );
-  const [intent] = useState<RelationshipIntent>(
-    draftPreferences.relationshipIntent || 'LONG_TERM'
-  );
+  const [maxDistanceKm, setMaxDistanceKm] = useState<number>(draftPreferences.maxDistanceKm || 50);
+  const [intent] = useState<RelationshipIntent>(draftPreferences.relationshipIntent || 'LONG_TERM');
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
@@ -109,11 +105,7 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title=""
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.8} style={styles.progressBar} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -182,10 +174,7 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
           </View>
 
           {/* Age range */}
-          <SurfaceCard
-            elevation="none"
-            style={[styles.card, { borderColor: theme.colors.border }]}
-          >
+          <SurfaceCard elevation="none" style={[styles.card, { borderColor: theme.colors.border }]}>
             <View style={styles.cardHeader}>
               <Text level="title" style={{ color: theme.colors.textPrimary, fontWeight: '700' }}>
                 Age Range
@@ -247,10 +236,7 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
           </SurfaceCard>
 
           {/* Maximum distance */}
-          <SurfaceCard
-            elevation="none"
-            style={[styles.card, { borderColor: theme.colors.border }]}
-          >
+          <SurfaceCard elevation="none" style={[styles.card, { borderColor: theme.colors.border }]}>
             <View style={styles.cardHeader}>
               <Text level="title" style={{ color: theme.colors.textPrimary, fontWeight: '700' }}>
                 Maximum Distance

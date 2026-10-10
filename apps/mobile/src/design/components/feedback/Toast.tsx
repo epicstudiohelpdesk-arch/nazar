@@ -1,11 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-  type StyleProp,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, type ViewStyle, type StyleProp } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
@@ -148,34 +142,27 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     setCurrentToast(null);
   }, []);
 
-  const showToast = useCallback(
-    (options: ToastOptions | string) => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+  const showToast = useCallback((options: ToastOptions | string) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
 
-      const opts: ToastOptions =
-        typeof options === 'string' ? { message: options } : options;
+    const opts: ToastOptions = typeof options === 'string' ? { message: options } : options;
 
-      setCurrentToast(opts);
+    setCurrentToast(opts);
 
-      const duration = opts.duration ?? 3500;
-      if (duration > 0) {
-        timerRef.current = setTimeout(() => {
-          setCurrentToast(null);
-        }, duration);
-      }
-    },
-    []
-  );
+    const duration = opts.duration ?? 3500;
+    if (duration > 0) {
+      timerRef.current = setTimeout(() => {
+        setCurrentToast(null);
+      }, duration);
+    }
+  }, []);
 
   return (
     <ToastContext.Provider value={{ showToast, hideToast }}>
       {children}
       {currentToast && (
         <View
-          style={[
-            styles.floatingWrapper,
-            { bottom: Math.max(insets.bottom, 16) + 60 },
-          ]}
+          style={[styles.floatingWrapper, { bottom: Math.max(insets.bottom, 16) + 60 }]}
           pointerEvents="box-none"
         >
           <Toast

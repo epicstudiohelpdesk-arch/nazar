@@ -110,7 +110,9 @@ export function SubscriptionScreen({
   }, [defaultPlanCode, annualProduct, monthlyProduct, subscriptionProducts, selectedProductId]);
 
   const selectedProduct = useMemo(() => {
-    return products.find((p) => p.id === selectedProductId) || annualProduct || subscriptionProducts[0];
+    return (
+      products.find((p) => p.id === selectedProductId) || annualProduct || subscriptionProducts[0]
+    );
   }, [products, selectedProductId, annualProduct, subscriptionProducts]);
 
   const handleSelectProduct = (prod: ProductResponseDto) => {
@@ -205,7 +207,10 @@ export function SubscriptionScreen({
 
   if (isLoading && products.length === 0) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]} testID="subscription-loading">
+      <View
+        style={[styles.loadingContainer, { backgroundColor: colors.background }]}
+        testID="subscription-loading"
+      >
         <ActivityIndicator size="large" color={colors.accent || '#E11D48'} />
         <Text level="body" color="secondary" style={styles.loadingText}>
           Loading premium plans...
@@ -244,7 +249,11 @@ export function SubscriptionScreen({
             <View style={styles.activeHeader}>
               <View style={styles.activeBadge}>
                 <Text level="caption" weight="bold" style={styles.activeBadgeText}>
-                  {isGracePeriod ? 'PAYMENT GRACE PERIOD' : isAutoRenewCancelled ? 'ACTIVE (CANCELLED)' : 'ACTIVE SUBSCRIBER'}
+                  {isGracePeriod
+                    ? 'PAYMENT GRACE PERIOD'
+                    : isAutoRenewCancelled
+                      ? 'ACTIVE (CANCELLED)'
+                      : 'ACTIVE SUBSCRIBER'}
                 </Text>
               </View>
               <Heading level="h3" style={{ color: colors.textPrimary }}>
@@ -269,7 +278,9 @@ export function SubscriptionScreen({
                 </Text>
               ) : isGracePeriod ? (
                 <Text level="bodySmall" color="error">
-                  There was an issue processing your renewal payment. Your benefits are temporarily active during the grace period. Please update your payment method in store settings.
+                  There was an issue processing your renewal payment. Your benefits are temporarily
+                  active during the grace period. Please update your payment method in store
+                  settings.
                 </Text>
               ) : (
                 <Text level="bodySmall" color="secondary">
@@ -323,10 +334,7 @@ export function SubscriptionScreen({
           {BENEFIT_ITEMS.map((item, index) => (
             <View key={index} style={styles.benefitRow}>
               <View
-                style={[
-                  styles.benefitIconBox,
-                  { backgroundColor: colors.accentSoft || '#FFF1F2' },
-                ]}
+                style={[styles.benefitIconBox, { backgroundColor: colors.accentSoft || '#FFF1F2' }]}
               >
                 <Icon name={item.icon} size={18} color={colors.accent || '#E11D48'} />
               </View>
@@ -407,8 +415,8 @@ export function SubscriptionScreen({
             purchaseMutation.isPending
               ? 'Processing...'
               : isPremiumActive
-              ? 'Change Plan'
-              : 'Upgrade to Nazar Premium'
+                ? 'Change Plan'
+                : 'Upgrade to Nazar Premium'
           }
           variant="primary"
           size="lg"
@@ -450,7 +458,10 @@ export function SubscriptionScreen({
 
         {/* Legal & Auto-Renewal Disclosure */}
         <Text level="caption" color="tertiary" style={styles.legalNotice}>
-          Recurring billing, cancel anytime. Subscriptions automatically renew unless cancelled at least 24 hours prior to the end of the current period in your App Store or Google Play account settings. By tapping Subscribe, you agree to our Terms of Service and Privacy Policy.
+          Recurring billing, cancel anytime. Subscriptions automatically renew unless cancelled at
+          least 24 hours prior to the end of the current period in your App Store or Google Play
+          account settings. By tapping Subscribe, you agree to our Terms of Service and Privacy
+          Policy.
         </Text>
       </ScrollView>
     </View>

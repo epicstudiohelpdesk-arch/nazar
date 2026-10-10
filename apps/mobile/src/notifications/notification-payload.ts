@@ -30,13 +30,7 @@ import type { NotificationType } from '@platform/api-contracts';
 import { socialRoutes } from '../social/social-state.js';
 
 export type NotificationDestinationKind =
-  | 'conversation'
-  | 'match'
-  | 'post'
-  | 'community'
-  | 'event'
-  | 'billing'
-  | 'account';
+  'conversation' | 'match' | 'post' | 'community' | 'event' | 'billing' | 'account';
 
 /** Destinations built from a validated entity id. */
 export type EntityDestinationKind = Extract<
@@ -45,10 +39,7 @@ export type EntityDestinationKind = Extract<
 >;
 
 /** Destinations that are settings screens and carry no id. */
-export type SettingsDestinationKind = Extract<
-  NotificationDestinationKind,
-  'billing' | 'account'
->;
+export type SettingsDestinationKind = Extract<NotificationDestinationKind, 'billing' | 'account'>;
 
 /**
  * The complete set of types the client will act on. The API contract declares
@@ -91,11 +82,7 @@ export interface ResolvedNotification {
    * hostile" (worth an analytics event).
    */
   readonly reason:
-    | 'resolved'
-    | 'no_target_for_type'
-    | 'malformed_target_id'
-    | 'unknown_type'
-    | 'missing_payload';
+    'resolved' | 'no_target_for_type' | 'malformed_target_id' | 'unknown_type' | 'missing_payload';
   readonly notificationId: string;
   readonly type: NotificationType | null;
 }
@@ -146,10 +133,22 @@ function hasUnusableId(data: Record<string, unknown> | null, key: string): boole
 const ENTITY_DESTINATIONS: {
   readonly [K in EntityDestinationKind]: (id: string) => NotificationDestination;
 } = {
-  conversation: (id) => ({ kind: 'conversation', route: `/chat/${encodeURIComponent(id)}`, label: 'open conversation' }),
-  match: (id) => ({ kind: 'match', route: `/matches/${encodeURIComponent(id)}`, label: 'open match' }),
+  conversation: (id) => ({
+    kind: 'conversation',
+    route: `/chat/${encodeURIComponent(id)}`,
+    label: 'open conversation',
+  }),
+  match: (id) => ({
+    kind: 'match',
+    route: `/matches/${encodeURIComponent(id)}`,
+    label: 'open match',
+  }),
   post: (id) => ({ kind: 'post', route: socialRoutes.post(id), label: 'open post' }),
-  community: (id) => ({ kind: 'community', route: socialRoutes.community(id), label: 'open community' }),
+  community: (id) => ({
+    kind: 'community',
+    route: socialRoutes.community(id),
+    label: 'open community',
+  }),
   event: (id) => ({ kind: 'event', route: socialRoutes.event(id), label: 'open event' }),
 };
 
@@ -253,9 +252,7 @@ export interface NotificationIntent {
   readonly data: Record<string, unknown> | null;
 }
 
-export function parseNotificationIntent(
-  payload: unknown
-): NotificationIntent | null {
+export function parseNotificationIntent(payload: unknown): NotificationIntent | null {
   if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
     return null;
   }

@@ -98,24 +98,9 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ isTyping, disp
           {label}
         </Text>
         <View style={styles.dotsRow}>
-          <Animated.View
-            style={[
-              styles.dot,
-              { backgroundColor: colors.accent, opacity: anim1 },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.dot,
-              { backgroundColor: colors.accent, opacity: anim2 },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.dot,
-              { backgroundColor: colors.accent, opacity: anim3 },
-            ]}
-          />
+          <Animated.View style={[styles.dot, { backgroundColor: colors.accent, opacity: anim1 }]} />
+          <Animated.View style={[styles.dot, { backgroundColor: colors.accent, opacity: anim2 }]} />
+          <Animated.View style={[styles.dot, { backgroundColor: colors.accent, opacity: anim3 }]} />
         </View>
       </View>
     </View>

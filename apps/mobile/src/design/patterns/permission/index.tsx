@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Linking,
-  StyleSheet,
-  type ViewStyle,
-  type StyleProp,
-} from 'react-native';
+import { View, Linking, StyleSheet, type ViewStyle, type StyleProp } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
@@ -101,7 +95,12 @@ export const PermissionExplanation: React.FC<PermissionExplanationProps> = ({
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Icon name="check" size="tiny" color={colors.accent} style={{ marginRight: spacing.xs }} />
+          <Icon
+            name="check"
+            size="tiny"
+            color={colors.accent}
+            style={{ marginRight: spacing.xs }}
+          />
           <Text variant="caption" weight="medium" style={{ color: colors.textPrimary, flex: 1 }}>
             {benefit}
           </Text>

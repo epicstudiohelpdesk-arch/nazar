@@ -120,7 +120,12 @@ export const MultilineInput: React.FC<MultilineInputProps> = ({
 
       {hasError ? (
         <View style={styles.feedbackRow}>
-          <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xxs }} />
+          <Icon
+            name="warning"
+            size="tiny"
+            color={colors.error}
+            style={{ marginRight: spacing.xxs }}
+          />
           <Text variant="caption" style={{ color: colors.error }}>
             {effectiveError}
           </Text>

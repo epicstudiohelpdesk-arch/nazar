@@ -119,6 +119,7 @@ export async function purgeAccountSessionAndCaches(
 ```
 
 The purge sequence:
+
 1. Revoke access tokens on server via `POST /v1/auth/logout`.
 2. Clear tokens from secure storage (`ITokenStorage.clearTokens()`).
 3. Reset Zustand Profile store (`useProfileStore.getState().resetAll()`).
@@ -144,6 +145,7 @@ export function invalidateSafetyCaches(queryClient: QueryClient): void {
 ```
 
 This guarantees:
+
 - Blocked members vanish immediately from discovery decks.
 - Active matches with the blocked member are removed.
 - Chat conversation threads are severed.
@@ -155,5 +157,6 @@ This guarantees:
 ## 5. Telemetry & Zero-PII Policy
 
 All analytics emitted during profile editing, settings adjustments, safety operations, and account management pass through deep PII sanitization:
+
 - **Forbidden**: `latitude`, `longitude`, `phoneNumber`, `email`, `token`, `password`, `body`, `message`, `dob`.
 - **Allowed**: Enums, counts, IDs, booleans, and sanitized categories.

@@ -23,12 +23,22 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   { id: 'int_7', name: 'Books & Literature 📚', slug: 'books-literature', category: 'Lifestyle' },
   { id: 'int_8', name: 'Cricket & IPL 🏏', slug: 'cricket', category: 'Sports' },
   { id: 'int_9', name: 'Board Games & Catan 🎲', slug: 'board-games', category: 'Lifestyle' },
-  { id: 'int_10', name: 'Architecture & Heritage 🏛️', slug: 'architecture', category: 'Arts & Culture' },
+  {
+    id: 'int_10',
+    name: 'Architecture & Heritage 🏛️',
+    slug: 'architecture',
+    category: 'Arts & Culture',
+  },
   { id: 'int_11', name: 'Yoga & Mindfulness 🧘', slug: 'yoga-mindfulness', category: 'Wellness' },
   { id: 'int_12', name: 'Live Indie Gigs 🎸', slug: 'live-gigs', category: 'Music' },
   { id: 'int_13', name: 'Sufi & Ghazals 🎶', slug: 'sufi-ghazals', category: 'Music' },
   { id: 'int_14', name: 'Heritage Walks 🚶‍♂️', slug: 'heritage-walks', category: 'Outdoors' },
-  { id: 'int_15', name: 'Home Cooking & Spices 🥘', slug: 'home-cooking', category: 'Food & Drink' },
+  {
+    id: 'int_15',
+    name: 'Home Cooking & Spices 🥘',
+    slug: 'home-cooking',
+    category: 'Food & Drink',
+  },
   { id: 'int_16', name: 'Poetry & Shayari ✍️', slug: 'poetry-shayari', category: 'Arts & Culture' },
 ];
 
@@ -103,15 +113,13 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
   };
 
   // Group available interests by category
-  const categories = Array.from(new Set(availableInterests.map((item) => item.category || 'General')));
+  const categories = Array.from(
+    new Set(availableInterests.map((item) => item.category || 'General'))
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title=""
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.5} style={styles.progressBar} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -140,13 +148,14 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
 
         <View style={styles.categoriesContainer}>
           {categories.map((category) => {
-            const items = availableInterests.filter(
-              (i) => (i.category || 'General') === category
-            );
+            const items = availableInterests.filter((i) => (i.category || 'General') === category);
 
             return (
               <View key={category} style={styles.categorySection}>
-                <Text level="title" style={[styles.categoryTitle, { color: theme.colors.textPrimary }]}>
+                <Text
+                  level="title"
+                  style={[styles.categoryTitle, { color: theme.colors.textPrimary }]}
+                >
                   {category}
                 </Text>
                 <View style={styles.chipRow}>

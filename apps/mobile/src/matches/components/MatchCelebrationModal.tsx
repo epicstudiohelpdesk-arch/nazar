@@ -84,12 +84,10 @@ export const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
             <View style={[styles.avatarRing, { borderColor: theme.colors.accent }]}>
               <Avatar size="large" uri={effectiveMyAvatar} name={myName} />
             </View>
-            <View style={[styles.avatarRing, { borderColor: theme.colors.accent, marginLeft: -16 }]}>
-              <Avatar
-                size="large"
-                uri={effectiveMatchedAvatar}
-                name={matchedUser.displayName}
-              />
+            <View
+              style={[styles.avatarRing, { borderColor: theme.colors.accent, marginLeft: -16 }]}
+            >
+              <Avatar size="large" uri={effectiveMatchedAvatar} name={matchedUser.displayName} />
             </View>
           </View>
 

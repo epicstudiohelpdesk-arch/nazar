@@ -29,17 +29,19 @@ The objective is to make direct conversation feel effortless, respectful, emotio
 A complete audit of the backend REST endpoints (`apps/api/src/modules/chat/chat.controller.ts`), WebSocket gateway (`apps/api/src/modules/chat/chat.gateway.ts`), and shared contracts (`packages/api-contracts/src/chat/chat.contract.ts`) was completed prior to implementation:
 
 ### Authoritative Backend REST Endpoints
-| Endpoint | Method | Contract Request / Response | Client Integration |
-| :--- | :--- | :--- | :--- |
-| `/v1/conversations` | `GET` | Query: `limit`, `cursor`<br>Response: `ConversationListResponseDto` | **Fully Integrated** via TanStack `useInfiniteQuery` with cursor pagination |
-| `/v1/conversations/:id` | `GET` | Response: `ConversationDetailDto` | **Fully Integrated** for participant profile, verification, and match ID |
-| `/v1/conversations/:id/messages` | `GET` | Query: `limit`, `cursor`<br>Response: `MessageListResponseDto` | **Fully Integrated** with descending cursor pagination in inverted list |
-| `/v1/conversations/:id/messages` | `POST` | Body: `SendMessageRequestDto`<br>Response: `SendMessageResponseDto` | **Fully Integrated** with optimistic `clientMessageId` lifecycle |
-| `/v1/conversations/:id/read` | `POST` | Body: `{ messageId }`<br>Response: `MarkReadResponseDto` | **Fully Integrated** upon chat mount and receipt of incoming messages |
-| `/v1/conversations/:id/delivered` | `POST` | Body: `{ messageId }`<br>Response: `MarkDeliveredResponseDto` | Supported for push notification receipts |
-| `/v1/conversations/:id/sync` | `GET` | Query: `sinceMessageId`, `limit`<br>Response: `SyncMessagesResponseDto` | **Fully Integrated** for socket reconnection catch-up |
+
+| Endpoint                          | Method | Contract Request / Response                                             | Client Integration                                                          |
+| :-------------------------------- | :----- | :---------------------------------------------------------------------- | :-------------------------------------------------------------------------- |
+| `/v1/conversations`               | `GET`  | Query: `limit`, `cursor`<br>Response: `ConversationListResponseDto`     | **Fully Integrated** via TanStack `useInfiniteQuery` with cursor pagination |
+| `/v1/conversations/:id`           | `GET`  | Response: `ConversationDetailDto`                                       | **Fully Integrated** for participant profile, verification, and match ID    |
+| `/v1/conversations/:id/messages`  | `GET`  | Query: `limit`, `cursor`<br>Response: `MessageListResponseDto`          | **Fully Integrated** with descending cursor pagination in inverted list     |
+| `/v1/conversations/:id/messages`  | `POST` | Body: `SendMessageRequestDto`<br>Response: `SendMessageResponseDto`     | **Fully Integrated** with optimistic `clientMessageId` lifecycle            |
+| `/v1/conversations/:id/read`      | `POST` | Body: `{ messageId }`<br>Response: `MarkReadResponseDto`                | **Fully Integrated** upon chat mount and receipt of incoming messages       |
+| `/v1/conversations/:id/delivered` | `POST` | Body: `{ messageId }`<br>Response: `MarkDeliveredResponseDto`           | Supported for push notification receipts                                    |
+| `/v1/conversations/:id/sync`      | `GET`  | Query: `sinceMessageId`, `limit`<br>Response: `SyncMessagesResponseDto` | **Fully Integrated** for socket reconnection catch-up                       |
 
 ### Authoritative WebSocket Gateway (`/chat` Namespace)
+
 - **Authentication**: JWT Bearer token passed in socket handshake auth (`{ auth: { token } }`).
 - **Client Emitters**:
   - `join:conversation`: Join conversation socket room (`conversation:${id}`).
@@ -57,6 +59,7 @@ A complete audit of the backend REST endpoints (`apps/api/src/modules/chat/chat.
 
 > [!IMPORTANT]
 > **Scope Boundaries & Server Authority**:
+>
 > - The server remains strictly authoritative for conversation membership, persistence, message ordering, message IDs, and safety state.
 > - Client-side state is purely transient: optimistic message placeholders (`isOptimistic: true`), local draft text, typing throttle timers, and keyboard offsets.
 > - The client does not invent unsupported message types (only supported `TEXT`), attachments, reactions, or audio notes.
@@ -77,6 +80,7 @@ apps/mobile/app/
 ```
 
 ### Deep Link Specifications
+
 - **Scheme**: `nazar://`
 - **Pattern**: `nazar://chat/:conversationId`
 - **Routing**: Expo Router dynamically routes to `app/chat/[conversationId].tsx`.
@@ -97,6 +101,7 @@ export const CHAT_QUERY_KEYS = {
 ```
 
 ### Inverted FlatList & Descending Order Architecture
+
 1. **Ordering**:
    - The server returns messages in chronological descending order (`items[0]` is newest).
    - Inverted FlatList (`inverted={true}`) renders index `0` at the **bottom** of the screen.
@@ -111,14 +116,15 @@ export const CHAT_QUERY_KEYS = {
    - If the request fails, the item transitions to `isFailed: true` with a `Failed ↺` retry button.
 
 ### Realtime Socket Event Matrix
-| Socket Event | Client Cache / State Action |
-| :--- | :--- |
-| `message.created` | Replaces matching optimistic message (by `clientMessageId`) or appends incoming message to cache. If incoming from partner, dispatches `chatApi.markRead`. Invalidates `CHAT_QUERY_KEYS.conversations`. |
-| `message.read` | Updates delivery states of all outgoing messages up to `lastReadMessageId` to `'READ'`. |
-| `message.delivered` | Updates delivery states of outgoing messages up to `messageId` to `'DELIVERED'`. |
-| `typing.started` | Sets `isPartnerTyping = true` with animated typing pill. |
-| `typing.stopped` | Sets `isPartnerTyping = false`. |
-| `reconnect` | Updates connection badge to connected. Re-queries conversation messages to reconcile any missed messages while disconnected. |
+
+| Socket Event        | Client Cache / State Action                                                                                                                                                                             |
+| :------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `message.created`   | Replaces matching optimistic message (by `clientMessageId`) or appends incoming message to cache. If incoming from partner, dispatches `chatApi.markRead`. Invalidates `CHAT_QUERY_KEYS.conversations`. |
+| `message.read`      | Updates delivery states of all outgoing messages up to `lastReadMessageId` to `'READ'`.                                                                                                                 |
+| `message.delivered` | Updates delivery states of outgoing messages up to `messageId` to `'DELIVERED'`.                                                                                                                        |
+| `typing.started`    | Sets `isPartnerTyping = true` with animated typing pill.                                                                                                                                                |
+| `typing.stopped`    | Sets `isPartnerTyping = false`.                                                                                                                                                                         |
+| `reconnect`         | Updates connection badge to connected. Re-queries conversation messages to reconcile any missed messages while disconnected.                                                                            |
 
 ---
 
@@ -127,6 +133,7 @@ export const CHAT_QUERY_KEYS = {
 All messaging screens and components are 100% compliant with the Nazar F0 design system tokens (`useTheme()`) and F2 component primitives:
 
 ### A. Conversations Screen (`ConversationsScreen.tsx`)
+
 - **TopNavHeader**: Title "Messages", transparent background, accessible back action if modal.
 - **SearchInput**: Live client-side filtering by partner display name or message preview.
 - **ConversationCard**: Avatar ($56\times56$) with presence ring and verified badge, partner name, timestamp, bold preview for unread, Saffron unread badge (`colors.accent`).
@@ -137,6 +144,7 @@ All messaging screens and components are 100% compliant with the Nazar F0 design
 - **ErrorState**: Server error illustration with retry callback.
 
 ### B. Chat Screen (`ChatScreen.tsx`)
+
 - **ChatHeader**:
   - Avatar with online presence indicator (Green for active, Yellow for reconnecting, Muted for offline).
   - Partner name and age.
@@ -194,16 +202,17 @@ const FORBIDDEN_PII_KEYS = new Set([
 ```
 
 ### Tracked Chat Events
-| Event Name | Key Properties | PII Scrubbed |
-| :--- | :--- | :--- |
-| `conversations_viewed` | `{ timestamp }` | None |
-| `conversation_opened` | `{ conversationId }` | None |
-| `conversation_closed` | `{ conversationId }` | None |
-| `message_send_attempted` | `{ conversationId, clientMessageId }` | Message text stripped |
-| `message_sent` | `{ conversationId, messageId }` | Message text stripped |
-| `message_send_failed` | `{ conversationId, clientMessageId }` | Message text stripped |
-| `message_retried` | `{ conversationId, clientMessageId }` | Message text stripped |
-| `conversation_marked_read` | `{ conversationId, messageId }` | Message text stripped |
-| `chat_block_started` / `completed` | `{ conversationId, targetUserId }` | Reason notes sanitized |
-| `chat_report_started` / `completed`| `{ conversationId, reasonCode }` | Notes sanitized |
-| `chat_unmatch_started` / `completed`| `{ conversationId, matchId }` | None |
+
+| Event Name                           | Key Properties                        | PII Scrubbed           |
+| :----------------------------------- | :------------------------------------ | :--------------------- |
+| `conversations_viewed`               | `{ timestamp }`                       | None                   |
+| `conversation_opened`                | `{ conversationId }`                  | None                   |
+| `conversation_closed`                | `{ conversationId }`                  | None                   |
+| `message_send_attempted`             | `{ conversationId, clientMessageId }` | Message text stripped  |
+| `message_sent`                       | `{ conversationId, messageId }`       | Message text stripped  |
+| `message_send_failed`                | `{ conversationId, clientMessageId }` | Message text stripped  |
+| `message_retried`                    | `{ conversationId, clientMessageId }` | Message text stripped  |
+| `conversation_marked_read`           | `{ conversationId, messageId }`       | Message text stripped  |
+| `chat_block_started` / `completed`   | `{ conversationId, targetUserId }`    | Reason notes sanitized |
+| `chat_report_started` / `completed`  | `{ conversationId, reasonCode }`      | Notes sanitized        |
+| `chat_unmatch_started` / `completed` | `{ conversationId, matchId }`         | None                   |

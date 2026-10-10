@@ -119,12 +119,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
   // Prefetch next page as user nears end of visible deck
   useEffect(() => {
-    if (
-      candidates.length - currentIndex <= 3 &&
-      hasNextPage &&
-      !isFetchingNextPage &&
-      !isLoading
-    ) {
+    if (candidates.length - currentIndex <= 3 && hasNextPage && !isFetchingNextPage && !isLoading) {
       void fetchNextPage();
     }
   }, [currentIndex, candidates.length, hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]);
@@ -332,8 +327,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   const formatProfileData = (item: DiscoveryItemDto): ProfileCardData => {
     const { profile, distanceBucket } = item;
     const mediaUrls = (profile.media || []).map((m) => m.url);
-    const primary =
-      profile.media?.find((m) => m.isPrimary)?.url || mediaUrls[0] || null;
+    const primary = profile.media?.find((m) => m.isPrimary)?.url || mediaUrls[0] || null;
 
     return {
       id: profile.userId || profile.id,
@@ -442,7 +436,10 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
           </View>
         ) : !activeCandidate ? (
           // Empty State (All Candidates Evaluated)
-          <SurfaceCard elevation="none" style={[styles.emptyCard, { borderColor: theme.colors.border }]}>
+          <SurfaceCard
+            elevation="none"
+            style={[styles.emptyCard, { borderColor: theme.colors.border }]}
+          >
             <View
               style={[
                 styles.emptyIconCircle,
@@ -455,7 +452,8 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
               You've Caught Up!
             </Heading>
             <Text level="body" color="secondary" style={styles.messageText}>
-              No more profiles matching your current filters right now. Expand your distance or age preferences to meet more people.
+              No more profiles matching your current filters right now. Expand your distance or age
+              preferences to meet more people.
             </Text>
 
             <View style={styles.emptyActions}>
@@ -486,10 +484,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             {/* Underneath Next Card (Visual depth) */}
             {nextCandidate && (
               <View style={[styles.cardWrapper, styles.nextCardWrapper]}>
-                <ProfileCard
-                  context="discovery"
-                  profile={formatProfileData(nextCandidate)}
-                />
+                <ProfileCard context="discovery" profile={formatProfileData(nextCandidate)} />
               </View>
             )}
 
@@ -499,11 +494,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                 styles.cardWrapper,
                 styles.activeCardWrapper,
                 {
-                  transform: [
-                    { translateX: position.x },
-                    { translateY: position.y },
-                    { rotate },
-                  ],
+                  transform: [{ translateX: position.x }, { translateY: position.y }, { rotate }],
                 },
               ]}
               {...panResponder.panHandlers}
@@ -537,9 +528,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                 context="discovery"
                 profile={formatProfileData(activeCandidate)}
                 onPress={() =>
-                  handleOpenDetail(
-                    activeCandidate.profile.userId || activeCandidate.profile.id
-                  )
+                  handleOpenDetail(activeCandidate.profile.userId || activeCandidate.profile.id)
                 }
               />
             </Animated.View>
@@ -601,9 +590,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
               },
             ]}
             onPress={() =>
-              handleOpenDetail(
-                activeCandidate.profile.userId || activeCandidate.profile.id
-              )
+              handleOpenDetail(activeCandidate.profile.userId || activeCandidate.profile.id)
             }
             hitSlop={ensureMinTouchTarget(44, 44)}
             accessibilityRole="button"

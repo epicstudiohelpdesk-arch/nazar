@@ -79,8 +79,8 @@ jobs:
         run: |
           pnpm --filter @platform/api test tests/infra/deployment-smoke.test.ts
         env:
-          SMOKE_TARGET_URL: "https://api.nazar.app"
-          SMOKE_TARGET_WS_URL: "wss://ws.nazar.app/chat"
+          SMOKE_TARGET_URL: 'https://api.nazar.app'
+          SMOKE_TARGET_WS_URL: 'wss://ws.nazar.app/chat'
 
       - name: Post-Deployment Success Notification
         if: success()

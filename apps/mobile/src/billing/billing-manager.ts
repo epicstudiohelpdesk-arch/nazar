@@ -67,7 +67,8 @@ export class BillingManager {
     const transactionId = mockToken || `tx-${Platform.OS}-${Date.now()}`;
     let environment: 'SANDBOX' | 'PRODUCTION' = 'SANDBOX';
     try {
-      environment = getMobileConfig().EXPO_PUBLIC_APP_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX';
+      environment =
+        getMobileConfig().EXPO_PUBLIC_APP_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX';
     } catch {
       environment = 'SANDBOX';
     }
@@ -96,7 +97,8 @@ export class BillingManager {
     const provider = this.getNativeProvider();
     let environment: 'SANDBOX' | 'PRODUCTION' = 'SANDBOX';
     try {
-      environment = getMobileConfig().EXPO_PUBLIC_APP_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX';
+      environment =
+        getMobileConfig().EXPO_PUBLIC_APP_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX';
     } catch {
       environment = 'SANDBOX';
     }

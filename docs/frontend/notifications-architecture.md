@@ -19,6 +19,7 @@ Backend Notification (Gate 10)
 ```
 
 The system ensures:
+
 - **Server Authority**: The backend owns ordering, unread count tallies, and permissions. The client never invents synthetic states, fake tokens, or speculative counter decrements.
 - **Security & Route Safety**: Every notification identifier and target ID is strictly validated against allowlists and path traversal patterns before navigation.
 - **Cold-Start Resilience**: Push notification navigation taps are preserved during bootstrap session restoration and dispatched only once an authenticated active session is verified.
@@ -29,19 +30,20 @@ The system ensures:
 
 Inspection of `@platform/api-contracts` (Gate 10) and `@platform/validation`:
 
-| Feature / Resource | HTTP Method / Endpoint | Contract / Schema | Status in Mobile |
-| :--- | :--- | :--- | :--- |
-| **Activity Center Feed** | `GET /v1/notifications` | `NotificationListResponseDto`, `listNotificationsQuerySchema` | **Fully Integrated** with cursor pagination & limit clamping (1-50) |
-| **Unread Notification Count**| `GET /v1/notifications/unread-count` | `UnreadNotificationCountDto` | **Fully Integrated** with system badge synchronization |
-| **Mark Notification Read** | `POST /v1/notifications/:id/read` | `MarkNotificationReadResponseDto` | **Fully Integrated** with server `readAt` adoption |
-| **Mark All Notifications Read** | `POST /v1/notifications/read-all` | `MarkAllNotificationsReadResponseDto` | **Fully Integrated** across all cached feed pages |
-| **Get Preferences** | `GET /v1/notifications/preferences` | `NotificationPreferencesDto` | **Fully Integrated** |
-| **Update Preferences** | `PATCH /v1/notifications/preferences` | `UpdateNotificationPreferencesDto`, `updateNotificationPreferencesSchema` | **Fully Integrated** with server-authoritative error rollback |
-| **Register Device** | `POST /v1/devices` | `RegisterDeviceRequestDto`, `DeviceResponseDto` | **Fully Integrated** with hashed device identifier & token redaction |
-| **List Devices** | `GET /v1/devices` | `readonly DeviceResponseDto[]` | **Fully Integrated** |
-| **Revoke Device** | `DELETE /v1/devices/:deviceId` | `{ revoked: boolean }` | **Fully Integrated** |
+| Feature / Resource              | HTTP Method / Endpoint                | Contract / Schema                                                         | Status in Mobile                                                     |
+| :------------------------------ | :------------------------------------ | :------------------------------------------------------------------------ | :------------------------------------------------------------------- |
+| **Activity Center Feed**        | `GET /v1/notifications`               | `NotificationListResponseDto`, `listNotificationsQuerySchema`             | **Fully Integrated** with cursor pagination & limit clamping (1-50)  |
+| **Unread Notification Count**   | `GET /v1/notifications/unread-count`  | `UnreadNotificationCountDto`                                              | **Fully Integrated** with system badge synchronization               |
+| **Mark Notification Read**      | `POST /v1/notifications/:id/read`     | `MarkNotificationReadResponseDto`                                         | **Fully Integrated** with server `readAt` adoption                   |
+| **Mark All Notifications Read** | `POST /v1/notifications/read-all`     | `MarkAllNotificationsReadResponseDto`                                     | **Fully Integrated** across all cached feed pages                    |
+| **Get Preferences**             | `GET /v1/notifications/preferences`   | `NotificationPreferencesDto`                                              | **Fully Integrated**                                                 |
+| **Update Preferences**          | `PATCH /v1/notifications/preferences` | `UpdateNotificationPreferencesDto`, `updateNotificationPreferencesSchema` | **Fully Integrated** with server-authoritative error rollback        |
+| **Register Device**             | `POST /v1/devices`                    | `RegisterDeviceRequestDto`, `DeviceResponseDto`                           | **Fully Integrated** with hashed device identifier & token redaction |
+| **List Devices**                | `GET /v1/devices`                     | `readonly DeviceResponseDto[]`                                            | **Fully Integrated**                                                 |
+| **Revoke Device**               | `DELETE /v1/devices/:deviceId`        | `{ revoked: boolean }`                                                    | **Fully Integrated**                                                 |
 
 ### Supported Notification Types (Gate 10 Contract)
+
 1. `NEW_MATCH`: Navigates to `/matches/:matchId` (or `/matches` if ID omitted).
 2. `NEW_MESSAGE`: Navigates to `/chat/:conversationId` (or `/conversations` if ID omitted).
 3. `NEW_LIKE`: Generic notice ("Like"); no actor recorded by server to preserve anonymity; non-routable or fallback.
@@ -86,18 +88,20 @@ export const NOTIFICATION_QUERY_KEYS = {
 ```
 
 ### Stale Time & Cache Strategy
+
 - **Feed (`list`)**: `staleTime = 30_000ms` (30 seconds) to ensure recent deliveries surface quickly without constant thrashing.
 - **Unread Count**: `staleTime = 20_000ms` (20 seconds). When a list page arrives, its `totalUnreadCount` immediately synchronizes into the unread count state.
 - **Preferences**: `staleTime = 300_000ms` (5 minutes).
 
 ### Reconciliation Matrix
-| Action | Cache Invalidation Target | Behavior |
-| :--- | :--- | :--- |
-| **Mark One Read** | `list`, `unreadCount` | Updates local `readAt` on the matching row in all cached pages; refetches unread count from server. Never locally decrements. |
-| **Mark All Read** | `list`, `unreadCount` | Sets `readAt` on all unread rows across all pages; refetches authoritative count. |
-| **Incoming Push / Socket Event**| `list`, `unreadCount` | Upserts row into the front of the first page using `upsertNotification(existing, item)`; preserves server ordering; invalidates queries. |
-| **Preference Mutation** | `preferences` | Optimistic update with automatic query invalidation and rollback on mutation error. |
-| **App Resume (Foreground)** | `list`, `unreadCount` | Triggers background refresh of notification list and unread count only (does not blindly refetch entire app). |
+
+| Action                           | Cache Invalidation Target | Behavior                                                                                                                                 |
+| :------------------------------- | :------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mark One Read**                | `list`, `unreadCount`     | Updates local `readAt` on the matching row in all cached pages; refetches unread count from server. Never locally decrements.            |
+| **Mark All Read**                | `list`, `unreadCount`     | Sets `readAt` on all unread rows across all pages; refetches authoritative count.                                                        |
+| **Incoming Push / Socket Event** | `list`, `unreadCount`     | Upserts row into the front of the first page using `upsertNotification(existing, item)`; preserves server ordering; invalidates queries. |
+| **Preference Mutation**          | `preferences`             | Optimistic update with automatic query invalidation and rollback on mutation error.                                                      |
+| **App Resume (Foreground)**      | `list`, `unreadCount`     | Triggers background refresh of notification list and unread count only (does not blindly refetch entire app).                            |
 
 ---
 
@@ -127,23 +131,31 @@ The client integrates notification events over the existing `ChatSocketManager` 
 Push notification capabilities are encapsulated in `apps/mobile/src/notifications/push-runtime.ts` with progressive degradation:
 
 ### Native Runtime Detection
+
 If `expo-notifications` or `expo-device` is not available (e.g. Node tests, Web, Expo Go without native build), `isPushRuntimeAvailable()` returns `false`, and the UI seamlessly operates in Activity-Center-only mode without crashing.
 
 ### Device Identifier Cryptographic Hashing
+
 To prevent leaking sensitive push delivery credentials into unredacted database columns:
+
 ```typescript
-deriveDeviceIdentifier({ pushToken })
+deriveDeviceIdentifier({ pushToken });
 ```
+
 Derives a stable 64-character SHA-256 digest from the push token. Raw tokens are never used as device identifiers and are only passed to the backend in the `pushToken` field (which the server redacts on responses).
 
 ### Android Notification Channel
+
 Configured on Android runtime startup:
+
 - Channel Identifier: `nazar-activity`
 - Channel Name: `Matches, messages & activity`
 - Importance: `4` (`IMPORTANCE_HIGH`)
 
 ### Foreground Policy
+
 When a push arrives while the app is in `active` foreground:
+
 - Native banners and sounds are suppressed (`showBanner: false, playSound: false`).
 - Feed cache and badge are silently updated (`shouldReconcile: true`).
 - This prevents triple-competing notifications (native banner + in-app toast + activity center update).
@@ -171,6 +183,7 @@ When a push arrives while the app is in `active` foreground:
 Deep-link navigation is centralized in `notification-payload.ts` (`resolveNotificationDestination`).
 
 ### Safe Route Construction
+
 - Identifiers are validated against `/^[A-Za-z0-9_.-]+$/` (1-128 characters), explicitly disallowing path traversals (`..`), slashes, whitespace, and special characters.
 - Path parameters are strictly URI-encoded via `encodeURIComponent`.
 - Validated destination map:
@@ -183,7 +196,9 @@ Deep-link navigation is centralized in `notification-payload.ts` (`resolveNotifi
   - Account: `/settings/account`
 
 ### Cold-Start Intent Queue
+
 To prevent the common navigation race condition where a cold-start push tap navigates before session restore completes (and is destroyed by the bootstrap route replacement):
+
 1. Launch tap payload is captured in `app/index.tsx` via `getColdStartIntent()`.
 2. Parsed intent is queued via `setPendingNotificationIntent()`.
 3. `sessionService.restoreSession()` runs authoritatively.

@@ -67,7 +67,12 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({
 
               {/* Primary Star Badge */}
               {isPrimary && (
-                <View style={[styles.primaryBadge, { backgroundColor: colors.accent, borderRadius: radii.radiusFull }]}>
+                <View
+                  style={[
+                    styles.primaryBadge,
+                    { backgroundColor: colors.accent, borderRadius: radii.radiusFull },
+                  ]}
+                >
                   <Text variant="caption" weight="bold" style={{ color: '#FFFFFF', fontSize: 10 }}>
                     Main
                   </Text>
@@ -77,7 +82,10 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({
               {/* Delete Button */}
               <TouchableOpacity
                 onPress={() => onDeletePhoto(slot.id)}
-                style={[styles.deleteBtn, { backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radii.radiusFull }]}
+                style={[
+                  styles.deleteBtn,
+                  { backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radii.radiusFull },
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel="Delete photo"
               >
@@ -249,7 +257,9 @@ export const ProfileField: React.FC<ProfileFieldProps> = ({
         >
           {value || placeholder}
         </Text>
-        {onPress && <Icon name="chevron" direction="right" size="tiny" color={colors.textTertiary} />}
+        {onPress && (
+          <Icon name="chevron" direction="right" size="tiny" color={colors.textTertiary} />
+        )}
       </View>
     </TouchableOpacity>
   );

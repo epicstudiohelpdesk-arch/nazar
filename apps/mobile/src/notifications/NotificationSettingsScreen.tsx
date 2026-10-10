@@ -13,10 +13,7 @@ import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import type { NotificationsApiClient } from './notifications-api.js';
 import type { PushPermissionState } from './push-permissions.js';
 import { PushPermissionCard } from './components/PushPermissionCard.js';
-import {
-  useNotificationPreferences,
-  useUpdateNotificationPreference,
-} from './useNotifications.js';
+import { useNotificationPreferences, useUpdateNotificationPreference } from './useNotifications.js';
 
 /**
  * A switch may only ever write the one field it owns. Restricting the key here
@@ -54,16 +51,14 @@ export function NotificationSettingsScreen({
   const handleToggle = useCallback(
     (key: PreferenceKey, value: boolean) => {
       setFailedKey(null);
-      updatePreference.mutate(
-        { [key]: value } as UpdateNotificationPreferencesDto,
-        {
-          onSuccess: () => trackOnboardingEvent('notification_preference_changed', {
+      updatePreference.mutate({ [key]: value } as UpdateNotificationPreferencesDto, {
+        onSuccess: () =>
+          trackOnboardingEvent('notification_preference_changed', {
             preference: key,
             enabled: value,
           }),
-          onError: () => setFailedKey(key),
-        }
-      );
+        onError: () => setFailedKey(key),
+      });
     },
     [updatePreference]
   );
@@ -74,7 +69,9 @@ export function NotificationSettingsScreen({
    * value in place, so the switch visibly snaps back rather than showing an
    * optimistic value that was never saved.
    */
-  const pendingKeys = updatePreference.isPending ? Object.keys(updatePreference.variables ?? {}) : [];
+  const pendingKeys = updatePreference.isPending
+    ? Object.keys(updatePreference.variables ?? {})
+    : [];
   const isBusy = (key: PreferenceKey): boolean => pendingKeys.includes(key);
 
   return (
@@ -203,8 +200,8 @@ export function NotificationSettingsScreen({
                 />
               </View>
               <Text variant="caption" color="tertiary" style={styles.footnote}>
-                Previews are decided when a notification is created, so changing this affects
-                future messages only.
+                Previews are decided when a notification is created, so changing this affects future
+                messages only.
               </Text>
             </SettingsSection>
           )}

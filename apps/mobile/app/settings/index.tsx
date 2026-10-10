@@ -19,7 +19,13 @@ interface SettingsItemProps {
   destructive?: boolean;
 }
 
-function SettingsRow({ icon, title, subtitle, onPress, destructive }: SettingsItemProps): React.JSX.Element {
+function SettingsRow({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  destructive,
+}: SettingsItemProps): React.JSX.Element {
   const { theme } = useTheme();
 
   return (
@@ -33,9 +39,7 @@ function SettingsRow({ icon, title, subtitle, onPress, destructive }: SettingsIt
         style={[
           styles.iconBox,
           {
-            backgroundColor: destructive
-              ? theme.colors.error + '15'
-              : theme.colors.surfaceMuted,
+            backgroundColor: destructive ? theme.colors.error + '15' : theme.colors.surfaceMuted,
           },
         ]}
       >
@@ -152,11 +156,7 @@ export default function SettingsHubRoute(): React.JSX.Element {
         <View style={styles.section}>
           <Heading level="h3">Actions</Heading>
           <SurfaceCard elevation="sm" style={styles.card}>
-            <SettingsRow
-              icon="settings"
-              title="Log Out"
-              onPress={handleLogout}
-            />
+            <SettingsRow icon="settings" title="Log Out" onPress={handleLogout} />
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
             <SettingsRow
               icon="lock"

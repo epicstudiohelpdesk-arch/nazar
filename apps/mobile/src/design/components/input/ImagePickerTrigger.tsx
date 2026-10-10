@@ -13,13 +13,7 @@ import { Icon } from '../../primitives/Icon.js';
 import { Badge } from '../../primitives/Badge.js';
 
 export type PhotoUploadStatus =
-  | 'empty'
-  | 'uploading'
-  | 'processing'
-  | 'moderation_pending'
-  | 'ready'
-  | 'rejected'
-  | 'error';
+  'empty' | 'uploading' | 'processing' | 'moderation_pending' | 'ready' | 'rejected' | 'error';
 
 export interface ImagePickerTriggerProps {
   readonly uri?: string | null;

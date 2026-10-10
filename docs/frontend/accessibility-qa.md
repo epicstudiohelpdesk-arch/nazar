@@ -8,16 +8,16 @@ Nazar mobile targets compliance with **WCAG 2.1 Level AA** standards with key Le
 
 ## 2. Screen-Reader Verification (TalkBack & VoiceOver)
 
-| Screen / Flow | Accessible Role | Accessibility Labels & Traversal | Status |
-| :--- | :--- | :--- | :--- |
-| **Authentication (Login/OTP)** | `header`, `button`, `text` | Inputs have explicit `accessibilityLabel` ("Phone number input"), OTP cells narrate digit index, error banners use `accessibilityRole="alert"`. | Verified |
-| **Discovery Deck** | `image`, `button`, `text` | Announce: "Viewing profile: {Name}, age {Age}, {City}". Pass and Like have explicit labeled buttons ("Pass on {Name}", "Like {Name}"). | Verified |
-| **Matches & Conversations** | `tab`, `button`, `text` | Tab announces unread badges ("Matches tab, 3 unread items"). Conversation rows announce partner name and latest message snippet. | Verified |
-| **Chat & Messaging** | `button`, `text` | Message bubbles narrate sender, timestamp, and delivery status. Message composer announces character limits. Typing indicator announces "{Name} is typing...". | Verified |
-| **Match Celebration** | `alert`, `button` | Immediate screen-reader announcement: "It's a Match! You and {Name} liked each other's profiles." Clear CTAs: "Say hello and message {Name}" and "Keep browsing discovery profiles". | Verified |
-| **Social / Communities** | `button`, `text` | Community cards announce member count and category. Event cards narrate date, venue, and RSVP status. | Verified |
-| **Settings & Safety** | `switch`, `radio`, `checkbox` | Settings rows announce state ("Checked", "Selected", "Disabled") and description. Account deletion and block actions use explicit confirmation dialogs. | Verified |
-| **Decorative Iconography** | `none` (hidden) | All decorative icons without explicit label have `accessibilityElementsHidden={true}` and `importantForAccessibility="no-hide-descendants"`. Semantic icons announce only when explicitly labeled. | Verified |
+| Screen / Flow                  | Accessible Role               | Accessibility Labels & Traversal                                                                                                                                                                   | Status   |
+| :----------------------------- | :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------- |
+| **Authentication (Login/OTP)** | `header`, `button`, `text`    | Inputs have explicit `accessibilityLabel` ("Phone number input"), OTP cells narrate digit index, error banners use `accessibilityRole="alert"`.                                                    | Verified |
+| **Discovery Deck**             | `image`, `button`, `text`     | Announce: "Viewing profile: {Name}, age {Age}, {City}". Pass and Like have explicit labeled buttons ("Pass on {Name}", "Like {Name}").                                                             | Verified |
+| **Matches & Conversations**    | `tab`, `button`, `text`       | Tab announces unread badges ("Matches tab, 3 unread items"). Conversation rows announce partner name and latest message snippet.                                                                   | Verified |
+| **Chat & Messaging**           | `button`, `text`              | Message bubbles narrate sender, timestamp, and delivery status. Message composer announces character limits. Typing indicator announces "{Name} is typing...".                                     | Verified |
+| **Match Celebration**          | `alert`, `button`             | Immediate screen-reader announcement: "It's a Match! You and {Name} liked each other's profiles." Clear CTAs: "Say hello and message {Name}" and "Keep browsing discovery profiles".               | Verified |
+| **Social / Communities**       | `button`, `text`              | Community cards announce member count and category. Event cards narrate date, venue, and RSVP status.                                                                                              | Verified |
+| **Settings & Safety**          | `switch`, `radio`, `checkbox` | Settings rows announce state ("Checked", "Selected", "Disabled") and description. Account deletion and block actions use explicit confirmation dialogs.                                            | Verified |
+| **Decorative Iconography**     | `none` (hidden)               | All decorative icons without explicit label have `accessibilityElementsHidden={true}` and `importantForAccessibility="no-hide-descendants"`. Semantic icons announce only when explicitly labeled. | Verified |
 
 ---
 
@@ -67,13 +67,13 @@ Nazar mobile targets compliance with **WCAG 2.1 Level AA** standards with key Le
 
 ## 7. Device Matrix & Execution Status
 
-| Platform / Environment | Target OS / Resolution | Verification Status | Notes |
-| :--- | :--- | :--- | :--- |
-| **Node / Vitest Engine** | Pure Node v22 / Headless | **VERIFIED** | 21 test files, 343 unit and integration tests passing cleanly. |
-| **TypeScript Compiler** | Strict mode / No emit | **VERIFIED** | `pnpm --filter @platform/mobile typecheck` zero errors. |
-| **iOS Simulator** | iOS 18 (iPhone 15 Pro) | **VERIFIED (Automated)** | Layouts, safe insets, and styling structures verified. |
-| **Android Emulator** | Android 14 (Pixel 8) | **VERIFIED (Automated)** | Touch targets, back handling, and material colors verified. |
-| **Physical Hardware** | Real iPhone / Android Device | **NOT PHYSICALLY ATTACHED** | Automated CI/test double verification complete; physical device validation recommended in staging (F12). |
+| Platform / Environment   | Target OS / Resolution       | Verification Status         | Notes                                                                                                    |
+| :----------------------- | :--------------------------- | :-------------------------- | :------------------------------------------------------------------------------------------------------- |
+| **Node / Vitest Engine** | Pure Node v22 / Headless     | **VERIFIED**                | 21 test files, 343 unit and integration tests passing cleanly.                                           |
+| **TypeScript Compiler**  | Strict mode / No emit        | **VERIFIED**                | `pnpm --filter @platform/mobile typecheck` zero errors.                                                  |
+| **iOS Simulator**        | iOS 18 (iPhone 15 Pro)       | **VERIFIED (Automated)**    | Layouts, safe insets, and styling structures verified.                                                   |
+| **Android Emulator**     | Android 14 (Pixel 8)         | **VERIFIED (Automated)**    | Touch targets, back handling, and material colors verified.                                              |
+| **Physical Hardware**    | Real iPhone / Android Device | **NOT PHYSICALLY ATTACHED** | Automated CI/test double verification complete; physical device validation recommended in staging (F12). |
 
 ---
 

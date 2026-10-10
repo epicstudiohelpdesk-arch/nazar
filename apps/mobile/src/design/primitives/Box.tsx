@@ -275,10 +275,7 @@ export const SafeAreaContainer: React.FC<SafeAreaContainerProps> = ({
 }) => {
   const { colors } = useTheme();
   return (
-    <SafeAreaView
-      style={[{ flex: 1, backgroundColor: bg || colors.background }, style]}
-      {...rest}
-    >
+    <SafeAreaView style={[{ flex: 1, backgroundColor: bg || colors.background }, style]} {...rest}>
       {children}
     </SafeAreaView>
   );

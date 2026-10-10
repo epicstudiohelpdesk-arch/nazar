@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  type ViewStyle,
-} from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Icon } from '../../primitives/Icon.js';
@@ -78,11 +72,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
       {uri ? (
         <Image
           source={{ uri }}
-          style={[
-            styles.image,
-            { borderRadius: radii.radiusLG },
-            isBlurred && styles.blurredImage,
-          ]}
+          style={[styles.image, { borderRadius: radii.radiusLG }, isBlurred && styles.blurredImage]}
           resizeMode="cover"
           blurRadius={isBlurred ? 25 : 0}
         />

@@ -140,7 +140,11 @@ describe('Mobile Matches & Connection Layer (F5)', () => {
       }
 
       expect(deduplicated).toHaveLength(3);
-      expect(deduplicated.map((m) => m.otherUser.displayName)).toEqual(['Meera', 'Ananya', 'Pooja']);
+      expect(deduplicated.map((m) => m.otherUser.displayName)).toEqual([
+        'Meera',
+        'Ananya',
+        'Pooja',
+      ]);
     });
 
     it('handles empty match list when user has no mutual matches', async () => {

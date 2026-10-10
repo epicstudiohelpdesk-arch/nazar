@@ -67,10 +67,7 @@ export const TextInput: React.FC<TextInputProps> = ({
       {label && (
         <Text
           variant="label"
-          style={[
-            styles.label,
-            { color: hasError ? colors.error : colors.textSecondary },
-          ]}
+          style={[styles.label, { color: hasError ? colors.error : colors.textSecondary }]}
         >
           {label}
         </Text>
@@ -125,7 +122,11 @@ export const TextInput: React.FC<TextInputProps> = ({
         />
 
         {loading ? (
-          <ActivityIndicator size="small" color={colors.accent} style={{ marginLeft: spacing.xs }} />
+          <ActivityIndicator
+            size="small"
+            color={colors.accent}
+            style={{ marginLeft: spacing.xs }}
+          />
         ) : rightIcon ? (
           onRightIconPress ? (
             <TouchableOpacity
@@ -154,7 +155,12 @@ export const TextInput: React.FC<TextInputProps> = ({
 
       {hasError ? (
         <View style={styles.feedbackRow}>
-          <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xxs }} />
+          <Icon
+            name="warning"
+            size="tiny"
+            color={colors.error}
+            style={{ marginRight: spacing.xxs }}
+          />
           <Text variant="caption" style={{ color: colors.error }}>
             {effectiveError}
           </Text>

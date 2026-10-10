@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
@@ -14,13 +8,7 @@ import { Badge } from '../../primitives/Badge.js';
 import { SurfaceCard } from '../../primitives/SurfaceCard.js';
 
 export type ProfileCardContext =
-  | 'discovery'
-  | 'likes'
-  | 'matches'
-  | 'search'
-  | 'community'
-  | 'event'
-  | 'profilePreview';
+  'discovery' | 'likes' | 'matches' | 'search' | 'community' | 'event' | 'profilePreview';
 
 export interface ProfileCardData {
   readonly id: string;
@@ -119,7 +107,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
         <View style={styles.topBadgesRow}>
           {profile.contextualInfo ? (
             <Badge label={profile.contextualInfo} variant="neutral" size="sm" />
-          ) : <View />}
+          ) : (
+            <View />
+          )}
 
           {profile.imageCount && profile.imageCount > 1 ? (
             <View style={[styles.imageCountBadge, { borderRadius: radii.radiusFull }]}>
@@ -175,7 +165,10 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           {/* Interests Chips */}
           {profile.interests && profile.interests.length > 0 && (
             <View style={{ marginBottom: spacing.md }}>
-              <Text variant="label" style={{ color: colors.textSecondary, marginBottom: spacing.xs }}>
+              <Text
+                variant="label"
+                style={{ color: colors.textSecondary, marginBottom: spacing.xs }}
+              >
                 Interests
               </Text>
               <View style={styles.interestsWrap}>
@@ -222,7 +215,10 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 >
                   {prompt.question}
                 </Text>
-                <Text variant="bodySmall" style={{ color: colors.textPrimary, fontStyle: 'italic' }}>
+                <Text
+                  variant="bodySmall"
+                  style={{ color: colors.textPrimary, fontStyle: 'italic' }}
+                >
                   "{prompt.answer}"
                 </Text>
               </View>

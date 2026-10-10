@@ -42,9 +42,10 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = ({
           border: '#F59E0B',
           text: '#92400E',
           iconColor: '#B45309',
-          message: pendingSyncCount > 0
-            ? `Offline · ${pendingSyncCount} changes queued locally`
-            : 'You are offline · Showing cached profiles',
+          message:
+            pendingSyncCount > 0
+              ? `Offline · ${pendingSyncCount} changes queued locally`
+              : 'You are offline · Showing cached profiles',
           showSpinner: false,
           showRetry: false,
         };
@@ -130,10 +131,7 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = ({
         {cfg.showRetry && onRetrySync && (
           <TouchableOpacity
             onPress={onRetrySync}
-            style={[
-              styles.retryButton,
-              { borderColor: cfg.border, borderRadius: radii.radiusSM },
-            ]}
+            style={[styles.retryButton, { borderColor: cfg.border, borderRadius: radii.radiusSM }]}
             accessibilityRole="button"
             accessibilityLabel="Retry syncing pending changes"
           >

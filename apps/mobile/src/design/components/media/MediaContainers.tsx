@@ -188,8 +188,7 @@ export const MediaCarousel: React.FC<MediaCarouselProps> = ({
                 styles.dot,
                 {
                   borderRadius: radii.radiusFull,
-                  backgroundColor:
-                    idx === activeIndex ? colors.accent : 'rgba(255,255,255,0.6)',
+                  backgroundColor: idx === activeIndex ? colors.accent : 'rgba(255,255,255,0.6)',
                   width: idx === activeIndex ? 16 : 6,
                 },
               ]}
@@ -226,20 +225,10 @@ export const FullScreenMediaViewer: React.FC<FullScreenMediaViewerProps> = ({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent={false}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent={false} animationType="fade" onRequestClose={onClose}>
       <View style={styles.lightboxContainer}>
         {/* Lightbox Header Bar */}
-        <View
-          style={[
-            styles.lightboxHeader,
-            { paddingTop: Math.max(insets.top, 16) },
-          ]}
-        >
+        <View style={[styles.lightboxHeader, { paddingTop: Math.max(insets.top, 16) }]}>
           <TouchableOpacity
             onPress={onClose}
             style={styles.closeBtn}

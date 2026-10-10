@@ -283,10 +283,36 @@ export const Icon: React.FC<IconProps> = ({
 
       case 'filter': {
         return (
-          <View style={[styles.center, { width: dimension, height: dimension, justifyContent: 'space-evenly' }]}>
-            <View style={{ width: dimension * 0.75, height: strokeWidth, backgroundColor: iconColor, borderRadius: 2 }} />
-            <View style={{ width: dimension * 0.5, height: strokeWidth, backgroundColor: iconColor, borderRadius: 2 }} />
-            <View style={{ width: dimension * 0.25, height: strokeWidth, backgroundColor: iconColor, borderRadius: 2 }} />
+          <View
+            style={[
+              styles.center,
+              { width: dimension, height: dimension, justifyContent: 'space-evenly' },
+            ]}
+          >
+            <View
+              style={{
+                width: dimension * 0.75,
+                height: strokeWidth,
+                backgroundColor: iconColor,
+                borderRadius: 2,
+              }}
+            />
+            <View
+              style={{
+                width: dimension * 0.5,
+                height: strokeWidth,
+                backgroundColor: iconColor,
+                borderRadius: 2,
+              }}
+            />
+            <View
+              style={{
+                width: dimension * 0.25,
+                height: strokeWidth,
+                backgroundColor: iconColor,
+                borderRadius: 2,
+              }}
+            />
           </View>
         );
       }
@@ -368,10 +394,26 @@ export const Icon: React.FC<IconProps> = ({
       case 'more': {
         const dot = dimension * 0.14;
         return (
-          <View style={[styles.center, { width: dimension, height: dimension, flexDirection: 'row', justifyContent: 'space-evenly' }]}>
-            <View style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: iconColor }} />
-            <View style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: iconColor }} />
-            <View style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: iconColor }} />
+          <View
+            style={[
+              styles.center,
+              {
+                width: dimension,
+                height: dimension,
+                flexDirection: 'row',
+                justifyContent: 'space-evenly',
+              },
+            ]}
+          >
+            <View
+              style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: iconColor }}
+            />
+            <View
+              style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: iconColor }}
+            />
+            <View
+              style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: iconColor }}
+            />
           </View>
         );
       }
@@ -624,8 +666,22 @@ export const Icon: React.FC<IconProps> = ({
                 justifyContent: 'center',
               }}
             >
-              <View style={{ width: strokeWidth, height: dimension * 0.24, backgroundColor: iconColor, marginBottom: 2 }} />
-              <View style={{ width: strokeWidth, height: strokeWidth, backgroundColor: iconColor, borderRadius: strokeWidth / 2 }} />
+              <View
+                style={{
+                  width: strokeWidth,
+                  height: dimension * 0.24,
+                  backgroundColor: iconColor,
+                  marginBottom: 2,
+                }}
+              />
+              <View
+                style={{
+                  width: strokeWidth,
+                  height: strokeWidth,
+                  backgroundColor: iconColor,
+                  borderRadius: strokeWidth / 2,
+                }}
+              />
             </View>
           </View>
         );
@@ -785,11 +841,61 @@ export const Icon: React.FC<IconProps> = ({
         const dotSize = dimension * 0.16;
         return (
           <View style={[styles.center, { width: dimension, height: dimension }]}>
-            <View style={{ position: 'absolute', left: dimension * 0.15, top: half - dotSize / 2, width: dotSize, height: dotSize, borderRadius: dotSize / 2, backgroundColor: iconColor }} />
-            <View style={{ position: 'absolute', right: dimension * 0.15, top: dimension * 0.18, width: dotSize, height: dotSize, borderRadius: dotSize / 2, backgroundColor: iconColor }} />
-            <View style={{ position: 'absolute', right: dimension * 0.15, bottom: dimension * 0.18, width: dotSize, height: dotSize, borderRadius: dotSize / 2, backgroundColor: iconColor }} />
-            <View style={{ position: 'absolute', left: dimension * 0.28, top: dimension * 0.34, width: dimension * 0.42, height: strokeWidth, backgroundColor: iconColor, transform: [{ rotate: '-25deg' }] }} />
-            <View style={{ position: 'absolute', left: dimension * 0.28, bottom: dimension * 0.34, width: dimension * 0.42, height: strokeWidth, backgroundColor: iconColor, transform: [{ rotate: '25deg' }] }} />
+            <View
+              style={{
+                position: 'absolute',
+                left: dimension * 0.15,
+                top: half - dotSize / 2,
+                width: dotSize,
+                height: dotSize,
+                borderRadius: dotSize / 2,
+                backgroundColor: iconColor,
+              }}
+            />
+            <View
+              style={{
+                position: 'absolute',
+                right: dimension * 0.15,
+                top: dimension * 0.18,
+                width: dotSize,
+                height: dotSize,
+                borderRadius: dotSize / 2,
+                backgroundColor: iconColor,
+              }}
+            />
+            <View
+              style={{
+                position: 'absolute',
+                right: dimension * 0.15,
+                bottom: dimension * 0.18,
+                width: dotSize,
+                height: dotSize,
+                borderRadius: dotSize / 2,
+                backgroundColor: iconColor,
+              }}
+            />
+            <View
+              style={{
+                position: 'absolute',
+                left: dimension * 0.28,
+                top: dimension * 0.34,
+                width: dimension * 0.42,
+                height: strokeWidth,
+                backgroundColor: iconColor,
+                transform: [{ rotate: '-25deg' }],
+              }}
+            />
+            <View
+              style={{
+                position: 'absolute',
+                left: dimension * 0.28,
+                bottom: dimension * 0.34,
+                width: dimension * 0.42,
+                height: strokeWidth,
+                backgroundColor: iconColor,
+                transform: [{ rotate: '25deg' }],
+              }}
+            />
           </View>
         );
       }
@@ -978,7 +1084,14 @@ export const Icon: React.FC<IconProps> = ({
       default:
         return (
           <View style={[styles.center, { width: dimension, height: dimension }]}>
-            <View style={{ width: dimension * 0.5, height: dimension * 0.5, backgroundColor: iconColor, borderRadius: 2 }} />
+            <View
+              style={{
+                width: dimension * 0.5,
+                height: dimension * 0.5,
+                backgroundColor: iconColor,
+                borderRadius: 2,
+              }}
+            />
           </View>
         );
     }

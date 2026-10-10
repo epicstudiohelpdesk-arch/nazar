@@ -47,9 +47,18 @@ export const EventCard: React.FC<EventCardProps> = ({
       testID={testID || `event-card-${id}`}
     >
       <View style={styles.topRow}>
-        <View style={[styles.calendarBadge, { backgroundColor: colors.accentSoft, borderRadius: radii.radiusSM }]}>
+        <View
+          style={[
+            styles.calendarBadge,
+            { backgroundColor: colors.accentSoft, borderRadius: radii.radiusSM },
+          ]}
+        >
           <Icon name="calendar" size="sm" color={colors.accent} />
-          <Text variant="caption" weight="bold" style={{ color: colors.accentStrong, marginTop: 2 }}>
+          <Text
+            variant="caption"
+            weight="bold"
+            style={{ color: colors.accentStrong, marginTop: 2 }}
+          >
             {dateFormatted.slice(0, 3).toUpperCase()}
           </Text>
         </View>
@@ -62,7 +71,12 @@ export const EventCard: React.FC<EventCardProps> = ({
             {dateFormatted}
           </Text>
           <View style={styles.locationRow}>
-            <Icon name="location" size="tiny" color={colors.textTertiary} style={{ marginRight: 4 }} />
+            <Icon
+              name="location"
+              size="tiny"
+              color={colors.textTertiary}
+              style={{ marginRight: 4 }}
+            />
             <Text variant="caption" style={{ color: colors.textTertiary }} numberOfLines={1}>
               {location}
             </Text>
@@ -70,7 +84,12 @@ export const EventCard: React.FC<EventCardProps> = ({
         </View>
       </View>
 
-      <View style={[styles.bottomRow, { borderTopColor: colors.border, marginTop: spacing.sm, paddingTop: spacing.xs }]}>
+      <View
+        style={[
+          styles.bottomRow,
+          { borderTopColor: colors.border, marginTop: spacing.sm, paddingTop: spacing.xs },
+        ]}
+      >
         <Badge
           label={`${attendeeCount} going`}
           variant={isAttending ? 'success' : 'neutral'}

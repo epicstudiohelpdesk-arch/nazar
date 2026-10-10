@@ -1,12 +1,6 @@
 import { Vibration, Platform } from 'react-native';
 
-export type HapticCategory =
-  | 'selection'
-  | 'light'
-  | 'medium'
-  | 'success'
-  | 'warning'
-  | 'error';
+export type HapticCategory = 'selection' | 'light' | 'medium' | 'success' | 'warning' | 'error';
 
 class HapticManager {
   private isEnabled: boolean = true;

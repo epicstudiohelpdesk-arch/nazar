@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  StyleSheet,
-  type ViewStyle,
-  type StyleProp,
-} from 'react-native';
+import { View, StyleSheet, type ViewStyle, type StyleProp } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
@@ -60,7 +55,8 @@ export const EventLocation: React.FC<EventLocationProps> = ({ venue, city, style
     <View style={[styles.locationRow, style]}>
       <Icon name="location" size="tiny" color={colors.textTertiary} style={{ marginRight: 4 }} />
       <Text variant="caption" style={{ color: colors.textSecondary }} numberOfLines={1}>
-        {venue}{city ? `, ${city}` : ''}
+        {venue}
+        {city ? `, ${city}` : ''}
       </Text>
     </View>
   );
@@ -73,11 +69,7 @@ export interface RSVPButtonProps {
   readonly isLoading?: boolean;
 }
 
-export const RSVPButton: React.FC<RSVPButtonProps> = ({
-  status,
-  onRSVP,
-  isLoading = false,
-}) => {
+export const RSVPButton: React.FC<RSVPButtonProps> = ({ status, onRSVP, isLoading = false }) => {
   const isGoing = status === 'going';
 
   return (
@@ -182,18 +174,26 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
   const { colors, spacing } = useTheme();
 
   return (
-    <View style={[styles.eventHeader, { backgroundColor: colors.surface, padding: spacing.md }, style]}>
+    <View
+      style={[styles.eventHeader, { backgroundColor: colors.surface, padding: spacing.md }, style]}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
         <EventDateBadge month={month} day={day} style={{ marginRight: spacing.md }} />
         <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+          >
             <Heading level="h2" style={{ flex: 1, marginRight: spacing.xs }}>
               {title}
             </Heading>
             <EventStatusBadge status={status} />
           </View>
           <EventLocation venue={venue} city={city} style={{ marginTop: 4 }} />
-          <CapacityIndicator attendingCount={attendingCount} maxCapacity={maxCapacity} style={{ marginTop: 2 }} />
+          <CapacityIndicator
+            attendingCount={attendingCount}
+            maxCapacity={maxCapacity}
+            style={{ marginTop: 2 }}
+          />
         </View>
       </View>
     </View>
@@ -243,7 +243,12 @@ export const EventFeedCard: React.FC<EventFeedCardProps> = ({
         <EventDateBadge month={month} day={day} style={{ marginRight: spacing.md }} />
 
         <View style={{ flex: 1, marginRight: spacing.sm }}>
-          <Text variant="title" weight="bold" style={{ color: colors.textPrimary }} numberOfLines={1}>
+          <Text
+            variant="title"
+            weight="bold"
+            style={{ color: colors.textPrimary }}
+            numberOfLines={1}
+          >
             {title}
           </Text>
           <EventLocation venue={venue} city={city} style={{ marginTop: 2 }} />
@@ -252,9 +257,7 @@ export const EventFeedCard: React.FC<EventFeedCardProps> = ({
 
         <View style={{ alignItems: 'flex-end', gap: 6 }}>
           <EventStatusBadge status={status} />
-          {onRSVP && (
-            <RSVPButton status={rsvpStatus} onRSVP={onRSVP} />
-          )}
+          {onRSVP && <RSVPButton status={rsvpStatus} onRSVP={onRSVP} />}
         </View>
       </View>
     </SurfaceCard>

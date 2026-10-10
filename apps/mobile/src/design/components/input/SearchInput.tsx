@@ -50,7 +50,12 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       ]}
       testID={testID}
     >
-      <Icon name="search" size="sm" color={colors.textTertiary} style={{ marginRight: spacing.xs }} />
+      <Icon
+        name="search"
+        size="sm"
+        color={colors.textTertiary}
+        style={{ marginRight: spacing.xs }}
+      />
 
       <RNTextInput
         style={[styles.input, { color: colors.textPrimary }]}

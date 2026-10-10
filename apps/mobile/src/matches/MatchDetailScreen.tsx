@@ -55,13 +55,7 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
   const [isNavigatingChat, setIsNavigatingChat] = useState(false);
 
   // Fetch Match Details
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery<MatchDetailDto, Error>({
+  const { data, isLoading, isError, error, refetch } = useQuery<MatchDetailDto, Error>({
     queryKey: MATCHES_QUERY_KEYS.detail(matchId),
     queryFn: async () => {
       if (!matchId) throw new Error('Missing match ID');
@@ -375,7 +369,10 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
                       },
                     ]}
                   >
-                    <Text level="caption" style={{ color: theme.colors.textPrimary, fontWeight: '600' }}>
+                    <Text
+                      level="caption"
+                      style={{ color: theme.colors.textPrimary, fontWeight: '600' }}
+                    >
                       {interest.name}
                     </Text>
                   </View>

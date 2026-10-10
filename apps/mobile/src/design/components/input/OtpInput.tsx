@@ -74,7 +74,9 @@ export const OtpInput: React.FC<OtpInputProps> = ({
         accessibilityRole="none"
       >
         {digits.map((digit, index) => {
-          const isFocused = !disabled && (index === activeIndex || (index === length - 1 && value.length === length));
+          const isFocused =
+            !disabled &&
+            (index === activeIndex || (index === length - 1 && value.length === length));
           const isFilled = Boolean(digit);
 
           let borderColor: string = colors.border;
@@ -111,7 +113,12 @@ export const OtpInput: React.FC<OtpInputProps> = ({
 
       {hasError && (
         <View style={styles.feedbackRow}>
-          <Icon name="warning" size="tiny" color={colors.error} style={{ marginRight: spacing.xxs }} />
+          <Icon
+            name="warning"
+            size="tiny"
+            color={colors.error}
+            style={{ marginRight: spacing.xxs }}
+          />
           <Text variant="caption" style={{ color: colors.error }}>
             {effectiveError}
           </Text>

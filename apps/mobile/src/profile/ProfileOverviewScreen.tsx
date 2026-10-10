@@ -1,11 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../design/theme/index.js';
 import { SurfaceCard } from '../design/primitives/SurfaceCard.js';
@@ -242,7 +236,9 @@ export function ProfileOverviewScreen({
                 {profile.displayName}, {profile.age}
               </Heading>
               {profile.visibility === 'ACTIVE' && (
-                <View style={[styles.activeDot, { backgroundColor: colors.success || '#10B981' }]} />
+                <View
+                  style={[styles.activeDot, { backgroundColor: colors.success || '#10B981' }]}
+                />
               )}
             </View>
             {profile.city && (
@@ -294,14 +290,18 @@ export function ProfileOverviewScreen({
         onUploadPress={onUploadPhotoPress || onEditPress}
         onSetPrimary={(mediaId) => setPrimaryMutation.mutate(mediaId)}
         onDeleteMedia={(mediaId) => {
-          Alert.alert('Delete Photo', 'Are you sure you want to remove this photo from your profile?', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Delete',
-              style: 'destructive',
-              onPress: () => deletePhotoMutation.mutate(mediaId),
-            },
-          ]);
+          Alert.alert(
+            'Delete Photo',
+            'Are you sure you want to remove this photo from your profile?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: () => deletePhotoMutation.mutate(mediaId),
+              },
+            ]
+          );
         }}
       />
 
@@ -315,7 +315,10 @@ export function ProfileOverviewScreen({
             {interests.map((item) => (
               <View
                 key={item.id}
-                style={[styles.interestChip, { backgroundColor: colors.surfaceMuted, borderColor: colors.border }]}
+                style={[
+                  styles.interestChip,
+                  { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
+                ]}
               >
                 <Text level="bodySmall" weight="medium">
                   {item.name}

@@ -318,7 +318,10 @@ export default function PublicProfileRoute(): React.JSX.Element {
                         },
                       ]}
                     >
-                      <Text level="caption" style={{ color: theme.colors.textPrimary, fontWeight: '600' }}>
+                      <Text
+                        level="caption"
+                        style={{ color: theme.colors.textPrimary, fontWeight: '600' }}
+                      >
                         {interest.name}
                       </Text>
                     </View>

@@ -1,11 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import {
-  View,
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, FlatList, RefreshControl, StyleSheet, ActivityIndicator } from 'react-native';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import type { ConversationItemDto } from '@platform/api-contracts';
@@ -168,9 +162,19 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
             { borderBottomColor: colors.border, paddingVertical: spacing.md },
           ]}
         >
-          <SkeletonBox width={56} height={56} radius="radiusFull" style={{ marginRight: spacing.md }} />
+          <SkeletonBox
+            width={56}
+            height={56}
+            radius="radiusFull"
+            style={{ marginRight: spacing.md }}
+          />
           <View style={{ flex: 1, justifyContent: 'center' }}>
-            <SkeletonBox width="50%" height={16} radius="radiusSM" style={{ marginBottom: spacing.xs }} />
+            <SkeletonBox
+              width="50%"
+              height={16}
+              radius="radiusSM"
+              style={{ marginBottom: spacing.xs }}
+            />
             <SkeletonBox width="80%" height={14} radius="radiusSM" />
           </View>
         </View>
@@ -186,13 +190,14 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <TopNavHeader
-        title="Messages"
-        leftAction={onBack ? 'back' : 'none'}
-        onBack={onBack}
-      />
+      <TopNavHeader title="Messages" leftAction={onBack ? 'back' : 'none'} onBack={onBack} />
 
-      <View style={[styles.searchWrapper, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]}>
+      <View
+        style={[
+          styles.searchWrapper,
+          { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+        ]}
+      >
         <SearchInput
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -207,7 +212,9 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
         <ErrorState
           type="server_error"
           title="Failed to load conversations"
-          message={error instanceof Error ? error.message : 'Please check your connection and try again.'}
+          message={
+            error instanceof Error ? error.message : 'Please check your connection and try again.'
+          }
           onRetry={() => refetch()}
         />
       ) : (

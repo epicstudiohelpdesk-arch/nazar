@@ -42,7 +42,11 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {valueLabel && (
-            <Text variant="bodySmall" weight="semibold" style={{ color: colors.accent, marginRight: spacing.sm }}>
+            <Text
+              variant="bodySmall"
+              weight="semibold"
+              style={{ color: colors.accent, marginRight: spacing.sm }}
+            >
               {valueLabel}
             </Text>
           )}

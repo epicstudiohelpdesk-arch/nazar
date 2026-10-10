@@ -3,7 +3,11 @@ import { QueryClient } from '@tanstack/react-query';
 import { AuthClient } from '../src/auth/auth-client.js';
 import { InMemoryTokenStorage } from '../src/auth/token-storage.js';
 import { createProfileApi, PROFILE_QUERY_KEYS } from '../src/profile/profile-api.js';
-import { createSafetyApi, invalidateSafetyCaches, SAFETY_QUERY_KEYS } from '../src/safety/safety-api.js';
+import {
+  createSafetyApi,
+  invalidateSafetyCaches,
+  SAFETY_QUERY_KEYS,
+} from '../src/safety/safety-api.js';
 import {
   SessionService,
   purgeAccountSessionAndCaches,

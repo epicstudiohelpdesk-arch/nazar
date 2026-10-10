@@ -76,11 +76,7 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
 
   return (
     <View
-      style={[
-        styles.bubbleRow,
-        { justifyContent: isOutgoing ? 'flex-end' : 'flex-start' },
-        style,
-      ]}
+      style={[styles.bubbleRow, { justifyContent: isOutgoing ? 'flex-end' : 'flex-start' }, style]}
       accessibilityRole="text"
       accessibilityLabel={`${isOutgoing ? 'You' : 'Partner'}: ${text}, ${timestamp}`}
     >
@@ -253,9 +249,7 @@ export const ConversationRow: React.FC<ConversationRowProps> = ({
             {lastMessage}
           </Text>
 
-          {hasUnread && (
-            <Badge label={String(unreadCount)} variant="accent" size="sm" />
-          )}
+          {hasUnread && <Badge label={String(unreadCount)} variant="accent" size="sm" />}
         </View>
       </View>
     </TouchableOpacity>
@@ -361,11 +355,7 @@ export const ChatMessageComposer: React.FC<ChatMessageComposerProps> = ({
         accessibilityRole="button"
         accessibilityLabel="Send message"
       >
-        <Icon
-          name="send"
-          size="sm"
-          color={canSend ? colors.textInverse : colors.textTertiary}
-        />
+        <Icon name="send" size="sm" color={canSend ? colors.textInverse : colors.textTertiary} />
       </TouchableOpacity>
     </View>
   );

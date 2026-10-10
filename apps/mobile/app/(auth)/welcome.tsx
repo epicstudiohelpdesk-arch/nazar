@@ -499,8 +499,20 @@ export default function WelcomeScreen(): React.JSX.Element {
                 },
               ]}
             >
-              <Icon name="chevron" size={15} color="#52525B" direction="right" style={{ marginRight: -7 }} />
-              <Icon name="chevron" size={15} color="#A1A1AA" direction="right" style={{ marginRight: -7 }} />
+              <Icon
+                name="chevron"
+                size={15}
+                color="#52525B"
+                direction="right"
+                style={{ marginRight: -7 }}
+              />
+              <Icon
+                name="chevron"
+                size={15}
+                color="#A1A1AA"
+                direction="right"
+                style={{ marginRight: -7 }}
+              />
               <Icon name="chevron" size={15} color="#FFFFFF" direction="right" />
             </Animated.View>
 
@@ -510,10 +522,7 @@ export default function WelcomeScreen(): React.JSX.Element {
               style={[
                 styles.pillHeartCircle,
                 {
-                  transform: [
-                    { translateX: slideAnim },
-                    { scale: thumbScaleAnim },
-                  ],
+                  transform: [{ translateX: slideAnim }, { scale: thumbScaleAnim }],
                 },
               ]}
             >

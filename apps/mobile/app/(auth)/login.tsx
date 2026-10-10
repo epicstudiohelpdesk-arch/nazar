@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import { View, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
@@ -123,7 +117,9 @@ export default function LoginScreen(): React.JSX.Element {
         activeTab === 'phone' ? `+91${phoneNumber}` : email
       );
       if (!optionsRes.success) {
-        setErrorMessage(optionsRes.error || 'Passkey authentication is not available on this device.');
+        setErrorMessage(
+          optionsRes.error || 'Passkey authentication is not available on this device.'
+        );
         setIsLoading(false);
         return;
       }
@@ -134,16 +130,14 @@ export default function LoginScreen(): React.JSX.Element {
 
     // Google / Apple OAuth placeholders adhering to backend contract
     setIsLoading(false);
-    setErrorMessage(`${provider === 'google' ? 'Google' : 'Apple'} Sign-In is configured for native releases.`);
+    setErrorMessage(
+      `${provider === 'google' ? 'Google' : 'Apple'} Sign-In is configured for native releases.`
+    );
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader
-        title=""
-        onBack={() => router.back()}
-        leftAction="back"
-      />
+      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.formHeader}>
@@ -179,7 +173,8 @@ export default function LoginScreen(): React.JSX.Element {
               level="bodySmall"
               style={{
                 fontWeight: activeTab === 'phone' ? '700' : '500',
-                color: activeTab === 'phone' ? theme.colors.textPrimary : theme.colors.textSecondary,
+                color:
+                  activeTab === 'phone' ? theme.colors.textPrimary : theme.colors.textSecondary,
               }}
             >
               Phone Number
@@ -205,7 +200,8 @@ export default function LoginScreen(): React.JSX.Element {
               level="bodySmall"
               style={{
                 fontWeight: activeTab === 'email' ? '700' : '500',
-                color: activeTab === 'email' ? theme.colors.textPrimary : theme.colors.textSecondary,
+                color:
+                  activeTab === 'email' ? theme.colors.textPrimary : theme.colors.textSecondary,
               }}
             >
               Email Address
@@ -293,7 +289,6 @@ export default function LoginScreen(): React.JSX.Element {
           >
             {rateLimitSeconds > 0 ? `Wait (${rateLimitSeconds}s)` : 'Continue'}
           </Button>
-
         </View>
 
         {/* Social / Alternate Auth Divider */}

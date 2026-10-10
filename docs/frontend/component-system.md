@@ -30,6 +30,7 @@ Product Screens (`app/`, `src/`)
 ```
 
 ### Core Design Principles
+
 1. **Separation of Concerns:** Primitives know only about design tokens and layout math; components know about interactive states, gestures, and accessibility; patterns compose components around business domain conventions; screens bind patterns to TanStack Query and Zustand stores.
 2. **Constrained APIs:** Arbitrary inline styling (`style={{ fontSize: 17.5, color: '#f3a' }}`) is prohibited. All layout spacing, typography sizes, radii, shadows, and color values must resolve through semantic theme tokens.
 3. **Double-Tap and Jitter Protection:** All interactive action buttons enforce internal throttling to eliminate accidental double-submissions, double-likes, or duplicate financial transactions.
@@ -102,6 +103,7 @@ apps/mobile/src/design/
 ## 3. Layer Specifications
 
 ### 3.1 Design Tokens Layer
+
 - **Colors:** Light (`#FAF8F5` cream background, `#D84315` warm terracotta accent) and Dark (`#12100E` deep obsidian background, `#F06548` radiant terracotta accent) palettes.
 - **Typography:** 12 defined semantic scales with strict line-heights and font-weights (`display`, `heading1`–`heading3`, `title`, `bodyLarge`, `body`, `bodySmall`, `caption`, `label`, `button`, `numeric`).
 - **Spacing:** Fibonacci-derived scale (`none: 0`, `xxs: 2`, `xs: 4`, `sm: 8`, `md: 16`, `lg: 24`, `xl: 32`, `xxl: 48`).
@@ -109,16 +111,19 @@ apps/mobile/src/design/
 - **Elevation:** Multi-platform iOS shadow and Android elevation levels (`shadowSM`, `shadowMD`, `shadowLG`).
 
 ### 3.2 Primitives Layer
+
 - Layout is constructed through `<Box>`, `<Stack>`, `<Row>`, `<Column>`, `<Spacer>`, and `<Divider>` rather than raw `View` style objects with arbitrary margins.
 - Semantic typography components (`<DisplayText>`, `<HeadingText>`, `<BodyText>`, `<BodySmallText>`, `<CaptionText>`, `<NumericText>`) ensure zero typography drifting across screens.
 - Media primitives (`<ImageView>`, `<Avatar>`) handle loading skeletons, blur hashes, fallback placeholders, and network failure states natively.
 
 ### 3.3 Components Layer
+
 - All buttons implement active press feedback and double-tap prevention windows (default 400ms).
 - Form inputs support validation error states, helper texts, clear triggers, secure text toggle, and OTP cell synchronization.
 - Feedback components provide non-blocking toasts via React Context (`useToast`), non-dismissible or dismissible banners (`Banner`), connection quality indicators (`ConnectionIndicator`), and animated skeletons.
 
 ### 3.4 Patterns Layer
+
 - Higher-order patterns encapsulate repetitive domain screens:
   - **Lists:** `<RefreshableList>` and `<InfiniteList>` wire pull-to-refresh, skeleton placeholders, and empty states automatically.
   - **Chat:** `<ChatMessageBubble>` renders Indian colloquialisms and timestamps with delivery status ticks (`sending`, `sent`, `delivered`, `read`).
@@ -139,6 +144,7 @@ apps/mobile/src/design/
 ## 5. Testing & Verification Standard
 
 Components are verified through:
+
 1. **Static Typing:** Strict TypeScript compilation with `noEmit: true`, no implicit `any`, and zero unused identifiers (`tsc --noEmit`).
 2. **Unit Tests:** Vitest unit test coverage validating component instantiation, prop contracts, state transitions, and accessibility attributes.
 3. **Showcase Integration:** All primitives, components, and patterns are rendered in `app/design-system-showcase.tsx`, enabling real-device QA across light and dark modes.

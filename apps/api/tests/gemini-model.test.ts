@@ -122,9 +122,7 @@ describe('Gemini Model Configuration & Client Service', () => {
         GEMINI_API_KEY: 'test-api-key',
       });
 
-      await expect(client.generateContent('Test')).rejects.toThrow(
-        /NOT_FOUND \(code 404\)/
-      );
+      await expect(client.generateContent('Test')).rejects.toThrow(/NOT_FOUND \(code 404\)/);
     });
   });
 });

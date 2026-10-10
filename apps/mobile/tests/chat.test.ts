@@ -365,9 +365,21 @@ describe('Mobile Chat Layer: API Client, Inverted Pagination & Realtime Reconcil
 
     it('filters conversations by user display name or message preview', () => {
       const conversations = [
-        { id: 'c1', otherUser: { displayName: 'Priya Sharma' }, lastMessage: { preview: 'Sounds great!' } },
-        { id: 'c2', otherUser: { displayName: 'Rahul Verma' }, lastMessage: { preview: 'Are you in Bangalore?' } },
-        { id: 'c3', otherUser: { displayName: 'Meera Patel' }, lastMessage: { preview: 'Hello there' } },
+        {
+          id: 'c1',
+          otherUser: { displayName: 'Priya Sharma' },
+          lastMessage: { preview: 'Sounds great!' },
+        },
+        {
+          id: 'c2',
+          otherUser: { displayName: 'Rahul Verma' },
+          lastMessage: { preview: 'Are you in Bangalore?' },
+        },
+        {
+          id: 'c3',
+          otherUser: { displayName: 'Meera Patel' },
+          lastMessage: { preview: 'Hello there' },
+        },
       ];
 
       const filterByName = conversations.filter((c) =>
@@ -605,7 +617,7 @@ describe('Mobile Chat Layer: API Client, Inverted Pagination & Realtime Reconcil
       expect(cleanProperties).not.toHaveProperty('preview');
       expect(cleanProperties).not.toHaveProperty('phone');
       expect((cleanProperties.metadata as Record<string, unknown>).wordCount).toBe(5);
-      expect((cleanProperties.metadata as Record<string, unknown>)).not.toHaveProperty('text');
+      expect(cleanProperties.metadata as Record<string, unknown>).not.toHaveProperty('text');
     });
 
     it('successfully emits chat analytics events', () => {

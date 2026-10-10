@@ -33,7 +33,10 @@ import {
  * a payload can name a conversation the user can no longer open, and that screen
  * is where that is discovered and reported.
  */
-function resolveIntentRoute(intent: NotificationIntent, source: 'push_cold_start' | 'push_foreground'): string | null {
+function resolveIntentRoute(
+  intent: NotificationIntent,
+  source: 'push_cold_start' | 'push_foreground'
+): string | null {
   if (intent.type === null) {
     trackOnboardingEvent('notification_navigation_failed', {
       reason: 'malformed_payload',
@@ -110,12 +113,12 @@ export default function AppLaunchScreen(): React.JSX.Element {
         const targetStep = result.nextStep || 'intro';
         const stepRoutes: Record<string, `/(onboarding)/${string}`> = {
           'profile-setup': '/(onboarding)/profile-setup',
-          'photos': '/(onboarding)/photos',
-          'interests': '/(onboarding)/interests',
-          'prompts': '/(onboarding)/prompts',
-          'preferences': '/(onboarding)/preferences',
-          'permissions': '/(onboarding)/permissions',
-          'preview': '/(onboarding)/preview',
+          photos: '/(onboarding)/photos',
+          interests: '/(onboarding)/interests',
+          prompts: '/(onboarding)/prompts',
+          preferences: '/(onboarding)/preferences',
+          permissions: '/(onboarding)/permissions',
+          preview: '/(onboarding)/preview',
         };
         const route = stepRoutes[targetStep] || '/(onboarding)/intro';
         router.replace(route);

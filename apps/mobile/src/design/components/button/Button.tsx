@@ -191,7 +191,11 @@ export const Button: React.FC<ButtonProps> = ({
       onPress={handlePress}
       disabled={!isInteractive}
       activeOpacity={0.8}
-      hitSlop={sz.minHeight < MIN_TOUCH_TARGET ? ensureMinTouchTarget(MIN_TOUCH_TARGET, sz.minHeight) : undefined}
+      hitSlop={
+        sz.minHeight < MIN_TOUCH_TARGET
+          ? ensureMinTouchTarget(MIN_TOUCH_TARGET, sz.minHeight)
+          : undefined
+      }
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || buttonText}
       accessibilityHint={accessibilityHint}
@@ -205,21 +209,25 @@ export const Button: React.FC<ButtonProps> = ({
         <ActivityIndicator size="small" color={vs.text} />
       ) : success ? (
         <View style={styles.contentRow}>
-          <Icon name="check" size={sz.iconSize} color={vs.text} style={{ marginRight: spacing.xs }} />
-          <Text
-            variant="button"
-            style={[{ color: vs.text, fontSize: sz.fontSize }, textStyle]}
-          >
+          <Icon
+            name="check"
+            size={sz.iconSize}
+            color={vs.text}
+            style={{ marginRight: spacing.xs }}
+          />
+          <Text variant="button" style={[{ color: vs.text, fontSize: sz.fontSize }, textStyle]}>
             {buttonText}
           </Text>
         </View>
       ) : error ? (
         <View style={styles.contentRow}>
-          <Icon name="warning" size={sz.iconSize} color={vs.text} style={{ marginRight: spacing.xs }} />
-          <Text
-            variant="button"
-            style={[{ color: vs.text, fontSize: sz.fontSize }, textStyle]}
-          >
+          <Icon
+            name="warning"
+            size={sz.iconSize}
+            color={vs.text}
+            style={{ marginRight: spacing.xs }}
+          />
+          <Text variant="button" style={[{ color: vs.text, fontSize: sz.fontSize }, textStyle]}>
             {buttonText}
           </Text>
         </View>
@@ -233,10 +241,7 @@ export const Button: React.FC<ButtonProps> = ({
               style={{ marginRight: spacing.xs }}
             />
           )}
-          <Text
-            variant="button"
-            style={[{ color: vs.text, fontSize: sz.fontSize }, textStyle]}
-          >
+          <Text variant="button" style={[{ color: vs.text, fontSize: sz.fontSize }, textStyle]}>
             {buttonText}
           </Text>
           {effectiveRightIcon && (
@@ -271,11 +276,7 @@ export const DestructiveButton: React.FC<ButtonProps> = (props) => (
 );
 
 export const TextButton: React.FC<ButtonProps> = ({ style, ...props }) => (
-  <Button
-    variant="tertiary"
-    style={[{ paddingHorizontal: 0, minHeight: 32 }, style]}
-    {...props}
-  />
+  <Button variant="tertiary" style={[{ paddingHorizontal: 0, minHeight: 32 }, style]} {...props} />
 );
 
 export interface FloatingActionButtonProps {

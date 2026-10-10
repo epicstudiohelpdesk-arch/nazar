@@ -262,9 +262,7 @@ describe('Events, Capacity & RSVP Engine (Gate 12)', () => {
           .get(`/v1/events?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`)
           .set('Authorization', `Bearer ${outsider.accessToken}`);
         expect(res.status).toBe(200);
-        outsiderListItem = res.body.data.items.find(
-          (e: { id: string }) => e.id === eventId
-        );
+        outsiderListItem = res.body.data.items.find((e: { id: string }) => e.id === eventId);
         cursor = res.body.data.nextCursor ?? null;
       }
       expect(outsiderListItem).toBeDefined();

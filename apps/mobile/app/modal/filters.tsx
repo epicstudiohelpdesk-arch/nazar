@@ -198,7 +198,9 @@ export default function FiltersModalRoute(): React.JSX.Element {
             feature="ADVANCED_DISCOVERY"
             lockedTitle="Relationship Intent Filters"
             lockedMessage="Filter your discovery deck by specific dating intentions, marriage goals, and lifestyle preferences with Nazar Premium."
-            onUnlockPress={() => router.push('/billing?plan=PREMIUM_MONTHLY&returnRoute=/modal/filters')}
+            onUnlockPress={() =>
+              router.push('/billing?plan=PREMIUM_MONTHLY&returnRoute=/modal/filters')
+            }
           >
             <SurfaceCard elevation="sm" style={styles.card}>
               <Heading level="h3">Relationship Intent</Heading>

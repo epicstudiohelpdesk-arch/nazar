@@ -19,10 +19,7 @@ import { Badge } from '../../src/design/primitives/Badge.js';
 import { Button } from '../../src/design/components/button/Button.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { getDefaultAuthClient } from '../../src/auth/default-client.js';
-import {
-  AUTH_QUERY_KEYS,
-  purgeAccountSessionAndCaches,
-} from '../../src/auth/session-service.js';
+import { AUTH_QUERY_KEYS, purgeAccountSessionAndCaches } from '../../src/auth/session-service.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 
 export default function AccountSettingsRoute(): React.JSX.Element {
@@ -77,7 +74,10 @@ export default function AccountSettingsRoute(): React.JSX.Element {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.devices });
       trackOnboardingEvent('device_revoked');
-      Alert.alert('Device Unregistered', 'Push notifications for this device have been unregistered.');
+      Alert.alert(
+        'Device Unregistered',
+        'Push notifications for this device have been unregistered.'
+      );
     },
     onError: (err: unknown) => {
       const msg = err instanceof Error ? err.message : 'Failed to unregister device';
@@ -158,7 +158,11 @@ export default function AccountSettingsRoute(): React.JSX.Element {
           </Text>
 
           {sessionsQuery.isLoading ? (
-            <ActivityIndicator size="small" color={theme.colors.accent} style={{ marginVertical: 12 }} />
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.accent}
+              style={{ marginVertical: 12 }}
+            />
           ) : (
             sessions.map((session) => (
               <SurfaceCard key={session.id} elevation="sm" style={styles.sessionCard}>
@@ -213,7 +217,11 @@ export default function AccountSettingsRoute(): React.JSX.Element {
           </Text>
 
           {devicesQuery.isLoading ? (
-            <ActivityIndicator size="small" color={theme.colors.accent} style={{ marginVertical: 12 }} />
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.accent}
+              style={{ marginVertical: 12 }}
+            />
           ) : devices.length === 0 ? (
             <SurfaceCard elevation="sm" style={styles.card}>
               <Text level="bodySmall" color="secondary">

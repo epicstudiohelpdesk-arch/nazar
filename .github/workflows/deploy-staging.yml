@@ -13,6 +13,7 @@ jobs:
   build-and-deploy:
     name: Build Immutable Image & Deploy Staging
     runs-on: ubuntu-latest
+    if: ${{ secrets.AWS_STAGING_DEPLOY_ROLE_ARN != '' }}
     environment: staging
     timeout-minutes: 20
 
@@ -83,5 +84,5 @@ jobs:
         run: |
           pnpm --filter @platform/api test tests/infra/deployment-smoke.test.ts
         env:
-          SMOKE_TARGET_URL: "https://staging.nazar.app"
-          SMOKE_TARGET_WS_URL: "wss://staging.nazar.app/chat"
+          SMOKE_TARGET_URL: 'https://staging.nazar.app'
+          SMOKE_TARGET_WS_URL: 'wss://staging.nazar.app/chat'

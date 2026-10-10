@@ -94,7 +94,11 @@ export default function DeleteAccountRoute(): React.JSX.Element {
         <View style={styles.confirmationSection}>
           <Text level="title">Confirm Permanent Deletion</Text>
           <Text level="bodySmall" color="secondary">
-            To prevent accidental deletion, please type <Text level="bodySmall" weight="bold">DELETE</Text> below:
+            To prevent accidental deletion, please type{' '}
+            <Text level="bodySmall" weight="bold">
+              DELETE
+            </Text>{' '}
+            below:
           </Text>
           <TextInput
             placeholder="Type DELETE to confirm"

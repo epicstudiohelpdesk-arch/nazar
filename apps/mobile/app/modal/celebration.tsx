@@ -108,7 +108,9 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
             <View style={[styles.avatarRing, { borderColor: theme.colors.accent }]}>
               <Avatar size="large" uri={myAvatar} name={myName} />
             </View>
-            <View style={[styles.avatarRing, { borderColor: theme.colors.accent, marginLeft: -16 }]}>
+            <View
+              style={[styles.avatarRing, { borderColor: theme.colors.accent, marginLeft: -16 }]}
+            >
               <Avatar size="large" uri={matchedAvatar} name={matchedName} />
             </View>
           </View>

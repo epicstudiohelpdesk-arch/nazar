@@ -39,9 +39,7 @@ describe('Onboarding & First-Run Suite', () => {
         displayName: 'Aanya',
         dateOfBirth: '1998-05-15',
         gender: 'WOMAN',
-        media: [
-          { id: 'm1', url: 'https://img.com/1', status: 'READY', isPrimary: true },
-        ],
+        media: [{ id: 'm1', url: 'https://img.com/1', status: 'READY', isPrimary: true }],
         interests: [],
         prompts: [],
       } as unknown as PrivateProfileResponse;
@@ -100,7 +98,12 @@ describe('Onboarding & First-Run Suite', () => {
           { id: '3', name: 'Books' },
         ],
         prompts: [
-          { id: 'p1', promptDefinitionId: 'pd1', prompt: 'Sunday morning', answer: 'Filter coffee' },
+          {
+            id: 'p1',
+            promptDefinitionId: 'pd1',
+            prompt: 'Sunday morning',
+            answer: 'Filter coffee',
+          },
         ],
         preferences: null,
       } as unknown as PrivateProfileResponse;
@@ -123,7 +126,12 @@ describe('Onboarding & First-Run Suite', () => {
           { id: '3', name: 'Books' },
         ],
         prompts: [
-          { id: 'p1', promptDefinitionId: 'pd1', prompt: 'Sunday morning', answer: 'Filter coffee' },
+          {
+            id: 'p1',
+            promptDefinitionId: 'pd1',
+            prompt: 'Sunday morning',
+            answer: 'Filter coffee',
+          },
         ],
         preferences: {
           minAge: 21,

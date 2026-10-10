@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type QueryClient,
-} from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type {
   EntitlementCode,
   ProductResponseDto,
@@ -14,11 +9,7 @@ import type {
   SubscriptionResponseDto,
   UserEntitlementDto,
 } from '@platform/api-contracts';
-import {
-  BILLING_QUERY_KEYS,
-  getDefaultBillingApi,
-  type BillingApiClient,
-} from './billing-api.js';
+import { BILLING_QUERY_KEYS, getDefaultBillingApi, type BillingApiClient } from './billing-api.js';
 import { billingManager } from './billing-manager.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 
@@ -138,10 +129,7 @@ export function useProducts(apiClient?: BillingApiClient): ProductsState {
     [products]
   );
 
-  const boostProduct = useMemo(
-    () => products.find((p) => p.code === 'BOOST_ONE_TIME'),
-    [products]
-  );
+  const boostProduct = useMemo(() => products.find((p) => p.code === 'BOOST_ONE_TIME'), [products]);
 
   return {
     products,
@@ -183,9 +171,7 @@ export function useSubscriptions(apiClient?: BillingApiClient): SubscriptionsSta
   const subscriptions = query.data?.subscriptions ?? [];
 
   const activeSubscription = useMemo(() => {
-    return subscriptions.find(
-      (s) => s.status === 'ACTIVE' || s.status === 'GRACE_PERIOD'
-    );
+    return subscriptions.find((s) => s.status === 'ACTIVE' || s.status === 'GRACE_PERIOD');
   }, [subscriptions]);
 
   const isAutoRenewCancelled = useMemo(() => {

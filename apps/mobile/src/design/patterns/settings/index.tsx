@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-  type StyleProp,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, type ViewStyle, type StyleProp } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Icon, type IconName } from '../../primitives/Icon.js';
@@ -19,11 +13,7 @@ export interface SettingsSectionProps {
   readonly style?: StyleProp<ViewStyle>;
 }
 
-export const SettingsSection: React.FC<SettingsSectionProps> = ({
-  title,
-  children,
-  style,
-}) => {
+export const SettingsSection: React.FC<SettingsSectionProps> = ({ title, children, style }) => {
   const { colors, spacing } = useTheme();
 
   return (
@@ -108,9 +98,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
         )}
       </View>
 
-      {onPress && (
-        <Icon name="chevron" direction="right" size="tiny" color={colors.textTertiary} />
-      )}
+      {onPress && <Icon name="chevron" direction="right" size="tiny" color={colors.textTertiary} />}
     </TouchableOpacity>
   );
 };
@@ -164,7 +152,10 @@ export const SettingsValueRow: React.FC<SettingsValueRowProps> = ({
       </Text>
 
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text variant="bodySmall" style={{ color: colors.textSecondary, marginRight: onPress ? spacing.xs : 0 }}>
+        <Text
+          variant="bodySmall"
+          style={{ color: colors.textSecondary, marginRight: onPress ? spacing.xs : 0 }}
+        >
           {value}
         </Text>
         {onPress && (

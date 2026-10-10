@@ -45,8 +45,13 @@ jobs:
 
       - name: Start Database & Cache Containers
         run: |
-          docker compose up -d postgres redis minio
+          docker compose up -d --wait postgres redis minio
           docker compose ps
+
+      - name: Run Database Migrations
+        run: pnpm --filter @platform/api db:migrate
+        env:
+          DATABASE_URL: postgresql://nazar_user:nazar_password@localhost:5432/nazar_db
 
       - name: Run Test Suite
         run: pnpm test

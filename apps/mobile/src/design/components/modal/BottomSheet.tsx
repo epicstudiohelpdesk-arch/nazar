@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Modal,
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { Modal, View, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
@@ -112,9 +106,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           )}
 
           {/* Sheet Body */}
-          <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
-            {children}
-          </View>
+          <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>{children}</View>
         </View>
       </View>
     </Modal>

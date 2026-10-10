@@ -5,10 +5,7 @@ export interface PasswordInputProps extends Omit<TextInputProps, 'secureTextEntr
   readonly showToggle?: boolean;
 }
 
-export const PasswordInput: React.FC<PasswordInputProps> = ({
-  showToggle = true,
-  ...props
-}) => {
+export const PasswordInput: React.FC<PasswordInputProps> = ({ showToggle = true, ...props }) => {
   const [isSecure, setIsSecure] = useState(true);
 
   return (
