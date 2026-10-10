@@ -1,8 +1,6 @@
 name: Deploy Staging
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -13,7 +11,6 @@ jobs:
   build-and-deploy:
     name: Build Immutable Image & Deploy Staging
     runs-on: ubuntu-latest
-    if: ${{ secrets.AWS_STAGING_DEPLOY_ROLE_ARN != '' }}
     environment: staging
     timeout-minutes: 20
 
