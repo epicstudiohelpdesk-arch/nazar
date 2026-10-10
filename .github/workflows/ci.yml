@@ -48,8 +48,10 @@ jobs:
           docker compose up -d --wait postgres redis
           docker compose ps
 
-      - name: Run Database Migrations
-        run: pnpm --filter @platform/api db:migrate
+      - name: Run Database Migrations & Seeds
+        run: |
+          pnpm --filter @platform/api db:migrate
+          pnpm --filter @platform/api db:seed
         env:
           DATABASE_URL: postgresql://nazar_user:nazar_password@localhost:5432/nazar_db
 
