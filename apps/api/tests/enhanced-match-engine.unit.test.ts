@@ -135,13 +135,22 @@ describe('Enhanced Match Engine Unit Tests', () => {
       withTransaction: vi.fn().mockImplementation((cb) => cb(mockTx)),
     };
 
+    const mockEntitlementService = { hasEntitlement: vi.fn().mockResolvedValue(false) };
+    const mockStorageService = {
+      getPublicUrl: vi.fn().mockReturnValue('https://example.com/photo.jpg'),
+    };
+    const mockSmartPhotosService = { recordCandidateLike: vi.fn() };
+
     interactionsService = new InteractionsService(
       mockInteractionsRepo as IInteractionsRepository,
       mockMatchesRepo as IMatchesRepository,
       mockProfileRepo as IProfileRepository,
       mockInterestRepo as IInterestRepository,
       mockSafetyEnforcement as SafetyEnforcementService,
-      mockDatabaseService as DatabaseService
+      mockDatabaseService as DatabaseService,
+      mockEntitlementService as any,
+      mockStorageService as any,
+      mockSmartPhotosService as any
     );
   });
 

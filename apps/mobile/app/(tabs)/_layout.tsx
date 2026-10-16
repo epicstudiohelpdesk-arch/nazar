@@ -149,11 +149,9 @@ const TabButton: React.FC<TabButtonProps> = ({
   );
 };
 
-interface CustomBottomTabBarProps {
-  readonly state: any;
-  readonly descriptors: any;
-  readonly navigation: any;
-}
+type CustomBottomTabBarProps = Parameters<
+  NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>
+>[0];
 
 const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
   state,
@@ -178,9 +176,11 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
       pointerEvents="box-none"
     >
       <View style={styles.tabsRow}>
-        {state.routes.map((route: any, index: number) => {
+        {state.routes.map((route, index) => {
           const isFocused = state.index === index;
-          const { options } = descriptors[route.key];
+          const descriptor = descriptors[route.key];
+          const options = descriptor?.options as
+            { tabBarAccessibilityLabel?: string; title?: string } | undefined;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -201,7 +201,7 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
             });
           };
 
-          const label = options.tabBarAccessibilityLabel || options.title || route.name;
+          const label = options?.tabBarAccessibilityLabel || options?.title || route.name;
           const baseName = route.name.split('/')[0];
           const testID = baseName === 'discovery' ? 'tab-discover' : `tab-${baseName}`;
 

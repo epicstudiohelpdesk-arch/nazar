@@ -58,11 +58,11 @@ export class InteractionsService {
     @Inject(DatabaseService)
     private readonly databaseService: DatabaseService,
     @Inject(EntitlementService)
-    private readonly entitlementService: EntitlementService,
+    private readonly entitlementService?: EntitlementService,
     @Inject(S3StorageService)
-    private readonly storageService: S3StorageService,
+    private readonly storageService?: S3StorageService,
     @Inject(SmartPhotosService)
-    private readonly smartPhotosService: SmartPhotosService
+    private readonly smartPhotosService?: SmartPhotosService
   ) {}
 
   async like(
@@ -315,17 +315,23 @@ export class InteractionsService {
         attachmentOptions?.targetAttachmentType === 'MEDIA'
           ? attachmentOptions.targetAttachmentId
           : undefined;
-      void this.smartPhotosService.recordCandidateLike(resolvedTargetUserId, mediaAttachmentId);
+      void this.smartPhotosService?.recordCandidateLike?.(resolvedTargetUserId, mediaAttachmentId);
 
       return {
         targetUserId: resolvedTargetUserId,
         interaction: 'LIKE' as const,
         matched,
         matchId,
-        targetAttachmentType:
-          (interaction.targetAttachmentType as TargetAttachmentType) || undefined,
-        targetAttachmentId: interaction.targetAttachmentId || undefined,
-        comment: interaction.comment || undefined,
+        ...(attachmentOptions?.targetAttachmentType
+          ? {
+              targetAttachmentType:
+                (interaction.targetAttachmentType as TargetAttachmentType) || undefined,
+            }
+          : {}),
+        ...(attachmentOptions?.targetAttachmentId
+          ? { targetAttachmentId: interaction.targetAttachmentId || undefined }
+          : {}),
+        ...(attachmentOptions?.comment ? { comment: interaction.comment || undefined } : {}),
         ...(matched
           ? {
               matchStatus,
@@ -503,8 +509,10 @@ export class InteractionsService {
     const safeLimit = Math.min(Math.max(limit, 1), 100);
 
     const [hasSeeLikes, hasPremium] = await Promise.all([
-      this.entitlementService.hasEntitlement(userId, 'SEE_LIKES').catch(() => false),
-      this.entitlementService.hasEntitlement(userId, 'PREMIUM').catch(() => false),
+      this.entitlementService?.hasEntitlement(userId, 'SEE_LIKES').catch(() => false) ??
+        Promise.resolve(false),
+      this.entitlementService?.hasEntitlement(userId, 'PREMIUM').catch(() => false) ??
+        Promise.resolve(false),
     ]);
 
     const hasEntitlement = hasSeeLikes || hasPremium;
@@ -514,7 +522,7 @@ export class InteractionsService {
     const mappedItems: InboundLikeItemDto[] = items.map((rec) => {
       const isBlurred = !hasEntitlement;
       const photoUrl = rec.primaryPhotoKey
-        ? this.storageService.getPublicUrl(rec.primaryPhotoKey)
+        ? (this.storageService?.getPublicUrl(rec.primaryPhotoKey) ?? null)
         : null;
 
       if (isBlurred) {
