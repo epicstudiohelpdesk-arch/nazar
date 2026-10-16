@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { ProfilesModule } from '../profiles/profiles.module.js';
 import { MatchesModule } from '../matches/matches.module.js';
 import { SafetyModule } from '../safety/safety.module.js';
+import { PaymentsModule } from '../payments/payments.module.js';
 import { InteractionsController } from './interactions.controller.js';
 import { InteractionsService } from './services/interactions.service.js';
 import { InteractionsRepository } from './repositories/interactions.repository.js';
@@ -17,6 +18,7 @@ import { InteractionExclusionService } from './services/interaction-exclusion.se
     ProfilesModule,
     MatchesModule,
     forwardRef(() => SafetyModule),
+    forwardRef(() => PaymentsModule),
   ],
   controllers: [InteractionsController],
   providers: [

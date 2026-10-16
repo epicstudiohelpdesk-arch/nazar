@@ -14,6 +14,8 @@ export interface ChatHeaderProps {
   readonly isVerified?: boolean;
   readonly connectionState: SocketConnectionState;
   readonly onBack: () => void;
+  readonly onAudioCall?: () => void;
+  readonly onVideoCall?: () => void;
   readonly onReport?: () => void;
   readonly onBlock?: () => void;
   readonly onUnmatch?: () => void;
@@ -26,6 +28,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   isVerified,
   connectionState,
   onBack,
+  onAudioCall,
+  onVideoCall,
   onReport,
   onBlock,
   onUnmatch,
@@ -116,6 +120,28 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
       </View>
 
       <View style={styles.actionContainer}>
+        {onAudioCall && (
+          <TouchableOpacity
+            onPress={onAudioCall}
+            style={styles.actionBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Audio Call"
+            testID="chat-audio-call-btn"
+          >
+            <Icon name="phone" size="sm" color={colors.accent} />
+          </TouchableOpacity>
+        )}
+        {onVideoCall && (
+          <TouchableOpacity
+            onPress={onVideoCall}
+            style={styles.actionBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Video Call"
+            testID="chat-video-call-btn"
+          >
+            <Icon name="video" size="sm" color={colors.accent} />
+          </TouchableOpacity>
+        )}
         {onUnmatch && (
           <TouchableOpacity
             onPress={onUnmatch}

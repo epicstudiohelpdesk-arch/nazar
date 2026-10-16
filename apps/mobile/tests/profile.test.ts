@@ -163,4 +163,180 @@ describe('Mobile Profile Layer: Store, State Machine & API Client', () => {
     expect(useProfileStore.getState().uploadProgress.phase).toBe('SUCCESS');
     expect(useProfileStore.getState().uploadProgress.progress).toBe(100);
   });
+
+  it('fetches smart photos bandit statistics via getSmartPhotosStats', async () => {
+    const api = createProfileApi(authClient, mockFetch as unknown as typeof fetch);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        success: true,
+        data: {
+          enabled: true,
+          photos: [
+            {
+              mediaId: 'media_1',
+              photoUrl: 'https://cdn.platform.com/1.jpg',
+              impressions: 150,
+              likes: 45,
+              conversionRate: 0.3,
+              ucbScore: 1.82,
+              isPrimary: true,
+            },
+            {
+              mediaId: 'media_2',
+              photoUrl: 'https://cdn.platform.com/2.jpg',
+              impressions: 120,
+              likes: 24,
+              conversionRate: 0.2,
+              ucbScore: 1.45,
+              isPrimary: false,
+            },
+          ],
+        },
+      }),
+    });
+
+    const res = await api.getSmartPhotosStats();
+    expect(res.enabled).toBe(true);
+    expect(res.photos.length).toBe(2);
+    expect(res.photos[0]?.mediaId).toBe('media_1');
+    expect(res.photos[0]?.conversionRate).toBe(0.3);
+    expect(res.photos[0]?.isPrimary).toBe(true);
+  });
+
+  it('toggles smart photos setting via toggleSmartPhotos', async () => {
+    const api = createProfileApi(authClient, mockFetch as unknown as typeof fetch);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        success: true,
+        data: {
+          enabled: false,
+        },
+      }),
+    });
+
+    const res = await api.toggleSmartPhotos(false);
+    expect(res.enabled).toBe(false);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.test.platform.com/v1/profiles/me/smart-photos',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ enabled: false }),
+      })
+    );
+  });
+
+  it('fetches passport travel destination via getPassportLocation', async () => {
+    const api = createProfileApi(authClient, mockFetch as unknown as typeof fetch);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        success: true,
+        data: {
+          enabled: true,
+          latitude: 51.5074,
+          longitude: -0.1278,
+          city: 'London',
+          country: 'UK',
+        },
+      }),
+    });
+
+    const res = await api.getPassportLocation();
+    expect(res.enabled).toBe(true);
+    expect(res.city).toBe('London');
+    expect(res.country).toBe('UK');
+    expect(res.latitude).toBe(51.5074);
+  });
+
+  it('updates passport travel destination via setPassportLocation', async () => {
+    const api = createProfileApi(authClient, mockFetch as unknown as typeof fetch);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        success: true,
+        data: {
+          enabled: true,
+          latitude: 40.7128,
+          longitude: -74.006,
+          city: 'New York',
+          country: 'USA',
+        },
+      }),
+    });
+
+    const payload = {
+      enabled: true,
+      latitude: 40.7128,
+      longitude: -74.006,
+      city: 'New York',
+      country: 'USA',
+    };
+
+    const res = await api.setPassportLocation(payload);
+    expect(res.enabled).toBe(true);
+    expect(res.city).toBe('New York');
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.test.platform.com/v1/profiles/me/passport',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+    );
+  });
+
+  it('fetches shareable profile card metadata with deep links and OpenGraph previews', async () => {
+    const api = createProfileApi(authClient);
+
+    const mockCard = {
+      profileId: '018f0000-0000-7000-8000-000000000001',
+      userId: '018f0000-0000-7000-8000-000000000002',
+      displayName: 'Priya',
+      age: 28,
+      occupation: 'Architect',
+      city: 'Mumbai',
+      countryCode: 'IN',
+      isVerified: true,
+      primaryPhotoUrl: 'https://cdn.platform.com/media/photo.jpg',
+      featuredPrompt: {
+        prompt: 'My ideal Sunday looks like...',
+        answer: 'Exploring heritage lanes with filter coffee.',
+      },
+      shareUrl: 'https://nazar.app/p/018f0000-0000-7000-8000-000000000001',
+      deepLink: 'nazar://profile/018f0000-0000-7000-8000-000000000001',
+    };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: mockCard,
+      }),
+    });
+
+    const card = await api.getShareableProfileCard('018f0000-0000-7000-8000-000000000001');
+    expect(card.displayName).toBe('Priya');
+    expect(card.age).toBe(28);
+    expect(card.shareUrl).toBe('https://nazar.app/p/018f0000-0000-7000-8000-000000000001');
+    expect(card.deepLink).toBe('nazar://profile/018f0000-0000-7000-8000-000000000001');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.test.platform.com/v1/profiles/018f0000-0000-7000-8000-000000000001/card',
+      expect.anything()
+    );
+  });
 });

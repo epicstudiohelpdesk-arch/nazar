@@ -78,6 +78,8 @@ export const eventRsvps = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     status: varchar('status', { length: 32 }).notNull().default('GOING'), // 'GOING' | 'INTERESTED' | 'CANCELLED' | 'WAITLISTED'
+    lookingForPlusOne: boolean('looking_for_plus_one').notNull().default(false),
+    plusOneNote: varchar('plus_one_note', { length: 255 }),
     promotedFromWaitlistAt: timestamp('promoted_from_waitlist_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -86,6 +88,7 @@ export const eventRsvps = pgTable(
     uniqueIndex('idx_event_rsvps_unique').on(table.eventId, table.userId),
     index('idx_event_rsvps_event_status').on(table.eventId, table.status),
     index('idx_event_rsvps_user').on(table.userId),
+    index('idx_event_rsvps_plus_one').on(table.eventId, table.lookingForPlusOne),
     index('idx_event_rsvps_created_at').on(table.createdAt),
     check(
       'chk_event_rsvps_status',

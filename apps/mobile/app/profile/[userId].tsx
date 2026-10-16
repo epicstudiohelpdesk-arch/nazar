@@ -5,7 +5,6 @@ import {
   SafeAreaView,
   ScrollView,
   Image,
-  Dimensions,
   ActivityIndicator,
   TouchableOpacity,
   Alert,
@@ -14,6 +13,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { PublicProfileResponse } from '@platform/api-contracts';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
 import { IconButton } from '../../src/design/components/button/IconButton.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
@@ -26,10 +27,7 @@ import { getDefaultProfileApi } from '../../src/profile/profile-api.js';
 import { getDefaultInteractionsApi } from '../../src/interactions/interactions-api.js';
 import { MATCHES_QUERY_KEYS } from '../../src/matches/matches-api.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PHOTO_WIDTH = SCREEN_WIDTH - 32;
-const PHOTO_HEIGHT = Math.round(PHOTO_WIDTH * 1.25);
+import { ShareProfileModal } from '../../src/profile/components/ShareProfileModal.js';
 
 export default function PublicProfileRoute(): React.JSX.Element {
   const { userId } = useLocalSearchParams<{ userId: string }>();
@@ -42,6 +40,11 @@ export default function PublicProfileRoute(): React.JSX.Element {
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
+
+  const { isSmallScreen, isLargeScreen, width: windowWidth } = useResponsiveLayout();
+  const photoWidth = Math.min(windowWidth - 32, 500);
+  const photoHeight = isSmallScreen ? 340 : isLargeScreen ? 460 : 400;
 
   // Fetch Public Profile from server
   const {
@@ -114,18 +117,34 @@ export default function PublicProfileRoute(): React.JSX.Element {
 
   const handleLike = () => {
     if (!userId || isSubmitting) return;
+    haptics.medium();
     setIsSubmitting(true);
     likeMutation.mutate(userId);
   };
 
   const handlePass = () => {
     if (!userId || isSubmitting) return;
+    haptics.light();
     setIsSubmitting(true);
     passMutation.mutate(userId);
   };
 
   const mediaList = profile?.media || [];
   const photos = mediaList.map((m) => m.url);
+
+  const handleNextPhoto = () => {
+    if (photos.length > 1) {
+      haptics.selection();
+      setActivePhotoIndex((prev) => (prev + 1) % photos.length);
+    }
+  };
+
+  const handlePrevPhoto = () => {
+    if (photos.length > 1) {
+      haptics.selection();
+      setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -135,6 +154,14 @@ export default function PublicProfileRoute(): React.JSX.Element {
         leftAction="back"
         rightAction={
           <View style={styles.headerActions}>
+            <IconButton
+              icon="share"
+              size="sm"
+              variant="tertiary"
+              accessibilityLabel="Share profile"
+              onPress={() => setIsShareModalVisible(true)}
+              testID="public-profile-share-btn"
+            />
             <IconButton
               icon="flag"
               size="sm"
@@ -181,50 +208,58 @@ export default function PublicProfileRoute(): React.JSX.Element {
         </View>
       ) : (
         <View style={styles.bodyWrapper}>
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Multi-Photo Carousel */}
+          <ScrollView
+            contentContainerStyle={[styles.content, { maxWidth: 540, alignSelf: 'center', width: '100%' }]}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Multi-Photo Carousel with Story Bars & Taps */}
             {photos.length > 0 ? (
-              <View style={styles.galleryContainer}>
-                <ScrollView
-                  horizontal
-                  pagingEnabled
-                  showsHorizontalScrollIndicator={false}
-                  onScroll={(e) => {
-                    const offset = e.nativeEvent.contentOffset.x;
-                    const index = Math.round(offset / PHOTO_WIDTH);
-                    if (index !== activePhotoIndex) {
-                      setActivePhotoIndex(index);
-                    }
-                  }}
-                  scrollEventThrottle={16}
-                  style={styles.photoScroll}
-                >
-                  {photos.map((photoUrl, idx) => (
-                    <View key={`${photoUrl}-${idx}`} style={styles.photoSlide}>
-                      <Image
-                        source={{ uri: photoUrl }}
-                        style={styles.photoImage}
-                        resizeMode="cover"
-                        accessibilityLabel={`${profile.displayName}'s photo ${idx + 1}`}
-                      />
-                    </View>
-                  ))}
-                </ScrollView>
+              <View style={[styles.galleryContainer, { width: photoWidth, height: photoHeight }]}>
+                <Image
+                  source={{ uri: photos[activePhotoIndex] }}
+                  style={[styles.photoImage, { width: photoWidth, height: photoHeight }]}
+                  resizeMode="cover"
+                  accessibilityLabel={`${profile.displayName}'s photo ${activePhotoIndex + 1}`}
+                />
 
-                {/* Pagination Dots */}
+                {/* Subtle Bottom Vignette */}
+                <View style={styles.photoVignette} pointerEvents="none" />
+
+                {/* Story-Style Progress Bars */}
                 {photos.length > 1 && (
-                  <View style={styles.dotsRow}>
+                  <View style={styles.storyBarsContainer}>
                     {photos.map((_, idx) => (
                       <View
-                        key={`dot-${idx}`}
+                        key={`story-${idx}`}
                         style={[
-                          styles.dot,
-                          idx === activePhotoIndex
-                            ? [styles.activeDot, { backgroundColor: theme.colors.accent }]
-                            : { backgroundColor: 'rgba(255, 255, 255, 0.5)' },
+                          styles.storyBarTrack,
+                          {
+                            backgroundColor:
+                              idx === activePhotoIndex
+                                ? '#FFFFFF'
+                                : 'rgba(255, 255, 255, 0.4)',
+                          },
                         ]}
                       />
                     ))}
+                  </View>
+                )}
+
+                {/* Tap Zones for Left/Right Story Navigation */}
+                {photos.length > 1 && (
+                  <View style={styles.tapZonesRow} pointerEvents="box-none">
+                    <TouchableOpacity
+                      style={styles.tapZone}
+                      onPress={handlePrevPhoto}
+                      activeOpacity={1}
+                      accessibilityLabel="Previous photo"
+                    />
+                    <TouchableOpacity
+                      style={styles.tapZone}
+                      onPress={handleNextPhoto}
+                      activeOpacity={1}
+                      accessibilityLabel="Next photo"
+                    />
                   </View>
                 )}
               </View>
@@ -249,20 +284,76 @@ export default function PublicProfileRoute(): React.JSX.Element {
                 </View>
               )}
 
-              {/* Occupation & Education */}
+              {/* Event Plus-One Matching Badge */}
+              {profile.eventPlusOne ? (
+                <TouchableOpacity
+                  onPress={() => router.push(`/social/event/${profile.eventPlusOne?.eventId}`)}
+                  style={[
+                    styles.eventPlusOneCard,
+                    {
+                      backgroundColor: theme.colors.accentSoft,
+                      borderColor: theme.colors.accent,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  testID="profile-event-plus-one-banner"
+                >
+                  <View style={styles.eventPlusOneHeader}>
+                    <Icon name="ticket" size="sm" color={theme.colors.accent} />
+                    <Text level="bodySmall" weight="bold" color="primary">
+                      Looking for a +1
+                    </Text>
+                    <Badge variant="accent" label="Social Event" size="sm" />
+                  </View>
+                  <Text
+                    level="body"
+                    weight="semibold"
+                    style={{ color: theme.colors.accent, marginTop: 4 }}
+                  >
+                    {profile.eventPlusOne.eventTitle}
+                  </Text>
+                  {profile.eventPlusOne.note ? (
+                    <Text
+                      level="caption"
+                      color="secondary"
+                      style={{ fontStyle: 'italic', marginTop: 4 }}
+                    >
+                      "{profile.eventPlusOne.note}"
+                    </Text>
+                  ) : null}
+                </TouchableOpacity>
+              ) : null}
+
+              {/* Occupation & Education Micro-Badges */}
               {(profile.occupation || profile.education) && (
                 <View style={styles.detailsRow}>
                   {profile.occupation && (
-                    <View style={styles.detailItem}>
-                      <Icon name="user" size="sm" color={theme.colors.textSecondary} />
+                    <View
+                      style={[
+                        styles.detailChip,
+                        {
+                          backgroundColor: theme.colors.surfaceMuted,
+                          borderColor: theme.colors.border,
+                        },
+                      ]}
+                    >
+                      <Icon name="briefcase" size="sm" color={theme.colors.textSecondary} />
                       <Text level="bodySmall" color="secondary">
                         {profile.occupation}
                       </Text>
                     </View>
                   )}
                   {profile.education && (
-                    <View style={styles.detailItem}>
-                      <Icon name="sparkles" size="sm" color={theme.colors.textSecondary} />
+                    <View
+                      style={[
+                        styles.detailChip,
+                        {
+                          backgroundColor: theme.colors.surfaceMuted,
+                          borderColor: theme.colors.border,
+                        },
+                      ]}
+                    >
+                      <Icon name="graduationCap" size="sm" color={theme.colors.textSecondary} />
                       <Text level="bodySmall" color="secondary">
                         {profile.education}
                       </Text>
@@ -385,6 +476,14 @@ export default function PublicProfileRoute(): React.JSX.Element {
           </View>
         </View>
       )}
+
+      {profile?.id && (
+        <ShareProfileModal
+          visible={isShareModalVisible}
+          onClose={() => setIsShareModalVisible(false)}
+          profileId={profile.id}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -418,47 +517,44 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   galleryContainer: {
-    width: PHOTO_WIDTH,
-    height: PHOTO_HEIGHT,
     borderRadius: 24,
     overflow: 'hidden',
     position: 'relative',
     alignSelf: 'center',
-  },
-  photoScroll: {
-    width: PHOTO_WIDTH,
-    height: PHOTO_HEIGHT,
-  },
-  photoSlide: {
-    width: PHOTO_WIDTH,
-    height: PHOTO_HEIGHT,
+    backgroundColor: '#000000',
   },
   photoImage: {
-    width: '100%',
+    borderRadius: 24,
+  },
+  photoVignette: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  storyBarsContainer: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    gap: 4,
+    zIndex: 10,
+  },
+  storyBarTrack: {
+    flex: 1,
+    height: 3,
+    borderRadius: 1.5,
+  },
+  tapZonesRow: {
+    ...StyleSheet.absoluteFill,
+    flexDirection: 'row',
+    zIndex: 5,
+  },
+  tapZone: {
+    flex: 1,
     height: '100%',
   },
-  dotsRow: {
-    position: 'absolute',
-    bottom: 16,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  activeDot: {
-    width: 24,
-    height: 8,
-    borderRadius: 4,
-  },
   identitySection: {
-    gap: 6,
+    gap: 8,
     paddingHorizontal: 4,
   },
   nameRow: {
@@ -476,23 +572,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  eventPlusOneCard: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  eventPlusOneHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   detailsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
     marginTop: 4,
   },
-  detailItem: {
+  detailChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   bioCard: {
-    padding: 16,
-    borderRadius: 16,
+    padding: 18,
+    borderRadius: 20,
   },
   bioText: {
-    lineHeight: 22,
+    lineHeight: 24,
   },
   section: {
     gap: 12,
@@ -501,18 +612,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   promptCard: {
-    padding: 18,
-    borderRadius: 16,
-    gap: 6,
+    padding: 20,
+    borderRadius: 20,
+    gap: 8,
   },
   promptQuestion: {
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   promptAnswer: {
     fontWeight: '500',
-    lineHeight: 24,
+    lineHeight: 26,
   },
   interestsContainer: {
     flexDirection: 'row',
@@ -534,12 +645,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 14,
-    gap: 28,
+    gap: 32,
     borderTopWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.08,
-    shadowRadius: 6,
+    shadowRadius: 8,
     elevation: 8,
   },
   actionCircle: {
@@ -548,9 +659,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
   },
   passCircle: {
     width: 60,

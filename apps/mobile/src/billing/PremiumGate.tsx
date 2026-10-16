@@ -9,6 +9,7 @@ import { Icon } from '../design/primitives/Icon.js';
 import { SurfaceCard } from '../design/primitives/SurfaceCard.js';
 import { Button } from '../design/components/button/Button.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
+import { haptics } from '../design/haptics/index.js';
 
 export interface PremiumGateProps {
   readonly feature: EntitlementCode;
@@ -95,6 +96,7 @@ export function PremiumGate({
   }
 
   const handleUnlock = () => {
+    haptics.selection();
     trackOnboardingEvent('premium_paywall_viewed', { source: `gate_${feature}` });
     if (onUnlockPress) {
       onUnlockPress();
@@ -133,6 +135,7 @@ export function PremiumGate({
         label="Unlock with Premium"
         variant="primary"
         size="sm"
+        icon="sparkles"
         onPress={handleUnlock}
         testID={`${testID}-unlock-button`}
         accessibilityLabel={`Unlock ${title}`}

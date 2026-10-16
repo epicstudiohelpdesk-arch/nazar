@@ -14,6 +14,8 @@ import { PhotoEditor } from '../../src/design/patterns/profile/index.js';
 import { getDefaultProfileApi } from '../../src/profile/profile-api.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 // High-quality authentic portrait assets for preview/demo fallback
 const SAMPLE_PORTRAITS = [
@@ -28,6 +30,7 @@ const SAMPLE_PORTRAITS = [
 export default function OnboardingPhotosScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const profileApi = getDefaultProfileApi();
 
   const { draftPhotos, setDraftPhotos, addDraftPhoto, removeDraftPhoto, setPrimaryDraftPhoto } =
@@ -95,6 +98,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
         isPrimary: isFirst,
         status: 'READY',
       });
+      haptics.notificationSuccess();
 
       trackOnboardingEvent('photo_added', {
         photoCount: draftPhotos.length + 1,
@@ -113,6 +117,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
         isPrimary: isFirst,
         status: 'READY',
       });
+      haptics.notificationSuccess();
 
       trackOnboardingEvent('photo_added', {
         photoCount: draftPhotos.length + 1,
@@ -124,6 +129,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
   };
 
   const handleDeletePhoto = async (photoId: string) => {
+    haptics.impactLight();
     try {
       await profileApi.deleteMedia(photoId);
     } catch {
@@ -136,6 +142,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
   };
 
   const handleSetPrimary = async (photoId: string) => {
+    haptics.selection();
     setPrimaryDraftPhoto(photoId);
     try {
       await profileApi.setPrimaryPhoto(photoId);
@@ -147,10 +154,12 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
 
   const handleNext = () => {
     if (filledCount < 2) {
+      haptics.notificationError();
       setErrorMessage('Please upload at least 2 photos before continuing.');
       return;
     }
 
+    haptics.impactMedium();
     setErrorMessage(undefined);
     trackOnboardingEvent('photos_completed', { photoCount: filledCount });
     router.push('/(onboarding)/interests');
@@ -161,7 +170,13 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
       <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.3} style={styles.progressBar} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text level="label" color="accent">
             STEP 2 OF 6

@@ -23,17 +23,17 @@ describe('@platform/ui', () => {
   it('should expose semantic light and dark color palettes', () => {
     expect(semanticLightColors.background).toBe('#FAF8F5');
     expect(semanticLightColors.surface).toBe('#FFFFFF');
-    expect(semanticLightColors.accent).toBe('#D84315');
+    expect(semanticLightColors.accent).toBe('#DC0C24');
     expect(semanticLightColors.textPrimary).toBe('#1C1917');
 
     expect(semanticDarkColors.background).toBe('#12100E');
     expect(semanticDarkColors.surface).toBe('#1C1917');
-    expect(semanticDarkColors.accent).toBe('#F06548');
+    expect(semanticDarkColors.accent).toBe('#DC0C24');
     expect(semanticDarkColors.textPrimary).toBe('#F5F5F4');
 
     expect(darkColors.darkBackground).toBe('#12100E');
-    expect(colors.accent).toBe('#D84315');
-    expect(colors.darkAccent).toBe('#F06548');
+    expect(colors.accent).toBe('#DC0C24');
+    expect(colors.darkAccent).toBe('#DC0C24');
   });
 
   it('should expose non-negative spacing tokens in ascending order', () => {

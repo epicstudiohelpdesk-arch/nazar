@@ -1,48 +1,76 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import type { ProfileCompleteness, ProfileVisibility } from '@platform/api-contracts';
+import { useTheme } from '../../design/theme/ThemeContext.js';
+import { SurfaceCard } from '../../design/primitives/SurfaceCard.js';
+import { Heading } from '../../design/primitives/Heading.js';
+import { Text } from '../../design/primitives/Text.js';
+import { Badge } from '../../design/primitives/Badge.js';
+import { Icon } from '../../design/primitives/Icon.js';
 
 interface CompletenessCardProps {
   completeness: ProfileCompleteness;
   visibility: ProfileVisibility;
 }
 
-const statusColors: Record<ProfileVisibility, { backgroundColor: string }> = {
-  ACTIVE: { backgroundColor: '#DCFCE7' },
-  DRAFT: { backgroundColor: '#FEF9C3' },
-  PAUSED: { backgroundColor: '#F3F4F6' },
-  HIDDEN: { backgroundColor: '#FEE2E2' },
-};
-
 export const CompletenessCard: React.FC<CompletenessCardProps> = ({ completeness, visibility }) => {
+  const { theme } = useTheme();
   const isComplete = completeness.missingRequired.length === 0;
 
+  const getVisibilityBadge = () => {
+    switch (visibility) {
+      case 'ACTIVE':
+        return <Badge variant="success" label="Active in Discovery" size="sm" icon="checkCircle" />;
+      case 'DRAFT':
+        return <Badge variant="warning" label="Draft Mode" size="sm" icon="alertCircle" />;
+      case 'PAUSED':
+        return <Badge variant="neutral" label="Paused" size="sm" />;
+      case 'HIDDEN':
+        return <Badge variant="error" label="Hidden" size="sm" icon="eyeOff" />;
+      default:
+        return <Badge variant="neutral" label={visibility} size="sm" />;
+    }
+  };
+
   return (
-    <View style={styles.card}>
+    <SurfaceCard elevation="sm" style={styles.card}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Profile Status</Text>
-        <View style={[styles.badge, statusColors[visibility]]}>
-          <Text style={styles.badgeText}>{visibility}</Text>
-        </View>
+        <Heading level="h3">Profile Status</Heading>
+        {getVisibilityBadge()}
       </View>
 
       <View style={styles.progressContainer}>
-        <View style={styles.progressBarBackground}>
+        <View
+          style={[
+            styles.progressBarBackground,
+            { backgroundColor: theme.colors.surfaceMuted },
+          ]}
+        >
           <View
             style={[
               styles.progressBarFill,
-              { width: `${Math.min(100, Math.max(0, completeness.percentage))}%` },
+              {
+                width: `${Math.min(100, Math.max(0, completeness.percentage))}%`,
+                backgroundColor: isComplete ? (theme.colors.success || '#10B981') : theme.colors.accent,
+              },
             ]}
           />
         </View>
-        <Text style={styles.percentageText}>{completeness.percentage}% Complete</Text>
+        <Text level="bodySmall" color="secondary" style={styles.percentageText}>
+          {completeness.percentage}% Complete
+        </Text>
       </View>
 
       {!isComplete && (
-        <View style={styles.missingContainer}>
-          <Text style={styles.missingTitle}>Required for activation:</Text>
+        <View style={[styles.missingContainer, { borderTopColor: theme.colors.border }]}>
+          <View style={styles.missingHeaderRow}>
+            <Icon name="alertCircle" size="tiny" color={theme.colors.warning} />
+            <Text level="caption" weight="bold" style={{ color: theme.colors.warning, marginLeft: 4 }}>
+              Required for discovery activation:
+            </Text>
+          </View>
           {completeness.missingRequired.map((field) => (
-            <Text key={field} style={styles.missingItem}>
+            <Text key={field} level="caption" color="secondary" style={styles.missingItem}>
               • {field}
             </Text>
           ))}
@@ -50,22 +78,26 @@ export const CompletenessCard: React.FC<CompletenessCardProps> = ({ completeness
       )}
 
       {isComplete && visibility === 'DRAFT' && (
-        <Text style={styles.readyText}>✓ Your profile is ready for discovery activation!</Text>
+        <View style={styles.readyRow}>
+          <Icon name="checkCircle" size="sm" color={theme.colors.success || '#10B981'} />
+          <Text
+            level="bodySmall"
+            weight="semibold"
+            style={{ color: theme.colors.success || '#10B981', marginLeft: 6 }}
+          >
+            Your profile is ready for discovery activation!
+          </Text>
+        </View>
       )}
-    </View>
+    </SurfaceCard>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 8,
-    shadowColor: '#000000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    padding: 18,
+    borderRadius: 20,
+    marginVertical: 4,
   },
   headerRow: {
     flexDirection: 'row',
@@ -73,74 +105,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  status_ACTIVE: {
-    backgroundColor: '#DCFCE7',
-  },
-  status_DRAFT: {
-    backgroundColor: '#FEF9C3',
-  },
-  status_PAUSED: {
-    backgroundColor: '#F3F4F6',
-  },
-  status_HIDDEN: {
-    backgroundColor: '#FEE2E2',
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#374151',
-  },
   progressContainer: {
-    marginVertical: 8,
+    marginVertical: 4,
   },
   progressBarBackground: {
     height: 8,
-    backgroundColor: '#E5E7EB',
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#E11D48',
     borderRadius: 4,
   },
   percentageText: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginTop: 6,
-    fontWeight: '500',
+    marginTop: 8,
+    fontWeight: '600',
   },
   missingContainer: {
-    marginTop: 8,
-    paddingTop: 8,
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
   },
-  missingTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#B91C1C',
-    marginBottom: 4,
+  missingHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   missingItem: {
-    fontSize: 12,
-    color: '#4B5563',
+    marginLeft: 6,
+    marginTop: 3,
     lineHeight: 18,
   },
-  readyText: {
-    fontSize: 13,
-    color: '#059669',
-    fontWeight: '600',
-    marginTop: 8,
+  readyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
   },
 });

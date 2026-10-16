@@ -410,11 +410,12 @@ export class SocialApiClient {
 
   async listEventAttendees(
     id: string,
-    query: { limit?: number; cursor?: string } = {}
+    query: { limit?: number; cursor?: string; plusOnesOnly?: boolean } = {}
   ): Promise<EventAttendeeListResponseDto> {
     const params = new URLSearchParams();
     if (query.limit) params.set('limit', String(query.limit));
     if (query.cursor) params.set('cursor', query.cursor);
+    if (query.plusOnesOnly !== undefined) params.set('plusOnesOnly', String(query.plusOnesOnly));
 
     const queryStr = params.toString() ? `?${params.toString()}` : '';
     const res = await this.fetchWithAuth<EventAttendeeListResponseDto>(
@@ -445,7 +446,8 @@ export const SOCIAL_QUERY_KEYS = {
   events: (params?: { communityId?: string; type?: string }) =>
     ['social', 'events', params ?? {}] as const,
   event: (id: string) => ['social', 'event', id] as const,
-  eventAttendees: (id: string) => ['social', 'event', id, 'attendees'] as const,
+  eventAttendees: (id: string, plusOnesOnly?: boolean) =>
+    ['social', 'event', id, 'attendees', { plusOnesOnly: !!plusOnesOnly }] as const,
   /**
    * The detail screen shows a short, non-paginated attendee preview while
    * `eventAttendees` backs an infinite roster. The two cache different shapes,

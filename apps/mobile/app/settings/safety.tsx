@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -9,16 +9,28 @@ import { Text } from '../../src/design/primitives/Text.js';
 import { Icon } from '../../src/design/primitives/Icon.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { getDefaultSafetyApi, SAFETY_QUERY_KEYS } from '../../src/safety/safety-api.js';
+import { PhotoVerificationModal } from '../../src/safety/components/PhotoVerificationModal.js';
+import { DateSafetyModal } from '../../src/safety/components/DateSafetyModal.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 export default function SafetyHubRoute(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const safetyApi = getDefaultSafetyApi();
+  const [isVerificationModalVisible, setIsVerificationModalVisible] = useState(false);
+  const [isDateSafetyModalVisible, setIsDateSafetyModalVisible] = useState(false);
 
   const blocksQuery = useQuery({
     queryKey: SAFETY_QUERY_KEYS.blocks,
     queryFn: () => safetyApi.getBlockedUsers(),
+  });
+
+  const verificationQuery = useQuery({
+    queryKey: SAFETY_QUERY_KEYS.verificationStatus,
+    queryFn: () => safetyApi.getVerificationStatus(),
   });
 
   useEffect(() => {
@@ -26,18 +38,28 @@ export default function SafetyHubRoute(): React.JSX.Element {
   }, []);
 
   const blockedCount = blocksQuery.data?.items?.length ?? 0;
+  const isVerified = verificationQuery.data?.isVerified ?? false;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <TopNavHeader title="Safety & Trust" onBack={() => router.back()} leftAction="back" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Safety Controls & Blocked Accounts */}
         <View style={styles.section}>
           <Heading level="h3">Safety Controls</Heading>
           <SurfaceCard elevation="sm" style={styles.card}>
             <TouchableOpacity
               style={styles.itemRow}
-              onPress={() => router.push('/settings/blocked')}
+              onPress={() => {
+                haptics.selection();
+                router.push('/settings/blocked');
+              }}
               accessibilityRole="button"
               accessibilityLabel="Manage blocked users"
             >
@@ -57,17 +79,80 @@ export default function SafetyHubRoute(): React.JSX.Element {
 
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
-            <View style={styles.itemRow}>
-              <View style={[styles.iconBox, { backgroundColor: theme.colors.accentSoft }]}>
-                <Icon name="shield" size={20} color={theme.colors.accent} />
+            <TouchableOpacity
+              style={styles.itemRow}
+              onPress={() => {
+                haptics.selection();
+                setIsVerificationModalVisible(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Photo Verification"
+              testID="btn-photo-verification-row"
+            >
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: isVerified ? theme.colors.successSoft : theme.colors.accentSoft },
+                ]}
+              >
+                <Icon
+                  name="shield"
+                  size={20}
+                  color={isVerified ? theme.colors.success : theme.colors.accent}
+                />
               </View>
               <View style={styles.itemText}>
-                <Text level="title">Photo Verification</Text>
+                <View style={styles.verificationTitleRow}>
+                  <Text level="title">Photo Verification</Text>
+                  {isVerified && (
+                    <View style={[styles.verifiedPill, { backgroundColor: theme.colors.successSoft }]}>
+                      <Text variant="caption" weight="bold" color="success">
+                        VERIFIED
+                      </Text>
+                    </View>
+                  )}
+                </View>
                 <Text level="bodySmall" color="secondary">
-                  Your profile photos are verified through biometric selfie confirmation.
+                  {isVerified
+                    ? 'Your profile is verified with biometric selfie confirmation.'
+                    : 'Tap to complete a 10-second selfie pose check and earn your Verified badge.'}
                 </Text>
               </View>
-            </View>
+              <Icon name="chevron" size={18} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+
+            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+
+            <TouchableOpacity
+              style={styles.itemRow}
+              onPress={() => {
+                haptics.selection();
+                setIsDateSafetyModalVisible(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Date Safety and SOS Check-in"
+              testID="btn-date-safety-row"
+            >
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: theme.colors.errorSoft },
+                ]}
+              >
+                <Icon
+                  name="shield"
+                  size={20}
+                  color={theme.colors.error}
+                />
+              </View>
+              <View style={styles.itemText}>
+                <Text level="title">Date Safety & Emergency SOS</Text>
+                <Text level="bodySmall" color="secondary">
+                  Schedule date check-in alarms, automated emergency contact alerts, and instant SOS panic trigger.
+                </Text>
+              </View>
+              <Icon name="chevron" size={18} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
           </SurfaceCard>
         </View>
 
@@ -101,22 +186,10 @@ export default function SafetyHubRoute(): React.JSX.Element {
 
             <View style={styles.guidelineItem}>
               <Text level="title" color="accent">
-                3. Own Your Transportation
+                3. Financial Boundaries
               </Text>
               <Text level="bodySmall" color="secondary">
-                Arrange your own ride to and from the venue. Avoid relying on your date for
-                transportation so you can leave whenever you feel uncomfortable.
-              </Text>
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-
-            <View style={styles.guidelineItem}>
-              <Text level="title" color="accent">
-                4. Zero Tolerance for Financial Solicitations
-              </Text>
-              <Text level="bodySmall" color="secondary">
-                Never send money, wire transfers, crypto, or financial credentials to anyone you
+                Never send wire transfers, cryptocurrency, gift cards, or money to someone you
                 meet online. Report any financial requests immediately.
               </Text>
             </View>
@@ -138,6 +211,18 @@ export default function SafetyHubRoute(): React.JSX.Element {
           </SurfaceCard>
         </View>
       </ScrollView>
+
+      {/* KYC Photo Verification Modal */}
+      <PhotoVerificationModal
+        visible={isVerificationModalVisible}
+        onClose={() => setIsVerificationModalVisible(false)}
+      />
+
+      {/* Date Safety & SOS Modal */}
+      <DateSafetyModal
+        visible={isDateSafetyModalVisible}
+        onClose={() => setIsDateSafetyModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -173,6 +258,16 @@ const styles = StyleSheet.create({
   itemText: {
     flex: 1,
     gap: 2,
+  },
+  verificationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  verifiedPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   guidelineItem: {
     gap: 4,

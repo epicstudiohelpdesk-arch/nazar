@@ -24,6 +24,8 @@ import {
   toEventCardRsvp,
 } from './social-state.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../design/responsive/index.js';
+import { haptics } from '../design/haptics/index.js';
 
 export interface EventsScreenProps {
   readonly client: SocialApiClient;
@@ -52,6 +54,7 @@ const FILTERS: readonly { key: EventFilter; label: string }[] = [
 export const EventsScreen: React.FC<EventsScreenProps> = ({ client, communityId, onBack }) => {
   const router = useRouter();
   const { colors, spacing } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const [filter, setFilter] = useState<EventFilter>('ALL');
 
   const query = useInfiniteQuery({
@@ -112,7 +115,10 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ client, communityId,
             icon="plus"
             size="sm"
             variant="tertiary"
-            onPress={() => router.push(socialRoutes.createEvent(communityId))}
+            onPress={() => {
+              haptics.selection();
+              router.push(socialRoutes.createEvent(communityId));
+            }}
             accessibilityLabel="Host an event"
             testID="events-create-btn"
           />
@@ -136,7 +142,10 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ client, communityId,
                   paddingHorizontal: spacing.md,
                 },
               ]}
-              onPress={() => setFilter(f.key)}
+              onPress={() => {
+                haptics.selection();
+                setFilter(f.key);
+              }}
               accessibilityRole="tab"
               accessibilityState={{ selected: filter === f.key }}
               accessibilityLabel={f.label}
@@ -167,13 +176,17 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ client, communityId,
               attendeeCount={item.attendeeCount}
               rsvpStatus={toEventCardRsvp(item.currentUserRsvp)}
               onPress={() => {
+                haptics.selection();
                 trackOnboardingEvent('event_viewed', { event_id: item.id, event_type: item.type });
                 router.push(socialRoutes.event(item.id));
               }}
             />
           </View>
         )}
-        contentContainerStyle={events.length === 0 ? styles.emptyContent : styles.content}
+        contentContainerStyle={[
+          events.length === 0 ? styles.emptyContent : styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
         refreshing={query.isRefetching && !query.isFetchingNextPage}
         onRefresh={() => void query.refetch()}
         onEndReachedThreshold={0.5}

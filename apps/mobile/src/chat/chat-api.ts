@@ -1,11 +1,11 @@
-import type {
-  ConversationListResponseDto,
-  ConversationDetailDto,
-  MessageListResponseDto,
-  SendMessageRequestDto,
-  SendMessageResponseDto,
-  MarkReadResponseDto,
-  SyncMessagesResponseDto,
+import {
+  type ConversationListResponseDto,
+  type ConversationDetailDto,
+  type MessageListResponseDto,
+  type SendMessageRequestDto,
+  type SendMessageResponseDto,
+  type MarkReadResponseDto,
+  type SyncMessagesResponseDto,
 } from '@platform/api-contracts';
 import type { AuthClient } from '../auth/auth-client.js';
 

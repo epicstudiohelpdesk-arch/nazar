@@ -407,5 +407,69 @@ describe('Mobile Social, Communities & Events Client', () => {
       expect((err as SocialApiError).message).toBe('Internal Server Error');
       expect(describeSocialError(err).kind).toBe('unknown');
     });
+
+    it('should submit RSVP with lookingForPlusOne and plusOneNote', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: { status: 'GOING' } }),
+      });
+
+      const res = await client.rsvpEvent('event-1', {
+        status: 'GOING',
+        lookingForPlusOne: true,
+        plusOneNote: 'Looking for a concert buddy!',
+      });
+
+      expect(res.status).toBe('GOING');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:4000/v1/events/event-1/rsvp',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            status: 'GOING',
+            lookingForPlusOne: true,
+            plusOneNote: 'Looking for a concert buddy!',
+          }),
+        })
+      );
+    });
+
+    it('should list event attendees with plusOnesOnly query parameter', async () => {
+      const attendeeList: EventAttendeeListResponseDto = {
+        items: [
+          {
+            id: 'rsvp-po-1',
+            eventId: 'event-1',
+            userId: 'user-po-1',
+            user: {
+              userId: 'user-po-1',
+              displayName: 'Zara',
+              avatarUrl: null,
+            },
+            status: 'GOING',
+            lookingForPlusOne: true,
+            plusOneNote: 'Looking for someone who loves indie pop',
+            createdAt: '2026-10-01T12:00:00.000Z',
+          },
+        ],
+        nextCursor: null,
+        hasMore: false,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: attendeeList }),
+      });
+
+      const res = await client.listEventAttendees('event-1', { plusOnesOnly: true });
+      expect(res.items).toHaveLength(1);
+      expect(res.items[0]?.lookingForPlusOne).toBe(true);
+      expect(res.items[0]?.plusOneNote).toBe('Looking for someone who loves indie pop');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:4000/v1/events/event-1/attendees?plusOnesOnly=true',
+        expect.anything()
+      );
+    });
   });
 });

@@ -7,7 +7,11 @@ import {
 import { matches, type MatchRow } from '../../../infrastructure/database/drizzle/schema/matches.js';
 import { conversations } from '../../../infrastructure/database/drizzle/schema/conversations.js';
 import { generateUuidV7 } from '@platform/domain';
-import type { IMatchesRepository, FindMatchesOptions } from './matches.repository.interface.js';
+import type {
+  IMatchesRepository,
+  FindMatchesOptions,
+  CreateMatchOptions,
+} from './matches.repository.interface.js';
 
 @Injectable()
 export class MatchesRepository implements IMatchesRepository {
@@ -23,8 +27,12 @@ export class MatchesRepository implements IMatchesRepository {
   async createOrActivateMatchTx(
     tx: DrizzleDatabase,
     userAId: string,
-    userBId: string
+    userBId: string,
+    options?: CreateMatchOptions
   ): Promise<{ match: MatchRow; wasCreated: boolean }> {
+    const targetStatus = options?.status ?? 'ACTIVE';
+    const targetExpiresAt = options?.expiresAt ?? null;
+
     // 1. Acquire transaction-scoped advisory lock on the normalized pair to serialize concurrent likes
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userAId}), hashtext(${userBId}))`);
 
@@ -45,7 +53,8 @@ export class MatchesRepository implements IMatchesRepository {
       const [updated] = await tx
         .update(matches)
         .set({
-          status: 'ACTIVE',
+          status: targetStatus,
+          expiresAt: targetExpiresAt,
           matchedAt: new Date(),
           unmatchedByUserId: null,
           unmatchedAt: null,
@@ -59,22 +68,24 @@ export class MatchesRepository implements IMatchesRepository {
         throw new Error('Failed to update match status');
       }
 
-      await tx
-        .insert(conversations)
-        .values({
-          id: generateUuidV7(),
-          matchId: updated.id,
-          status: 'ACTIVE',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: [conversations.matchId],
-          set: {
+      if (targetStatus === 'ACTIVE') {
+        await tx
+          .insert(conversations)
+          .values({
+            id: generateUuidV7(),
+            matchId: updated.id,
             status: 'ACTIVE',
+            createdAt: new Date(),
             updatedAt: new Date(),
-          },
-        });
+          })
+          .onConflictDoUpdate({
+            target: [conversations.matchId],
+            set: {
+              status: 'ACTIVE',
+              updatedAt: new Date(),
+            },
+          });
+      }
 
       return { match: updated, wasCreated: true };
     }
@@ -87,7 +98,8 @@ export class MatchesRepository implements IMatchesRepository {
         id: matchId,
         userAId,
         userBId,
-        status: 'ACTIVE',
+        status: targetStatus,
+        expiresAt: targetExpiresAt,
         matchedAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -95,7 +107,8 @@ export class MatchesRepository implements IMatchesRepository {
       .onConflictDoUpdate({
         target: [matches.userAId, matches.userBId],
         set: {
-          status: 'ACTIVE',
+          status: targetStatus,
+          expiresAt: targetExpiresAt,
           matchedAt: new Date(),
           unmatchedByUserId: null,
           unmatchedAt: null,
@@ -109,22 +122,24 @@ export class MatchesRepository implements IMatchesRepository {
       throw new Error('Failed to insert match record');
     }
 
-    await tx
-      .insert(conversations)
-      .values({
-        id: generateUuidV7(),
-        matchId: inserted.id,
-        status: 'ACTIVE',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [conversations.matchId],
-        set: {
+    if (targetStatus === 'ACTIVE') {
+      await tx
+        .insert(conversations)
+        .values({
+          id: generateUuidV7(),
+          matchId: inserted.id,
           status: 'ACTIVE',
+          createdAt: new Date(),
           updatedAt: new Date(),
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: [conversations.matchId],
+          set: {
+            status: 'ACTIVE',
+            updatedAt: new Date(),
+          },
+        });
+    }
 
     return { match: inserted, wasCreated: true };
   }
@@ -197,5 +212,32 @@ export class MatchesRepository implements IMatchesRepository {
       .returning();
 
     return rows[0] || null;
+  }
+
+  async countActiveMatchesForUser(userId: string, tx?: DrizzleDatabase): Promise<number> {
+    const client = this.getClient(tx);
+    const result = await client
+      .select({ count: sql<number>`count(*)::int` })
+      .from(matches)
+      .where(
+        and(
+          or(eq(matches.userAId, userId), eq(matches.userBId, userId)),
+          eq(matches.status, 'ACTIVE')
+        )
+      );
+    return result[0]?.count ?? 0;
+  }
+
+  async confirmMatchConversation(matchId: string, tx?: DrizzleDatabase): Promise<MatchRow | null> {
+    const client = this.getClient(tx);
+    const [updated] = await client
+      .update(matches)
+      .set({
+        expiresAt: null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(matches.id, matchId), eq(matches.status, 'ACTIVE')))
+      .returning();
+    return updated || null;
   }
 }

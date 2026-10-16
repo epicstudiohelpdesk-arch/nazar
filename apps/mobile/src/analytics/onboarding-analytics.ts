@@ -140,6 +140,9 @@ export type OnboardingAnalyticsEvent =
   | 'chat_report_completed'
   | 'chat_unmatch_started'
   | 'chat_unmatch_completed'
+  | 'toxic_intervention_triggered'
+  | 'call_initiated'
+  | 'call_ended'
   // Social + Communities + Events (F7)
   | 'social_home_opened'
   | 'community_viewed'

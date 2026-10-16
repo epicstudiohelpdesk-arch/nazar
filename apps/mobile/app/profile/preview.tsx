@@ -1,12 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, SafeAreaView, ScrollView, View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
+import { IconButton } from '../../src/design/components/button/IconButton.js';
 import { ProfileCard } from '../../src/design/components/card/ProfileCard.js';
 import { Text } from '../../src/design/primitives/Text.js';
 import { getDefaultProfileApi, PROFILE_QUERY_KEYS } from '../../src/profile/profile-api.js';
+import { ShareProfileModal } from '../../src/profile/components/ShareProfileModal.js';
 
 const SAMPLE_PHOTO_REPLACEMENTS = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800',
@@ -21,6 +23,7 @@ export default function ProfilePreviewRoute(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
   const profileApi = getDefaultProfileApi();
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
 
   const profileQuery = useQuery({
     queryKey: PROFILE_QUERY_KEYS.me,
@@ -76,7 +79,23 @@ export default function ProfilePreviewRoute(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="Profile Preview" onBack={() => router.back()} leftAction="close" />
+      <TopNavHeader
+        title="Profile Preview"
+        onBack={() => router.back()}
+        leftAction="close"
+        rightAction={
+          profile?.id ? (
+            <IconButton
+              icon="share"
+              size="md"
+              variant="tertiary"
+              accessibilityLabel="Share profile"
+              onPress={() => setIsShareModalVisible(true)}
+              testID="preview-share-btn"
+            />
+          ) : undefined
+        }
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <ProfileCard
           context="profilePreview"
@@ -98,6 +117,14 @@ export default function ProfilePreviewRoute(): React.JSX.Element {
           }}
         />
       </ScrollView>
+
+      {profile?.id && (
+        <ShareProfileModal
+          visible={isShareModalVisible}
+          onClose={() => setIsShareModalVisible(false)}
+          profileId={profile.id}
+        />
+      )}
     </SafeAreaView>
   );
 }

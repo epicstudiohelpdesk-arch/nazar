@@ -15,6 +15,8 @@ import { ProgressBar } from '../../src/design/components/feedback/ProgressBar.js
 import { getDefaultProfileApi } from '../../src/profile/profile-api.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 const GENDER_OPTIONS = [
   { label: 'Woman', value: 'WOMAN' },
@@ -44,6 +46,7 @@ const POPULAR_CITIES = [
 export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const profileApi = getDefaultProfileApi();
 
   const { draftProfile, updateDraftProfile } = useOnboardingStore();
@@ -74,33 +77,40 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
   const handleNext = async () => {
     if (!displayName.trim()) {
+      haptics.notificationError();
       setErrorMessage('Please enter your first name.');
       return;
     }
     if (displayName.trim().length > 30) {
+      haptics.notificationError();
       setErrorMessage('First name cannot exceed 30 characters.');
       return;
     }
     if (!dateOfBirth) {
+      haptics.notificationError();
       setErrorMessage('Please select your date of birth.');
       return;
     }
 
     const age = calculateAge(dateOfBirth);
     if (age < 18) {
+      haptics.notificationError();
       setErrorMessage('You must be at least 18 years old to join Nazar.');
       return;
     }
     if (age > 100) {
+      haptics.notificationError();
       setErrorMessage('Please enter a valid date of birth.');
       return;
     }
 
     if (!city.trim()) {
+      haptics.notificationError();
       setErrorMessage('Please provide your current city.');
       return;
     }
 
+    haptics.impactMedium();
     const formattedDob = dateOfBirth.toISOString().split('T')[0];
 
     // Preserve in store draft
@@ -137,6 +147,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
       router.push('/(onboarding)/photos');
     } catch (err: unknown) {
+      haptics.notificationError();
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMessage(msg || 'Failed to save profile. Tap Continue to retry.');
     } finally {
@@ -150,7 +161,10 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       <ProgressBar progress={0.15} style={styles.progressBar} />
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -208,14 +222,20 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             label="Gender Identity"
             value={gender}
             options={GENDER_OPTIONS}
-            onSelectOption={(val) => setGender(val as Gender)}
+            onSelectOption={(val) => {
+              haptics.selection();
+              setGender(val as Gender);
+            }}
           />
 
           <Select
             label="Relationship Intent"
             value={intent}
             options={INTENT_OPTIONS}
-            onSelectOption={(val) => setIntent(val as RelationshipIntent)}
+            onSelectOption={(val) => {
+              haptics.selection();
+              setIntent(val as RelationshipIntent);
+            }}
           />
 
           <View>
@@ -237,7 +257,10 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
               {POPULAR_CITIES.map((c) => (
                 <TouchableOpacity
                   key={c}
-                  onPress={() => setCity(c)}
+                  onPress={() => {
+                    haptics.selection();
+                    setCity(c);
+                  }}
                   style={[
                     styles.cityPill,
                     {

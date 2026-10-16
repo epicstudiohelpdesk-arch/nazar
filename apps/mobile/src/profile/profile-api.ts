@@ -14,6 +14,10 @@ import type {
   ReorderMediaPayload,
   ProfileStateChangeResponse,
   PublicProfileResponse,
+  SmartPhotosStatsResponseDto,
+  SetPassportLocationRequestDto,
+  PassportLocationResponseDto,
+  ShareableProfileCardDto,
 } from '@platform/api-contracts';
 import type { AuthClient } from '../auth/auth-client.js';
 import { getDefaultAuthClient } from '../auth/default-client.js';
@@ -36,6 +40,9 @@ export const PROFILE_QUERY_KEYS = {
   promptsTaxonomy: ['prompts', 'taxonomy'] as const,
   myPrompts: ['profile', 'prompts'] as const,
   media: ['profile', 'media'] as const,
+  smartPhotosStats: ['profile', 'smart-photos'] as const,
+  passport: ['profile', 'passport'] as const,
+  shareCard: (profileId: string) => ['profile', 'share-card', profileId] as const,
 };
 
 export function createProfileApi(authClient: AuthClient, customFetch?: typeof fetch) {
@@ -52,6 +59,14 @@ export function createProfileApi(authClient: AuthClient, customFetch?: typeof fe
 
     async getPublicProfile(profileId: string): Promise<PublicProfileResponse> {
       const res = await authClient.request<PublicProfileResponse>(`/v1/profiles/${profileId}`);
+      if (!res.success) throw new Error(res.error.message);
+      return res.data;
+    },
+
+    async getShareableProfileCard(profileId: string): Promise<ShareableProfileCardDto> {
+      const res = await authClient.request<ShareableProfileCardDto>(
+        `/v1/profiles/${profileId}/card`
+      );
       if (!res.success) throw new Error(res.error.message);
       return res.data;
     },
@@ -215,6 +230,54 @@ export function createProfileApi(authClient: AuthClient, customFetch?: typeof fe
         }
       );
       if (!res.success) throw new Error(res.error.message);
+    },
+
+    // ----------------------------------------------------
+    // Smart Photos Multi-Armed Bandit (Feature 3.2)
+    // ----------------------------------------------------
+    async getSmartPhotosStats(): Promise<SmartPhotosStatsResponseDto> {
+      const res = await authClient.request<SmartPhotosStatsResponseDto>(
+        '/v1/profiles/me/smart-photos'
+      );
+      if (!res.success) throw new Error(res.error.message);
+      return res.data;
+    },
+
+    async toggleSmartPhotos(enabled: boolean): Promise<{ enabled: boolean }> {
+      const res = await authClient.request<{ enabled: boolean }>(
+        '/v1/profiles/me/smart-photos',
+        {
+          method: 'POST',
+          body: JSON.stringify({ enabled }),
+        }
+      );
+      if (!res.success) throw new Error(res.error.message);
+      return res.data;
+    },
+
+    // ----------------------------------------------------
+    // Passport & Travel Mode (Feature 3.3)
+    // ----------------------------------------------------
+    async getPassportLocation(): Promise<PassportLocationResponseDto> {
+      const res = await authClient.request<PassportLocationResponseDto>(
+        '/v1/profiles/me/passport'
+      );
+      if (!res.success) throw new Error(res.error.message);
+      return res.data;
+    },
+
+    async setPassportLocation(
+      payload: SetPassportLocationRequestDto
+    ): Promise<PassportLocationResponseDto> {
+      const res = await authClient.request<PassportLocationResponseDto>(
+        '/v1/profiles/me/passport',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }
+      );
+      if (!res.success) throw new Error(res.error.message);
+      return res.data;
     },
 
     async uploadPhotoWorkflow(fileBlob: Blob, mimeType: string): Promise<MediaItemResponse> {

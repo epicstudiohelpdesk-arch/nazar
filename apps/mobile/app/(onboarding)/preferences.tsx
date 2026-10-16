@@ -6,12 +6,15 @@ import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
+import { Icon } from '../../src/design/primitives/Icon.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { Button } from '../../src/design/components/button/Button.js';
 import { ProgressBar } from '../../src/design/components/feedback/ProgressBar.js';
 import { getDefaultProfileApi } from '../../src/profile/profile-api.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 const GENDER_OPTIONS: Array<{ label: string; value: Gender }> = [
   { label: 'Men', value: 'MAN' },
@@ -25,6 +28,7 @@ const DISTANCE_PRESETS = [10, 25, 50, 100, 200];
 export default function OnboardingPreferencesScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const profileApi = getDefaultProfileApi();
 
   const { draftPreferences, updateDraftPreferences } = useOnboardingStore();
@@ -41,6 +45,7 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const toggleGender = (val: Gender) => {
+    haptics.selection();
     if (selectedGenders.includes(val)) {
       if (selectedGenders.length <= 1) return; // Keep at least one
       setSelectedGenders(selectedGenders.filter((g) => g !== val));
@@ -51,18 +56,22 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
 
   const handleNext = async () => {
     if (minAge < 18) {
+      haptics.notificationError();
       setErrorMessage('Minimum age preference must be at least 18.');
       return;
     }
     if (minAge > maxAge) {
+      haptics.notificationError();
       setErrorMessage('Minimum age cannot be greater than maximum age.');
       return;
     }
     if (selectedGenders.length === 0) {
+      haptics.notificationError();
       setErrorMessage('Please select who you are interested in discovering.');
       return;
     }
 
+    haptics.impactMedium();
     setIsLoading(true);
     setErrorMessage(undefined);
 
@@ -108,7 +117,13 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
       <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.8} style={styles.progressBar} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text level="label" color="accent">
             STEP 5 OF 6
@@ -191,20 +206,26 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
                 </Text>
                 <View style={styles.stepperBtns}>
                   <TouchableOpacity
-                    onPress={() => setMinAge((prev) => Math.max(18, prev - 1))}
+                    onPress={() => {
+                      haptics.selection();
+                      setMinAge((prev) => Math.max(18, prev - 1));
+                    }}
                     style={[styles.stepBtn, { borderColor: theme.colors.border }]}
                     accessibilityRole="button"
                     accessibilityLabel="Decrease minimum age"
                   >
-                    <Text level="title">-</Text>
+                    <Icon name="minus" size="xs" color={theme.colors.textPrimary} />
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => setMinAge((prev) => Math.min(maxAge - 1, prev + 1))}
+                    onPress={() => {
+                      haptics.selection();
+                      setMinAge((prev) => Math.min(maxAge - 1, prev + 1));
+                    }}
                     style={[styles.stepBtn, { borderColor: theme.colors.border }]}
                     accessibilityRole="button"
                     accessibilityLabel="Increase minimum age"
                   >
-                    <Text level="title">+</Text>
+                    <Icon name="plus" size="xs" color={theme.colors.textPrimary} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -215,20 +236,26 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
                 </Text>
                 <View style={styles.stepperBtns}>
                   <TouchableOpacity
-                    onPress={() => setMaxAge((prev) => Math.max(minAge + 1, prev - 1))}
+                    onPress={() => {
+                      haptics.selection();
+                      setMaxAge((prev) => Math.max(minAge + 1, prev - 1));
+                    }}
                     style={[styles.stepBtn, { borderColor: theme.colors.border }]}
                     accessibilityRole="button"
                     accessibilityLabel="Decrease maximum age"
                   >
-                    <Text level="title">-</Text>
+                    <Icon name="minus" size="xs" color={theme.colors.textPrimary} />
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => setMaxAge((prev) => Math.min(70, prev + 1))}
+                    onPress={() => {
+                      haptics.selection();
+                      setMaxAge((prev) => Math.min(70, prev + 1));
+                    }}
                     style={[styles.stepBtn, { borderColor: theme.colors.border }]}
                     accessibilityRole="button"
                     accessibilityLabel="Increase maximum age"
                   >
-                    <Text level="title">+</Text>
+                    <Icon name="plus" size="xs" color={theme.colors.textPrimary} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -252,7 +279,10 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
                 return (
                   <TouchableOpacity
                     key={d}
-                    onPress={() => setMaxDistanceKm(d)}
+                    onPress={() => {
+                      haptics.selection();
+                      setMaxDistanceKm(d);
+                    }}
                     style={[
                       styles.pill,
                       {

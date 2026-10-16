@@ -23,6 +23,8 @@ import {
   toEventCardRsvp,
 } from './social-state.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../design/responsive/index.js';
+import { haptics } from '../design/haptics/index.js';
 
 export interface SocialHomeScreenProps {
   readonly client: SocialApiClient;
@@ -44,6 +46,7 @@ const PREVIEW_LIMIT = 5;
 export const SocialHomeScreen: React.FC<SocialHomeScreenProps> = ({ client }) => {
   const router = useRouter();
   const { colors, spacing } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
 
   // These are previews, so they deliberately use their own query keys. Reusing
   // the full-screen keys would write a single partial page into the cache of an
@@ -98,7 +101,11 @@ export const SocialHomeScreen: React.FC<SocialHomeScreenProps> = ({ client }) =>
   return (
     <ScrollView
       style={{ backgroundColor: colors.background }}
-      contentContainerStyle={[styles.content, { paddingBottom: spacing.xl }]}
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: spacing.xl, maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+      ]}
+      showsVerticalScrollIndicator={false}
       testID="social-home"
     >
       <View style={styles.header}>
@@ -112,7 +119,10 @@ export const SocialHomeScreen: React.FC<SocialHomeScreenProps> = ({ client }) =>
           label="Post"
           icon="edit"
           size="sm"
-          onPress={() => router.push(socialRoutes.createPost())}
+          onPress={() => {
+            haptics.selection();
+            router.push(socialRoutes.createPost());
+          }}
           accessibilityLabel="Create a post"
           testID="social-home-create-post"
         />

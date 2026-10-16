@@ -19,7 +19,7 @@ export default function RootLayout(): React.JSX.Element {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider initialMode="system">
+      <ThemeProvider initialMode="dark">
         <LocalizationProvider initialLocale="en">
           <Stack
             screenOptions={{

@@ -7,3 +7,4 @@ export * from './localization/index.js';
 export * from './a11y/index.js';
 export * from './motion/index.js';
 export * from './haptics/index.js';
+export * from './responsive/index.js';

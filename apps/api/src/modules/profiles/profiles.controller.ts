@@ -8,6 +8,7 @@ import {
   Body,
   Param,
   Req,
+  Res,
   Inject,
   UseGuards,
   HttpCode,
@@ -20,7 +21,7 @@ import {
   ApiResponse as SwaggerResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import {
   ErrorCode,
   type PrivateProfileResponse,
@@ -30,6 +31,7 @@ import {
   type InterestItem,
   type UpdateInterestsPayload,
   type ProfilePromptItem,
+  type ProfileAudioPromptResponse,
   type PromptDefinitionItem,
   type UpdatePromptsPayload,
   type MediaUploadRequestPayload,
@@ -38,14 +40,23 @@ import {
   type ReorderMediaPayload,
   type ProfileStateChangeResponse,
   type UpdateProfilePayload,
+  type SmartPhotosStatsResponseDto,
+  type PassportLocationResponseDto,
+  type ShareableProfileCardDto,
 } from '@platform/api-contracts';
 import {
   updateProfileSchema,
   updatePreferencesSchema,
   updateInterestsSchema,
   updatePromptsSchema,
+  createAudioPromptSchema,
+  type CreateAudioPromptInput,
   mediaUploadSchema,
   reorderMediaSchema,
+  toggleSmartPhotosSchema,
+  type ToggleSmartPhotosInput,
+  setPassportLocationSchema,
+  type SetPassportLocationInput,
 } from '@platform/validation';
 import { AppValidationPipe } from '../../common/pipes/app-validation.pipe.js';
 import { Public } from '../../common/decorators/public.decorator.js';
@@ -53,6 +64,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { AuthGuard, type AuthenticatedPrincipal } from '../../common/guards/auth.guard.js';
 import { ProfileService } from './services/profile.service.js';
 import { MediaService } from './services/media.service.js';
+import { SmartPhotosService } from './services/smart-photos.service.js';
 import {
   PROMPT_REPOSITORY_TOKEN,
   type IPromptRepository,
@@ -67,6 +79,8 @@ export class ProfilesController {
     private readonly profileService: ProfileService,
     @Inject(MediaService)
     private readonly mediaService: MediaService,
+    @Inject(SmartPhotosService)
+    private readonly smartPhotosService: SmartPhotosService,
     @Inject(PROMPT_REPOSITORY_TOKEN)
     private readonly promptRepo: IPromptRepository
   ) {}
@@ -234,6 +248,42 @@ export class ProfilesController {
   }
 
   // ----------------------------------------------------
+  // Audio Prompts Endpoints (Feature 1.2)
+  // ----------------------------------------------------
+
+  @ApiBearerAuth()
+  @Get(['audio-prompts', 'me/audio-prompts'])
+  @ApiOperation({ summary: 'Get audio prompts for authenticated user profile' })
+  async getMyAudioPrompts(
+    @CurrentUser() user: AuthenticatedPrincipal
+  ): Promise<ProfileAudioPromptResponse[]> {
+    return this.profileService.getProfileAudioPrompts(user.userId);
+  }
+
+  @ApiBearerAuth()
+  @Post(['audio-prompts', 'me/audio-prompts'])
+  @ApiOperation({ summary: 'Add or update an audio prompt for profile' })
+  async createMyAudioPrompt(
+    @CurrentUser() user: AuthenticatedPrincipal,
+    @Body(new AppValidationPipe(createAudioPromptSchema)) body: CreateAudioPromptInput,
+    @Req() req: Request
+  ): Promise<ProfileAudioPromptResponse> {
+    return this.profileService.createProfileAudioPrompt(user.userId, body, req.ip);
+  }
+
+  @ApiBearerAuth()
+  @Delete(['audio-prompts/:id', 'me/audio-prompts/:id'])
+  @ApiOperation({ summary: 'Delete an audio prompt from profile' })
+  async deleteMyAudioPrompt(
+    @CurrentUser() user: AuthenticatedPrincipal,
+    @Param('id') id: string,
+    @Req() req: Request
+  ): Promise<{ message: string }> {
+    await this.profileService.deleteProfileAudioPrompt(user.userId, id, req.ip);
+    return { message: 'Audio prompt deleted successfully' };
+  }
+
+  // ----------------------------------------------------
   // Media Endpoints
   // ----------------------------------------------------
 
@@ -310,6 +360,109 @@ export class ProfilesController {
     @Req() req: Request
   ): Promise<{ message: string }> {
     return this.mediaService.deleteMedia(user.userId, mediaId, req.ip);
+  }
+
+  // ----------------------------------------------------
+  // Smart Photos Multi-Armed Bandit Endpoints (Feature 3.2)
+  // ----------------------------------------------------
+
+  @ApiBearerAuth()
+  @Get(['smart-photos', 'me/smart-photos'])
+  @ApiOperation({ summary: 'Get smart photos multi-armed bandit statistics' })
+  async getSmartPhotosStats(
+    @CurrentUser() user: AuthenticatedPrincipal
+  ): Promise<SmartPhotosStatsResponseDto> {
+    return this.smartPhotosService.getStats(user.userId);
+  }
+
+  @ApiBearerAuth()
+  @Post(['smart-photos', 'me/smart-photos'])
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Toggle smart photos multi-armed bandit optimization' })
+  async toggleSmartPhotos(
+    @CurrentUser() user: AuthenticatedPrincipal,
+    @Body(new AppValidationPipe(toggleSmartPhotosSchema)) body: ToggleSmartPhotosInput
+  ): Promise<{ enabled: boolean }> {
+    return this.smartPhotosService.toggleSmartPhotos(user.userId, body.enabled);
+  }
+
+  // ----------------------------------------------------
+  // Passport & Travel Mode Endpoints (Feature 3.3)
+  // ----------------------------------------------------
+
+  @ApiBearerAuth()
+  @Get(['passport', 'me/passport'])
+  @ApiOperation({ summary: 'Get current user passport travel destination' })
+  async getPassportLocation(
+    @CurrentUser() user: AuthenticatedPrincipal
+  ): Promise<PassportLocationResponseDto> {
+    return this.profileService.getPassportLocation(user.userId);
+  }
+
+  @ApiBearerAuth()
+  @Post(['passport', 'me/passport'])
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set or toggle virtual passport travel location' })
+  async setPassportLocation(
+    @CurrentUser() user: AuthenticatedPrincipal,
+    @Body(new AppValidationPipe(setPassportLocationSchema)) body: SetPassportLocationInput,
+    @Req() req: Request
+  ): Promise<PassportLocationResponseDto> {
+    return this.profileService.setPassportLocation(user.userId, body, req.ip);
+  }
+
+  // ----------------------------------------------------
+  // Shareable Profile Card Endpoints (Feature 3.5)
+  // ----------------------------------------------------
+
+  @Public()
+  @Get(':profileId/card')
+  @ApiOperation({ summary: 'Get shareable card representation of profile' })
+  async getShareableCard(@Param('profileId') profileId: string): Promise<ShareableProfileCardDto> {
+    return this.profileService.getShareableProfileCard(profileId);
+  }
+
+  @Public()
+  @Get(':profileId/share')
+  @ApiOperation({ summary: 'HTML preview card with OpenGraph metadata' })
+  async getSharePreviewHtml(
+    @Param('profileId') profileId: string,
+    @Res() res: Response
+  ): Promise<void> {
+    const card = await this.profileService.getShareableProfileCard(profileId);
+    const title = `${card.displayName}, ${card.age}${card.city ? ` in ${card.city}` : ''} on Nazar`;
+    const description = card.featuredPrompt
+      ? `"${card.featuredPrompt.prompt}" — "${card.featuredPrompt.answer}"`
+      : `Connect with ${card.displayName} on Nazar dating app.`;
+    const image = card.primaryPhotoUrl || 'https://nazar.app/assets/og-preview.png';
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <meta property="og:title" content="${title}" />
+  <meta property="og:description" content="${description}" />
+  <meta property="og:image" content="${image}" />
+  <meta property="og:url" content="${card.shareUrl}" />
+  <meta property="og:type" content="profile" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${title}" />
+  <meta name="twitter:description" content="${description}" />
+  <meta name="twitter:image" content="${image}" />
+  <meta http-equiv="refresh" content="0;url=${card.deepLink}" />
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #0b0f19; color: #ffffff;">
+  <div style="text-align: center; padding: 24px;">
+    <h2>${title}</h2>
+    <p>${description}</p>
+    <a href="${card.deepLink}" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: #6366f1; color: #fff; border-radius: 999px; text-decoration: none; font-weight: 600;">Open in Nazar App</a>
+  </div>
+</body>
+</html>`;
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
   }
 
   // ----------------------------------------------------

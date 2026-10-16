@@ -9,7 +9,11 @@ import {
   type UserInteractionRow,
 } from '../../../infrastructure/database/drizzle/schema/interactions.js';
 import { generateUuidV7 } from '@platform/domain';
-import type { IInteractionsRepository } from './interactions.repository.interface.js';
+import type {
+  IInteractionsRepository,
+  InteractionAttachmentOptions,
+  InboundLikeRecord,
+} from './interactions.repository.interface.js';
 
 @Injectable()
 export class InteractionsRepository implements IInteractionsRepository {
@@ -26,6 +30,7 @@ export class InteractionsRepository implements IInteractionsRepository {
     actorUserId: string,
     targetUserId: string,
     type: 'LIKE' | 'PASS',
+    attachmentOptions?: InteractionAttachmentOptions,
     tx?: DrizzleDatabase
   ): Promise<UserInteractionRow> {
     const client = this.getClient(tx);
@@ -38,6 +43,9 @@ export class InteractionsRepository implements IInteractionsRepository {
         actorUserId,
         targetUserId,
         type,
+        targetAttachmentType: attachmentOptions?.targetAttachmentType || 'PROFILE',
+        targetAttachmentId: attachmentOptions?.targetAttachmentId || null,
+        comment: attachmentOptions?.comment || null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -45,6 +53,9 @@ export class InteractionsRepository implements IInteractionsRepository {
         target: [userInteractions.actorUserId, userInteractions.targetUserId],
         set: {
           type,
+          targetAttachmentType: attachmentOptions?.targetAttachmentType || 'PROFILE',
+          targetAttachmentId: attachmentOptions?.targetAttachmentId || null,
+          comment: attachmentOptions?.comment || null,
           updatedAt: new Date(),
         },
       })
@@ -114,5 +125,66 @@ export class InteractionsRepository implements IInteractionsRepository {
       .where(eq(userInteractions.actorUserId, actorUserId))
       .orderBy(sql`${userInteractions.createdAt} DESC`)
       .limit(limit);
+  }
+
+  async findInboundLikes(
+    targetUserId: string,
+    limit: number,
+    tx?: DrizzleDatabase
+  ): Promise<{ items: readonly InboundLikeRecord[]; totalCount: number }> {
+    const client = this.getClient(tx);
+
+    const itemsQuery = sql<InboundLikeRecord>`
+      SELECT
+        ui.id,
+        ui.actor_user_id AS "actorUserId",
+        ui.target_attachment_type AS "targetAttachmentType",
+        ui.target_attachment_id AS "targetAttachmentId",
+        ui.comment,
+        ui.created_at AS "createdAt",
+        p.id AS "profileId",
+        p.display_name AS "displayName",
+        p.date_of_birth::text AS "dateOfBirth",
+        p.city,
+        p.occupation,
+        p.is_verified AS "isVerified",
+        pm.object_key AS "primaryPhotoKey"
+      FROM user_interactions ui
+      JOIN profiles p ON p.user_id = ui.actor_user_id
+      LEFT JOIN profile_media pm ON pm.profile_id = p.id AND pm.is_primary = true AND pm.status = 'READY'
+      WHERE ui.target_user_id = ${targetUserId}
+        AND ui.type = 'LIKE'
+        AND NOT EXISTS (
+          SELECT 1 FROM user_interactions rev
+          WHERE rev.actor_user_id = ${targetUserId}
+            AND rev.target_user_id = ui.actor_user_id
+        )
+      ORDER BY ui.created_at DESC
+      LIMIT ${limit}
+    `;
+
+    const countQuery = sql<{ count: number }>`
+      SELECT count(*)::int AS count
+      FROM user_interactions ui
+      JOIN profiles p ON p.user_id = ui.actor_user_id
+      WHERE ui.target_user_id = ${targetUserId}
+        AND ui.type = 'LIKE'
+        AND NOT EXISTS (
+          SELECT 1 FROM user_interactions rev
+          WHERE rev.actor_user_id = ${targetUserId}
+            AND rev.target_user_id = ui.actor_user_id
+        )
+    `;
+
+    const [itemsResult, countResult] = await Promise.all([
+      client.execute(itemsQuery),
+      client.execute(countQuery),
+    ]);
+
+    const items = (itemsResult.rows as unknown as InboundLikeRecord[]) || [];
+    const countRow = countResult.rows[0] as { count?: number } | undefined;
+    const totalCount = countRow?.count ? Number(countRow.count) : items.length;
+
+    return { items, totalCount };
   }
 }

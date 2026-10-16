@@ -21,10 +21,13 @@ import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { getDefaultAuthClient } from '../../src/auth/default-client.js';
 import { AUTH_QUERY_KEYS, purgeAccountSessionAndCaches } from '../../src/auth/session-service.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 export default function AccountSettingsRoute(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const queryClient = useQueryClient();
   const authClient = getDefaultAuthClient();
 
@@ -86,6 +89,7 @@ export default function AccountSettingsRoute(): React.JSX.Element {
   });
 
   const handleConfirmRevokeSession = (sessionId: string) => {
+    haptics.impactLight();
     Alert.alert(
       'Terminate Session',
       'Are you sure you want to log out this device? The user will need to log in again.',
@@ -94,13 +98,17 @@ export default function AccountSettingsRoute(): React.JSX.Element {
         {
           text: 'Log Out Device',
           style: 'destructive',
-          onPress: () => revokeSessionMutation.mutate(sessionId),
+          onPress: () => {
+            haptics.impactMedium();
+            revokeSessionMutation.mutate(sessionId);
+          },
         },
       ]
     );
   };
 
   const handleConfirmLogoutAll = () => {
+    haptics.impactLight();
     Alert.alert(
       'Log Out All Other Devices',
       'This will revoke all active sessions except the device you are currently holding.',
@@ -109,13 +117,17 @@ export default function AccountSettingsRoute(): React.JSX.Element {
         {
           text: 'Log Out Others',
           style: 'destructive',
-          onPress: () => logoutAllMutation.mutate(),
+          onPress: () => {
+            haptics.impactMedium();
+            logoutAllMutation.mutate();
+          },
         },
       ]
     );
   };
 
   const handleLogout = () => {
+    haptics.impactMedium();
     Alert.alert('Log Out', 'Are you sure you want to log out of Nazar?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -136,7 +148,13 @@ export default function AccountSettingsRoute(): React.JSX.Element {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <TopNavHeader title="Account & Devices" onBack={() => router.back()} leftAction="back" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Active Sessions Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>

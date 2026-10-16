@@ -11,10 +11,13 @@ import { Button } from '../../src/design/components/button/Button.js';
 import { ProgressBar } from '../../src/design/components/feedback/ProgressBar.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 export default function OnboardingPermissionsScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
 
   const { permissionsStatus, setPermissionStatus } = useOnboardingStore();
 
@@ -29,6 +32,11 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
 
   const handleToggleLocation = () => {
     const next = !locationGranted;
+    if (next) {
+      haptics.notificationSuccess();
+    } else {
+      haptics.selection();
+    }
     setLocationGranted(next);
     setPermissionStatus('location', next ? 'granted' : 'denied');
     if (next) {
@@ -40,6 +48,11 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
 
   const handleToggleNotifications = () => {
     const next = !notificationsGranted;
+    if (next) {
+      haptics.notificationSuccess();
+    } else {
+      haptics.selection();
+    }
     setNotificationsGranted(next);
     setPermissionStatus('push', next ? 'granted' : 'denied');
     if (next) {
@@ -50,10 +63,12 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
   };
 
   const handleOpenSettings = () => {
+    haptics.impactLight();
     Linking.openSettings().catch(() => {});
   };
 
   const handleContinue = () => {
+    haptics.impactMedium();
     router.push('/(onboarding)/preview');
   };
 
@@ -62,7 +77,13 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
       <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.9} style={styles.progressBar} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text level="label" color="accent">
             STEP 6 OF 6

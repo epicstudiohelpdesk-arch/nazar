@@ -22,6 +22,8 @@ import {
   socialRoutes,
 } from './social-state.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../design/responsive/index.js';
+import { haptics } from '../design/haptics/index.js';
 
 export interface CommunitiesScreenProps {
   readonly client: SocialApiClient;
@@ -53,6 +55,7 @@ export const CommunitiesScreen: React.FC<CommunitiesScreenProps> = ({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors, spacing } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const [tab, setTab] = useState<CommunityListTab>(initialTab);
 
   const query = useInfiniteQuery({
@@ -126,7 +129,10 @@ export const CommunitiesScreen: React.FC<CommunitiesScreenProps> = ({
             icon="plus"
             size="sm"
             variant="tertiary"
-            onPress={() => router.push(socialRoutes.createCommunity())}
+            onPress={() => {
+              haptics.selection();
+              router.push(socialRoutes.createCommunity());
+            }}
             accessibilityLabel="Create a community"
             testID="communities-create-btn"
           />
@@ -144,7 +150,10 @@ export const CommunitiesScreen: React.FC<CommunitiesScreenProps> = ({
               styles.tab,
               tab === key && { borderBottomColor: colors.accent, borderBottomWidth: 2 },
             ]}
-            onPress={() => setTab(key)}
+            onPress={() => {
+              haptics.selection();
+              setTab(key);
+            }}
             accessibilityRole="tab"
             accessibilityState={{ selected: tab === key }}
             accessibilityLabel={TAB_LABELS[key]}
@@ -173,6 +182,7 @@ export const CommunitiesScreen: React.FC<CommunitiesScreenProps> = ({
               memberCount={item.memberCount}
               isJoined={tab === 'mine'}
               onPress={() => {
+                haptics.selection();
                 trackOnboardingEvent('community_viewed', { communityId: item.id });
                 router.push(socialRoutes.community(item.id));
               }}
@@ -180,7 +190,10 @@ export const CommunitiesScreen: React.FC<CommunitiesScreenProps> = ({
             />
           </View>
         )}
-        contentContainerStyle={communities.length === 0 ? styles.emptyContent : styles.content}
+        contentContainerStyle={[
+          communities.length === 0 ? styles.emptyContent : styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
         refreshing={query.isRefetching && !query.isFetchingNextPage}
         onRefresh={() => void query.refetch()}
         onEndReachedThreshold={0.5}

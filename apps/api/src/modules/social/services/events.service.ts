@@ -241,9 +241,10 @@ export class EventsService {
       });
     }
 
-    const [organizer, rsvp] = await Promise.all([
+    const [organizer, rsvp, plusOneCount] = await Promise.all([
       this.profileEnricher.getAuthor(event.organizerId),
       this.eventsRepo.getRsvp(id, viewerUserId),
+      this.eventsRepo.countPlusOnes(id),
     ]);
 
     // Privacy-aware location:
@@ -277,6 +278,9 @@ export class EventsService {
       waitlistCount: event.waitlistCount,
       isWaitlistEnabled: event.isWaitlistEnabled,
       currentUserRsvp: (rsvp?.status as EventRsvpStatus) || null,
+      currentUserLookingForPlusOne: rsvp?.lookingForPlusOne ?? false,
+      currentUserPlusOneNote: rsvp?.plusOneNote ?? null,
+      plusOneAttendeeCount: plusOneCount,
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
     };
@@ -563,6 +567,9 @@ export class EventsService {
           eventId: id,
           userId,
           status: targetStatus,
+          lookingForPlusOne: input.lookingForPlusOne ?? existingRsvp?.lookingForPlusOne ?? false,
+          plusOneNote:
+            input.plusOneNote !== undefined ? input.plusOneNote : existingRsvp?.plusOneNote ?? null,
           createdAt: existingRsvp?.createdAt || new Date(),
           updatedAt: new Date(),
         },
@@ -657,7 +664,7 @@ export class EventsService {
   async listAttendees(
     eventId: string,
     viewerUserId: string,
-    query: { limit?: number; cursor?: string }
+    query: { limit?: number; cursor?: string; plusOnesOnly?: boolean }
   ): Promise<EventAttendeeListResponseDto> {
     const event = await this.eventsRepo.findById(eventId);
     if (!event) {
@@ -687,6 +694,7 @@ export class EventsService {
       limit: limit + 1,
       cursor: parsedCursor,
       excludedUserIds: blockedUserIds,
+      plusOnesOnly: query.plusOnesOnly,
     });
 
     const hasMore = rows.length > limit;
@@ -701,6 +709,8 @@ export class EventsService {
       userId: r.userId,
       user: authorMap.get(r.userId),
       status: r.status as EventRsvpStatus,
+      lookingForPlusOne: r.lookingForPlusOne,
+      plusOneNote: r.plusOneNote,
       promotedFromWaitlistAt: r.promotedFromWaitlistAt
         ? r.promotedFromWaitlistAt.toISOString()
         : null,

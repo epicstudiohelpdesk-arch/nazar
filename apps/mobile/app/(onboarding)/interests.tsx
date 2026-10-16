@@ -11,6 +11,8 @@ import { ProgressBar } from '../../src/design/components/feedback/ProgressBar.js
 import { getDefaultProfileApi } from '../../src/profile/profile-api.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 // Canonical fallback taxonomy curated for authentic Indian nuances
 const FALLBACK_INTERESTS: InterestItem[] = [
@@ -45,6 +47,7 @@ const FALLBACK_INTERESTS: InterestItem[] = [
 export default function OnboardingInterestsScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const profileApi = getDefaultProfileApi();
 
   const { draftInterests, toggleDraftInterest } = useOnboardingStore();
@@ -76,10 +79,12 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
   const handleToggle = (id: string) => {
     const isSelected = draftInterests.includes(id);
     if (!isSelected && draftInterests.length >= 10) {
+      haptics.notificationError();
       setErrorMessage('You can select a maximum of 10 interests.');
       return;
     }
 
+    haptics.selection();
     toggleDraftInterest(id);
     if (errorMessage) setErrorMessage(undefined);
 
@@ -92,10 +97,12 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
 
   const handleNext = async () => {
     if (draftInterests.length < 3) {
+      haptics.notificationError();
       setErrorMessage('Please select at least 3 interests that represent you.');
       return;
     }
 
+    haptics.impactMedium();
     setIsLoading(true);
     setErrorMessage(undefined);
 
@@ -122,7 +129,13 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
       <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.5} style={styles.progressBar} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text level="label" color="accent">
             STEP 3 OF 6

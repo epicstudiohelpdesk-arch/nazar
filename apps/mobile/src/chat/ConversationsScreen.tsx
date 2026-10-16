@@ -15,6 +15,8 @@ import { createChatApi, CHAT_QUERY_KEYS } from './chat-api.js';
 import { chatSocket } from './chat-socket.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import type { AuthClient } from '../auth/auth-client.js';
+import { useResponsiveLayout } from '../design/responsive/index.js';
+import { haptics } from '../design/haptics/index.js';
 
 export interface ConversationsScreenProps {
   readonly authClient?: AuthClient;
@@ -30,6 +32,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors, spacing } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -101,6 +104,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
 
   const handleSelectConversation = useCallback(
     (conversationId: string) => {
+      haptics.selection();
       trackOnboardingEvent('conversation_opened', { conversationId });
       if (onSelectConversation) {
         onSelectConversation(conversationId);
@@ -133,7 +137,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
   const renderConversationItem = useCallback(
     ({ item }: { item: ConversationItemDto }) => {
       const avatarUrl = item.otherUser.primaryMedia?.url;
-      const lastPreview = item.lastMessage?.preview || 'Matched! Say hello 👋';
+      const lastPreview = item.lastMessage?.preview || 'Matched! Say hello';
       const timestamp = item.lastMessage ? formatTimestamp(item.lastMessage.sentAt) : '';
 
       return (
@@ -153,7 +157,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
   );
 
   const renderSkeletonList = () => (
-    <View style={styles.skeletonContainer}>
+    <View style={[styles.skeletonContainer, { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' }]}>
       {Array.from({ length: 5 }, (_, idx) => (
         <View
           key={idx}
@@ -195,7 +199,13 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
       <View
         style={[
           styles.searchWrapper,
-          { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+          {
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.sm,
+            maxWidth: maxContentWidth,
+            width: '100%',
+            alignSelf: 'center',
+          },
         ]}
       >
         <SearchInput
@@ -222,9 +232,10 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
           data={filteredConversations}
           keyExtractor={(item) => item.id}
           renderItem={renderConversationItem}
-          contentContainerStyle={
-            filteredConversations.length === 0 ? styles.emptyListContent : styles.listContent
-          }
+          contentContainerStyle={[
+            filteredConversations.length === 0 ? styles.emptyListContent : styles.listContent,
+            { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}

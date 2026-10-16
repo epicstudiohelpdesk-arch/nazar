@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Param,
+  Body,
   Query,
   UseGuards,
   Inject,
@@ -21,7 +22,10 @@ import type {
   InteractionResponseDto,
   UndoResponseDto,
   InteractionHistoryResponseDto,
+  LikesYouResponseDto,
 } from '@platform/api-contracts';
+import { likeInteractionBodySchema, type LikeInteractionInput } from '@platform/validation';
+import { AppValidationPipe } from '../../common/pipes/app-validation.pipe.js';
 import { AuthGuard, type AuthenticatedPrincipal } from '../../common/guards/auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { InteractionsService } from './services/interactions.service.js';
@@ -60,6 +64,30 @@ export class InteractionsController {
     return this.interactionsService.getHistory(user.userId, parsedLimit);
   }
 
+  @Get('likes-you')
+  @ApiOperation({
+    summary: 'Retrieve inbound likes grid ("Likes You")',
+    description:
+      'Returns users who liked the current user. Entitled subscribers (SEE_LIKES or PREMIUM) receive full unblurred profiles; free users receive blurred teasers with total count.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of inbound likes to return (default 50)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Inbound likes retrieved successfully',
+  })
+  async getLikesYou(
+    @CurrentUser() user: AuthenticatedPrincipal,
+    @Query('limit') limit?: string
+  ): Promise<LikesYouResponseDto> {
+    const parsedLimit = limit !== undefined && limit !== '' ? Number(limit) : undefined;
+    return this.interactionsService.getLikesYou(user.userId, parsedLimit);
+  }
+
   @Post(':targetUserId/like')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -86,9 +114,11 @@ export class InteractionsController {
   })
   async like(
     @CurrentUser() user: AuthenticatedPrincipal,
-    @Param('targetUserId') targetUserId: string
+    @Param('targetUserId') targetUserId: string,
+    @Body(new AppValidationPipe(likeInteractionBodySchema.optional()))
+    body?: LikeInteractionInput
   ): Promise<InteractionResponseDto> {
-    return this.interactionsService.like(user.userId, targetUserId);
+    return this.interactionsService.like(user.userId, targetUserId, body);
   }
 
   @Post(':targetUserId/pass')

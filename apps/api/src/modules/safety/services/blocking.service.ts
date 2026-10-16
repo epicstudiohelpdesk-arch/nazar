@@ -5,6 +5,8 @@ import {
   type UnblockUserResponseDto,
   type BlockedUserListResponseDto,
   type BlockedUserItemDto,
+  type BlockContactsResponseDto,
+  type BlockedContactsListResponseDto,
 } from '@platform/api-contracts';
 import { DatabaseService } from '../../../infrastructure/database/database.service.js';
 import { outboxEvents } from '../../../infrastructure/database/drizzle/schema/outbox-events.js';
@@ -15,6 +17,10 @@ import {
   USER_BLOCKS_REPOSITORY_TOKEN,
   type IUserBlocksRepository,
 } from '../repositories/user-blocks.repository.interface.js';
+import {
+  BLOCKED_CONTACTS_REPOSITORY_TOKEN,
+  type IBlockedContactsRepository,
+} from '../repositories/blocked-contacts.repository.interface.js';
 import {
   PROFILE_REPOSITORY_TOKEN,
   type IProfileRepository,
@@ -60,6 +66,8 @@ export class BlockingService {
   constructor(
     @Inject(USER_BLOCKS_REPOSITORY_TOKEN)
     private readonly userBlocksRepo: IUserBlocksRepository,
+    @Inject(BLOCKED_CONTACTS_REPOSITORY_TOKEN)
+    private readonly blockedContactsRepo: IBlockedContactsRepository,
     @Inject(PROFILE_REPOSITORY_TOKEN)
     private readonly profileRepo: IProfileRepository,
     @Inject(STORAGE_SERVICE_TOKEN)
@@ -308,6 +316,60 @@ export class BlockingService {
       items,
       nextCursor,
       hasMore,
+    };
+  }
+
+  async blockContacts(
+    userId: string,
+    contacts: readonly { phoneHash: string; label?: string | null }[]
+  ): Promise<BlockContactsResponseDto> {
+    const { addedCount, totalCount } = await this.blockedContactsRepo.blockContacts(
+      userId,
+      contacts
+    );
+
+    // Emit security audit event
+    await this.databaseService.client.insert(securityEvents).values({
+      id: generateUuidV7(),
+      userId,
+      eventType: 'CONTACTS_BLOCKED',
+      severity: 'INFO',
+      metadata: { addedCount, totalBlockedCount: totalCount },
+    });
+
+    return {
+      success: true,
+      addedCount,
+      totalBlockedCount: totalCount,
+    };
+  }
+
+  async unblockContact(userId: string, phoneHash: string): Promise<{ success: boolean }> {
+    const deleted = await this.blockedContactsRepo.unblockContact(userId, phoneHash);
+
+    if (deleted) {
+      await this.databaseService.client.insert(securityEvents).values({
+        id: generateUuidV7(),
+        userId,
+        eventType: 'CONTACT_UNBLOCKED',
+        severity: 'INFO',
+        metadata: { phoneHash },
+      });
+    }
+
+    return { success: deleted };
+  }
+
+  async listBlockedContacts(userId: string): Promise<BlockedContactsListResponseDto> {
+    const rows = await this.blockedContactsRepo.listBlockedContacts(userId);
+    return {
+      items: rows.map((r) => ({
+        id: r.id,
+        phoneHash: r.phoneHash,
+        label: r.label,
+        createdAt: r.createdAt.toISOString(),
+      })),
+      totalCount: rows.length,
     };
   }
 }

@@ -29,3 +29,20 @@ export const unmatchRequestSchema = z.object({
 });
 
 export type UnmatchRequestInput = z.infer<typeof unmatchRequestSchema>;
+
+export const postDateFeedbackSchema = z.object({
+  didMeet: z.boolean(),
+  wouldSeeAgain: z.boolean().optional(),
+  sentimentTags: z
+    .array(z.string().trim().min(1).max(64))
+    .max(10, 'Cannot exceed 10 sentiment tags')
+    .optional(),
+  privateNotes: z
+    .string()
+    .trim()
+    .max(1000, 'Private notes cannot exceed 1000 characters')
+    .optional(),
+  closeMatch: z.boolean().optional().default(false),
+});
+
+export type PostDateFeedbackInput = z.infer<typeof postDateFeedbackSchema>;

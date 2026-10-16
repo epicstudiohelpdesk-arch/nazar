@@ -5,6 +5,8 @@ import {
   type MatchListResponseDto,
   type MatchDetailDto,
   type UnmatchResponseDto,
+  type PostDateFeedbackRequestDto,
+  type PostDateFeedbackResponseDto,
   type MatchItemDto,
   type MatchStatus,
   type PublicMediaItem,
@@ -17,6 +19,7 @@ import {
   profileMedia,
   outboxEvents,
   conversations,
+  postDateFeedbacks,
 } from '../../../infrastructure/database/drizzle/schema/index.js';
 import { S3StorageService } from '../../../infrastructure/storage/s3-storage.service.js';
 import { STORAGE_SERVICE_TOKEN } from '../../../infrastructure/storage/storage.interface.js';
@@ -158,6 +161,7 @@ export class MatchesService {
         id: row.id,
         matchedAt: row.matchedAt.toISOString(),
         status: row.status as MatchStatus,
+        expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,
         otherUser: {
           userId: otherId,
           profileId,
@@ -237,10 +241,36 @@ export class MatchesService {
     const interests = await this.interestRepo.findByProfileId(profile.id);
     const prompts = await this.promptRepo.findByProfileId(profile.id);
 
+    const viewerProfile = await this.profileRepo.findByUserId(userId);
+    let sharedInterests: string[] = [];
+    let suggestedIcebreakers: string[] = [];
+
+    if (viewerProfile) {
+      const viewerInterests = await this.interestRepo.findByProfileId(viewerProfile.id);
+      const targetSet = new Set(interests.map((i) => i.name.toLowerCase()));
+      sharedInterests = viewerInterests
+        .filter((i) => targetSet.has(i.name.toLowerCase()))
+        .map((i) => i.name);
+
+      if (sharedInterests.length > 0) {
+        suggestedIcebreakers = sharedInterests
+          .slice(0, 3)
+          .map((name) => `Ask them about their passion for ${name}!`);
+      } else {
+        suggestedIcebreakers = [
+          'Say hi and ask what their favorite weekend activity is!',
+          'Compliment one of their prompt answers to break the ice.',
+        ];
+      }
+    }
+
     return {
       id: match.id,
       matchedAt: match.matchedAt.toISOString(),
       status: match.status as MatchStatus,
+      expiresAt: match.expiresAt ? match.expiresAt.toISOString() : null,
+      sharedInterests: sharedInterests.length > 0 ? sharedInterests : undefined,
+      suggestedIcebreakers: suggestedIcebreakers.length > 0 ? suggestedIcebreakers : undefined,
       otherUser: {
         userId: otherUserId,
         profileId: profile.id,
@@ -329,6 +359,114 @@ export class MatchesService {
         success: true,
         matchId,
         status: (updated?.status || 'UNMATCHED') as MatchStatus,
+      };
+    });
+  }
+
+  async submitFeedback(
+    userId: string,
+    matchId: string,
+    input: PostDateFeedbackRequestDto
+  ): Promise<PostDateFeedbackResponseDto> {
+    const match = await this.matchesRepo.findMatchById(matchId);
+    if (!match) {
+      throw new HttpException(
+        { code: ErrorCode.MATCH_NOT_FOUND, message: 'Match not found' },
+        HttpStatus.NOT_FOUND
+      );
+    }
+
+    if (match.userAId !== userId && match.userBId !== userId) {
+      throw new HttpException(
+        { code: ErrorCode.MATCH_ACCESS_DENIED, message: 'You are not a member of this match' },
+        HttpStatus.FORBIDDEN
+      );
+    }
+
+    const otherUserId = match.userAId === userId ? match.userBId : match.userAId;
+    const feedbackId = generateUuidV7();
+    const now = new Date();
+
+    return this.databaseService.withTransaction(async (tx) => {
+      // Upsert into postDateFeedbacks
+      await tx
+        .insert(postDateFeedbacks)
+        .values({
+          id: feedbackId,
+          userId,
+          matchId,
+          didMeet: input.didMeet,
+          wouldSeeAgain: input.wouldSeeAgain ?? null,
+          sentimentTags: input.sentimentTags ? [...input.sentimentTags] : null,
+          privateNotes: input.privateNotes ?? null,
+          closeMatch: !!input.closeMatch,
+          createdAt: now,
+        })
+        .onConflictDoUpdate({
+          target: [postDateFeedbacks.userId, postDateFeedbacks.matchId],
+          set: {
+            didMeet: input.didMeet,
+            wouldSeeAgain: input.wouldSeeAgain ?? null,
+            sentimentTags: input.sentimentTags ? [...input.sentimentTags] : null,
+            privateNotes: input.privateNotes ?? null,
+            closeMatch: !!input.closeMatch,
+          },
+        });
+
+      // Emit outbox event for recommendations / ML feedback loop
+      await tx.insert(outboxEvents).values({
+        id: generateUuidV7(),
+        eventType: 'match.post_date_feedback',
+        aggregateType: 'MATCH',
+        aggregateId: matchId,
+        payload: {
+          feedbackId,
+          matchId,
+          userId,
+          otherUserId,
+          didMeet: input.didMeet,
+          wouldSeeAgain: input.wouldSeeAgain,
+          sentimentTags: input.sentimentTags,
+          closeMatch: !!input.closeMatch,
+          createdAt: now.toISOString(),
+        },
+        status: 'PENDING',
+      });
+
+      // If user chose to close / unmatch, automatically prune the dead match
+      let closedMatch = false;
+      if (input.closeMatch && match.status === 'ACTIVE') {
+        await this.matchesRepo.unmatch(matchId, userId, 'WE_MET_CLOSED', tx);
+
+        await tx
+          .update(conversations)
+          .set({ status: 'CLOSED', updatedAt: now })
+          .where(eq(conversations.matchId, matchId));
+
+        await tx.insert(outboxEvents).values({
+          id: generateUuidV7(),
+          eventType: 'match.unmatched',
+          aggregateType: 'MATCH',
+          aggregateId: matchId,
+          payload: {
+            matchId,
+            unmatchedByUserId: userId,
+            otherUserId,
+            reason: 'WE_MET_CLOSED',
+            unmatchedAt: now.toISOString(),
+          },
+          status: 'PENDING',
+        });
+
+        closedMatch = true;
+      }
+
+      return {
+        success: true,
+        feedbackId,
+        matchId,
+        didMeet: input.didMeet,
+        closedMatch,
       };
     });
   }

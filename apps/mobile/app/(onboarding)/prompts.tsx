@@ -13,6 +13,8 @@ import { ProgressBar } from '../../src/design/components/feedback/ProgressBar.js
 import { getDefaultProfileApi } from '../../src/profile/profile-api.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 const FALLBACK_PROMPT_DEFINITIONS: PromptDefinitionItem[] = [
   {
@@ -56,6 +58,7 @@ const FALLBACK_PROMPT_DEFINITIONS: PromptDefinitionItem[] = [
 export default function OnboardingPromptsScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const profileApi = getDefaultProfileApi();
 
   const { draftPrompts, setDraftPrompts } = useOnboardingStore();
@@ -103,21 +106,25 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
   }, []);
 
   const handleSelectPrompt = (item: PromptDefinitionItem) => {
+    haptics.selection();
     setSelectedPromptDef(item);
     setIsPickerOpen(false);
   };
 
   const handleNext = async () => {
     if (!answer.trim()) {
+      haptics.notificationError();
       setErrorMessage('Please write a response to this prompt to spark conversation.');
       return;
     }
 
     if (answer.trim().length > 200) {
+      haptics.notificationError();
       setErrorMessage('Prompt answer cannot exceed 200 characters.');
       return;
     }
 
+    haptics.impactMedium();
     setIsLoading(true);
     setErrorMessage(undefined);
 
@@ -153,7 +160,14 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
       <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={0.65} style={styles.progressBar} />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text level="label" color="accent">
             STEP 4 OF 6

@@ -377,6 +377,30 @@ export const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
             ) : null}
           </View>
 
+          {event.plusOneAttendeeCount && event.plusOneAttendeeCount > 0 ? (
+            <TouchableOpacity
+              onPress={() => router.push(socialRoutes.eventAttendees(event.id))}
+              style={[
+                styles.plusOneBanner,
+                {
+                  backgroundColor: colors.accentSoft,
+                  borderRadius: radii.radiusSM,
+                  paddingHorizontal: spacing.sm,
+                  paddingVertical: spacing.xs,
+                  marginTop: spacing.xs,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${event.plusOneAttendeeCount} members looking for a plus one`}
+              testID="event-plus-one-banner"
+            >
+              <Text variant="caption" weight="semibold" color="accent">
+                🎟️ {event.plusOneAttendeeCount}{' '}
+                {event.plusOneAttendeeCount === 1 ? 'member' : 'members'} looking for a +1
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
           {isLoadingAttendees ? (
             <Text variant="caption" color="tertiary" style={{ marginTop: spacing.sm }}>
               Loading attendees...
@@ -692,5 +716,8 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  plusOneBanner: {
+    alignSelf: 'flex-start',
   },
 });

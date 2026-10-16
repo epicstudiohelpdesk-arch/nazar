@@ -25,12 +25,18 @@ import {
   type BlockUserResponseDto,
   type UnblockUserResponseDto,
   type BlockedUserListResponseDto,
+  type BlockContactsResponseDto,
+  type BlockedContactsListResponseDto,
 } from '@platform/api-contracts';
 import {
   blockUserParamSchema,
   blockUserBodySchema,
   getBlockedUsersQuerySchema,
+  blockContactsSchema,
+  type BlockContactsInput,
+  unblockContactParamSchema,
 } from '@platform/validation';
+import { AppValidationPipe } from '../../../common/pipes/app-validation.pipe.js';
 import { AuthGuard, type AuthenticatedPrincipal } from '../../../common/guards/auth.guard.js';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator.js';
 import { BlockingService } from '../services/blocking.service.js';
@@ -137,5 +143,55 @@ export class BlockingController {
     }
 
     return this.blockingService.listBlockedUsers(user.userId, parseResult.data);
+  }
+
+  // ----------------------------------------------------
+  // Blocked Contacts Endpoints (Feature 2.1)
+  // ----------------------------------------------------
+
+  @Post('blocked-contacts')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Block contacts by SHA-256 phone hash (Privacy-preserving address book blocking)',
+    description:
+      'Stores client-hashed phone numbers to exclude contacts from candidate discovery without raw phone disclosure.',
+  })
+  @ApiResponse({ status: 200, description: 'Contacts blocked successfully' })
+  async blockContacts(
+    @CurrentUser() user: AuthenticatedPrincipal,
+    @Body(new AppValidationPipe(blockContactsSchema)) body: BlockContactsInput
+  ): Promise<BlockContactsResponseDto> {
+    return this.blockingService.blockContacts(user.userId, body.contacts);
+  }
+
+  @Get('blocked-contacts')
+  @ApiOperation({ summary: 'List all blocked contacts for current user' })
+  @ApiResponse({ status: 200, description: 'Blocked contacts retrieved successfully' })
+  async listBlockedContacts(
+    @CurrentUser() user: AuthenticatedPrincipal
+  ): Promise<BlockedContactsListResponseDto> {
+    return this.blockingService.listBlockedContacts(user.userId);
+  }
+
+  @Delete('blocked-contacts/:phoneHash')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unblock a contact by phone hash' })
+  @ApiParam({ name: 'phoneHash', type: String, description: 'SHA-256 phone hash' })
+  @ApiResponse({ status: 200, description: 'Contact unblocked successfully' })
+  async unblockContact(
+    @CurrentUser() user: AuthenticatedPrincipal,
+    @Param('phoneHash') phoneHash: string
+  ): Promise<{ success: boolean }> {
+    const parseResult = unblockContactParamSchema.safeParse({ phoneHash });
+    if (!parseResult.success) {
+      throw new HttpException(
+        {
+          code: ErrorCode.VALIDATION_ERROR,
+          message: parseResult.error.errors[0]?.message || 'Invalid phone hash',
+        },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    return this.blockingService.unblockContact(user.userId, parseResult.data.phoneHash);
   }
 }

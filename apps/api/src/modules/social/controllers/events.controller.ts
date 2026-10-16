@@ -250,12 +250,14 @@ export class EventsController {
   @ApiParam({ name: 'id', type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'plusOnesOnly', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Attendees retrieved successfully' })
   async listAttendees(
     @CurrentUser() user: AuthenticatedPrincipal,
     @Param('id') id: string,
     @Query('limit') limit?: string,
-    @Query('cursor') cursor?: string
+    @Query('cursor') cursor?: string,
+    @Query('plusOnesOnly') plusOnesOnly?: string
   ): Promise<EventAttendeeListResponseDto> {
     const paramResult = eventIdParamSchema.safeParse({ id });
     if (!paramResult.success) {
@@ -267,7 +269,7 @@ export class EventsController {
         HttpStatus.BAD_REQUEST
       );
     }
-    const queryResult = getAttendeesQuerySchema.safeParse({ limit, cursor });
+    const queryResult = getAttendeesQuerySchema.safeParse({ limit, cursor, plusOnesOnly });
     if (!queryResult.success) {
       throw new HttpException(
         {

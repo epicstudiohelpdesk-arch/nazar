@@ -3,6 +3,8 @@ import type {
   MatchDetailDto,
   UnmatchResponseDto,
   UnmatchRequestDto,
+  PostDateFeedbackRequestDto,
+  PostDateFeedbackResponseDto,
 } from '@platform/api-contracts';
 import type { AuthClient } from '../auth/auth-client.js';
 import { getDefaultAuthClient } from '../auth/default-client.js';
@@ -51,6 +53,24 @@ export function createMatchesApi(authClient: AuthClient) {
       });
       if (!res.success) {
         throw new Error(res.error?.message || 'Failed to unmatch user');
+      }
+      return res.data;
+    },
+
+    async submitFeedback(
+      matchId: string,
+      payload: PostDateFeedbackRequestDto
+    ): Promise<PostDateFeedbackResponseDto> {
+      const res = await authClient.request<PostDateFeedbackResponseDto>(
+        `/v1/matches/${matchId}/feedback`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
+      if (!res.success) {
+        throw new Error(res.error?.message || 'Failed to submit post-date feedback');
       }
       return res.data;
     },

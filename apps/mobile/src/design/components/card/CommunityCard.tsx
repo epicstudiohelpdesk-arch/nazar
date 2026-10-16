@@ -4,6 +4,7 @@ import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
 import { Badge } from '../../primitives/Badge.js';
+import { Icon } from '../../primitives/Icon.js';
 import { Button } from '../button/Button.js';
 import { SurfaceCard } from '../../primitives/SurfaceCard.js';
 
@@ -73,9 +74,12 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({
         </Text>
       )}
 
-      <Text variant="caption" style={{ color: colors.textTertiary, marginTop: 4 }}>
-        👥 {memberCount.toLocaleString()} members
-      </Text>
+      <View style={styles.memberCountRow}>
+        <Icon name="user" size="tiny" color={colors.textTertiary} />
+        <Text variant="caption" style={{ color: colors.textTertiary }}>
+          {memberCount.toLocaleString()} members
+        </Text>
+      </View>
     </SurfaceCard>
   );
 };
@@ -89,5 +93,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
+  },
+  memberCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
   },
 });

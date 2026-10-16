@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { eq, inArray, asc } from 'drizzle-orm';
+import { eq, inArray, asc, and } from 'drizzle-orm';
 import { generateUuidV7 } from '@platform/domain';
 import {
   DatabaseService,
@@ -8,9 +8,15 @@ import {
 import {
   profilePromptDefinitions,
   profilePrompts,
+  profileAudioPrompts,
   type ProfilePromptDefinitionRow,
 } from '../../../infrastructure/database/drizzle/schema/index.js';
-import type { ProfilePromptItem, PromptAnswerInput } from '@platform/api-contracts';
+import type {
+  ProfilePromptItem,
+  PromptAnswerInput,
+  ProfileAudioPromptResponse,
+  CreateAudioPromptRequest,
+} from '@platform/api-contracts';
 
 export interface IPromptRepository {
   findAllDefinitions(): Promise<ProfilePromptDefinitionRow[]>;
@@ -21,6 +27,20 @@ export interface IPromptRepository {
     prompts: readonly PromptAnswerInput[],
     tx?: DrizzleDatabase
   ): Promise<ProfilePromptItem[]>;
+  findAudioPromptsByProfileId(
+    profileId: string,
+    tx?: DrizzleDatabase
+  ): Promise<ProfileAudioPromptResponse[]>;
+  createAudioPrompt(
+    profileId: string,
+    input: CreateAudioPromptRequest,
+    tx?: DrizzleDatabase
+  ): Promise<ProfileAudioPromptResponse>;
+  deleteAudioPrompt(
+    profileId: string,
+    audioPromptId: string,
+    tx?: DrizzleDatabase
+  ): Promise<boolean>;
 }
 
 export const PROMPT_REPOSITORY_TOKEN = Symbol('IPromptRepository');
@@ -96,5 +116,102 @@ export class PromptRepository implements IPromptRepository {
 
     // 3. Return updated list
     return this.findByProfileId(profileId, tx);
+  }
+
+  async findAudioPromptsByProfileId(
+    profileId: string,
+    tx?: DrizzleDatabase
+  ): Promise<ProfileAudioPromptResponse[]> {
+    const rows = await this.getClient(tx)
+      .select({
+        id: profileAudioPrompts.id,
+        promptDefinitionId: profileAudioPrompts.promptDefinitionId,
+        prompt: profilePromptDefinitions.prompt,
+        audioUrl: profileAudioPrompts.audioUrl,
+        durationSeconds: profileAudioPrompts.durationSeconds,
+        waveformPeaks: profileAudioPrompts.waveformPeaks,
+        createdAt: profileAudioPrompts.createdAt,
+      })
+      .from(profileAudioPrompts)
+      .innerJoin(
+        profilePromptDefinitions,
+        eq(profileAudioPrompts.promptDefinitionId, profilePromptDefinitions.id)
+      )
+      .where(eq(profileAudioPrompts.profileId, profileId))
+      .orderBy(asc(profileAudioPrompts.createdAt));
+
+    return rows.map((r) => ({
+      id: r.id,
+      promptDefinitionId: r.promptDefinitionId,
+      prompt: r.prompt,
+      audioUrl: r.audioUrl,
+      durationSeconds: r.durationSeconds,
+      waveformPeaks: (r.waveformPeaks as number[] | null) || null,
+      createdAt: r.createdAt.toISOString(),
+    }));
+  }
+
+  async createAudioPrompt(
+    profileId: string,
+    input: CreateAudioPromptRequest,
+    tx?: DrizzleDatabase
+  ): Promise<ProfileAudioPromptResponse> {
+    const client = this.getClient(tx);
+    const id = generateUuidV7();
+    const now = new Date();
+
+    const [inserted] = await client
+      .insert(profileAudioPrompts)
+      .values({
+        id,
+        profileId,
+        promptDefinitionId: input.promptDefinitionId,
+        audioUrl: input.audioUrl,
+        durationSeconds: input.durationSeconds,
+        waveformPeaks: (input.waveformPeaks as any) || null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [profileAudioPrompts.profileId, profileAudioPrompts.promptDefinitionId],
+        set: {
+          audioUrl: input.audioUrl,
+          durationSeconds: input.durationSeconds,
+          waveformPeaks: (input.waveformPeaks as any) || null,
+          updatedAt: now,
+        },
+      })
+      .returning();
+
+    const defs = await this.findDefinitionByIds([input.promptDefinitionId]);
+    const promptText = defs[0]?.prompt || '';
+
+    return {
+      id: inserted!.id,
+      promptDefinitionId: inserted!.promptDefinitionId,
+      prompt: promptText,
+      audioUrl: inserted!.audioUrl,
+      durationSeconds: inserted!.durationSeconds,
+      waveformPeaks: (inserted!.waveformPeaks as number[] | null) || null,
+      createdAt: inserted!.createdAt.toISOString(),
+    };
+  }
+
+  async deleteAudioPrompt(
+    profileId: string,
+    audioPromptId: string,
+    tx?: DrizzleDatabase
+  ): Promise<boolean> {
+    const client = this.getClient(tx);
+    const result = await client
+      .delete(profileAudioPrompts)
+      .where(
+        and(
+          eq(profileAudioPrompts.id, audioPromptId),
+          eq(profileAudioPrompts.profileId, profileId)
+        )
+      )
+      .returning({ id: profileAudioPrompts.id });
+    return result.length > 0;
   }
 }

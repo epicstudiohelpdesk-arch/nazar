@@ -6,20 +6,39 @@ export const conversationIdParamSchema = z.object({
   conversationId: uuidSchema,
 });
 
-export const sendMessageSchema = z.object({
-  clientMessageId: z
-    .string()
-    .trim()
-    .min(1, 'Client message ID cannot be empty')
-    .max(64, 'Client message ID cannot exceed 64 characters'),
-  body: z
-    .string()
-    .trim()
-    .min(1, 'Message body cannot be empty')
-    .max(2000, 'Message body cannot exceed 2000 characters'),
-  messageType: z.enum(['TEXT', 'IMAGE', 'SYSTEM'] as const).default('TEXT'),
-  metadata: z.record(z.unknown()).optional(),
-});
+export const sendMessageSchema = z
+  .object({
+    clientMessageId: z
+      .string()
+      .trim()
+      .min(1, 'Client message ID cannot be empty')
+      .max(64, 'Client message ID cannot exceed 64 characters'),
+    body: z
+      .string()
+      .trim()
+      .max(2000, 'Message body cannot exceed 2000 characters')
+      .default(''),
+    messageType: z.enum(['TEXT', 'IMAGE', 'AUDIO', 'SYSTEM'] as const).default('TEXT'),
+    mediaUrl: z.string().url('Invalid media URL').optional(),
+    durationSeconds: z.number().int().min(1).max(300).optional(),
+    waveformPeaks: z.array(z.number().min(0).max(1)).max(100).optional(),
+    metadata: z.record(z.unknown()).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.messageType === 'TEXT') {
+        return data.body.trim().length > 0;
+      }
+      if (data.messageType === 'AUDIO' || data.messageType === 'IMAGE') {
+        return !!data.mediaUrl || data.body.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Message must have content or mediaUrl',
+      path: ['body'],
+    }
+  );
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 

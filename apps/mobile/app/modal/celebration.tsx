@@ -13,6 +13,9 @@ import { haptics } from '../../src/design/haptics/index.js';
 import { announceAccessibility } from '../../src/design/a11y/index.js';
 import { useReducedMotion } from '../../src/design/motion/index.js';
 
+import { Icon } from '../../src/design/primitives/Icon.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+
 export default function MatchCelebrationModalRoute(): React.JSX.Element {
   const { matchId, conversationId, targetUserId, userName, userAvatar } = useLocalSearchParams<{
     matchId?: string;
@@ -24,6 +27,7 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
   const isReduced = useReducedMotion();
+  const { isSmallScreen } = useResponsiveLayout();
 
   const scaleAnim = useRef(new Animated.Value(isReduced ? 1 : 0.88)).current;
   const fadeAnim = useRef(new Animated.Value(isReduced ? 1 : 0)).current;
@@ -66,6 +70,7 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
   }, [matchId, targetUserId, matchedName, isReduced, scaleAnim, fadeAnim]);
 
   const handleStartChat = () => {
+    haptics.medium();
     const targetChat = conversationId || matchId;
     if (targetChat) {
       router.replace(`/chat/${targetChat}`);
@@ -75,6 +80,7 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
   };
 
   const handleKeepBrowsing = () => {
+    haptics.light();
     router.back();
   };
 
@@ -91,10 +97,22 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
       >
         <SurfaceCard
           elevation="lg"
-          style={[styles.dialog, { backgroundColor: theme.colors.surfaceElevated }]}
+          style={[
+            styles.dialog,
+            {
+              backgroundColor: theme.colors.surfaceElevated,
+              borderColor: theme.colors.border,
+              maxWidth: isSmallScreen ? 320 : 360,
+            },
+          ]}
         >
-          <View style={styles.celebrationBadge}>
-            <Text level="display">💕</Text>
+          <View
+            style={[
+              styles.celebrationBadge,
+              { backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accent },
+            ]}
+          >
+            <Icon name="heart" size="lg" color={theme.colors.accent} fill={theme.colors.accent} />
           </View>
 
           <Heading level="h1" style={styles.title}>
@@ -123,7 +141,7 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
               onPress={handleStartChat}
               accessibilityLabel={`Say hello and message ${matchedName}`}
             >
-              Say Hello 💌
+              Say Hello
             </Button>
             <Button
               variant="secondary"
@@ -161,7 +179,13 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   celebrationBadge: {
-    marginBottom: -4,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   title: {
     textAlign: 'center',

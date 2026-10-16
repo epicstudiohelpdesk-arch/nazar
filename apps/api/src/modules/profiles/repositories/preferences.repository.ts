@@ -69,9 +69,14 @@ export class PreferencesRepository implements IPreferencesRepository {
       userId,
       minAge: data.minAge ?? 18,
       maxAge: data.maxAge ?? 99,
+      ageIsDealbreaker: data.ageIsDealbreaker ?? false,
       genderPreferences: data.genderPreferences ?? ['WOMAN', 'MAN', 'NON_BINARY', 'OTHER'],
       maxDistanceKm: data.maxDistanceKm ?? 50,
+      distanceIsDealbreaker: data.distanceIsDealbreaker ?? false,
       relationshipIntent: data.relationshipIntent ?? 'LONG_TERM',
+      intentIsDealbreaker: data.intentIsDealbreaker ?? false,
+      familyPlans: data.familyPlans ?? null,
+      familyPlansIsDealbreaker: data.familyPlansIsDealbreaker ?? false,
     };
 
     const rows = await this.getClient(tx).insert(profilePreferences).values(newRow).returning();

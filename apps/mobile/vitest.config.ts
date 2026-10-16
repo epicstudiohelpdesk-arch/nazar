@@ -16,6 +16,8 @@ export default defineConfig({
       'expo-notifications': path.resolve(__dirname, 'tests/mocks/expo-notifications.ts'),
       'expo-device': path.resolve(__dirname, 'tests/mocks/expo-device.ts'),
       'expo-linear-gradient': path.resolve(__dirname, 'tests/mocks/expo-linear-gradient.ts'),
+      'react-native-svg': path.resolve(__dirname, 'tests/mocks/react-native-svg.ts'),
+      'lucide-react-native': path.resolve(__dirname, 'tests/mocks/lucide-react-native.ts'),
     },
   },
 });

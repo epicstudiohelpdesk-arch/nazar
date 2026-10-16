@@ -1,10 +1,25 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Avatar } from '../../primitives/Avatar.js';
 import { Icon } from '../../primitives/Icon.js';
 import { SurfaceCard } from '../../primitives/SurfaceCard.js';
+
+function formatTimeRemaining(expiresAt?: string | null): { text: string; isExpired: boolean } {
+  if (!expiresAt) return { text: '', isExpired: false };
+  const exp = new Date(expiresAt).getTime();
+  if (Number.isNaN(exp)) return { text: '', isExpired: false };
+  const now = Date.now();
+  const diffMs = exp - now;
+  if (diffMs <= 0) return { text: 'Expired', isExpired: true };
+  const totalSec = Math.floor(diffMs / 1000);
+  const hours = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  if (hours > 0 && mins > 0) return { text: `${hours}h ${mins}m left`, isExpired: false };
+  if (hours > 0) return { text: `${hours}h left`, isExpired: false };
+  return { text: `${mins}m left`, isExpired: false };
+}
 
 export interface MatchCardProps {
   readonly id: string;
@@ -17,6 +32,8 @@ export interface MatchCardProps {
   readonly onPress?: () => void;
   readonly style?: ViewStyle;
   readonly testID?: string;
+  readonly expiresAt?: string | null;
+  readonly status?: string;
 }
 
 export const MatchCard: React.FC<MatchCardProps> = ({
@@ -30,8 +47,22 @@ export const MatchCard: React.FC<MatchCardProps> = ({
   onPress,
   style,
   testID,
+  expiresAt,
+  status,
 }) => {
   const { colors, radii } = useTheme();
+  const [expiry, setExpiry] = useState(formatTimeRemaining(expiresAt));
+
+  useEffect(() => {
+    setExpiry(formatTimeRemaining(expiresAt));
+    if (!expiresAt) return;
+    const exp = new Date(expiresAt).getTime();
+    if (Number.isNaN(exp)) return;
+    const tick = setInterval(() => {
+      setExpiry(formatTimeRemaining(expiresAt));
+    }, 60000); // update every minute
+    return () => clearInterval(tick);
+  }, [expiresAt]);
 
   return (
     <SurfaceCard
@@ -85,11 +116,54 @@ export const MatchCard: React.FC<MatchCardProps> = ({
             )}
           </View>
 
-          {matchedAt && (
-            <Text variant="caption" style={{ color: colors.textTertiary, marginTop: 2 }}>
-              Matched {matchedAt}
-            </Text>
-          )}
+          <View style={styles.bottomRow}>
+            {matchedAt && (
+              <Text variant="caption" style={{ color: colors.textTertiary }}>
+                Matched {matchedAt}
+              </Text>
+            )}
+            {expiry.text ? (
+              <View
+                style={[
+                  styles.expiryBadge,
+                  {
+                    backgroundColor: expiry.isExpired ? colors.errorSoft : colors.warningSoft,
+                    borderColor: expiry.isExpired ? colors.error : colors.warning,
+                    borderRadius: radii.radiusFull,
+                  },
+                ]}
+              >
+                <Icon
+                  name="alertCircle"
+                  size="tiny"
+                  color={expiry.isExpired ? colors.error : colors.warning}
+                  style={{ marginRight: 4 }}
+                />
+                <Text
+                  variant="caption"
+                  weight="medium"
+                  style={{ color: expiry.isExpired ? colors.error : colors.warning }}
+                >
+                  {expiry.text}
+                </Text>
+              </View>
+            ) : status && status !== 'ACTIVE' ? (
+              <View
+                style={[
+                  styles.expiryBadge,
+                  {
+                    backgroundColor: colors.surfaceMuted,
+                    borderColor: colors.border,
+                    borderRadius: radii.radiusFull,
+                  },
+                ]}
+              >
+                <Text variant="caption" weight="medium" style={{ color: colors.textSecondary }}>
+                  {status}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         </View>
 
         <Icon name="chevron" direction="right" size="tiny" color={colors.textTertiary} />
@@ -129,11 +203,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingRight: 8,
+    gap: 6,
   },
   sparkBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 6,
     paddingVertical: 1,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    paddingRight: 8,
+    gap: 8,
+  },
+  expiryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderWidth: 1,
   },
 });

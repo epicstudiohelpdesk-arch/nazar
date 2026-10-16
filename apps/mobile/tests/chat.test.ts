@@ -627,4 +627,146 @@ describe('Mobile Chat Layer: API Client, Inverted Pagination & Realtime Reconcil
       expect(eventId).toBeDefined();
     });
   });
+
+  describe('Feature 2.2: AI Toxic Message Intervention (Are You Sure?)', () => {
+    it('detects severe personal harassment and threats', async () => {
+      const { detectToxicity } = await import('../src/chat/moderation/toxicity-detector.js');
+
+      const threat = detectToxicity('I am gonna hurt you if you do not reply');
+      expect(threat.isToxic).toBe(true);
+      expect(threat.score).toBeGreaterThanOrEqual(0.7);
+      expect(threat.categories).toContain('THREAT_OR_VIOLENCE');
+
+      const insult = detectToxicity('You are ugly and worthless');
+      expect(insult.isToxic).toBe(true);
+      expect(insult.score).toBeGreaterThanOrEqual(0.7);
+      expect(insult.categories).toContain('HARASSMENT');
+    });
+
+    it('detects unsolicited sexually explicit demands', async () => {
+      const { detectToxicity } = await import('../src/chat/moderation/toxicity-detector.js');
+
+      const explicit = detectToxicity('Hey send nudes right now');
+      expect(explicit.isToxic).toBe(true);
+      expect(explicit.score).toBeGreaterThanOrEqual(0.7);
+      expect(explicit.categories).toContain('SEXUAL_HARASSMENT');
+    });
+
+    it('passes respectful and ordinary conversation without false positives', async () => {
+      const { detectToxicity } = await import('../src/chat/moderation/toxicity-detector.js');
+
+      expect(detectToxicity('Hey! How was your weekend?').isToxic).toBe(false);
+      expect(detectToxicity('I love your third photo, where was that taken?').isToxic).toBe(false);
+      expect(detectToxicity('Would you like to grab coffee at Blue Tokai tomorrow?').isToxic).toBe(false);
+    });
+  });
+
+  describe('Feature 2.4: In-App Safe WebRTC Audio & Video Calling', () => {
+    it('initiates a safe audio call session', async () => {
+      const { createCallingApi } = await import('../src/chat/calling-api.js');
+
+      const mockInitiateRes = {
+        callSessionId: 'call-sess-1',
+        status: 'RINGING',
+        callerUserId: 'user-a',
+        calleeUserId: 'user-b',
+        callType: 'AUDIO',
+        startedAt: '2026-10-15T14:00:00.000Z',
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: mockInitiateRes,
+        }),
+      });
+
+      const callingApi = createCallingApi(authClient);
+      const res = await callingApi.initiateCall({
+        conversationId: 'conv-1',
+        callType: 'AUDIO',
+      });
+
+      expect(res.callSessionId).toBe('call-sess-1');
+      expect(res.status).toBe('RINGING');
+      expect(res.callType).toBe('AUDIO');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.test.platform.com/v1/calls/initiate',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ conversationId: 'conv-1', callType: 'AUDIO' }),
+        })
+      );
+    });
+
+    it('ends an active call session', async () => {
+      const { createCallingApi } = await import('../src/chat/calling-api.js');
+
+      const mockEndRes = {
+        success: true,
+        callSessionId: 'call-sess-1',
+        durationSeconds: 42,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: mockEndRes,
+        }),
+      });
+
+      const callingApi = createCallingApi(authClient);
+      const res = await callingApi.endCall('call-sess-1', 'ENDED');
+
+      expect(res.success).toBe(true);
+      expect(res.durationSeconds).toBe(42);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.test.platform.com/v1/calls/call-sess-1/end',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ reason: 'ENDED' }),
+        })
+      );
+    });
+
+    it('retrieves details for an existing call session', async () => {
+      const { createCallingApi } = await import('../src/chat/calling-api.js');
+
+      const mockDetailRes = {
+        id: 'call-sess-1',
+        conversationId: 'conv-1',
+        callerUserId: 'user-a',
+        calleeUserId: 'user-b',
+        callType: 'VIDEO',
+        status: 'ENDED',
+        startedAt: '2026-10-15T14:00:00.000Z',
+        endedAt: '2026-10-15T14:02:30.000Z',
+        durationSeconds: 150,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: mockDetailRes,
+        }),
+      });
+
+      const callingApi = createCallingApi(authClient);
+      const res = await callingApi.getCallSession('call-sess-1');
+
+      expect(res.id).toBe('call-sess-1');
+      expect(res.callType).toBe('VIDEO');
+      expect(res.durationSeconds).toBe(150);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.test.platform.com/v1/calls/call-sess-1',
+        expect.anything()
+      );
+    });
+  });
 });

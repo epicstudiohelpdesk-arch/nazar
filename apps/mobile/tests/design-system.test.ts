@@ -65,13 +65,13 @@ describe('Nazar Design System (F0 UI/UX Constitution)', () => {
     it('exposes semantic light and dark color palettes', () => {
       expect(semanticLightColors.background).toBe('#FAF8F5');
       expect(semanticLightColors.surface).toBe('#FFFFFF');
-      expect(semanticLightColors.accent).toBe('#D84315');
+      expect(semanticLightColors.accent).toBe('#DC0C24');
       expect(semanticLightColors.textPrimary).toBe('#1C1917');
       expect(semanticLightColors.border).toBe('#E7E2DA');
 
       expect(semanticDarkColors.background).toBe('#12100E');
       expect(semanticDarkColors.surface).toBe('#1C1917');
-      expect(semanticDarkColors.accent).toBe('#F06548');
+      expect(semanticDarkColors.accent).toBe('#DC0C24');
       expect(semanticDarkColors.textPrimary).toBe('#F5F5F4');
       expect(darkColors.darkBackground).toBe('#12100E');
     });

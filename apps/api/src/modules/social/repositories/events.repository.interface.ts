@@ -28,6 +28,15 @@ export interface ListAttendeesOptions {
   readonly limit: number;
   readonly cursor?: AttendeeCursor;
   readonly excludedUserIds?: readonly string[];
+  readonly plusOnesOnly?: boolean;
+}
+
+export interface UserPlusOneEventSummary {
+  readonly userId: string;
+  readonly eventId: string;
+  readonly eventTitle: string;
+  readonly eventDate: string;
+  readonly note?: string | null;
 }
 
 export interface IEventsRepository {
@@ -50,6 +59,11 @@ export interface IEventsRepository {
     options: ListAttendeesOptions,
     tx?: DrizzleDatabase
   ): Promise<readonly EventRsvpRow[]>;
+  countPlusOnes(eventId: string, tx?: DrizzleDatabase): Promise<number>;
+  findActivePlusOnesByUserIds(
+    userIds: readonly string[],
+    tx?: DrizzleDatabase
+  ): Promise<Map<string, UserPlusOneEventSummary>>;
   getOldestWaitlistedRsvpForUpdate(
     eventId: string,
     tx: DrizzleDatabase

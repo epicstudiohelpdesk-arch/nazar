@@ -14,6 +14,8 @@ import { MediaGrid } from './components/MediaGrid.js';
 import { PreferencesView } from './components/PreferencesView.js';
 import { PromptsList } from './components/PromptsList.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../design/responsive/index.js';
+import { haptics } from '../design/haptics/index.js';
 
 export interface ProfileOverviewScreenProps {
   readonly onEditPress?: () => void;
@@ -27,13 +29,22 @@ export function ProfileOverviewScreen({
   onUploadPhotoPress,
 }: ProfileOverviewScreenProps): React.JSX.Element {
   const { colors } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const queryClient = useQueryClient();
   const profileApi = getDefaultProfileApi();
 
   // Primary Queries
   const profileQuery = useQuery({
     queryKey: PROFILE_QUERY_KEYS.me,
-    queryFn: () => profileApi.getMyProfile(),
+    queryFn: async () => {
+      try {
+        return await profileApi.getMyProfile();
+      } catch (_err) {
+        const stored = useProfileStore.getState().profile;
+        if (stored) return stored;
+        throw _err;
+      }
+    },
   });
 
   const mediaQuery = useQuery({
@@ -225,7 +236,11 @@ export function ProfileOverviewScreen({
   return (
     <ScrollView
       style={[styles.screen, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        { maxWidth: maxContentWidth || 540, alignSelf: 'center', width: '100%' },
+      ]}
+      showsVerticalScrollIndicator={false}
     >
       {/* Profile Header Card */}
       <SurfaceCard elevation="sm" style={styles.headerCard}>
@@ -242,9 +257,12 @@ export function ProfileOverviewScreen({
               )}
             </View>
             {profile.city && (
-              <Text level="bodySmall" color="secondary" style={{ marginTop: 2 }}>
-                📍 {profile.city}
-              </Text>
+              <View style={styles.locationRow}>
+                <Icon name="location" size="xs" color={colors.textSecondary} />
+                <Text level="bodySmall" color="secondary">
+                  {profile.city}
+                </Text>
+              </View>
             )}
           </View>
 
@@ -253,7 +271,10 @@ export function ProfileOverviewScreen({
               <Button
                 variant="primary"
                 size="sm"
-                onPress={onEditPress}
+                onPress={() => {
+                  haptics.selection();
+                  onEditPress();
+                }}
                 accessibilityLabel="Edit Profile"
                 testID="profile-edit-btn"
               >
@@ -264,7 +285,10 @@ export function ProfileOverviewScreen({
               <Button
                 variant="secondary"
                 size="sm"
-                onPress={onPreviewPress}
+                onPress={() => {
+                  haptics.selection();
+                  onPreviewPress();
+                }}
                 accessibilityLabel="Preview Profile"
                 testID="profile-preview-btn"
               >
@@ -430,6 +454,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
   },
   activeDot: {
     width: 10,

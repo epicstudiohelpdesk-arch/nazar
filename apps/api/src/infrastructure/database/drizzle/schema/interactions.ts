@@ -1,10 +1,11 @@
-import { pgTable, uuid, varchar, timestamp, uniqueIndex, index, check } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, uniqueIndex, index, check } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from './users.js';
 
 /**
  * User Interactions Table (Gate 07)
  * Directional user-to-user interactions (LIKE / PASS).
+ * Supports inline media/prompt liking and contextual opening comments.
  * Enforces directional uniqueness and forbids self-interaction at the database level.
  */
 export const userInteractions = pgTable(
@@ -18,6 +19,11 @@ export const userInteractions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     type: varchar('type', { length: 16 }).notNull(), // 'LIKE' | 'PASS'
+    targetAttachmentType: varchar('target_attachment_type', { length: 16 })
+      .default('PROFILE')
+      .notNull(), // 'PROFILE' | 'MEDIA' | 'PROMPT'
+    targetAttachmentId: uuid('target_attachment_id'),
+    comment: text('comment'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

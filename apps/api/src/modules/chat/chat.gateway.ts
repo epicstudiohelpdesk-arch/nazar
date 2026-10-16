@@ -366,4 +366,58 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { success: false };
     }
   }
+
+  @SubscribeMessage('call:signal')
+  async handleCallSignal(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    data: {
+      targetUserId: string;
+      callSessionId: string;
+      signal: { type: string; sdp?: string; candidate?: unknown };
+    }
+  ): Promise<{ success: boolean }> {
+    const user = client.data.user as AuthenticatedPrincipal | undefined;
+    if (!user) {
+      return { success: false };
+    }
+
+    try {
+      this.server.to(`user:${data.targetUserId}`).emit('call.signal', {
+        callerUserId: user.userId,
+        callSessionId: data.callSessionId,
+        signal: data.signal,
+      });
+      return { success: true };
+    } catch {
+      return { success: false };
+    }
+  }
+
+  @SubscribeMessage('call:hangup')
+  async handleCallHangup(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    data: {
+      targetUserId: string;
+      callSessionId: string;
+      reason?: string;
+    }
+  ): Promise<{ success: boolean }> {
+    const user = client.data.user as AuthenticatedPrincipal | undefined;
+    if (!user) {
+      return { success: false };
+    }
+
+    try {
+      this.server.to(`user:${data.targetUserId}`).emit('call.hangup', {
+        callerUserId: user.userId,
+        callSessionId: data.callSessionId,
+        reason: data.reason || 'ENDED',
+      });
+      return { success: true };
+    } catch {
+      return { success: false };
+    }
+  }
 }

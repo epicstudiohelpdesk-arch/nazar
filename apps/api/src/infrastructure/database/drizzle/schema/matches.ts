@@ -18,7 +18,8 @@ export const matches = pgTable(
     userBId: uuid('user_b_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    status: varchar('status', { length: 16 }).notNull().default('ACTIVE'), // 'ACTIVE' | 'UNMATCHED'
+    status: varchar('status', { length: 16 }).notNull().default('ACTIVE'), // 'ACTIVE' | 'QUEUED' | 'EXPIRED' | 'UNMATCHED'
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
     matchedAt: timestamp('matched_at', { withTimezone: true }).defaultNow().notNull(),
     unmatchedByUserId: uuid('unmatched_by_user_id').references(() => users.id, {
       onDelete: 'set null',
@@ -33,8 +34,12 @@ export const matches = pgTable(
     index('idx_matches_user_a_status').on(table.userAId, table.status),
     index('idx_matches_user_b_status').on(table.userBId, table.status),
     index('idx_matches_status_matched_at').on(table.status, table.matchedAt),
+    index('idx_matches_status_expires_at').on(table.status, table.expiresAt),
     check('chk_matches_normalized_pair', sql`${table.userAId} < ${table.userBId}`),
-    check('chk_matches_status', sql`${table.status} IN ('ACTIVE', 'UNMATCHED')`),
+    check(
+      'chk_matches_status',
+      sql`${table.status} IN ('ACTIVE', 'QUEUED', 'EXPIRED', 'UNMATCHED')`
+    ),
   ]
 );
 

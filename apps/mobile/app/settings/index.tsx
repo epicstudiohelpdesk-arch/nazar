@@ -6,13 +6,15 @@ import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
-import { Icon } from '../../src/design/primitives/Icon.js';
+import { Icon, type IconName } from '../../src/design/primitives/Icon.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { getDefaultAuthClient } from '../../src/auth/default-client.js';
 import { purgeAccountSessionAndCaches } from '../../src/auth/session-service.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 interface SettingsItemProps {
-  icon: 'settings' | 'shield' | 'bell' | 'lock' | 'sparkles' | 'flag';
+  icon: IconName;
   title: string;
   subtitle?: string;
   onPress: () => void;
@@ -28,10 +30,15 @@ function SettingsRow({
 }: SettingsItemProps): React.JSX.Element {
   const { theme } = useTheme();
 
+  const handlePress = () => {
+    haptics.selection();
+    onPress();
+  };
+
   return (
     <TouchableOpacity
       style={styles.row}
-      onPress={onPress}
+      onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={title}
     >
@@ -45,7 +52,7 @@ function SettingsRow({
       >
         <Icon
           name={icon}
-          size={20}
+          size={18}
           color={destructive ? theme.colors.error : theme.colors.textPrimary}
         />
       </View>
@@ -59,7 +66,7 @@ function SettingsRow({
           </Text>
         )}
       </View>
-      <Icon name="chevron" size={18} color={theme.colors.textTertiary} />
+      <Icon name="chevron" size={16} color={theme.colors.textTertiary} />
     </TouchableOpacity>
   );
 }
@@ -67,10 +74,12 @@ function SettingsRow({
 export default function SettingsHubRoute(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const queryClient = useQueryClient();
   const authClient = getDefaultAuthClient();
 
   const handleLogout = () => {
+    haptics.impactMedium();
     Alert.alert('Log Out', 'Are you sure you want to log out of your Nazar account?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -90,7 +99,13 @@ export default function SettingsHubRoute(): React.JSX.Element {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <TopNavHeader title="Settings" onBack={() => router.back()} leftAction="back" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Account & Security */}
         <View style={styles.section}>
           <Heading level="h3">Account & Security</Heading>
@@ -156,10 +171,10 @@ export default function SettingsHubRoute(): React.JSX.Element {
         <View style={styles.section}>
           <Heading level="h3">Actions</Heading>
           <SurfaceCard elevation="sm" style={styles.card}>
-            <SettingsRow icon="settings" title="Log Out" onPress={handleLogout} />
+            <SettingsRow icon="logout" title="Log Out" onPress={handleLogout} />
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
             <SettingsRow
-              icon="lock"
+              icon="trash"
               title="Delete Account"
               subtitle="Permanently remove your account and all data"
               destructive

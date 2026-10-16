@@ -1,15 +1,18 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { sql, inArray, eq } from 'drizzle-orm';
+import { sql, inArray, eq, and, isNull, gt, asc } from 'drizzle-orm';
 import {
   DatabaseService,
   type DrizzleDatabase,
 } from '../../../infrastructure/database/database.service.js';
 import {
+  profiles,
   profileInterests,
   interests,
   profilePrompts,
   profilePromptDefinitions,
   profileMedia,
+  events,
+  eventRsvps,
 } from '../../../infrastructure/database/drizzle/schema/index.js';
 import { S3StorageService } from '../../../infrastructure/storage/s3-storage.service.js';
 import type {
@@ -40,6 +43,11 @@ interface RawCandidateRow {
   countryCode: string | null;
   latitude: number | null;
   longitude: number | null;
+  travelMode: boolean;
+  travelLatitude: number | null;
+  travelLongitude: number | null;
+  travelCity: string | null;
+  travelCountry: string | null;
   visibility: string;
   completionStatus: unknown;
   createdAt: Date;
@@ -82,15 +90,32 @@ export class CandidateRepository implements ICandidateRepository {
     const viewerGenderJson = JSON.stringify([context.gender]);
 
     // Build geospatial selection and conditions
+    // If candidate has active travelMode with travel coordinates, use them as candidate location point
+    const effectiveCandidateLocationSql = sql`COALESCE(
+      CASE WHEN p.travel_mode = true AND p.travel_latitude IS NOT NULL AND p.travel_longitude IS NOT NULL
+           THEN ST_SetSRID(ST_MakePoint(p.travel_longitude, p.travel_latitude), 4326)::geography
+      END,
+      p.location
+    )`;
+
     const distanceSelectSql = hasLocation
-      ? sql`ST_Distance(p.location, ST_SetSRID(ST_MakePoint(${viewerLng}, ${viewerLat}), 4326)::geography)`
+      ? sql`ST_Distance(${effectiveCandidateLocationSql}, ST_SetSRID(ST_MakePoint(${viewerLng}, ${viewerLat}), 4326)::geography)`
       : sql`NULL`;
 
     const locationFilterSql = hasLocation
-      ? sql`AND p.location IS NOT NULL
-            AND ST_DWithin(p.location, ST_SetSRID(ST_MakePoint(${viewerLng}, ${viewerLat}), 4326)::geography, ${viewerMaxDistanceMeters})
-            AND ST_DWithin(p.location, ST_SetSRID(ST_MakePoint(${viewerLng}, ${viewerLat}), 4326)::geography, (pp.max_distance_km * 1000))`
+      ? sql`AND ${effectiveCandidateLocationSql} IS NOT NULL
+            AND ST_DWithin(${effectiveCandidateLocationSql}, ST_SetSRID(ST_MakePoint(${viewerLng}, ${viewerLat}), 4326)::geography, ${viewerMaxDistanceMeters})
+            AND ST_DWithin(${effectiveCandidateLocationSql}, ST_SetSRID(ST_MakePoint(${viewerLng}, ${viewerLat}), 4326)::geography, (pp.max_distance_km * 1000))`
       : sql``;
+
+    const intentFilterSql = context.intentIsDealbreaker
+      ? sql`AND (p.relationship_intent = ${context.relationshipIntent} OR pp.relationship_intent = ${context.relationshipIntent})`
+      : sql``;
+
+    const familyPlansFilterSql =
+      context.familyPlansIsDealbreaker && context.familyPlans
+        ? sql`AND (p.family_plans = ${context.familyPlans} OR pp.family_plans = ${context.familyPlans})`
+        : sql``;
 
     const exclusionsSql =
       excludedUserIds.length > 0
@@ -114,6 +139,11 @@ export class CandidateRepository implements ICandidateRepository {
         p.country_code AS "countryCode",
         p.latitude AS "latitude",
         p.longitude AS "longitude",
+        p.travel_mode AS "travelMode",
+        p.travel_latitude AS "travelLatitude",
+        p.travel_longitude AS "travelLongitude",
+        p.travel_city AS "travelCity",
+        p.travel_country AS "travelCountry",
         p.visibility AS "visibility",
         p.completion_status AS "completionStatus",
         p.created_at AS "createdAt",
@@ -132,6 +162,16 @@ export class CandidateRepository implements ICandidateRepository {
           (p.completion_status->'missingRequired')::jsonb = '[]'::jsonb
           OR jsonb_array_length(p.completion_status->'missingRequired') = 0
         )
+        -- Incognito Mode: If candidate is in Incognito mode, viewer can ONLY see them if candidate has already liked viewer
+        AND (
+          p.incognito_mode = false
+          OR EXISTS (
+            SELECT 1 FROM user_interactions ui
+            WHERE ui.actor_user_id = p.user_id
+              AND ui.target_user_id = ${context.userId}
+              AND ui.type = 'LIKE'
+          )
+        )
         -- Reciprocal Age Filtering
         AND EXTRACT(YEAR FROM age(CURRENT_DATE, p.date_of_birth)) >= ${context.minAge}
         AND EXTRACT(YEAR FROM age(CURRENT_DATE, p.date_of_birth)) <= ${context.maxAge}
@@ -144,6 +184,8 @@ export class CandidateRepository implements ICandidateRepository {
         )}]::varchar[]`})
         AND pp.gender_preferences @> ${viewerGenderJson}::jsonb
         ${locationFilterSql}
+        ${intentFilterSql}
+        ${familyPlansFilterSql}
         ${exclusionsSql}
       ORDER BY p.updated_at DESC, p.id ASC
       LIMIT ${candidatePoolLimit}
@@ -177,6 +219,9 @@ export class CandidateRepository implements ICandidateRepository {
         countryCode: row.countryCode,
         latitude: row.latitude,
         longitude: row.longitude,
+        travelMode: row.travelMode ?? false,
+        travelCity: row.travelCity || null,
+        travelCountry: row.travelCountry || null,
         visibility: row.visibility,
         completionStatus: row.completionStatus as ProfileCompleteness,
         createdAt: new Date(row.createdAt),
@@ -286,6 +331,60 @@ export class CandidateRepository implements ICandidateRepository {
           position: row.position,
           isPrimary: row.isPrimary,
         });
+      }
+    }
+
+    // 4. Batch fetch active Event +1 for candidates
+    const profileUserRows = await client
+      .select({
+        profileId: profiles.id,
+        userId: profiles.userId,
+      })
+      .from(profiles)
+      .where(inArray(profiles.id, [...profileIds]));
+
+    const userToProfileMap = new Map<string, string>();
+    for (const p of profileUserRows) {
+      userToProfileMap.set(p.userId, p.profileId);
+    }
+
+    const candidateUserIds = profileUserRows.map((p) => p.userId);
+    if (candidateUserIds.length > 0) {
+      const plusOneRows = await client
+        .select({
+          userId: eventRsvps.userId,
+          eventId: events.id,
+          eventTitle: events.title,
+          eventDate: events.startAt,
+          note: eventRsvps.plusOneNote,
+        })
+        .from(eventRsvps)
+        .innerJoin(events, eq(events.id, eventRsvps.eventId))
+        .where(
+          and(
+            inArray(eventRsvps.userId, candidateUserIds),
+            eq(eventRsvps.status, 'GOING'),
+            eq(eventRsvps.lookingForPlusOne, true),
+            eq(events.status, 'PUBLISHED'),
+            isNull(events.deletedAt),
+            gt(events.endAt, new Date())
+          )
+        )
+        .orderBy(asc(events.startAt));
+
+      for (const po of plusOneRows) {
+        const profId = userToProfileMap.get(po.userId);
+        if (profId) {
+          const existing = map.get(profId);
+          if (existing && !existing.eventPlusOne) {
+            (existing as any).eventPlusOne = {
+              eventId: po.eventId,
+              eventTitle: po.eventTitle,
+              eventDate: po.eventDate.toISOString(),
+              note: po.note,
+            };
+          }
+        }
       }
     }
 

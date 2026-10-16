@@ -5,13 +5,15 @@ import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
-import { Icon } from '../../src/design/primitives/Icon.js';
+import { Icon, type IconName } from '../../src/design/primitives/Icon.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { Button } from '../../src/design/components/button/Button.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 interface PermissionRowProps {
-  icon: 'bell' | 'shield' | 'sparkles';
+  icon: IconName;
   title: string;
   description: string;
   privacyNote: string;
@@ -49,12 +51,14 @@ function PermissionCard({
 export default function PermissionsSettingsRoute(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
 
   useEffect(() => {
     trackOnboardingEvent('permissions_viewed');
   }, []);
 
   const handleOpenSettings = async () => {
+    haptics.impactMedium();
     try {
       await Linking.openSettings();
     } catch {
@@ -65,7 +69,13 @@ export default function PermissionsSettingsRoute(): React.JSX.Element {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <TopNavHeader title="App Permissions" onBack={() => router.back()} leftAction="back" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Heading level="h2">Device Permissions</Heading>
           <Text level="bodySmall" color="secondary">
@@ -83,14 +93,14 @@ export default function PermissionsSettingsRoute(): React.JSX.Element {
           />
 
           <PermissionCard
-            icon="shield"
+            icon="camera"
             title="Camera & Photos"
             description="Upload authentic photos to your profile and complete photo verification."
             privacyNote="We only access the specific photos you select. No background access."
           />
 
           <PermissionCard
-            icon="sparkles"
+            icon="location"
             title="Location Services"
             description="Calculate coarse distance to potential matches in your city or region."
             privacyNote="Exact coordinates are never stored or shared with other members."

@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { eq, and, sql, asc, desc, isNull, notInArray, gt } from 'drizzle-orm';
+import { eq, and, sql, asc, desc, isNull, notInArray, gt, inArray } from 'drizzle-orm';
 import {
   DatabaseService,
   type DrizzleDatabase,
@@ -16,6 +16,7 @@ import type {
   IEventsRepository,
   ListEventsOptions,
   ListAttendeesOptions,
+  UserPlusOneEventSummary,
 } from './events.repository.interface.js';
 
 @Injectable()
@@ -130,6 +131,8 @@ export class EventsRepository implements IEventsRepository {
         target: [eventRsvps.eventId, eventRsvps.userId],
         set: {
           status: data.status,
+          lookingForPlusOne: data.lookingForPlusOne ?? false,
+          plusOneNote: data.plusOneNote ?? null,
           promotedFromWaitlistAt: data.promotedFromWaitlistAt,
           updatedAt: new Date(),
         },
@@ -169,6 +172,10 @@ export class EventsRepository implements IEventsRepository {
       cursorCondition,
     ];
 
+    if (options.plusOnesOnly) {
+      conditions.push(eq(eventRsvps.lookingForPlusOne, true));
+    }
+
     if (options.excludedUserIds && options.excludedUserIds.length > 0) {
       conditions.push(notInArray(eventRsvps.userId, [...options.excludedUserIds]));
     }
@@ -179,6 +186,66 @@ export class EventsRepository implements IEventsRepository {
       .where(and(...conditions))
       .orderBy(desc(eventRsvps.createdAt), desc(eventRsvps.id))
       .limit(options.limit);
+  }
+
+  async countPlusOnes(eventId: string, tx?: DrizzleDatabase): Promise<number> {
+    const client = this.getClient(tx);
+    const [row] = await client
+      .select({ count: sql<number>`count(*)::int` })
+      .from(eventRsvps)
+      .where(
+        and(
+          eq(eventRsvps.eventId, eventId),
+          eq(eventRsvps.status, 'GOING'),
+          eq(eventRsvps.lookingForPlusOne, true)
+        )
+      );
+    return row?.count ?? 0;
+  }
+
+  async findActivePlusOnesByUserIds(
+    userIds: readonly string[],
+    tx?: DrizzleDatabase
+  ): Promise<Map<string, UserPlusOneEventSummary>> {
+    const map = new Map<string, UserPlusOneEventSummary>();
+    if (userIds.length === 0) return map;
+
+    const client = this.getClient(tx);
+    const rows = await client
+      .select({
+        userId: eventRsvps.userId,
+        eventId: events.id,
+        eventTitle: events.title,
+        eventDate: events.startAt,
+        note: eventRsvps.plusOneNote,
+      })
+      .from(eventRsvps)
+      .innerJoin(events, eq(events.id, eventRsvps.eventId))
+      .where(
+        and(
+          inArray(eventRsvps.userId, [...userIds]),
+          eq(eventRsvps.status, 'GOING'),
+          eq(eventRsvps.lookingForPlusOne, true),
+          eq(events.status, 'PUBLISHED'),
+          isNull(events.deletedAt),
+          gt(events.endAt, new Date())
+        )
+      )
+      .orderBy(asc(events.startAt));
+
+    for (const row of rows) {
+      if (!map.has(row.userId)) {
+        map.set(row.userId, {
+          userId: row.userId,
+          eventId: row.eventId,
+          eventTitle: row.eventTitle,
+          eventDate: row.eventDate.toISOString(),
+          note: row.note,
+        });
+      }
+    }
+
+    return map;
   }
 
   async getOldestWaitlistedRsvpForUpdate(

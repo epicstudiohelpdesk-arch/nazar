@@ -3,7 +3,6 @@ import {
   View,
   ScrollView,
   Image,
-  Dimensions,
   ActivityIndicator,
   TouchableOpacity,
   Alert,
@@ -14,6 +13,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import type { MatchDetailDto } from '@platform/api-contracts';
 import { useTheme } from '../design/theme/ThemeContext.js';
+import { useResponsiveLayout } from '../design/responsive/index.js';
+import { haptics } from '../design/haptics/index.js';
 import { TopNavHeader } from '../design/components/navigation/TopNavHeader.js';
 import { Heading } from '../design/primitives/Heading.js';
 import { Text } from '../design/primitives/Text.js';
@@ -26,10 +27,6 @@ import { createMatchesApi, MATCHES_QUERY_KEYS } from './matches-api.js';
 import { createChatApi } from '../chat/chat-api.js';
 import type { AuthClient } from '../auth/auth-client.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PHOTO_WIDTH = SCREEN_WIDTH - 32;
-const PHOTO_HEIGHT = Math.round(PHOTO_WIDTH * 1.25);
 
 export interface MatchDetailScreenProps {
   readonly authClient: AuthClient;
@@ -53,6 +50,26 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isNavigatingChat, setIsNavigatingChat] = useState(false);
+
+  const { isSmallScreen, isLargeScreen, width: windowWidth } = useResponsiveLayout();
+  const photoWidth = Math.min(windowWidth - 32, 500);
+  const photoHeight = isSmallScreen ? 340 : isLargeScreen ? 460 : 400;
+
+  const handleNextPhoto = () => {
+    const photos = (data?.otherUser?.media || []).map((m) => m.url);
+    if (photos.length > 1) {
+      haptics.selection();
+      setActivePhotoIndex((prev) => (prev + 1) % photos.length);
+    }
+  };
+
+  const handlePrevPhoto = () => {
+    const photos = (data?.otherUser?.media || []).map((m) => m.url);
+    if (photos.length > 1) {
+      haptics.selection();
+      setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+    }
+  };
 
   // Fetch Match Details
   const { data, isLoading, isError, error, refetch } = useQuery<MatchDetailDto, Error>({
@@ -181,13 +198,33 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
     );
   }
 
-  const { otherUser, matchedAt, status } = data;
+  const { otherUser, matchedAt, status, expiresAt } = data;
   const photos = (otherUser.media || []).map((m) => m.url);
   const formattedDate = new Date(matchedAt).toLocaleDateString(undefined, {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
   });
+
+  const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
+  useEffect(() => {
+    if (!expiresAt) return;
+    const updateTimer = () => {
+      const now = Date.now();
+      const expiry = new Date(expiresAt).getTime();
+      if (Number.isNaN(expiry) || expiry <= now) {
+        setTimeRemaining('Expired');
+        return;
+      }
+      const diffMs = expiry - now;
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      setTimeRemaining(hours > 0 ? `${hours}h ${minutes}m left` : `${minutes}m left`);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -219,63 +256,97 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
       />
 
       <View style={styles.bodyWrapper}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Photo Carousel */}
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { maxWidth: 540, alignSelf: 'center', width: '100%' },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Photo Carousel with Story Progress Bars & Tap Zones */}
           {photos.length > 0 ? (
-            <View style={styles.galleryContainer}>
-              <ScrollView
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onScroll={(e) => {
-                  const offset = e.nativeEvent.contentOffset.x;
-                  const index = Math.round(offset / PHOTO_WIDTH);
-                  if (index !== activePhotoIndex) {
-                    setActivePhotoIndex(index);
-                  }
-                }}
-                scrollEventThrottle={16}
-                style={styles.photoScroll}
-              >
-                {photos.map((photoUrl, idx) => (
-                  <View key={`${photoUrl}-${idx}`} style={styles.photoSlide}>
-                    <Image
-                      source={{ uri: photoUrl }}
-                      style={styles.photoImage}
-                      resizeMode="cover"
-                      accessibilityLabel={`${otherUser.displayName}'s photo ${idx + 1}`}
+            <View style={[styles.galleryContainer, { width: photoWidth, height: photoHeight }]}>
+              <Image
+                source={{ uri: photos[activePhotoIndex] }}
+                style={[styles.photoImage, { width: photoWidth, height: photoHeight }]}
+                resizeMode="cover"
+                accessibilityLabel={`${otherUser.displayName}'s photo ${activePhotoIndex + 1}`}
+              />
+
+              {/* Photo Vignette */}
+              <View style={styles.photoVignette} pointerEvents="none" />
+
+              {/* Story-Style Progress Bars */}
+              {photos.length > 1 && (
+                <View style={styles.storyBarsContainer}>
+                  {photos.map((_, idx) => (
+                    <View
+                      key={`story-${idx}`}
+                      style={[
+                        styles.storyBarTrack,
+                        {
+                          backgroundColor:
+                            idx === activePhotoIndex
+                              ? '#FFFFFF'
+                              : 'rgba(255, 255, 255, 0.4)',
+                        },
+                      ]}
                     />
-                  </View>
-                ))}
-              </ScrollView>
+                  ))}
+                </View>
+              )}
+
+              {/* Tap Zones for Left/Right Story Navigation */}
+              {photos.length > 1 && (
+                <View style={styles.tapZonesRow} pointerEvents="box-none">
+                  <TouchableOpacity
+                    style={styles.tapZone}
+                    onPress={handlePrevPhoto}
+                    activeOpacity={1}
+                    accessibilityLabel="Previous photo"
+                  />
+                  <TouchableOpacity
+                    style={styles.tapZone}
+                    onPress={handleNextPhoto}
+                    activeOpacity={1}
+                    accessibilityLabel="Next photo"
+                  />
+                </View>
+              )}
 
               {/* Matched Date Ribbon */}
               <View
                 style={[
                   styles.matchedRibbon,
-                  { backgroundColor: 'rgba(0, 0, 0, 0.7)', borderColor: theme.colors.accent },
+                  { backgroundColor: 'rgba(0, 0, 0, 0.72)', borderColor: theme.colors.accent },
                 ]}
               >
-                <Icon name="heart" size="tiny" color={theme.colors.accent} />
+                <Icon name="heart" size="tiny" color={theme.colors.accent} fill={theme.colors.accent} />
                 <Text level="caption" style={{ color: '#FFFFFF', fontWeight: '600' }}>
                   Matched on {formattedDate}
                 </Text>
               </View>
 
-              {/* Pagination Dots */}
-              {photos.length > 1 && (
-                <View style={styles.dotsRow}>
-                  {photos.map((_, idx) => (
-                    <View
-                      key={`dot-${idx}`}
-                      style={[
-                        styles.dot,
-                        idx === activePhotoIndex
-                          ? [styles.activeDot, { backgroundColor: theme.colors.accent }]
-                          : { backgroundColor: 'rgba(255, 255, 255, 0.5)' },
-                      ]}
-                    />
-                  ))}
+              {/* Expiry Countdown Ribbon */}
+              {expiresAt && timeRemaining && (
+                <View
+                  style={[
+                    styles.expiryRibbon,
+                    {
+                      backgroundColor: 'rgba(0, 0, 0, 0.72)',
+                      borderColor:
+                        timeRemaining === 'Expired' ? theme.colors.error : theme.colors.warning,
+                    },
+                  ]}
+                >
+                  <Icon
+                    name="alertCircle"
+                    size="tiny"
+                    color={timeRemaining === 'Expired' ? theme.colors.error : theme.colors.warning}
+                  />
+                  <Text level="caption" style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                    {timeRemaining === 'Expired' ? 'Match expired' : timeRemaining}
+                  </Text>
                 </View>
               )}
             </View>
@@ -300,20 +371,36 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
               </View>
             )}
 
-            {/* Occupation & Education */}
+            {/* Occupation & Education Micro-Badges */}
             {(otherUser.occupation || otherUser.education) && (
               <View style={styles.detailsRow}>
                 {otherUser.occupation && (
-                  <View style={styles.detailItem}>
-                    <Icon name="user" size="sm" color={theme.colors.textSecondary} />
+                  <View
+                    style={[
+                      styles.detailChip,
+                      {
+                        backgroundColor: theme.colors.surfaceMuted,
+                        borderColor: theme.colors.border,
+                      },
+                    ]}
+                  >
+                    <Icon name="briefcase" size="sm" color={theme.colors.textSecondary} />
                     <Text level="bodySmall" color="secondary">
                       {otherUser.occupation}
                     </Text>
                   </View>
                 )}
                 {otherUser.education && (
-                  <View style={styles.detailItem}>
-                    <Icon name="sparkles" size="sm" color={theme.colors.textSecondary} />
+                  <View
+                    style={[
+                      styles.detailChip,
+                      {
+                        backgroundColor: theme.colors.surfaceMuted,
+                        borderColor: theme.colors.border,
+                      },
+                    ]}
+                  >
+                    <Icon name="graduationCap" size="sm" color={theme.colors.textSecondary} />
                     <Text level="bodySmall" color="secondary">
                       {otherUser.education}
                     </Text>
@@ -322,6 +409,25 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
               </View>
             )}
           </View>
+
+          {/* Suggested Icebreakers */}
+          {data.suggestedIcebreakers && data.suggestedIcebreakers.length > 0 && (
+            <View style={styles.section}>
+              <Heading level="h3" style={styles.sectionTitle}>
+                Suggested Icebreakers
+              </Heading>
+              {data.suggestedIcebreakers.map((ib, idx) => (
+                <SurfaceCard key={`ib-${idx}`} elevation="sm" style={styles.icebreakerCard}>
+                  <View style={styles.icebreakerRow}>
+                    <Icon name="sparkles" size="sm" color={theme.colors.accent} />
+                    <Text level="body" style={styles.icebreakerText}>
+                      {ib}
+                    </Text>
+                  </View>
+                </SurfaceCard>
+              ))}
+            </View>
+          )}
 
           {/* Bio Surface Card */}
           {otherUser.bio ? (
@@ -407,17 +513,23 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
             },
           ]}
         >
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            isLoading={isNavigatingChat}
-            onPress={handleStartMessage}
-            accessibilityLabel={`Send message to ${otherUser.displayName}`}
-            testID="matches.match.message"
-          >
-            Send Message 💬
-          </Button>
+          <View style={{ maxWidth: 540, width: '100%', alignSelf: 'center' }}>
+            <Button
+              variant="primary"
+              size="lg"
+              icon="message"
+              fullWidth
+              isLoading={isNavigatingChat}
+              onPress={() => {
+                haptics.selection();
+                void handleStartMessage();
+              }}
+              accessibilityLabel={`Send message to ${otherUser.displayName}`}
+              testID="matches.match.message"
+            >
+              Send Message
+            </Button>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -453,28 +565,45 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   galleryContainer: {
-    width: PHOTO_WIDTH,
-    height: PHOTO_HEIGHT,
     borderRadius: 24,
     overflow: 'hidden',
     position: 'relative',
     alignSelf: 'center',
-  },
-  photoScroll: {
-    width: PHOTO_WIDTH,
-    height: PHOTO_HEIGHT,
-  },
-  photoSlide: {
-    width: PHOTO_WIDTH,
-    height: PHOTO_HEIGHT,
+    backgroundColor: '#000000',
   },
   photoImage: {
-    width: '100%',
+    borderRadius: 24,
+  },
+  photoVignette: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  storyBarsContainer: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    gap: 4,
+    zIndex: 10,
+  },
+  storyBarTrack: {
+    flex: 1,
+    height: 3,
+    borderRadius: 1.5,
+  },
+  tapZonesRow: {
+    ...StyleSheet.absoluteFill,
+    flexDirection: 'row',
+    zIndex: 5,
+  },
+  tapZone: {
+    flex: 1,
     height: '100%',
   },
   matchedRibbon: {
     position: 'absolute',
-    top: 14,
+    bottom: 14,
     left: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -483,29 +612,23 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
+    zIndex: 12,
   },
-  dotsRow: {
+  expiryRibbon: {
     position: 'absolute',
-    bottom: 16,
-    left: 0,
-    right: 0,
+    bottom: 14,
+    right: 14,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  activeDot: {
-    width: 24,
-    height: 8,
-    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    zIndex: 12,
   },
   identitySection: {
-    gap: 6,
+    gap: 8,
     paddingHorizontal: 4,
   },
   nameRow: {
@@ -526,13 +649,17 @@ const styles = StyleSheet.create({
   detailsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
     marginTop: 4,
   },
-  detailItem: {
+  detailChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   bioCard: {
     padding: 16,
@@ -560,6 +687,20 @@ const styles = StyleSheet.create({
   promptAnswer: {
     fontWeight: '500',
     lineHeight: 24,
+  },
+  icebreakerCard: {
+    padding: 14,
+    borderRadius: 16,
+    gap: 6,
+  },
+  icebreakerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  icebreakerText: {
+    flex: 1,
+    lineHeight: 22,
   },
   interestsContainer: {
     flexDirection: 'row',

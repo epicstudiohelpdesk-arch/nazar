@@ -26,6 +26,10 @@ import { ChatHeader } from './components/ChatHeader.js';
 import { MessageBubble, type OptimisticMessageItem } from './components/MessageBubble.js';
 import { MessageComposer } from './components/MessageComposer.js';
 import { TypingIndicator } from './components/TypingIndicator.js';
+import { AreYouSureModal } from './components/AreYouSureModal.js';
+import { CallModal } from './components/CallModal.js';
+import { getDefaultCallingApi } from './calling-api.js';
+import { detectToxicity } from './moderation/toxicity-detector.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import type { AuthClient } from '../auth/auth-client.js';
 
@@ -67,6 +71,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
   const chatApi = useMemo(() => createChatApi(effectiveClient), [effectiveClient]);
   const safetyApi = useMemo(() => createSafetyApi(effectiveClient), [effectiveClient]);
   const matchesApi = useMemo(() => getDefaultMatchesApi(), []);
+  const callingApi = useMemo(() => getDefaultCallingApi(), []);
 
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -77,9 +82,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
   const [optimisticMessages, setOptimisticMessages] = useState<OptimisticMessageItem[]>([]);
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [isBlockModalVisible, setIsBlockModalVisible] = useState(false);
+  const [isAysModalVisible, setIsAysModalVisible] = useState(false);
+  const [pendingToxicText, setPendingToxicText] = useState('');
+  const [aysReason, setAysReason] = useState<string | undefined>();
+  const [activeCallSessionId, setActiveCallSessionId] = useState<string | null>(null);
+  const [activeCallType, setActiveCallType] = useState<'AUDIO' | 'VIDEO'>('AUDIO');
+  const [isCallModalVisible, setIsCallModalVisible] = useState(false);
 
   const lastTypingEmittedRef = useRef<number>(0);
   const lastMarkedReadMessageIdRef = useRef<string | null>(null);
+  const CLIENT_MESSAGE_ID_PREFIX = 'cmsg_';
 
   // 1. Load conversation detail
   const {
@@ -226,20 +238,35 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
     };
   }, [conversationId, queryClient, chatApi, conversation?.otherUser.userId]);
 
-  // 5. Send message handler
-  const handleSendMessage = async () => {
-    const trimmed = inputText.trim();
-    if (!trimmed || isSending) return;
+  // 5. Send message handler (with AI Toxic Intervention check)
+  const handleSendMessage = async (bypassAys = false) => {
+    const textToSend = bypassAys ? pendingToxicText : inputText.trim();
+    if (!textToSend || isSending) return;
 
-    const clientMessageId = `cmsg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    if (!bypassAys) {
+      const toxCheck = detectToxicity(textToSend);
+      if (toxCheck.isToxic) {
+        setPendingToxicText(textToSend);
+        setAysReason(toxCheck.reason);
+        setIsAysModalVisible(true);
+        trackOnboardingEvent('toxic_intervention_triggered', {
+          conversationId,
+          score: toxCheck.score,
+          categories: toxCheck.categories,
+        });
+        return;
+      }
+    }
+
+    const clientMessageId = `${CLIENT_MESSAGE_ID_PREFIX}${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const newOptimisticMsg: OptimisticMessageItem = {
       id: clientMessageId,
       conversationId,
       senderUserId: 'me',
       clientMessageId,
       messageType: 'TEXT',
-      body: trimmed,
-      metadata: null,
+      body: textToSend,
+      metadata: bypassAys ? { warnedByAys: true, toxicityReason: aysReason } : null,
       deliveryState: 'SENT',
       createdAt: new Date().toISOString(),
       editedAt: null,
@@ -249,6 +276,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
     };
 
     setInputText('');
+    setPendingToxicText('');
+    setAysReason(undefined);
     lastTypingEmittedRef.current = 0;
     chatSocket.stopTyping(conversationId);
     setOptimisticMessages((prev) => [newOptimisticMsg, ...prev]);
@@ -258,8 +287,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
     try {
       const res = await chatApi.sendMessage(conversationId, {
         clientMessageId,
-        body: trimmed,
+        body: textToSend,
         messageType: 'TEXT',
+        metadata: bypassAys ? { warnedByAys: true, toxicityReason: aysReason } : undefined,
       });
 
       setOptimisticMessages((prev) => prev.filter((m) => m.clientMessageId !== clientMessageId));
@@ -293,7 +323,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
 
     try {
       const res = await chatApi.sendMessage(conversationId, {
-        clientMessageId: failedMsg.clientMessageId || `cmsg_${Date.now()}`,
+        clientMessageId: failedMsg.clientMessageId || `${CLIENT_MESSAGE_ID_PREFIX}${Date.now()}`,
         body: failedMsg.body,
         messageType: failedMsg.messageType,
       });
@@ -490,6 +520,30 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
     );
   }
 
+  const handleStartCall = async (type: 'AUDIO' | 'VIDEO') => {
+    try {
+      const res = await callingApi.initiateCall({ conversationId, callType: type });
+      setActiveCallSessionId(res.callSessionId);
+      setActiveCallType(type);
+      setIsCallModalVisible(true);
+      trackOnboardingEvent('call_initiated', { conversationId, callType: type });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not start call';
+      Alert.alert('Call Not Available', msg);
+    }
+  };
+
+  const handleHangup = async () => {
+    if (activeCallSessionId) {
+      try {
+        await callingApi.endCall(activeCallSessionId);
+        trackOnboardingEvent('call_ended', { conversationId, callSessionId: activeCallSessionId });
+      } catch {}
+    }
+    setActiveCallSessionId(null);
+    setIsCallModalVisible(false);
+  };
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -502,6 +556,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
         avatarUrl={conversation?.otherUser.primaryMedia?.url}
         connectionState={connectionState}
         onBack={handleBack}
+        onAudioCall={() => handleStartCall('AUDIO')}
+        onVideoCall={() => handleStartCall('VIDEO')}
         onReport={() => setIsReportModalVisible(true)}
         onBlock={() => setIsBlockModalVisible(true)}
         onUnmatch={conversation?.matchId ? handleUnmatch : undefined}
@@ -583,6 +639,23 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
             targetUserName={conversation.otherUser.displayName}
             onClose={() => setIsBlockModalVisible(false)}
             onConfirm={handleBlockConfirm}
+          />
+          <AreYouSureModal
+            visible={isAysModalVisible}
+            messageText={pendingToxicText}
+            reason={aysReason}
+            onEdit={() => setIsAysModalVisible(false)}
+            onSendAnyway={() => {
+              setIsAysModalVisible(false);
+              void handleSendMessage(true);
+            }}
+          />
+          <CallModal
+            visible={isCallModalVisible}
+            callType={activeCallType}
+            partnerName={conversation.otherUser.displayName}
+            avatarUrl={conversation.otherUser.primaryMedia?.url}
+            onHangup={handleHangup}
           />
         </>
       )}

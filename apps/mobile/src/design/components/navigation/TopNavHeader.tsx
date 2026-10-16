@@ -158,12 +158,13 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   actionCol: {
-    width: 60,
+    minWidth: 44,
     justifyContent: 'center',
   },
   actionButton: {
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: 40,
+    minHeight: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -171,5 +172,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 8,
   },
 });

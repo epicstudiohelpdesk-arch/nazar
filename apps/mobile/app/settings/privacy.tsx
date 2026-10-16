@@ -17,12 +17,17 @@ import { Text } from '../../src/design/primitives/Text.js';
 import { Icon } from '../../src/design/primitives/Icon.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { getDefaultProfileApi, PROFILE_QUERY_KEYS } from '../../src/profile/profile-api.js';
+import { WorkModeOverlay } from '../../src/common/components/WorkModeOverlay.js';
+import { PassportModal } from '../../src/profile/components/PassportModal.js';
 import { useEntitlements } from '../../src/billing/useEntitlements.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 export default function PrivacySettingsRoute(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const queryClient = useQueryClient();
   const profileApi = getDefaultProfileApi();
   const { hasPremium } = useEntitlements();
@@ -35,11 +40,48 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
   const profile = profileQuery.data;
   const isVisibleInDiscovery = profile?.visibility === 'ACTIVE';
 
-  const [incognitoMode, setIncognitoMode] = useState(false);
+  const [isWorkModeVisible, setIsWorkModeVisible] = useState(false);
+  const [isPassportModalVisible, setIsPassportModalVisible] = useState(false);
+
+  const passportQuery = useQuery({
+    queryKey: PROFILE_QUERY_KEYS.passport,
+    queryFn: () => profileApi.getPassportLocation(),
+  });
+
+  const savePassportMutation = useMutation({
+    mutationFn: (payload: {
+      enabled: boolean;
+      latitude?: number | null;
+      longitude?: number | null;
+      city?: string | null;
+      country?: string | null;
+    }) => profileApi.setPassportLocation(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEYS.passport });
+      void queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEYS.me });
+      void queryClient.invalidateQueries({ queryKey: ['discovery'] });
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to update Passport destination';
+      Alert.alert('Passport Error', msg);
+    },
+  });
 
   useEffect(() => {
     trackOnboardingEvent('privacy_viewed');
   }, []);
+
+  const incognitoMutation = useMutation({
+    mutationFn: (enabled: boolean) => profileApi.updateMyProfile({ incognitoMode: enabled }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEYS.me });
+      void queryClient.invalidateQueries({ queryKey: ['discovery'] });
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to update Incognito mode';
+      Alert.alert('Update Failed', msg);
+    },
+  });
 
   // Mutations
   const activateMutation = useMutation({
@@ -69,8 +111,10 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
   });
 
   const handleDiscoveryToggle = (nextValue: boolean) => {
+    haptics.selection();
     if (nextValue) {
       if (profile?.completionStatus && profile.completionStatus.missingRequired.length > 0) {
+        haptics.notificationWarning();
         Alert.alert(
           'Incomplete Profile',
           'Please upload at least 1 photo and fill in required fields before appearing in discovery feeds.',
@@ -88,7 +132,9 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
   };
 
   const handleIncognitoToggle = (nextValue: boolean) => {
+    haptics.selection();
     if (!hasPremium) {
+      haptics.notificationWarning();
       Alert.alert(
         'Nazar Gold Feature',
         'Incognito Mode allows you to browse completely privately—only members you personally like can see your profile.',
@@ -99,13 +145,19 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
       );
       return;
     }
-    setIncognitoMode(nextValue);
+    incognitoMutation.mutate(nextValue);
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <TopNavHeader title="Privacy Controls" onBack={() => router.back()} leftAction="back" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Discovery Visibility */}
         <View style={styles.section}>
           <Heading level="h3">Discovery Visibility</Heading>
@@ -136,11 +188,33 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
                 </Text>
               </View>
               <Switch
-                value={incognitoMode}
+                value={profile?.incognitoMode ?? false}
                 onValueChange={handleIncognitoToggle}
+                disabled={incognitoMutation.isPending}
                 trackColor={{ false: theme.colors.surfaceMuted, true: theme.colors.accent }}
               />
             </View>
+          </SurfaceCard>
+        </View>
+
+        {/* Work Mode & Discreet Browsing */}
+        <View style={styles.section}>
+          <Heading level="h3">Work Mode & Discreet Browsing</Heading>
+          <SurfaceCard elevation="sm" style={styles.card}>
+            <TouchableOpacity
+              style={styles.navRow}
+              onPress={() => setIsWorkModeVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Preview Work Mode Disguise"
+            >
+              <View style={{ flex: 1 }}>
+                <Text level="title">Discreet Spreadsheet Disguise</Text>
+                <Text level="bodySmall" color="secondary" style={{ marginTop: 2 }}>
+                  Instantly masks dating UI with a realistic financial spreadsheet view when browsing in public or at work.
+                </Text>
+              </View>
+              <Icon name="eyeOff" size={18} color={theme.colors.accent} />
+            </TouchableOpacity>
           </SurfaceCard>
         </View>
 
@@ -158,6 +232,46 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
                 </Text>
               </View>
             </View>
+          </SurfaceCard>
+        </View>
+
+        {/* Passport & Travel Mode (Feature 3.3) */}
+        <View style={styles.section}>
+          <Heading level="h3">Passport & Travel Mode</Heading>
+          <SurfaceCard elevation="sm" style={styles.card}>
+            <TouchableOpacity
+              style={styles.navRow}
+              onPress={() => setIsPassportModalVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Configure Passport Travel Mode"
+            >
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text level="title">Passport Location</Text>
+                  {passportQuery.data?.enabled && (
+                    <View
+                      style={{
+                        backgroundColor: theme.colors.accentSoft,
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        borderRadius: 6,
+                        marginLeft: 8,
+                      }}
+                    >
+                      <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '700' }}>
+                        ACTIVE
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text level="bodySmall" color="secondary" style={{ marginTop: 2 }}>
+                  {passportQuery.data?.enabled && passportQuery.data?.city
+                    ? `Currently swiping in ${passportQuery.data.city}${passportQuery.data.country ? `, ${passportQuery.data.country}` : ''}`
+                    : 'Match with members in other cities before traveling.'}
+                </Text>
+              </View>
+              <Icon name="chevron" size={18} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
           </SurfaceCard>
         </View>
 
@@ -182,6 +296,23 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
           </SurfaceCard>
         </View>
       </ScrollView>
+
+      {/* Passport Modal */}
+      <PassportModal
+        visible={isPassportModalVisible}
+        onClose={() => setIsPassportModalVisible(false)}
+        currentPassport={passportQuery.data}
+        onSavePassport={async (payload) => {
+          await savePassportMutation.mutateAsync(payload);
+        }}
+        isSaving={savePassportMutation.isPending}
+      />
+
+      {/* Work Mode Overlay Disguise */}
+      <WorkModeOverlay
+        visible={isWorkModeVisible}
+        onClose={() => setIsWorkModeVisible(false)}
+      />
     </SafeAreaView>
   );
 }

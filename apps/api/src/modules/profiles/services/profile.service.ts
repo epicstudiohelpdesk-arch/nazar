@@ -11,16 +11,24 @@ import {
   type InterestItem,
   type ProfilePromptItem,
   type PromptAnswerInput,
+  type ProfileAudioPromptResponse,
+  type CreateAudioPromptRequest,
   type PrivateProfileResponse,
   type PublicProfileResponse,
   type MediaItemResponse,
   type ProfileStateChangeResponse,
+  type SetPassportLocationRequestDto,
+  type PassportLocationResponseDto,
+  type ShareableProfileCardDto,
 } from '@platform/api-contracts';
 import { calculateAge, calculateProfileCompleteness } from '@platform/validation';
+import { eq, and, isNull, gt, asc } from 'drizzle-orm';
 import { DatabaseService } from '../../../infrastructure/database/database.service.js';
 import {
   outboxEvents,
   auditLogs,
+  events,
+  eventRsvps,
   type ProfileRow,
   type ProfilePreferencesRow,
 } from '../../../infrastructure/database/drizzle/schema/index.js';
@@ -125,6 +133,15 @@ export class ProfileService {
             countryCode: payload.countryCode,
             latitude: payload.location?.latitude,
             longitude: payload.location?.longitude,
+            relationshipIntent: payload.relationshipIntent || 'LONG_TERM',
+            familyPlans: payload.familyPlans || null,
+            incognitoMode: payload.incognitoMode ?? false,
+            smartPhotos: payload.smartPhotos ?? true,
+            travelMode: payload.travelMode ?? false,
+            travelLatitude: payload.travelLatitude ?? null,
+            travelLongitude: payload.travelLongitude ?? null,
+            travelCity: payload.travelCity ?? null,
+            travelCountry: payload.travelCountry ?? null,
             visibility: 'DRAFT',
             completionStatus: initialCompleteness,
           },
@@ -178,6 +195,15 @@ export class ProfileService {
       if (payload.education !== undefined) updateData.education = payload.education;
       if (payload.city !== undefined) updateData.city = payload.city;
       if (payload.countryCode !== undefined) updateData.countryCode = payload.countryCode;
+      if (payload.relationshipIntent !== undefined) updateData.relationshipIntent = payload.relationshipIntent;
+      if (payload.familyPlans !== undefined) updateData.familyPlans = payload.familyPlans;
+      if (payload.incognitoMode !== undefined && payload.incognitoMode !== null) updateData.incognitoMode = payload.incognitoMode;
+      if (payload.smartPhotos !== undefined && payload.smartPhotos !== null) updateData.smartPhotos = payload.smartPhotos;
+      if (payload.travelMode !== undefined && payload.travelMode !== null) updateData.travelMode = payload.travelMode;
+      if (payload.travelLatitude !== undefined) updateData.travelLatitude = payload.travelLatitude;
+      if (payload.travelLongitude !== undefined) updateData.travelLongitude = payload.travelLongitude;
+      if (payload.travelCity !== undefined) updateData.travelCity = payload.travelCity;
+      if (payload.travelCountry !== undefined) updateData.travelCountry = payload.travelCountry;
 
       let row = await this.profileRepo.update(existing.id, updateData, tx);
 
@@ -584,6 +610,158 @@ export class ProfileService {
   }
 
   // ----------------------------------------------------
+  // Audio Prompts Management (Feature 1.2)
+  // ----------------------------------------------------
+
+  async getProfileAudioPrompts(userId: string): Promise<ProfileAudioPromptResponse[]> {
+    const profile = await this.profileRepo.findByUserId(userId);
+    if (!profile) return [];
+    return this.promptRepo.findAudioPromptsByProfileId(profile.id);
+  }
+
+  async createProfileAudioPrompt(
+    userId: string,
+    input: CreateAudioPromptRequest,
+    ipAddress?: string
+  ): Promise<ProfileAudioPromptResponse> {
+    const profile = await this.profileRepo.findByUserId(userId);
+    if (!profile) {
+      throw new NotFoundException({
+        code: ErrorCode.PROFILE_NOT_FOUND,
+        message: 'Profile not found. Create a profile before recording audio prompts.',
+      });
+    }
+
+    const defs = await this.promptRepo.findDefinitionByIds([input.promptDefinitionId]);
+    if (defs.length === 0) {
+      throw new NotFoundException({
+        code: ErrorCode.PROMPT_NOT_FOUND,
+        message: 'Prompt definition does not exist',
+      });
+    }
+
+    return this.databaseService.withTransaction(async (tx) => {
+      const created = await this.promptRepo.createAudioPrompt(profile.id, input, tx);
+
+      await tx.insert(auditLogs).values({
+        id: generateUuidV7(),
+        action: 'AUDIO_PROMPT_CREATED',
+        resourceType: 'profile',
+        resourceId: profile.id,
+        actorUserId: userId,
+        ipAddress,
+        metadata: { audioPromptId: created.id, promptDefinitionId: input.promptDefinitionId },
+      });
+
+      return created;
+    });
+  }
+
+  async deleteProfileAudioPrompt(
+    userId: string,
+    audioPromptId: string,
+    ipAddress?: string
+  ): Promise<void> {
+    const profile = await this.profileRepo.findByUserId(userId);
+    if (!profile) {
+      throw new NotFoundException({
+        code: ErrorCode.PROFILE_NOT_FOUND,
+        message: 'Profile not found.',
+      });
+    }
+
+    await this.databaseService.withTransaction(async (tx) => {
+      const deleted = await this.promptRepo.deleteAudioPrompt(profile.id, audioPromptId, tx);
+      if (!deleted) {
+        throw new NotFoundException({
+          code: ErrorCode.PROMPT_NOT_FOUND,
+          message: 'Audio prompt not found or does not belong to you',
+        });
+      }
+
+      await tx.insert(auditLogs).values({
+        id: generateUuidV7(),
+        action: 'AUDIO_PROMPT_DELETED',
+        resourceType: 'profile',
+        resourceId: profile.id,
+        actorUserId: userId,
+        ipAddress,
+        metadata: { audioPromptId },
+      });
+    });
+  }
+
+  // ----------------------------------------------------
+  // Passport & Travel Mode (Feature 3.3)
+  // ----------------------------------------------------
+
+  async setPassportLocation(
+    userId: string,
+    input: SetPassportLocationRequestDto,
+    ipAddress?: string
+  ): Promise<PassportLocationResponseDto> {
+    const profile = await this.profileRepo.findByUserId(userId);
+    if (!profile) {
+      throw new NotFoundException({
+        code: ErrorCode.PROFILE_NOT_FOUND,
+        message: 'Profile not found. Create a profile before configuring Passport.',
+      });
+    }
+
+    const updateData: Partial<ProfileRow> = {
+      travelMode: input.enabled,
+      travelLatitude: input.enabled ? (input.latitude ?? null) : null,
+      travelLongitude: input.enabled ? (input.longitude ?? null) : null,
+      travelCity: input.enabled ? (input.city ?? null) : null,
+      travelCountry: input.enabled ? (input.country ?? null) : null,
+    };
+
+    await this.databaseService.withTransaction(async (tx) => {
+      await this.profileRepo.update(profile.id, updateData, tx);
+
+      await tx.insert(auditLogs).values({
+        id: generateUuidV7(),
+        action: 'PASSPORT_LOCATION_UPDATED',
+        resourceType: 'profile',
+        resourceId: profile.id,
+        actorUserId: userId,
+        ipAddress,
+        metadata: {
+          enabled: input.enabled,
+          travelCity: input.city,
+          travelCountry: input.country,
+        },
+      });
+    });
+
+    return {
+      enabled: input.enabled,
+      latitude: input.enabled ? (input.latitude ?? null) : null,
+      longitude: input.enabled ? (input.longitude ?? null) : null,
+      city: input.enabled ? (input.city ?? null) : null,
+      country: input.enabled ? (input.country ?? null) : null,
+    };
+  }
+
+  async getPassportLocation(userId: string): Promise<PassportLocationResponseDto> {
+    const profile = await this.profileRepo.findByUserId(userId);
+    if (!profile) {
+      throw new NotFoundException({
+        code: ErrorCode.PROFILE_NOT_FOUND,
+        message: 'Profile not found.',
+      });
+    }
+
+    return {
+      enabled: profile.travelMode ?? false,
+      latitude: profile.travelLatitude ?? null,
+      longitude: profile.travelLongitude ?? null,
+      city: profile.travelCity ?? null,
+      country: profile.travelCountry ?? null,
+    };
+  }
+
+  // ----------------------------------------------------
   // Public Profile Presentation (Sanitized)
   // ----------------------------------------------------
 
@@ -596,9 +774,10 @@ export class ProfileService {
       });
     }
 
-    const [interests, prompts, media] = await Promise.all([
+    const [interests, prompts, audioPrompts, media] = await Promise.all([
       this.interestRepo.findByProfileId(profile.id),
       this.promptRepo.findByProfileId(profile.id),
+      this.promptRepo.findAudioPromptsByProfileId(profile.id),
       this.mediaRepo.findByProfileId(profile.id),
     ]);
 
@@ -613,8 +792,40 @@ export class ProfileService {
 
     const age = calculateAge(profile.dateOfBirth);
 
+    const [plusOneRow] = await this.databaseService.client
+      .select({
+        eventId: events.id,
+        eventTitle: events.title,
+        eventDate: events.startAt,
+        note: eventRsvps.plusOneNote,
+      })
+      .from(eventRsvps)
+      .innerJoin(events, eq(events.id, eventRsvps.eventId))
+      .where(
+        and(
+          eq(eventRsvps.userId, profile.userId),
+          eq(eventRsvps.status, 'GOING'),
+          eq(eventRsvps.lookingForPlusOne, true),
+          eq(events.status, 'PUBLISHED'),
+          isNull(events.deletedAt),
+          gt(events.endAt, new Date())
+        )
+      )
+      .orderBy(asc(events.startAt))
+      .limit(1);
+
+    const eventPlusOne = plusOneRow
+      ? {
+          eventId: plusOneRow.eventId,
+          eventTitle: plusOneRow.eventTitle,
+          eventDate: plusOneRow.eventDate.toISOString(),
+          note: plusOneRow.note,
+        }
+      : null;
+
     return {
       id: profile.id,
+      userId: profile.userId,
       displayName: profile.displayName,
       age,
       gender: profile.gender as any,
@@ -634,7 +845,47 @@ export class ProfileService {
         prompt: p.prompt,
         answer: p.answer,
       })),
+      audioPrompts,
+      relationshipIntent: (profile.relationshipIntent as any) || null,
+      familyPlans: (profile.familyPlans as any) || null,
+      isVerified: profile.isVerified ?? false,
+      verifiedAt: profile.verifiedAt?.toISOString() || null,
+      incognitoMode: profile.incognitoMode ?? false,
+      smartPhotos: profile.smartPhotos ?? true,
+      travelMode: profile.travelMode ?? false,
+      travelCity: profile.travelCity || null,
+      travelCountry: profile.travelCountry || null,
       media: readyMedia,
+      eventPlusOne,
+    };
+  }
+
+  // ----------------------------------------------------
+  // Shareable Profile Card (Feature 3.5)
+  // ----------------------------------------------------
+
+  async getShareableProfileCard(profileId: string): Promise<ShareableProfileCardDto> {
+    const pub = await this.getPublicProfile(profileId);
+    const primaryPhoto = pub.media.find((m) => m.isPrimary) || pub.media[0];
+    const topPrompt = pub.prompts[0];
+
+    const shareUrl = `https://nazar.app/p/${pub.id}`;
+    const deepLink = `nazar://profile/${pub.id}`;
+
+    return {
+      profileId: pub.id,
+      userId: pub.userId,
+      displayName: pub.displayName,
+      age: pub.age,
+      occupation: pub.occupation,
+      city: pub.city,
+      countryCode: pub.countryCode,
+      isVerified: pub.isVerified ?? false,
+      primaryPhotoUrl: primaryPhoto?.url || null,
+      featuredPrompt: topPrompt ? { prompt: topPrompt.prompt, answer: topPrompt.answer } : null,
+      eventPlusOne: pub.eventPlusOne ?? null,
+      shareUrl,
+      deepLink,
     };
   }
 
@@ -643,10 +894,11 @@ export class ProfileService {
   // ----------------------------------------------------
 
   private async buildPrivateProfileResponse(profile: ProfileRow): Promise<PrivateProfileResponse> {
-    const [preferences, interests, prompts, media] = await Promise.all([
+    const [preferences, interests, prompts, audioPrompts, media] = await Promise.all([
       this.preferencesRepo.findByUserId(profile.userId),
       this.interestRepo.findByProfileId(profile.id),
       this.promptRepo.findByProfileId(profile.id),
+      this.promptRepo.findAudioPromptsByProfileId(profile.id),
       this.mediaRepo.findByProfileId(profile.id),
     ]);
 
@@ -684,6 +936,17 @@ export class ProfileService {
           : null,
       visibility: profile.visibility as any,
       completionStatus: profile.completionStatus,
+      relationshipIntent: (profile.relationshipIntent as any) || null,
+      familyPlans: (profile.familyPlans as any) || null,
+      isVerified: profile.isVerified ?? false,
+      verifiedAt: profile.verifiedAt?.toISOString() || null,
+      incognitoMode: profile.incognitoMode ?? false,
+      smartPhotos: profile.smartPhotos ?? true,
+      travelMode: profile.travelMode ?? false,
+      travelLatitude: profile.travelLatitude ?? null,
+      travelLongitude: profile.travelLongitude ?? null,
+      travelCity: profile.travelCity || null,
+      travelCountry: profile.travelCountry || null,
       preferences: preferences ? this.mapPreferencesResponse(preferences) : null,
       interests: interests.map((i) => ({
         id: i.id,
@@ -692,6 +955,7 @@ export class ProfileService {
         category: i.category,
       })),
       prompts,
+      audioPrompts,
       media: mappedMedia,
       createdAt: profile.createdAt.toISOString(),
       updatedAt: profile.updatedAt.toISOString(),
@@ -704,9 +968,14 @@ export class ProfileService {
       userId: p.userId,
       minAge: p.minAge,
       maxAge: p.maxAge,
+      ageIsDealbreaker: p.ageIsDealbreaker,
       genderPreferences: p.genderPreferences as any,
       maxDistanceKm: p.maxDistanceKm,
+      distanceIsDealbreaker: p.distanceIsDealbreaker,
       relationshipIntent: p.relationshipIntent as any,
+      intentIsDealbreaker: p.intentIsDealbreaker,
+      familyPlans: (p.familyPlans as any) || null,
+      familyPlansIsDealbreaker: p.familyPlansIsDealbreaker,
       updatedAt: p.updatedAt.toISOString(),
     };
   }

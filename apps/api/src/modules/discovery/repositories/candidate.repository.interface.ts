@@ -1,10 +1,16 @@
-import type { InterestItem, PublicMediaItem, PublicPromptItem } from '@platform/api-contracts';
+import type {
+  InterestItem,
+  PublicMediaItem,
+  PublicPromptItem,
+  EventPlusOneInfo,
+} from '@platform/api-contracts';
 import type { CandidateRecord, DiscoveryViewerContext } from '../domain/discovery.types.js';
 
 export interface HydratedProfileComponents {
   readonly interests: readonly InterestItem[];
   readonly prompts: readonly PublicPromptItem[];
   readonly media: readonly PublicMediaItem[];
+  readonly eventPlusOne?: EventPlusOneInfo | null;
 }
 
 export interface ICandidateRepository {

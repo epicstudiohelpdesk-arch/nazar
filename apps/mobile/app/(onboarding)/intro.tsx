@@ -5,16 +5,54 @@ import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
-import { Icon } from '../../src/design/primitives/Icon.js';
+import { Icon, type IconName } from '../../src/design/primitives/Icon.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { Button } from '../../src/design/components/button/Button.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+
+interface StepDef {
+  number: number;
+  icon: IconName;
+  title: string;
+  desc: string;
+}
+
+const ONBOARDING_STEPS: StepDef[] = [
+  {
+    number: 1,
+    icon: 'user',
+    title: 'The Basics',
+    desc: 'Your first name, age, city, and relationship intent.',
+  },
+  {
+    number: 2,
+    icon: 'camera',
+    title: 'Your Photos',
+    desc: 'At least 2 clear, authentic portraits. Candid moments work best.',
+  },
+  {
+    number: 3,
+    icon: 'sparkles',
+    title: 'Interests & Prompts',
+    desc: 'Passions, cultural affinities, and questions that spark genuine conversations.',
+  },
+  {
+    number: 4,
+    icon: 'compass',
+    title: 'Discovery Preferences',
+    desc: 'Age range, distance boundaries, and who you are excited to discover.',
+  },
+];
 
 export default function OnboardingIntroScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
 
   const handleStart = () => {
+    haptics.impactMedium();
     trackOnboardingEvent('profile_started', { entryPoint: 'intro_begin' });
     router.push('/(onboarding)/profile-setup');
   };
@@ -23,7 +61,13 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <View
             style={[
@@ -35,7 +79,7 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
               },
             ]}
           >
-            <Icon name="sparkles" size={32} color={theme.colors.accent} />
+            <Icon name="sparkles" size={28} color={theme.colors.accent} />
           </View>
           <Heading level="h1" style={styles.title}>
             Build your story on Nazar
@@ -47,81 +91,30 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
         </View>
 
         <View style={styles.stepsList}>
-          <SurfaceCard
-            elevation="none"
-            style={[styles.stepCard, { borderColor: theme.colors.border }]}
-          >
-            <View style={[styles.stepNumberBadge, { backgroundColor: theme.colors.accentSoft }]}>
-              <Text level="label" style={{ color: theme.colors.accent, fontWeight: '700' }}>
-                1
-              </Text>
-            </View>
-            <View style={styles.stepText}>
-              <Text level="title" style={{ color: theme.colors.textPrimary }}>
-                The Basics
-              </Text>
-              <Text level="bodySmall" color="secondary">
-                Your first name, age, city, and what relationship intent you are seeking.
-              </Text>
-            </View>
-          </SurfaceCard>
-
-          <SurfaceCard
-            elevation="none"
-            style={[styles.stepCard, { borderColor: theme.colors.border }]}
-          >
-            <View style={[styles.stepNumberBadge, { backgroundColor: theme.colors.accentSoft }]}>
-              <Text level="label" style={{ color: theme.colors.accent, fontWeight: '700' }}>
-                2
-              </Text>
-            </View>
-            <View style={styles.stepText}>
-              <Text level="title" style={{ color: theme.colors.textPrimary }}>
-                Your Photos
-              </Text>
-              <Text level="bodySmall" color="secondary">
-                At least 2 clear, authentic photos. Candid portraits and real moments work best.
-              </Text>
-            </View>
-          </SurfaceCard>
-
-          <SurfaceCard
-            elevation="none"
-            style={[styles.stepCard, { borderColor: theme.colors.border }]}
-          >
-            <View style={[styles.stepNumberBadge, { backgroundColor: theme.colors.accentSoft }]}>
-              <Text level="label" style={{ color: theme.colors.accent, fontWeight: '700' }}>
-                3
-              </Text>
-            </View>
-            <View style={styles.stepText}>
-              <Text level="title" style={{ color: theme.colors.textPrimary }}>
-                Interests & Prompts
-              </Text>
-              <Text level="bodySmall" color="secondary">
-                Passions, cultural affinities, and questions that spark genuine conversations.
-              </Text>
-            </View>
-          </SurfaceCard>
-
-          <SurfaceCard
-            elevation="none"
-            style={[styles.stepCard, { borderColor: theme.colors.border }]}
-          >
-            <View style={[styles.stepNumberBadge, { backgroundColor: theme.colors.accentSoft }]}>
-              <Text level="label" style={{ color: theme.colors.accent, fontWeight: '700' }}>
-                4
-              </Text>
-            </View>
-            <View style={styles.stepText}>
-              <Text level="title" style={{ color: theme.colors.textPrimary }}>
-                Discovery Preferences
-              </Text>
-              <Text level="bodySmall" color="secondary">
-                Age range, distance boundaries, and who you are excited to discover.
-              </Text>
-            </View>
-          </SurfaceCard>
+          {ONBOARDING_STEPS.map((step) => (
+            <SurfaceCard
+              key={step.number}
+              elevation="none"
+              style={[styles.stepCard, { borderColor: theme.colors.border }]}
+            >
+              <View style={[styles.stepNumberBadge, { backgroundColor: theme.colors.accentSoft }]}>
+                <Icon name={step.icon} size="sm" color={theme.colors.accent} />
+              </View>
+              <View style={styles.stepText}>
+                <View style={styles.stepTitleRow}>
+                  <Text level="label" style={{ color: theme.colors.accent, fontWeight: '700' }}>
+                    STEP {step.number}
+                  </Text>
+                  <Text level="title" style={{ color: theme.colors.textPrimary, fontWeight: '700' }}>
+                    {step.title}
+                  </Text>
+                </View>
+                <Text level="bodySmall" color="secondary" style={{ lineHeight: 18 }}>
+                  {step.desc}
+                </Text>
+              </View>
+            </SurfaceCard>
+          ))}
         </View>
 
         <View style={styles.buttonWrapper}>
@@ -130,9 +123,9 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
             size="lg"
             fullWidth
             onPress={handleStart}
-            accessibilityLabel="Let's Begin Profile Creation"
+            accessibilityLabel="Begin Profile Creation"
           >
-            Let's Begin ✨
+            Begin Profile Creation
           </Button>
         </View>
       </ScrollView>
@@ -191,6 +184,9 @@ const styles = StyleSheet.create({
   stepText: {
     flex: 1,
     gap: 4,
+  },
+  stepTitleRow: {
+    gap: 2,
   },
   buttonWrapper: {
     marginTop: 8,

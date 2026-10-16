@@ -9,7 +9,7 @@ import type {
   PublicPromptItem,
 } from '../profile/profile.contract.js';
 
-export type MatchStatus = 'ACTIVE' | 'UNMATCHED';
+export type MatchStatus = 'ACTIVE' | 'QUEUED' | 'EXPIRED' | 'UNMATCHED';
 
 export interface MatchPagination {
   readonly nextCursor: string | null;
@@ -31,6 +31,7 @@ export interface MatchItemDto {
   readonly id: string;
   readonly matchedAt: string;
   readonly status: MatchStatus;
+  readonly expiresAt?: string | null;
   readonly otherUser: MatchedUserSummaryDto;
 }
 
@@ -43,6 +44,9 @@ export interface MatchDetailDto {
   readonly id: string;
   readonly matchedAt: string;
   readonly status: MatchStatus;
+  readonly expiresAt?: string | null;
+  readonly sharedInterests?: readonly string[];
+  readonly suggestedIcebreakers?: readonly string[];
   readonly otherUser: {
     readonly userId: string;
     readonly profileId: string;
@@ -67,4 +71,20 @@ export interface UnmatchResponseDto {
   readonly success: boolean;
   readonly matchId: string;
   readonly status: MatchStatus;
+}
+
+export interface PostDateFeedbackRequestDto {
+  readonly didMeet: boolean;
+  readonly wouldSeeAgain?: boolean;
+  readonly sentimentTags?: readonly string[];
+  readonly privateNotes?: string;
+  readonly closeMatch?: boolean;
+}
+
+export interface PostDateFeedbackResponseDto {
+  readonly success: boolean;
+  readonly feedbackId: string;
+  readonly matchId: string;
+  readonly didMeet: boolean;
+  readonly closedMatch: boolean;
 }

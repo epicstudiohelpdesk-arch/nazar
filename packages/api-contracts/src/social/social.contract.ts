@@ -194,6 +194,9 @@ export interface EventDto {
   readonly waitlistCount: number;
   readonly isWaitlistEnabled: boolean;
   readonly currentUserRsvp?: EventRsvpStatus | null;
+  readonly currentUserLookingForPlusOne?: boolean;
+  readonly currentUserPlusOneNote?: string | null;
+  readonly plusOneAttendeeCount?: number;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -237,12 +240,16 @@ export interface EventRsvpDto {
   readonly userId: string;
   readonly user?: SocialAuthorDto;
   readonly status: EventRsvpStatus;
+  readonly lookingForPlusOne?: boolean;
+  readonly plusOneNote?: string | null;
   readonly promotedFromWaitlistAt?: string | null;
   readonly createdAt: string;
 }
 
 export interface CreateRsvpRequestDto {
   readonly status: 'GOING' | 'INTERESTED';
+  readonly lookingForPlusOne?: boolean;
+  readonly plusOneNote?: string | null;
 }
 
 export interface EventAttendeeListResponseDto {

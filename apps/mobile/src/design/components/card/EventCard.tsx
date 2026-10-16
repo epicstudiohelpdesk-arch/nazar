@@ -98,7 +98,8 @@ export const EventCard: React.FC<EventCardProps> = ({
 
         {onRsvp && (
           <Button
-            label={isAttending ? 'Going ✓' : 'RSVP'}
+            label={isAttending ? 'Going' : 'RSVP'}
+            icon={isAttending ? 'check' : undefined}
             variant={isAttending ? 'secondary' : 'primary'}
             size="sm"
             onPress={onRsvp}

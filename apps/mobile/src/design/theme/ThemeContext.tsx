@@ -30,7 +30,7 @@ export interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
-  initialMode = 'light',
+  initialMode = 'dark',
   children,
 }) => {
   const [mode, setMode] = useState<ThemeMode>(initialMode);

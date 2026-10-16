@@ -39,80 +39,87 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         },
       ]}
     >
-      <View
-        style={[
-          styles.inputContainer,
-          {
-            backgroundColor: colors.surfaceMuted,
-            borderColor: colors.border,
-            borderRadius: radii.radiusLG,
-            paddingHorizontal: spacing.md,
-            paddingVertical: spacing.xs,
-          },
-        ]}
-      >
-        <TextInput
-          style={[styles.input, { color: colors.textPrimary }]}
-          placeholder={placeholder}
-          placeholderTextColor={colors.textTertiary}
-          value={value}
-          onChangeText={onChangeText}
-          multiline
-          maxLength={2000}
-          editable={!disabled}
-          testID="message-input"
-          accessibilityLabel="Message input"
-        />
-        {value.length > 1800 && (
-          <Text
-            variant="caption"
-            style={{
-              color: remainingChars < 0 ? colors.error : colors.textTertiary,
-              alignSelf: 'flex-end',
-              fontSize: 10,
-              marginTop: 2,
-            }}
-          >
-            {remainingChars}
-          </Text>
-        )}
-      </View>
+      <View style={styles.innerWrapper}>
+        <View
+          style={[
+            styles.inputContainer,
+            {
+              backgroundColor: colors.surfaceMuted,
+              borderColor: colors.border,
+              borderRadius: radii.radiusLG,
+              paddingHorizontal: spacing.md,
+              paddingVertical: spacing.xs,
+            },
+          ]}
+        >
+          <TextInput
+            style={[styles.input, { color: colors.textPrimary }]}
+            placeholder={placeholder}
+            placeholderTextColor={colors.textTertiary}
+            value={value}
+            onChangeText={onChangeText}
+            multiline
+            maxLength={2000}
+            editable={!disabled}
+            testID="message-input"
+            accessibilityLabel="Message input"
+          />
+          {value.length > 1800 && (
+            <Text
+              variant="caption"
+              style={{
+                color: remainingChars < 0 ? colors.error : colors.textTertiary,
+                alignSelf: 'flex-end',
+                fontSize: 10,
+                marginTop: 2,
+              }}
+            >
+              {remainingChars}
+            </Text>
+          )}
+        </View>
 
-      <TouchableOpacity
-        style={[
-          styles.sendButton,
-          {
-            backgroundColor: isSendDisabled ? colors.surfaceMuted : colors.accent,
-            borderRadius: radii.radiusFull,
-            marginLeft: spacing.sm,
-          },
-        ]}
-        onPress={() => {
-          haptics.selection();
-          onSend();
-        }}
-        disabled={isSendDisabled}
-        hitSlop={ensureMinTouchTarget(40, 40)}
-        accessibilityRole="button"
-        accessibilityLabel="Send message"
-        testID="message-send-btn"
-      >
-        <Icon
-          name="send"
-          size="sm"
-          color={isSendDisabled ? colors.textTertiary : colors.textInverse}
-        />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.sendButton,
+            {
+              backgroundColor: isSendDisabled ? colors.surfaceMuted : colors.accent,
+              borderRadius: radii.radiusFull,
+              marginLeft: spacing.sm,
+            },
+          ]}
+          onPress={() => {
+            haptics.selection();
+            onSend();
+          }}
+          disabled={isSendDisabled}
+          hitSlop={ensureMinTouchTarget(40, 40)}
+          accessibilityRole="button"
+          accessibilityLabel="Send message"
+          testID="message-send-btn"
+        >
+          <Icon
+            name="send"
+            size="sm"
+            color={isSendDisabled ? colors.textTertiary : colors.textInverse}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     borderTopWidth: 1,
     width: '100%',
+  },
+  innerWrapper: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    maxWidth: 640,
+    width: '100%',
+    alignSelf: 'center',
   },
   inputContainer: {
     flex: 1,

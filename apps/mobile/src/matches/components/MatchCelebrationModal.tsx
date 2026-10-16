@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Modal, View, StyleSheet, SafeAreaView } from 'react-native';
 import { useTheme } from '../../design/theme/ThemeContext.js';
 import { Heading } from '../../design/primitives/Heading.js';
 import { Text } from '../../design/primitives/Text.js';
 import { Avatar } from '../../design/primitives/Avatar.js';
+import { Icon } from '../../design/primitives/Icon.js';
 import { Button } from '../../design/components/button/Button.js';
 import { SurfaceCard } from '../../design/primitives/SurfaceCard.js';
+import { haptics } from '../../design/haptics/index.js';
 
 export interface MatchedCelebrationUser {
   readonly displayName: string;
@@ -38,6 +40,12 @@ export const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
 }) => {
   const { theme } = useTheme();
 
+  useEffect(() => {
+    if (visible && matchedUser) {
+      haptics.notificationSuccess();
+    }
+  }, [visible, matchedUser]);
+
   if (!visible || !matchedUser) {
     return null;
   }
@@ -49,10 +57,16 @@ export const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
     'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500';
 
   const handleMessage = () => {
+    haptics.selection();
     onClose();
     if (onStartChat && matchId) {
       onStartChat(matchId);
     }
+  };
+
+  const handleDismiss = () => {
+    haptics.selection();
+    onClose();
   };
 
   return (
@@ -69,8 +83,13 @@ export const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
           elevation="lg"
           style={[styles.dialog, { backgroundColor: theme.colors.surfaceElevated }]}
         >
-          <View style={styles.celebrationBadge}>
-            <Text level="display">💕</Text>
+          <View
+            style={[
+              styles.celebrationBadge,
+              { backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accent },
+            ]}
+          >
+            <Icon name="heart" size="lg" color={theme.colors.accent} fill={theme.colors.accent} />
           </View>
 
           <Heading level="h1" style={styles.title}>
@@ -95,18 +114,19 @@ export const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
             <Button
               variant="primary"
               size="lg"
+              icon="message"
               fullWidth
               onPress={handleMessage}
               accessibilityLabel="Start conversation"
               testID="matchCelebration.message"
             >
-              Say Hello 💌
+              Say Hello
             </Button>
             <Button
               variant="secondary"
               size="lg"
               fullWidth
-              onPress={onClose}
+              onPress={handleDismiss}
               accessibilityLabel="Keep browsing connections"
               testID="matchCelebration.keepBrowsing"
             >
@@ -132,14 +152,20 @@ const styles = StyleSheet.create({
   },
   dialog: {
     width: '100%',
-    maxWidth: 340,
+    maxWidth: 380,
     borderRadius: 24,
-    padding: 24,
+    padding: 28,
     alignItems: 'center',
     gap: 16,
   },
   celebrationBadge: {
-    marginBottom: -4,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   title: {
     textAlign: 'center',
@@ -150,7 +176,7 @@ const styles = StyleSheet.create({
   },
   avatarRow: {
     flexDirection: 'row',
-    marginVertical: 12,
+    marginVertical: 14,
   },
   avatarRing: {
     borderWidth: 3,
@@ -158,7 +184,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     width: '100%',
-    gap: 10,
+    gap: 12,
     marginTop: 8,
   },
 });

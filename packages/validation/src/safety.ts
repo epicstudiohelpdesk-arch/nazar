@@ -76,3 +76,45 @@ export const reportIdParamSchema = z.object({
 });
 
 export type ReportIdParamInput = z.infer<typeof reportIdParamSchema>;
+
+export const blockContactsSchema = z.object({
+  contacts: z
+    .array(
+      z.object({
+        phoneHash: z
+          .string()
+          .trim()
+          .regex(/^[a-f0-9]{64}$/i, 'Phone hash must be a valid 64-character SHA-256 hex string'),
+        label: z.string().trim().max(128).optional().nullable(),
+      })
+    )
+    .min(1, 'Must provide at least one contact hash')
+    .max(1000, 'Cannot exceed 1000 contact hashes per batch'),
+});
+
+export type BlockContactsInput = z.infer<typeof blockContactsSchema>;
+
+export const unblockContactParamSchema = z.object({
+  phoneHash: z
+    .string()
+    .trim()
+    .regex(/^[a-f0-9]{64}$/i, 'Phone hash must be a valid 64-character SHA-256 hex string'),
+});
+
+export type UnblockContactParamInput = z.infer<typeof unblockContactParamSchema>;
+
+export const verificationGestureSchema = z.enum([
+  'HEAD_TURN_LEFT',
+  'HEAD_TURN_RIGHT',
+  'PEACE_SIGN',
+  'SMILE',
+  'THUMBS_UP',
+] as const);
+
+export const submitVerificationSchema = z.object({
+  challengeToken: z.string().trim().min(1, 'Challenge token is required'),
+  selfiePhotoUrl: z.string().trim().url('Must provide a valid selfie photo URL'),
+  gesture: verificationGestureSchema,
+});
+
+export type SubmitVerificationInput = z.infer<typeof submitVerificationSchema>;

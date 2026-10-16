@@ -18,6 +18,8 @@ import { Icon } from '../../src/design/primitives/Icon.js';
 import { haptics } from '../../src/design/haptics/index.js';
 import { useReducedMotion } from '../../src/design/motion/index.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useProfileStore } from '../../src/profile/profile-store.js';
+import { getDefaultAuthClient } from '../../src/auth/default-client.js';
 
 export default function WelcomeScreen(): React.JSX.Element {
   const router = useRouter();
@@ -78,6 +80,67 @@ export default function WelcomeScreen(): React.JSX.Element {
     haptics.light();
     trackOnboardingEvent('onboarding_started', { entryPoint: 'sign_in' });
     router.push('/(auth)/login');
+  };
+
+  const handleSkipAuth = async () => {
+    haptics.success();
+    try {
+      const storage = getDefaultAuthClient().getStorage();
+      await storage.setAccessToken('dev-demo-token');
+      await storage.setRefreshToken('dev-demo-refresh-token');
+    } catch {
+      // ignore dev bypass failure
+    }
+
+    useProfileStore.getState().setProfile({
+      id: 'demo-user-1',
+      userId: 'demo-user-1',
+      displayName: 'Subham',
+      dateOfBirth: '2000-01-01',
+      age: 25,
+      gender: 'MAN',
+      bio: 'Building Nazar — mindful, intentional dating ✨',
+      occupation: 'Founder & Engineer',
+      education: 'Tech & Product',
+      city: 'Mumbai',
+      countryCode: 'IN',
+      visibility: 'ACTIVE',
+      completionStatus: {
+        percentage: 100,
+        missingRequired: [],
+        recommended: [],
+      },
+      interests: [
+        { id: '1', name: 'Design', slug: 'design', category: 'Creative' },
+        { id: '2', name: 'Coffee', slug: 'coffee', category: 'Food & Drink' },
+        { id: '3', name: 'Tech', slug: 'tech', category: 'Tech' },
+      ],
+      prompts: [
+        {
+          id: 'p1',
+          promptDefinitionId: 'pd1',
+          prompt: 'A life goal of mine is...',
+          answer: 'To build software that brings people together meaningfully.',
+          position: 0,
+        },
+      ],
+      media: [
+        {
+          id: 'm1',
+          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=80',
+          mediaType: 'IMAGE',
+          mimeType: 'image/jpeg',
+          status: 'READY',
+          position: 0,
+          isPrimary: true,
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    router.replace('/(tabs)/discovery');
   };
 
   // Fallback tap trigger: glides smoothly across and initiates Get Started
@@ -564,6 +627,17 @@ export default function WelcomeScreen(): React.JSX.Element {
             </RNText>
           </TouchableOpacity>
 
+          {/* Dev Temporary Bypass Button */}
+          <TouchableOpacity
+            style={styles.skipAuthButton}
+            onPress={handleSkipAuth}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Skip Authentication (Dev Demo)"
+          >
+            <RNText style={styles.skipAuthText}>⚡ Skip Auth & Go to Discovery (Dev)</RNText>
+          </TouchableOpacity>
+
           {/* Legal Notice */}
           <RNText style={styles.legalNotice}>
             By continuing, you agree to our Terms of Service & Privacy Policy.
@@ -851,5 +925,25 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     paddingHorizontal: 16,
     marginTop: -4,
+  },
+  skipAuthButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  skipAuthText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
 });

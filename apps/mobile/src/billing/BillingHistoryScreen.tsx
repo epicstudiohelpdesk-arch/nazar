@@ -7,6 +7,7 @@ import { Text } from '../design/primitives/Text.js';
 import { SurfaceCard } from '../design/primitives/SurfaceCard.js';
 import { TopNavHeader } from '../design/components/navigation/TopNavHeader.js';
 import { EmptyState } from '../design/components/feedback/EmptyState.js';
+import { useResponsiveLayout } from '../design/responsive/index.js';
 import type { BillingApiClient } from './billing-api.js';
 
 export interface BillingHistoryScreenProps {
@@ -16,6 +17,7 @@ export interface BillingHistoryScreenProps {
 export function BillingHistoryScreen({ client }: BillingHistoryScreenProps): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
 
   const [transactions, setTransactions] = useState<PaymentTransactionResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -150,7 +152,10 @@ export function BillingHistoryScreen({ client }: BillingHistoryScreenProps): Rea
           data={transactions}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}

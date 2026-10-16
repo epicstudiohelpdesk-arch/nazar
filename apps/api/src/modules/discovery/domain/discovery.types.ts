@@ -13,9 +13,14 @@ export interface DiscoveryViewerContext {
   readonly location: LocationCoordinates | null;
   readonly minAge: number;
   readonly maxAge: number;
+  readonly ageIsDealbreaker?: boolean;
   readonly genderPreferences: readonly Gender[];
   readonly maxDistanceKm: number;
+  readonly distanceIsDealbreaker?: boolean;
   readonly relationshipIntent: RelationshipIntent;
+  readonly intentIsDealbreaker?: boolean;
+  readonly familyPlans?: string | null;
+  readonly familyPlansIsDealbreaker?: boolean;
 }
 
 export interface CandidateRecord {
@@ -32,6 +37,9 @@ export interface CandidateRecord {
   readonly countryCode?: string | null;
   readonly latitude?: number | null;
   readonly longitude?: number | null;
+  readonly travelMode?: boolean;
+  readonly travelCity?: string | null;
+  readonly travelCountry?: string | null;
   readonly visibility: string;
   readonly completionStatus: ProfileCompleteness;
   readonly createdAt: Date;

@@ -1,14 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
 import { Icon } from '../../primitives/Icon.js';
-import { Badge } from '../../primitives/Badge.js';
 import { SurfaceCard } from '../../primitives/SurfaceCard.js';
+import { useResponsiveLayout } from '../../responsive/index.js';
+import { haptics } from '../../haptics/index.js';
 
 export type ProfileCardContext =
-  'discovery' | 'likes' | 'matches' | 'search' | 'community' | 'event' | 'profilePreview';
+  | 'discovery'
+  | 'likes'
+  | 'matches'
+  | 'search'
+  | 'community'
+  | 'event'
+  | 'profilePreview';
 
 export interface ProfileCardData {
   readonly id: string;
@@ -27,9 +35,18 @@ export interface ProfileCardData {
   readonly verified?: boolean;
   readonly contextualInfo?: string; // e.g. "Within 5 km", "Matched 2d ago", "Attending Mumbai Mixer"
   readonly interests?: readonly string[];
+  readonly matchPercentage?: number;
+  readonly isOnline?: boolean;
   readonly prompts?: readonly {
     readonly question: string;
     readonly answer: string;
+  }[];
+  readonly audioPrompts?: readonly {
+    readonly id: string;
+    readonly prompt: string;
+    readonly audioUrl: string;
+    readonly durationSeconds: number;
+    readonly waveformPeaks?: readonly number[];
   }[];
 }
 
@@ -41,6 +58,11 @@ export interface ProfileCardProps {
   readonly onSuperLike?: () => void;
   readonly onMessage?: () => void;
   readonly onPress?: () => void;
+  readonly onInlineLike?: (attachment: {
+    readonly type: 'MEDIA' | 'PROMPT';
+    readonly id?: string;
+    readonly text?: string;
+  }) => void;
   readonly isSubmitting?: boolean;
   readonly style?: ViewStyle;
   readonly testID?: string;
@@ -54,17 +76,313 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   onSuperLike,
   onMessage,
   onPress,
+  onInlineLike,
   isSubmitting = false,
   style,
   testID,
 }) => {
-  const { colors, radii, spacing } = useTheme();
+  const { colors, spacing, isDark } = useTheme();
+  const { isSmallScreen, isLargeScreen } = useResponsiveLayout();
+  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
 
   const isDiscovery = context === 'discovery';
   const isCompact = context === 'matches' || context === 'search' || context === 'community';
-  const effectiveImageUri = profile.imageUrl || profile.images?.[0];
+
+  const mediaList =
+    profile.images && profile.images.length > 0
+      ? profile.images
+      : profile.imageUrl
+        ? [profile.imageUrl]
+        : [];
+
+  const currentPhoto = mediaList[activePhotoIdx] || profile.imageUrl || null;
   const effectiveVerified = profile.isVerified ?? profile.verified;
   const effectiveCity = profile.city || profile.location;
+
+  const dynamicImageHeight = isCompact
+    ? 220
+    : isSmallScreen
+      ? 350
+      : isLargeScreen
+        ? 450
+        : 400;
+
+  const handleNextPhoto = (e: any) => {
+    e?.stopPropagation?.();
+    if (mediaList.length > 1) {
+      haptics.selection();
+      setActivePhotoIdx((prev) => (prev + 1) % mediaList.length);
+    }
+  };
+
+  const handlePrevPhoto = (e: any) => {
+    e?.stopPropagation?.();
+    if (mediaList.length > 1) {
+      haptics.selection();
+      setActivePhotoIdx((prev) => (prev - 1 + mediaList.length) % mediaList.length);
+    }
+  };
+
+  if (isDiscovery) {
+    const featuredPrompt =
+      profile.prompts && profile.prompts.length > 0 ? profile.prompts[0] : null;
+    const effectiveDistance = profile.contextualInfo
+      ? profile.contextualInfo.replace(/[🎟️✈️]/g, '').trim()
+      : null;
+
+    const lifestylePills: { id: string; emoji: string; text: string }[] = [];
+    if (profile.education) {
+      lifestylePills.push({ id: 'edu', emoji: '🎓', text: profile.education });
+    }
+    if (profile.occupation) {
+      lifestylePills.push({ id: 'occ', emoji: '💼', text: profile.occupation });
+    }
+    if (profile.interests && profile.interests.length > 0) {
+      profile.interests.slice(0, 4).forEach((interest, idx) => {
+        const lower = interest.toLowerCase();
+        let emoji = '✨';
+        if (lower.includes('coffee') || lower.includes('drink') || lower.includes('wine')) emoji = '🍷';
+        else if (lower.includes('design') || lower.includes('art')) emoji = '🎨';
+        else if (lower.includes('architecture')) emoji = '🏛️';
+        else if (lower.includes('book') || lower.includes('read')) emoji = '📚';
+        else if (lower.includes('trek') || lower.includes('outdoor')) emoji = '🏔️';
+        else if (lower.includes('tech') || lower.includes('code')) emoji = '💻';
+        else if (lower.includes('music') || lower.includes('rock')) emoji = '🎵';
+        else if (lower.includes('dance')) emoji = '💃';
+        else if (lower.includes('science')) emoji = '🔬';
+        else if (lower.includes('game')) emoji = '🎮';
+        else if (lower.includes('anime')) emoji = '🇯🇵';
+        else if (lower.includes('yoga')) emoji = '🧘';
+        else if (lower.includes('food') || lower.includes('ramen')) emoji = '🍜';
+        lifestylePills.push({ id: `int-${idx}`, emoji, text: interest });
+      });
+    }
+    if (lifestylePills.length < 3) {
+      lifestylePills.push({ id: 'ls-1', emoji: '👄', text: 'Better in person' });
+      lifestylePills.push({ id: 'ls-2', emoji: '💬', text: 'Time together' });
+      lifestylePills.push({ id: 'ls-3', emoji: '🌙', text: 'Aries' });
+    }
+
+    return (
+      <View
+        style={[
+          styles.discoveryCard,
+          {
+            backgroundColor: colors.surface,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          },
+          style,
+        ]}
+        testID={testID || `profile-card-${profile.id}`}
+      >
+        <TouchableOpacity
+          activeOpacity={0.96}
+          onPress={onPress}
+          style={styles.discoveryTouchable}
+          accessibilityRole="button"
+          accessibilityLabel={`View full profile for ${profile.name}`}
+        >
+          {/* Background Image / Media */}
+          <View style={[styles.discoveryImageWrapper, { backgroundColor: colors.surfaceMuted }]}>
+            {currentPhoto ? (
+              <Image
+                source={{ uri: currentPhoto }}
+                style={styles.discoveryImage}
+                resizeMode="cover"
+                accessibilityLabel={`${profile.name}'s profile photo ${activePhotoIdx + 1} of ${mediaList.length || 1}`}
+              />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Text variant="display" weight="bold" style={{ color: colors.accent }}>
+                  {profile.name.charAt(0)}
+                </Text>
+              </View>
+            )}
+
+            {/* Tap areas for photo cycling */}
+            {mediaList.length > 1 && (
+              <View style={styles.tapAreasOverlay} pointerEvents="box-none">
+                <TouchableOpacity
+                  style={styles.tapAreaLeft}
+                  onPress={handlePrevPhoto}
+                  activeOpacity={1}
+                  accessibilityRole="button"
+                  accessibilityLabel="Previous photo"
+                />
+                <TouchableOpacity
+                  style={styles.tapAreaRight}
+                  onPress={handleNextPhoto}
+                  activeOpacity={1}
+                  accessibilityRole="button"
+                  accessibilityLabel="Next photo"
+                />
+              </View>
+            )}
+
+            {/* Multi-Stop Linear Gradient Scrim */}
+            <LinearGradient
+              colors={[
+                'rgba(0,0,0,0)',
+                'rgba(0,0,0,0.05)',
+                'rgba(10,10,14,0.35)',
+                'rgba(10,10,14,0.78)',
+                'rgba(10,10,14,0.96)',
+              ]}
+              locations={[0, 0.35, 0.58, 0.78, 1]}
+              style={styles.discoveryScrim}
+              pointerEvents="none"
+            />
+
+            {/* Top Story Progress Bars */}
+            {mediaList.length > 1 && (
+              <View style={styles.storyProgressRow} pointerEvents="none">
+                {mediaList.map((_, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.storyProgressBar,
+                      {
+                        backgroundColor:
+                          idx === activePhotoIdx ? '#FFFFFF' : 'rgba(255, 255, 255, 0.35)',
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+
+            {/* Top Badges Row */}
+            <View style={styles.topBadgesRow} pointerEvents="box-none">
+              {/* Left Match Score Pill with vivid ruby gradient */}
+              <LinearGradient
+                colors={['#FF2E48', '#DC0C24']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.matchScoreGradientPill}
+              >
+                <Icon name="sparkles" size={11} color="#FFFFFF" style={{ marginRight: 4 }} />
+                <Text style={styles.matchScoreText}>
+                  {profile.matchPercentage ?? 94}% MATCH
+                </Text>
+              </LinearGradient>
+
+              {/* Right Location & Counter Badges */}
+              <View style={styles.topRightPills}>
+                {effectiveDistance && (
+                  <View style={styles.frostedPill}>
+                    <Icon name="location" size={11} color="#FFFFFF" style={{ marginRight: 3 }} />
+                    <Text style={styles.frostedPillText}>
+                      {effectiveDistance}
+                    </Text>
+                  </View>
+                )}
+                {mediaList.length > 1 && (
+                  <View style={styles.frostedPill}>
+                    <Icon name="camera" size={10} color="#FFFFFF" style={{ marginRight: 3 }} />
+                    <Text style={styles.frostedPillText}>
+                      {activePhotoIdx + 1}/{mediaList.length}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Bottom Content Vignette - Tinder & Medina Amandel Style */}
+            <View style={styles.discoveryDetailsOverlay} pointerEvents="box-none">
+              {/* 1. Name, Age, Verified & Circular White Info Button Row */}
+              <View style={styles.nameHeaderRow}>
+                <View style={styles.nameRow}>
+                  <Text style={styles.discoveryNameText} numberOfLines={1}>
+                    {profile.name}
+                  </Text>
+                  <Text style={styles.discoveryAgeText}> {profile.age}</Text>
+                  {effectiveVerified && (
+                    <View style={styles.discoveryVerifiedBadge}>
+                      <Icon name="check" size={10} color="#FFFFFF" strokeWidth={3.4} />
+                    </View>
+                  )}
+                  <View style={styles.onlineBadge}>
+                    <View style={styles.onlineDot} />
+                    <Text style={styles.onlineText}>Active</Text>
+                  </View>
+                </View>
+
+                {/* Circular White Info / Detail Button */}
+                <TouchableOpacity
+                  style={styles.tinderInfoBtn}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    haptics.selection();
+                    onPress?.();
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View full profile for ${profile.name}`}
+                  testID="discovery-info-btn"
+                >
+                  <Icon name="arrowUpRight" size={17} color="#111113" strokeWidth={2.8} />
+                </TouchableOpacity>
+              </View>
+
+              {/* 2. Category Title: Basics & Lifestyle */}
+              <View style={styles.lifestyleHeaderRow}>
+                <Icon name="briefcase" size={13} color="rgba(255, 255, 255, 0.9)" style={{ marginRight: 6 }} />
+                <Text style={styles.lifestyleHeaderText}>Basics & Lifestyle</Text>
+              </View>
+
+              {/* 3. Staggered Lifestyle Pills with Dark Charcoal Base */}
+              <View style={styles.lifestyleChipsWrap}>
+                {lifestylePills.slice(0, 5).map((item) => (
+                  <View key={item.id} style={styles.tinderLifestyleChip}>
+                    <Text style={styles.lifestyleChipEmoji}>{item.emoji}</Text>
+                    <Text style={styles.tinderLifestyleChipText}>{item.text}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* 4. Editorial Prompt or Bio Highlight */}
+              {featuredPrompt ? (
+                <View style={styles.promptTeaserBox}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={styles.promptTeaserQuestion} numberOfLines={1}>
+                      {featuredPrompt.question}
+                    </Text>
+                    <Text style={styles.promptTeaserAnswer} numberOfLines={2}>
+                      "{featuredPrompt.answer}"
+                    </Text>
+                  </View>
+                  {onInlineLike && (
+                    <TouchableOpacity
+                      style={styles.discoveryInlineHeartBtn}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        haptics.selection();
+                        onInlineLike({
+                          type: 'PROMPT',
+                          id: 'prompt-0',
+                          text: featuredPrompt.answer,
+                        });
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Like prompt: ${featuredPrompt.question}`}
+                    >
+                      <Icon name="heart" size={14} color="#DC0C24" fill="#DC0C24" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : profile.bio ? (
+                <View style={styles.bioTeaserBox}>
+                  <Text style={styles.bioTeaserText} numberOfLines={2}>
+                    "{profile.bio}"
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <SurfaceCard
@@ -72,25 +390,32 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
       radius="radiusXL"
       elevationLevel={isDiscovery ? 'shadowMD' : 'shadowSM'}
       onPress={onPress}
-      style={[styles.card, style]}
+      style={[
+        styles.card,
+        {
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+          backgroundColor: colors.surface,
+        },
+        style,
+      ]}
       testID={testID || `profile-card-${profile.id}`}
     >
-      {/* Media Header */}
+      {/* Media Header Container */}
       <View
         style={[
           styles.imageContainer,
           {
-            height: isCompact ? 220 : 380,
+            height: dynamicImageHeight,
             backgroundColor: colors.surfaceMuted,
           },
         ]}
       >
-        {effectiveImageUri ? (
+        {currentPhoto ? (
           <Image
-            source={{ uri: effectiveImageUri }}
+            source={{ uri: currentPhoto }}
             style={styles.image}
             resizeMode="cover"
-            accessibilityLabel={`${profile.name}'s profile photo`}
+            accessibilityLabel={`${profile.name}'s profile photo ${activePhotoIdx + 1} of ${mediaList.length || 1}`}
           />
         ) : (
           <View style={styles.imagePlaceholder}>
@@ -100,44 +425,103 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           </View>
         )}
 
-        {/* Gradient Scrim Overlay at Bottom of Photo */}
-        <View style={[styles.scrimOverlay, { backgroundColor: colors.scrim }]} />
+        {/* Tap areas for photo cycling */}
+        {mediaList.length > 1 && (
+          <View style={styles.tapAreasOverlay} pointerEvents="box-none">
+            <TouchableOpacity
+              style={styles.tapAreaLeft}
+              onPress={handlePrevPhoto}
+              activeOpacity={1}
+              accessibilityRole="button"
+              accessibilityLabel="Previous photo"
+            />
+            <TouchableOpacity
+              style={styles.tapAreaRight}
+              onPress={handleNextPhoto}
+              activeOpacity={1}
+              accessibilityRole="button"
+              accessibilityLabel="Next photo"
+            />
+          </View>
+        )}
 
-        {/* Top Badges (Image Count & Contextual Info) */}
-        <View style={styles.topBadgesRow}>
+        {/* Seamless Linear Gradient Scrim */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.85)']}
+          locations={[0, 0.5, 1]}
+          style={styles.scrimOverlay}
+          pointerEvents="none"
+        />
+
+        {/* Top Story Progress Bars */}
+        {mediaList.length > 1 && (
+          <View style={styles.storyProgressRow} pointerEvents="none">
+            {mediaList.map((_, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.storyProgressBar,
+                  {
+                    backgroundColor:
+                      idx === activePhotoIdx ? '#FFFFFF' : 'rgba(255, 255, 255, 0.35)',
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        )}
+
+        {/* Top Floating Badges */}
+        <View style={styles.topBadgesRow} pointerEvents="box-none">
           {profile.contextualInfo ? (
-            <Badge label={profile.contextualInfo} variant="neutral" size="sm" />
+            <View style={styles.contextualPill}>
+              {profile.contextualInfo.includes('🎟️') ? (
+                <Icon name="ticket" size={13} color="#FF8A65" style={{ marginRight: 5 }} />
+              ) : profile.contextualInfo.includes('✈️') ? (
+                <Icon name="plane" size={13} color="#60A5FA" style={{ marginRight: 5 }} />
+              ) : (
+                <Icon name="location" size={13} color="#E7E2DA" style={{ marginRight: 5 }} />
+              )}
+              <Text
+                variant="caption"
+                weight="semibold"
+                style={{ color: '#FFFFFF', letterSpacing: 0.2 }}
+                numberOfLines={1}
+              >
+                {profile.contextualInfo.replace(/[🎟️✈️]/g, '').trim()}
+              </Text>
+            </View>
           ) : (
             <View />
           )}
 
-          {profile.imageCount && profile.imageCount > 1 ? (
-            <View style={[styles.imageCountBadge, { borderRadius: radii.radiusFull }]}>
-              <Icon name="camera" size="tiny" color="#FFFFFF" style={{ marginRight: 4 }} />
-              <Text variant="caption" weight="semibold" style={{ color: '#FFFFFF' }}>
-                {profile.imageCount}
+          {mediaList.length > 1 ? (
+            <View style={styles.imageCountBadge}>
+              <Icon name="camera" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
+              <Text variant="caption" weight="semibold" style={{ color: '#FFFFFF', fontSize: 11 }}>
+                {activePhotoIdx + 1}/{mediaList.length}
               </Text>
             </View>
           ) : null}
         </View>
 
-        {/* Overlay Details (Name, Age, Verified, Location) */}
-        <View style={styles.imageDetailsOverlay}>
+        {/* Overlay Details (Name, Age, Verified, Location, Occupation) */}
+        <View style={styles.imageDetailsOverlay} pointerEvents="box-none">
           <View style={styles.nameRow}>
-            <Heading level={isCompact ? 'h3' : 'h2'} style={{ color: '#FFFFFF' }}>
+            <Heading level={isCompact ? 'h3' : 'h2'} style={styles.displayNameText}>
               {profile.name}, {profile.age}
             </Heading>
             {effectiveVerified && (
-              <View style={[styles.verifiedDot, { backgroundColor: colors.info }]}>
-                <Icon name="check" size="tiny" color="#FFFFFF" strokeWidth={2.5} />
+              <View style={styles.verifiedBadge}>
+                <Icon name="check" size={12} color="#FFFFFF" strokeWidth={3} />
               </View>
             )}
           </View>
 
           {effectiveCity && (
             <View style={styles.locationRow}>
-              <Icon name="location" size="tiny" color="#E7E2DA" style={{ marginRight: 4 }} />
-              <Text variant="bodySmall" style={{ color: '#E7E2DA' }}>
+              <Icon name="location" size={13} color="#E7E2DA" style={{ marginRight: 5 }} />
+              <Text variant="bodySmall" style={{ color: '#E7E2DA', fontWeight: '500' }}>
                 {profile.city}
                 {profile.country ? `, ${profile.country}` : ''}
               </Text>
@@ -145,19 +529,30 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           )}
 
           {profile.occupation && (
-            <Text variant="caption" style={{ color: '#D1C9BE', marginTop: 2 }}>
-              {profile.occupation}
-              {profile.education ? ` · ${profile.education}` : ''}
-            </Text>
+            <View style={styles.occupationRow}>
+              <Icon name="briefcase" size={12} color="#D1C9BE" style={{ marginRight: 5 }} />
+              <Text variant="caption" style={{ color: '#D1C9BE', fontWeight: '400' }} numberOfLines={1}>
+                {profile.occupation}
+                {profile.education ? ` · ${profile.education}` : ''}
+              </Text>
+            </View>
           )}
         </View>
       </View>
 
       {/* Body Details (Bio, Interests, Prompts) */}
       {!isCompact && (
-        <View style={{ padding: spacing.lg }}>
+        <View style={{ padding: spacing.md }}>
           {profile.bio ? (
-            <Text variant="body" style={{ color: colors.textPrimary, marginBottom: spacing.md }}>
+            <Text
+              variant="body"
+              style={{
+                color: colors.textPrimary,
+                marginBottom: spacing.md,
+                lineHeight: 23,
+                letterSpacing: -0.1,
+              }}
+            >
               {profile.bio}
             </Text>
           ) : null}
@@ -167,9 +562,15 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             <View style={{ marginBottom: spacing.md }}>
               <Text
                 variant="label"
-                style={{ color: colors.textSecondary, marginBottom: spacing.xs }}
+                style={{
+                  color: colors.textSecondary,
+                  marginBottom: spacing.xs,
+                  letterSpacing: 0.6,
+                  textTransform: 'uppercase',
+                  fontSize: 11,
+                }}
               >
-                Interests
+                Passions & Interests
               </Text>
               <View style={styles.interestsWrap}>
                 {profile.interests.map((interest) => (
@@ -180,11 +581,14 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                       {
                         backgroundColor: colors.surfaceMuted,
                         borderColor: colors.border,
-                        borderRadius: radii.radiusFull,
                       },
                     ]}
                   >
-                    <Text variant="caption" weight="medium" style={{ color: colors.textPrimary }}>
+                    <Text
+                      variant="caption"
+                      weight="medium"
+                      style={{ color: colors.textPrimary, fontSize: 13 }}
+                    >
                       {interest}
                     </Text>
                   </View>
@@ -193,7 +597,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             </View>
           )}
 
-          {/* Profile Prompts */}
+          {/* Profile Editorial Prompts */}
           {profile.prompts &&
             profile.prompts.map((prompt, idx) => (
               <View
@@ -202,31 +606,145 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                   styles.promptCard,
                   {
                     backgroundColor: colors.surfaceMuted,
-                    borderRadius: radii.radiusMD,
-                    padding: spacing.md,
-                    marginBottom: spacing.sm,
+                    borderColor: colors.border,
+                    borderLeftColor: colors.accent,
                   },
                 ]}
               >
-                <Text
-                  variant="caption"
-                  weight="bold"
-                  style={{ color: colors.accent, marginBottom: spacing.xxs }}
-                >
-                  {prompt.question}
-                </Text>
-                <Text
-                  variant="bodySmall"
-                  style={{ color: colors.textPrimary, fontStyle: 'italic' }}
-                >
-                  "{prompt.answer}"
-                </Text>
+                <View style={styles.promptContentRow}>
+                  <View style={{ flex: 1, paddingRight: spacing.sm }}>
+                    <Text
+                      variant="caption"
+                      weight="bold"
+                      style={{
+                        color: colors.accent,
+                        marginBottom: 4,
+                        letterSpacing: 0.4,
+                        textTransform: 'uppercase',
+                        fontSize: 11,
+                      }}
+                    >
+                      {prompt.question}
+                    </Text>
+                    <Text
+                      variant="body"
+                      style={{
+                        color: colors.textPrimary,
+                        fontSize: 16,
+                        lineHeight: 23,
+                        fontWeight: '500',
+                      }}
+                    >
+                      "{prompt.answer}"
+                    </Text>
+                  </View>
+                  {onInlineLike && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        haptics.selection();
+                        onInlineLike({
+                          type: 'PROMPT',
+                          id: `prompt-${idx}`,
+                          text: prompt.answer,
+                        });
+                      }}
+                      style={[
+                        styles.inlineHeartBtn,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Like prompt: ${prompt.question}`}
+                      activeOpacity={0.7}
+                    >
+                      <Icon name="heart" size="sm" color={colors.accent} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            ))}
+
+          {/* Audio Prompts */}
+          {profile.audioPrompts &&
+            profile.audioPrompts.map((audioPrompt, idx) => (
+              <View
+                key={`audio-${idx}`}
+                style={[
+                  styles.promptCard,
+                  {
+                    backgroundColor: colors.surfaceMuted,
+                    borderColor: colors.border,
+                    borderLeftColor: colors.accent,
+                  },
+                ]}
+              >
+                <View style={styles.promptContentRow}>
+                  <View style={{ flex: 1, paddingRight: spacing.sm }}>
+                    <Text
+                      variant="caption"
+                      weight="bold"
+                      style={{
+                        color: colors.accent,
+                        marginBottom: 4,
+                        letterSpacing: 0.4,
+                        textTransform: 'uppercase',
+                        fontSize: 11,
+                      }}
+                    >
+                      {audioPrompt.prompt}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                      <View
+                        style={[
+                          styles.audioPromptPlayBtn,
+                          { backgroundColor: colors.accentSoft },
+                        ]}
+                      >
+                        <Icon name="mic" size="sm" color={colors.accent} />
+                      </View>
+                      <View style={{ marginLeft: spacing.sm }}>
+                        <Text variant="caption" weight="semibold" style={{ color: colors.textPrimary }}>
+                          Voice Prompt
+                        </Text>
+                        <Text variant="caption" style={{ color: colors.textSecondary, fontSize: 11 }}>
+                          {audioPrompt.durationSeconds}s audio recording
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  {onInlineLike && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        haptics.selection();
+                        onInlineLike({
+                          type: 'PROMPT',
+                          id: audioPrompt.id,
+                          text: `[Voice Prompt] ${audioPrompt.prompt}`,
+                        });
+                      }}
+                      style={[
+                        styles.inlineHeartBtn,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Like voice prompt: ${audioPrompt.prompt}`}
+                      activeOpacity={0.7}
+                    >
+                      <Icon name="heart" size="sm" color={colors.accent} />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             ))}
         </View>
       )}
 
-      {/* Actions Row */}
+      {/* Bottom Profile Action Row */}
       {(onPass || onLike || onSuperLike || onMessage) && (
         <View
           style={[
@@ -242,10 +760,12 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             <TouchableOpacity
               style={[
                 styles.actionBtn,
-                styles.passBtn,
                 { borderColor: colors.border, backgroundColor: colors.surfaceMuted },
               ]}
-              onPress={onPass}
+              onPress={() => {
+                haptics.warning();
+                onPass();
+              }}
               disabled={isSubmitting}
               accessibilityRole="button"
               accessibilityLabel={`Pass on ${profile.name}`}
@@ -258,15 +778,17 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             <TouchableOpacity
               style={[
                 styles.actionBtn,
-                styles.superBtn,
-                { borderColor: '#F59E0B', backgroundColor: '#FEF3C7' },
+                { borderColor: '#F59E0B', backgroundColor: 'rgba(245, 158, 11, 0.12)' },
               ]}
-              onPress={onSuperLike}
+              onPress={() => {
+                haptics.success();
+                onSuperLike();
+              }}
               disabled={isSubmitting}
               accessibilityRole="button"
               accessibilityLabel={`Super like ${profile.name}`}
             >
-              <Icon name="sparkles" size="md" color="#D97706" />
+              <Icon name="star" size="md" color="#D97706" />
             </TouchableOpacity>
           )}
 
@@ -274,10 +796,12 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             <TouchableOpacity
               style={[
                 styles.actionBtn,
-                styles.messageBtn,
                 { borderColor: colors.info, backgroundColor: colors.infoSoft },
               ]}
-              onPress={onMessage}
+              onPress={() => {
+                haptics.selection();
+                onMessage();
+              }}
               disabled={isSubmitting}
               accessibilityRole="button"
               accessibilityLabel={`Message ${profile.name}`}
@@ -290,15 +814,17 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             <TouchableOpacity
               style={[
                 styles.actionBtn,
-                styles.likeBtn,
                 { borderColor: colors.accent, backgroundColor: colors.accentSoft },
               ]}
-              onPress={onLike}
+              onPress={() => {
+                haptics.selection();
+                onLike();
+              }}
               disabled={isSubmitting}
               accessibilityRole="button"
               accessibilityLabel={`Like ${profile.name}`}
             >
-              <Icon name="heart" size="md" color={colors.accent} />
+              <Icon name="heart" size="md" color={colors.accent} fill={colors.accent} />
             </TouchableOpacity>
           )}
         </View>
@@ -313,6 +839,8 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     overflow: 'hidden',
     alignSelf: 'center',
+    borderRadius: 24,
+    borderWidth: 1,
     marginBottom: 16,
   },
   imageContainer: {
@@ -330,62 +858,154 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scrimOverlay: {
+  tapAreasOverlay: {
     ...StyleSheet.absoluteFill,
-    top: '40%',
+    flexDirection: 'row',
+    zIndex: 5,
+  },
+  tapAreaLeft: {
+    flex: 1,
+    height: '100%',
+  },
+  tapAreaRight: {
+    flex: 1,
+    height: '100%',
+  },
+  scrimOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '55%',
+    zIndex: 4,
+  },
+  storyProgressRow: {
+    position: 'absolute',
+    top: 10,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    gap: 4,
+    zIndex: 10,
+  },
+  storyProgressBar: {
+    height: 3,
+    borderRadius: 1.5,
   },
   topBadgesRow: {
     position: 'absolute',
-    top: 14,
+    top: 20,
     left: 14,
     right: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    zIndex: 10,
+  },
+  contextualPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(20, 18, 16, 0.72)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    maxWidth: '75%',
   },
   imageCountBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(20, 18, 16, 0.72)',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   imageDetailsOverlay: {
     position: 'absolute',
-    bottom: 14,
-    left: 14,
-    right: 14,
+    bottom: 16,
+    left: 16,
+    right: 16,
+    zIndex: 10,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  verifiedDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  displayNameText: {
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  verifiedBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#3B82F6',
     marginLeft: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
   },
+  occupationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+  },
   interestsWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
   },
   interestChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     borderWidth: 1,
   },
   promptCard: {
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#D84315',
+    borderWidth: 1,
+  },
+  promptContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  inlineHeartBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  audioPromptPlayBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionsRow: {
     flexDirection: 'row',
@@ -401,8 +1021,309 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
   },
-  passBtn: {},
-  superBtn: {},
-  messageBtn: {},
-  likeBtn: {},
+  discoveryCard: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
+    overflow: 'hidden',
+    borderWidth: 1,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  discoveryTouchable: {
+    width: '100%',
+    height: '100%',
+  },
+  discoveryImageWrapper: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  discoveryImage: {
+    width: '100%',
+    height: '100%',
+  },
+  discoveryScrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '62%',
+    zIndex: 4,
+  },
+  matchScoreGradientPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 11,
+    paddingVertical: 5.5,
+    borderRadius: 999,
+    shadowColor: '#DC0C24',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  matchScoreText: {
+    color: '#FFFFFF',
+    fontSize: 11.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  topRightPills: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  frostedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 12, 18, 0.62)',
+    paddingHorizontal: 9.5,
+    paddingVertical: 4.5,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+  },
+  frostedPillText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  discoveryDetailsOverlay: {
+    position: 'absolute',
+    bottom: 14,
+    left: 16,
+    right: 16,
+    zIndex: 10,
+  },
+  nameHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  tinderInfoBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  lifestyleHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 7,
+  },
+  lifestyleHeaderText: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  lifestyleChipsWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 6,
+  },
+  tinderLifestyleChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(20, 18, 25, 0.88)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 11,
+    paddingVertical: 5.5,
+  },
+  lifestyleChipEmoji: {
+    fontSize: 12,
+    marginRight: 5,
+  },
+  tinderLifestyleChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: 0.15,
+  },
+  discoveryNameText: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.8,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 1.5 },
+    textShadowRadius: 5,
+  },
+  discoveryAgeText: {
+    fontSize: 27,
+    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.88)',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1.5 },
+    textShadowRadius: 4,
+  },
+  discoveryVerifiedBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#3B82F6',
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  onlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.18)',
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  onlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+    marginRight: 4,
+  },
+  onlineText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#34D399',
+    letterSpacing: 0.2,
+  },
+  flowingTaglineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  flowingTaglineText: {
+    fontSize: 13.5,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.88)',
+    letterSpacing: 0.1,
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  flowingTaglineDot: {
+    color: 'rgba(255, 255, 255, 0.45)',
+    marginHorizontal: 6,
+    fontSize: 12,
+  },
+  flowingTaglineLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  discoveryInterestsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  discoveryInterestPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  discoveryInterestMore: {
+    backgroundColor: 'rgba(255, 255, 255, 0.09)',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  discoveryInterestText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  promptTeaserBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(22, 18, 28, 0.65)',
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    marginTop: 8,
+  },
+  promptTeaserQuestion: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FF2E48',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  promptTeaserAnswer: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    color: '#FFFFFF',
+    lineHeight: 18,
+  },
+  discoveryInlineHeartBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bioTeaserBox: {
+    backgroundColor: 'rgba(22, 18, 28, 0.62)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    marginTop: 8,
+  },
+  bioTeaserText: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.88)',
+    lineHeight: 18,
+  },
+  expandAffordanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+    gap: 4,
+  },
+  expandAffordanceText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.65)',
+    letterSpacing: 0.2,
+  },
 });

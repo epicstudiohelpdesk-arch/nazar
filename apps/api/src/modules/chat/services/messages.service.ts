@@ -1,4 +1,5 @@
 import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { generateUuidV7 } from '@platform/domain';
 import {
   ErrorCode,
@@ -14,6 +15,7 @@ import type {
 } from '@platform/validation';
 import { DatabaseService } from '../../../infrastructure/database/database.service.js';
 import { outboxEvents } from '../../../infrastructure/database/drizzle/schema/outbox-events.js';
+import { matches } from '../../../infrastructure/database/drizzle/schema/matches.js';
 import {
   MESSAGES_REPOSITORY_TOKEN,
   type IMessagesRepository,
@@ -70,10 +72,10 @@ export class MessagesService {
       );
     }
 
-    const trimmedBody = input.body.trim();
-    if (!trimmedBody) {
+    const trimmedBody = input.body ? input.body.trim() : '';
+    if (!trimmedBody && !input.mediaUrl) {
       throw new HttpException(
-        { code: ErrorCode.MESSAGE_EMPTY, message: 'Message body cannot be empty' },
+        { code: ErrorCode.MESSAGE_EMPTY, message: 'Message body or mediaUrl cannot be empty' },
         HttpStatus.BAD_REQUEST
       );
     }
@@ -87,6 +89,7 @@ export class MessagesService {
 
     const messageId = generateUuidV7();
     const now = new Date();
+    const finalBody = trimmedBody || (input.messageType === 'AUDIO' ? 'Voice note' : '');
 
     return this.databaseService.withTransaction(async (tx) => {
       const { message, wasCreated } = await this.messagesRepo.createMessage(
@@ -96,7 +99,10 @@ export class MessagesService {
           senderUserId,
           clientMessageId: input.clientMessageId,
           messageType: input.messageType || 'TEXT',
-          body: trimmedBody,
+          body: finalBody,
+          mediaUrl: input.mediaUrl || null,
+          durationSeconds: input.durationSeconds || null,
+          waveformPeaks: input.waveformPeaks || null,
           metadata: input.metadata || null,
           createdAt: now,
         },
@@ -104,6 +110,14 @@ export class MessagesService {
       );
 
       if (wasCreated) {
+        // Clear 48h match expiration timer on first conversation message
+        if (match.expiresAt) {
+          await tx
+            .update(matches)
+            .set({ expiresAt: null, updatedAt: now })
+            .where(eq(matches.id, match.id));
+        }
+
         // Update conversation last message pointer
         await this.conversationsRepo.updateLastMessage(
           conversationId,
@@ -126,6 +140,9 @@ export class MessagesService {
             clientMessageId: message.clientMessageId,
             messageType: message.messageType,
             body: message.body,
+            mediaUrl: message.mediaUrl,
+            durationSeconds: message.durationSeconds,
+            waveformPeaks: message.waveformPeaks,
             createdAt: message.createdAt.toISOString(),
           },
           status: 'PENDING',

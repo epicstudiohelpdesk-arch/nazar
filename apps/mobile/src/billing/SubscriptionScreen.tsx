@@ -21,6 +21,8 @@ import { TopNavHeader } from '../design/components/navigation/TopNavHeader.js';
 import { trackOnboardingEvent } from '../analytics/onboarding-analytics.js';
 import type { BillingApiClient } from './billing-api.js';
 import { billingManager } from './billing-manager.js';
+import { useResponsiveLayout } from '../design/responsive/index.js';
+import { haptics } from '../design/haptics/index.js';
 import {
   useEntitlements,
   useProducts,
@@ -73,6 +75,7 @@ export function SubscriptionScreen({
 }: SubscriptionScreenProps): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
 
   // Reconcile on resume
   useBillingResumeSync();
@@ -116,6 +119,7 @@ export function SubscriptionScreen({
   }, [products, selectedProductId, annualProduct, subscriptionProducts]);
 
   const handleSelectProduct = (prod: ProductResponseDto) => {
+    haptics.selection();
     setSelectedProductId(prod.id);
     setErrorMessage(null);
     trackOnboardingEvent('premium_product_selected', {
@@ -134,13 +138,15 @@ export function SubscriptionScreen({
       });
 
       if (result.verified) {
+        haptics.notificationSuccess();
         Alert.alert(
-          'Welcome to Nazar Premium! 🎉',
+          'Welcome to Nazar Premium',
           'Your subscription is active and all premium features are now unlocked.',
           [
             {
               text: 'Continue',
               onPress: () => {
+                haptics.selection();
                 if (returnRoute) {
                   router.replace(returnRoute as never);
                 } else if (onDismiss) {
@@ -161,10 +167,12 @@ export function SubscriptionScreen({
   };
 
   const handleRestore = async () => {
+    haptics.selection();
     setErrorMessage(null);
     try {
       const result = await restoreMutation.mutateAsync(undefined);
       if (result.restoredCount > 0) {
+        haptics.notificationSuccess();
         Alert.alert(
           'Purchases Restored',
           `Successfully restored ${result.restoredCount} active subscription(s).`
@@ -228,7 +236,7 @@ export function SubscriptionScreen({
         testID="subscription-header"
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' }]}>
         {/* Error Banner */}
         {errorMessage && (
           <Banner
@@ -420,6 +428,7 @@ export function SubscriptionScreen({
           }
           variant="primary"
           size="lg"
+          icon="sparkles"
           onPress={handlePurchase}
           disabled={purchaseMutation.isPending || !selectedProduct}
           testID="purchase-button"

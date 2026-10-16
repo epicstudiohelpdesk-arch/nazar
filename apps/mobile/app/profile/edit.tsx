@@ -23,9 +23,12 @@ import { MultilineInput } from '../../src/design/components/input/MultilineInput
 import { Button } from '../../src/design/components/button/Button.js';
 import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
 import { MediaGrid } from '../../src/profile/components/MediaGrid.js';
+import { SmartPhotosCard } from '../../src/profile/components/SmartPhotosCard.js';
 import { InterestsPicker } from '../../src/profile/components/InterestsPicker.js';
 import { getDefaultProfileApi, PROFILE_QUERY_KEYS } from '../../src/profile/profile-api.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 interface EditablePrompt {
   promptDefinitionId: string;
@@ -45,6 +48,7 @@ const SAMPLE_PHOTO_REPLACEMENTS = [
 export default function EditProfileRoute(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const queryClient = useQueryClient();
   const profileApi = getDefaultProfileApi();
 
@@ -77,6 +81,11 @@ export default function EditProfileRoute(): React.JSX.Element {
   const myPromptsQuery = useQuery({
     queryKey: PROFILE_QUERY_KEYS.myPrompts,
     queryFn: () => profileApi.getMyPrompts(),
+  });
+
+  const smartPhotosStatsQuery = useQuery({
+    queryKey: PROFILE_QUERY_KEYS.smartPhotosStats,
+    queryFn: () => profileApi.getSmartPhotosStats(),
   });
 
   // Local Form State
@@ -162,6 +171,19 @@ export default function EditProfileRoute(): React.JSX.Element {
     onError: (err: unknown) => {
       const msg = err instanceof Error ? err.message : 'Failed to set primary photo';
       Alert.alert('Photo Error', msg);
+    },
+  });
+
+  const toggleSmartPhotosMutation = useMutation({
+    mutationFn: (enabled: boolean) => profileApi.toggleSmartPhotos(enabled),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEYS.smartPhotosStats });
+      void queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEYS.me });
+      void queryClient.invalidateQueries({ queryKey: ['discovery'] });
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to toggle Smart Photos';
+      Alert.alert('Smart Photos', msg);
     },
   });
 
@@ -336,34 +358,70 @@ export default function EditProfileRoute(): React.JSX.Element {
           </Button>
         }
       />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth || 540, alignSelf: 'center', width: '100%' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Photo Management Section */}
         <View style={styles.section}>
-          <Heading level="h3">Photos & Media</Heading>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: theme.colors.accentSoft }]}>
+              <Icon name="camera" size="sm" color={theme.colors.accent} />
+            </View>
+            <Heading level="h3">Photos & Media</Heading>
+          </View>
           <Text level="bodySmall" color="secondary">
             Add up to 6 photos. The first photo with the primary badge will be displayed first in
             discovery feeds.
           </Text>
           <MediaGrid
             media={mediaList}
-            onUploadPress={() => addPhotoMutation.mutate()}
-            onSetPrimary={(mediaId) => setPrimaryMutation.mutate(mediaId)}
+            onUploadPress={() => {
+              haptics.light();
+              addPhotoMutation.mutate();
+            }}
+            onSetPrimary={(mediaId) => {
+              haptics.selection();
+              setPrimaryMutation.mutate(mediaId);
+            }}
             onDeleteMedia={(mediaId) => {
               Alert.alert('Remove Photo', 'Are you sure you want to delete this photo?', [
                 { text: 'Cancel', style: 'cancel' },
                 {
                   text: 'Delete',
                   style: 'destructive',
-                  onPress: () => deletePhotoMutation.mutate(mediaId),
+                  onPress: () => {
+                    haptics.light();
+                    deletePhotoMutation.mutate(mediaId);
+                  },
                 },
               ]);
             }}
+          />
+
+          <SmartPhotosCard
+            enabled={smartPhotosStatsQuery.data?.enabled ?? profileQuery.data?.smartPhotos ?? true}
+            onToggle={(enabled) => {
+              haptics.selection();
+              toggleSmartPhotosMutation.mutate(enabled);
+            }}
+            photos={smartPhotosStatsQuery.data?.photos}
+            isLoading={smartPhotosStatsQuery.isLoading}
+            isToggling={toggleSmartPhotosMutation.isPending}
           />
         </View>
 
         {/* Basic Details Section */}
         <View style={styles.section}>
-          <Heading level="h3">About Me</Heading>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: theme.colors.accentSoft }]}>
+              <Icon name="user" size="sm" color={theme.colors.accent} />
+            </View>
+            <Heading level="h3">About Me</Heading>
+          </View>
           <MultilineInput
             label="Bio"
             value={bio}
@@ -378,7 +436,12 @@ export default function EditProfileRoute(): React.JSX.Element {
 
         {/* Location & Career Section */}
         <View style={styles.section}>
-          <Heading level="h3">Location & Background</Heading>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: theme.colors.accentSoft }]}>
+              <Icon name="location" size="sm" color={theme.colors.accent} />
+            </View>
+            <Heading level="h3">Location & Background</Heading>
+          </View>
           <TextInput
             label="City / Location"
             value={city}
@@ -410,7 +473,12 @@ export default function EditProfileRoute(): React.JSX.Element {
 
         {/* Passions & Interests Section */}
         <View style={styles.section}>
-          <Heading level="h3">Passions & Interests</Heading>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: theme.colors.accentSoft }]}>
+              <Icon name="sparkles" size="sm" color={theme.colors.accent} />
+            </View>
+            <Heading level="h3">Passions & Interests</Heading>
+          </View>
           {interestsTaxonomyQuery.data && (
             <InterestsPicker
               taxonomy={interestsTaxonomyQuery.data}
@@ -424,12 +492,18 @@ export default function EditProfileRoute(): React.JSX.Element {
         {/* Personality Prompts Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Heading level="h3">Personality Prompts ({prompts.length}/3)</Heading>
+            <View style={[styles.sectionIconCircle, { backgroundColor: theme.colors.accentSoft }]}>
+              <Icon name="heart" size="sm" color={theme.colors.accent} />
+            </View>
+            <Heading level="h3" style={{ flex: 1 }}>Personality Prompts ({prompts.length}/3)</Heading>
             {prompts.length < 3 && (
               <Button
                 variant="tertiary"
                 size="sm"
-                onPress={handleAddNewPrompt}
+                onPress={() => {
+                  haptics.selection();
+                  handleAddNewPrompt();
+                }}
                 accessibilityLabel="Add Prompt"
               >
                 + Add Prompt
@@ -448,7 +522,10 @@ export default function EditProfileRoute(): React.JSX.Element {
             >
               <TouchableOpacity
                 style={styles.promptQuestionRow}
-                onPress={() => handleOpenPromptPicker(index)}
+                onPress={() => {
+                  haptics.selection();
+                  handleOpenPromptPicker(index);
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="Select different question"
               >
@@ -468,7 +545,10 @@ export default function EditProfileRoute(): React.JSX.Element {
 
               <TouchableOpacity
                 style={styles.removePromptRow}
-                onPress={() => handleRemovePrompt(index)}
+                onPress={() => {
+                  haptics.light();
+                  handleRemovePrompt(index);
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="Remove prompt"
               >
@@ -489,7 +569,10 @@ export default function EditProfileRoute(): React.JSX.Element {
             fullWidth
             isLoading={saveMutation.isPending}
             disabled={saveMutation.isPending}
-            onPress={() => saveMutation.mutate()}
+            onPress={() => {
+              haptics.medium();
+              saveMutation.mutate();
+            }}
             accessibilityLabel="Save profile changes"
           >
             Save Changes
@@ -553,8 +636,15 @@ const styles = StyleSheet.create({
   },
   sectionHeaderRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
+  },
+  sectionIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   promptCard: {
     padding: 16,

@@ -14,6 +14,8 @@ import type { NotificationsApiClient } from './notifications-api.js';
 import type { PushPermissionState } from './push-permissions.js';
 import { PushPermissionCard } from './components/PushPermissionCard.js';
 import { useNotificationPreferences, useUpdateNotificationPreference } from './useNotifications.js';
+import { useResponsiveLayout } from '../design/responsive/index.js';
+import { haptics } from '../design/haptics/index.js';
 
 /**
  * A switch may only ever write the one field it owns. Restricting the key here
@@ -44,12 +46,14 @@ export function NotificationSettingsScreen({
   onBack,
 }: NotificationSettingsScreenProps): React.JSX.Element {
   const { colors, spacing } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const preferencesQuery = useNotificationPreferences(client);
   const updatePreference = useUpdateNotificationPreference(client);
   const [failedKey, setFailedKey] = useState<PreferenceKey | null>(null);
 
   const handleToggle = useCallback(
     (key: PreferenceKey, value: boolean) => {
+      haptics.selection();
       setFailedKey(null);
       updatePreference.mutate({ [key]: value } as UpdateNotificationPreferencesDto, {
         onSuccess: () =>
@@ -57,7 +61,10 @@ export function NotificationSettingsScreen({
             preference: key,
             enabled: value,
           }),
-        onError: () => setFailedKey(key),
+        onError: () => {
+          haptics.notificationError();
+          setFailedKey(key);
+        },
       });
     },
     [updatePreference]
@@ -96,7 +103,13 @@ export function NotificationSettingsScreen({
           />
         </View>
       ) : preferences ? (
-        <ScrollView contentContainerStyle={[styles.content, { gap: spacing.xl }]}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { gap: spacing.xl, maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
           {updatePreference.isError && (
             <Banner
               variant="account_warning"

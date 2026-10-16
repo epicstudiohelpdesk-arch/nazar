@@ -74,6 +74,15 @@ export const relationshipIntentSchema = z.enum([
   'NOT_SURE',
 ] as const);
 
+export const familyPlansSchema = z.enum([
+  'WANTS_CHILDREN',
+  'DONT_WANT_CHILDREN',
+  'OPEN_TO_CHILDREN',
+  'NOT_SURE',
+] as const);
+
+export type FamilyPlans = z.infer<typeof familyPlansSchema>;
+
 export const mediaTypeSchema = z.enum(['IMAGE', 'VIDEO'] as const);
 
 export const mediaStatusSchema = z.enum([
@@ -116,6 +125,15 @@ export const createProfileSchema = z.object({
     .toUpperCase()
     .optional(),
   location: coordinatesSchema.optional(),
+  relationshipIntent: relationshipIntentSchema.optional(),
+  familyPlans: familyPlansSchema.optional(),
+  incognitoMode: z.boolean().optional(),
+  smartPhotos: z.boolean().optional(),
+  travelMode: z.boolean().optional(),
+  travelLatitude: z.number().min(-90).max(90).optional().nullable(),
+  travelLongitude: z.number().min(-180).max(180).optional().nullable(),
+  travelCity: z.string().trim().max(128).optional().nullable(),
+  travelCountry: z.string().trim().max(128).optional().nullable(),
 });
 
 export const updateProfileSchema = z.object({
@@ -139,7 +157,48 @@ export const updateProfileSchema = z.object({
     .optional()
     .nullable(),
   location: coordinatesSchema.optional().nullable(),
+  relationshipIntent: relationshipIntentSchema.optional().nullable(),
+  familyPlans: familyPlansSchema.optional().nullable(),
+  incognitoMode: z.boolean().optional().nullable(),
+  smartPhotos: z.boolean().optional().nullable(),
+  travelMode: z.boolean().optional().nullable(),
+  travelLatitude: z.number().min(-90).max(90).optional().nullable(),
+  travelLongitude: z.number().min(-180).max(180).optional().nullable(),
+  travelCity: z.string().trim().max(128).optional().nullable(),
+  travelCountry: z.string().trim().max(128).optional().nullable(),
 });
+
+export const toggleSmartPhotosSchema = z.object({
+  enabled: z.boolean(),
+});
+
+export type ToggleSmartPhotosInput = z.infer<typeof toggleSmartPhotosSchema>;
+
+export const setPassportLocationSchema = z
+  .object({
+    enabled: z.boolean(),
+    latitude: z.number().min(-90).max(90).optional().nullable(),
+    longitude: z.number().min(-180).max(180).optional().nullable(),
+    city: z.string().trim().max(128).optional().nullable(),
+    country: z.string().trim().max(128).optional().nullable(),
+  })
+  .refine(
+    (data) => {
+      if (data.enabled) {
+        return (
+          typeof data.latitude === 'number' &&
+          typeof data.longitude === 'number'
+        );
+      }
+      return true;
+    },
+    {
+      message: 'Latitude and longitude are required when enabling Passport / Travel Mode',
+      path: ['latitude'],
+    }
+  );
+
+export type SetPassportLocationInput = z.infer<typeof setPassportLocationSchema>;
 
 export const updatePreferencesSchema = z
   .object({
@@ -155,6 +214,7 @@ export const updatePreferencesSchema = z
       .min(18, 'Maximum age must be at least 18')
       .max(120, 'Maximum age cannot exceed 120')
       .optional(),
+    ageIsDealbreaker: z.boolean().optional(),
     genderPreferences: z
       .array(genderSchema)
       .min(1, 'Select at least one gender preference')
@@ -165,7 +225,11 @@ export const updatePreferencesSchema = z
       .min(1, 'Distance must be at least 1 km')
       .max(500, 'Distance cannot exceed 500 km')
       .optional(),
+    distanceIsDealbreaker: z.boolean().optional(),
     relationshipIntent: relationshipIntentSchema.optional(),
+    intentIsDealbreaker: z.boolean().optional(),
+    familyPlans: familyPlansSchema.optional().nullable(),
+    familyPlansIsDealbreaker: z.boolean().optional(),
   })
   .refine(
     (data) => {
@@ -205,10 +269,20 @@ export const updatePromptsSchema = z.object({
       (prompts) => {
         const ids = new Set(prompts.map((p) => p.promptDefinitionId));
         return ids.size === prompts.length;
-      },
-      { message: 'Cannot select the same prompt definition multiple times' }
-    ),
+    }),
 });
+export const createAudioPromptSchema = z.object({
+  promptDefinitionId: z.string().uuid('Invalid prompt definition ID'),
+  audioUrl: z.string().url('Invalid audio URL'),
+  durationSeconds: z
+    .number()
+    .int('Duration must be an integer')
+    .min(1, 'Audio prompt must be at least 1 second')
+    .max(60, 'Audio prompt cannot exceed 60 seconds'),
+  waveformPeaks: z.array(z.number().min(0).max(1)).max(100).optional(),
+});
+
+export type CreateAudioPromptInput = z.infer<typeof createAudioPromptSchema>;
 
 export const mediaUploadSchema = z.object({
   mimeType: z.enum(allowedMediaMimeTypes, {

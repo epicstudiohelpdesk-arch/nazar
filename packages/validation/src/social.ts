@@ -262,6 +262,8 @@ export type EventIdParamInput = z.infer<typeof eventIdParamSchema>;
 
 export const createRsvpSchema = z.object({
   status: z.enum(['GOING', 'INTERESTED'] as const),
+  lookingForPlusOne: z.boolean().optional(),
+  plusOneNote: z.string().trim().max(255).optional().nullable(),
 });
 
 export type CreateRsvpInput = z.infer<typeof createRsvpSchema>;
@@ -273,5 +275,13 @@ export const getEventsQuerySchema = socialCursorQuerySchema.extend({
 
 export type GetEventsQueryInput = z.infer<typeof getEventsQuerySchema>;
 
-export const getAttendeesQuerySchema = socialCursorQuerySchema;
+export const getAttendeesQuerySchema = socialCursorQuerySchema.extend({
+  plusOnesOnly: z
+    .preprocess((val) => {
+      if (val === 'true' || val === true) return true;
+      if (val === 'false' || val === false) return false;
+      return undefined;
+    }, z.boolean().optional())
+    .optional(),
+});
 export type GetAttendeesQueryInput = z.infer<typeof getAttendeesQuerySchema>;

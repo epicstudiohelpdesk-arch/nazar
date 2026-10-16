@@ -9,6 +9,11 @@ import { Text } from '../../src/design/primitives/Text.js';
 import { Select } from '../../src/design/components/input/Select.js';
 import { MultilineInput } from '../../src/design/components/input/MultilineInput.js';
 import { Button } from '../../src/design/components/button/Button.js';
+import { Icon } from '../../src/design/primitives/Icon.js';
+import { Badge } from '../../src/design/primitives/Badge.js';
+import { SurfaceCard } from '../../src/design/primitives/SurfaceCard.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 import { getDefaultSafetyApi } from '../../src/safety/safety-api.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 
@@ -16,6 +21,7 @@ export default function SafetyReportModalRoute(): React.JSX.Element {
   const { targetId } = useLocalSearchParams<{ targetId: string }>();
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const safetyApi = getDefaultSafetyApi();
 
   const [reason, setReason] = useState<ReportReasonCode>('HARASSMENT');
@@ -23,6 +29,7 @@ export default function SafetyReportModalRoute(): React.JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
+    haptics.medium();
     setIsSubmitting(true);
     try {
       await safetyApi.createReport({
@@ -53,15 +60,27 @@ export default function SafetyReportModalRoute(): React.JSX.Element {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <TopNavHeader title="Report Member" onBack={() => router.back()} leftAction="close" />
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Heading level="h2">Safety Report</Heading>
-          <Text level="body" color="secondary">
-            Your report is confidential. The reported member will not know who filed this report.
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth || 540, alignSelf: 'center', width: '100%' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <SurfaceCard elevation="sm" style={styles.headerCard}>
+          <View style={styles.badgeRow}>
+            <View style={[styles.shieldCircle, { backgroundColor: theme.colors.accentSoft }]}>
+              <Icon name="shield" size="sm" color={theme.colors.accent} />
+            </View>
+            <Badge variant="accent" label="Confidential Safety Review" size="sm" />
+          </View>
+          <Heading level="h2" style={{ marginTop: 4 }}>Safety Report</Heading>
+          <Text level="body" color="secondary" style={{ lineHeight: 22 }}>
+            Your report is strictly confidential. The reported member will never know who filed this report.
           </Text>
-        </View>
+        </SurfaceCard>
 
-        <View style={styles.form}>
+        <SurfaceCard elevation="sm" style={styles.formCard}>
           <Select
             label="Reason for reporting"
             value={reason}
@@ -74,7 +93,10 @@ export default function SafetyReportModalRoute(): React.JSX.Element {
               { label: 'Under 18 years of age', value: 'MINOR_SAFETY_CONCERN' },
               { label: 'Other violation', value: 'OTHER' },
             ]}
-            onSelectOption={(val) => setReason(val as ReportReasonCode)}
+            onSelectOption={(val) => {
+              haptics.selection();
+              setReason(val as ReportReasonCode);
+            }}
           />
 
           <MultilineInput
@@ -84,7 +106,7 @@ export default function SafetyReportModalRoute(): React.JSX.Element {
             onChangeText={setDetails}
             maxLength={300}
           />
-        </View>
+        </SurfaceCard>
 
         <View style={styles.buttonWrapper}>
           <Button
@@ -109,16 +131,32 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    gap: 20,
+    gap: 16,
     paddingBottom: 40,
   },
-  header: {
-    gap: 6,
+  headerCard: {
+    padding: 18,
+    borderRadius: 20,
+    gap: 8,
   },
-  form: {
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  shieldCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  formCard: {
+    padding: 18,
+    borderRadius: 20,
     gap: 16,
   },
   buttonWrapper: {
-    marginTop: 12,
+    marginTop: 8,
   },
 });

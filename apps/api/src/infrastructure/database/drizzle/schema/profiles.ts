@@ -7,11 +7,12 @@ import {
   doublePrecision,
   jsonb,
   timestamp,
+  boolean,
   uniqueIndex,
   index,
   customType,
 } from 'drizzle-orm/pg-core';
-import type { ProfileCompleteness } from '@platform/api-contracts';
+import type { ProfileCompleteness, RelationshipIntent, FamilyPlans } from '@platform/api-contracts';
 import { users } from './users.js';
 
 export const postgisPoint = customType<{
@@ -53,6 +54,17 @@ export const profiles = pgTable(
     latitude: doublePrecision('latitude'),
     longitude: doublePrecision('longitude'),
     location: postgisPoint('location'),
+    relationshipIntent: varchar('relationship_intent', { length: 32 }).$type<RelationshipIntent>(),
+    familyPlans: varchar('family_plans', { length: 32 }).$type<FamilyPlans>(),
+    isVerified: boolean('is_verified').notNull().default(false),
+    verifiedAt: timestamp('verified_at', { withTimezone: true }),
+    incognitoMode: boolean('incognito_mode').notNull().default(false),
+    smartPhotos: boolean('smart_photos').notNull().default(false),
+    travelMode: boolean('travel_mode').notNull().default(false),
+    travelLatitude: doublePrecision('travel_latitude'),
+    travelLongitude: doublePrecision('travel_longitude'),
+    travelCity: varchar('travel_city', { length: 128 }),
+    travelCountry: varchar('travel_country', { length: 128 }),
     visibility: varchar('visibility', { length: 16 }).notNull().default('DRAFT'),
     completionStatus: jsonb('completion_status').notNull().$type<ProfileCompleteness>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

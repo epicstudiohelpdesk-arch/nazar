@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Switch, TextInput as RNTextInput } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Text } from '../design/primitives/Text.js';
 import { Icon } from '../design/primitives/Icon.js';
+import { Badge } from '../design/primitives/Badge.js';
 import { Button } from '../design/components/button/Button.js';
 import { useTheme } from '../design/theme/index.js';
 import { SOCIAL_QUERY_KEYS, type SocialApiClient } from './social-api.js';
@@ -17,7 +18,12 @@ export interface RsvpComponentProps {
    * The event shape used to build controls. `status` and `currentUserRsvp` are
    * read from the server response; this component keeps no RSVP state of its own.
    */
-  readonly event: { readonly status: string; readonly currentUserRsvp?: string | null };
+  readonly event: {
+    readonly status: string;
+    readonly currentUserRsvp?: string | null;
+    readonly currentUserLookingForPlusOne?: boolean;
+    readonly currentUserPlusOneNote?: string | null;
+  };
   /**
    * Applied by the server response before the cache is refetched, so the UI
    * never has to guess. Still refetched afterwards to pick up counter changes
@@ -50,6 +56,42 @@ export const RsvpComponent: React.FC<RsvpComponentProps> = ({
   const { colors, radii, spacing } = useTheme();
   const queryClient = useQueryClient();
   const view = deriveRsvpView(event as Parameters<typeof deriveRsvpView>[0]);
+
+  const [isPlusOne, setIsPlusOne] = React.useState<boolean>(
+    event.currentUserLookingForPlusOne ?? false
+  );
+  const [plusOneNote, setPlusOneNote] = React.useState<string>(
+    event.currentUserPlusOneNote ?? ''
+  );
+
+  React.useEffect(() => {
+    setIsPlusOne(event.currentUserLookingForPlusOne ?? false);
+    setPlusOneNote(event.currentUserPlusOneNote ?? '');
+  }, [event.currentUserLookingForPlusOne, event.currentUserPlusOneNote]);
+
+  const plusOneMutation = useMutation({
+    mutationFn: async (payload: { lookingForPlusOne: boolean; plusOneNote?: string | null }) => {
+      await client.rsvpEvent(eventId, {
+        status: 'GOING',
+        lookingForPlusOne: payload.lookingForPlusOne,
+        plusOneNote: payload.plusOneNote ?? null,
+      });
+    },
+    onSuccess: () => {
+      invalidateEventLists(queryClient, eventId);
+      queryClient.invalidateQueries({ queryKey: SOCIAL_QUERY_KEYS.eventAttendees(eventId) });
+      queryClient.invalidateQueries({ queryKey: SOCIAL_QUERY_KEYS.eventAttendees(eventId, true) });
+    },
+  });
+
+  const handleTogglePlusOne = (nextVal: boolean) => {
+    setIsPlusOne(nextVal);
+    plusOneMutation.mutate({ lookingForPlusOne: nextVal, plusOneNote });
+  };
+
+  const handleSaveNote = () => {
+    plusOneMutation.mutate({ lookingForPlusOne: isPlusOne, plusOneNote });
+  };
 
   const mutation = useMutation({
     mutationFn: async (target: RsvpTarget) => {
@@ -208,6 +250,68 @@ export const RsvpComponent: React.FC<RsvpComponentProps> = ({
           />
         ))}
       </View>
+
+      {view.status === 'GOING' ? (
+        <View
+          style={[
+            styles.plusOneContainer,
+            {
+              backgroundColor: colors.surface,
+              borderColor: isPlusOne ? colors.accent : colors.border,
+              borderRadius: radii.radiusMD,
+              padding: spacing.md,
+              marginTop: spacing.md,
+            },
+          ]}
+          testID="rsvp-plus-one-card"
+        >
+          <View style={styles.plusOneHeader}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text variant="bodySmall" weight="bold" color="primary">
+                  🎟️ Looking for a +1
+                </Text>
+                {isPlusOne ? <Badge label="Active" variant="accent" size="sm" /> : null}
+              </View>
+              <Text variant="caption" color="secondary" style={{ marginTop: 2 }}>
+                Feature your profile to other attendees and in the discovery feed looking for an event date.
+              </Text>
+            </View>
+            <Switch
+              value={isPlusOne}
+              onValueChange={handleTogglePlusOne}
+              trackColor={{ false: colors.border, true: colors.accent }}
+              thumbColor={colors.surface}
+              testID="rsvp-plus-one-toggle"
+            />
+          </View>
+
+          {isPlusOne ? (
+            <View style={{ marginTop: spacing.sm }}>
+              <RNTextInput
+                style={[
+                  styles.noteInput,
+                  {
+                    color: colors.textPrimary,
+                    borderColor: colors.border,
+                    borderRadius: radii.radiusSM,
+                    backgroundColor: colors.surfaceMuted,
+                    padding: spacing.sm,
+                  },
+                ]}
+                placeholder="Optional note: e.g. Looking for someone who loves indie rock!"
+                placeholderTextColor={colors.textTertiary}
+                value={plusOneNote}
+                onChangeText={setPlusOneNote}
+                onBlur={handleSaveNote}
+                maxLength={255}
+                returnKeyType="done"
+                testID="rsvp-plus-one-note-input"
+              />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -244,5 +348,17 @@ const styles = StyleSheet.create({
   },
   actionSpacing: {
     marginLeft: 8,
+  },
+  plusOneContainer: {
+    borderWidth: 1,
+  },
+  plusOneHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  noteInput: {
+    borderWidth: 1,
+    fontSize: 13,
   },
 });

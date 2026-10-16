@@ -2,7 +2,9 @@ import type { PublicMediaItem } from '../profile/profile.contract.js';
 
 export type ConversationStatus = 'ACTIVE' | 'CLOSED';
 
-export type MessageType = 'TEXT' | 'IMAGE' | 'SYSTEM';
+export const CLIENT_MESSAGE_ID_PREFIX = 'cmsg_';
+
+export type MessageType = 'TEXT' | 'IMAGE' | 'AUDIO' | 'SYSTEM';
 
 export type DeliveryState = 'SENT' | 'DELIVERED' | 'READ';
 
@@ -56,6 +58,9 @@ export interface MessageItemDto {
   readonly clientMessageId: string;
   readonly messageType: MessageType;
   readonly body: string;
+  readonly mediaUrl?: string | null;
+  readonly durationSeconds?: number | null;
+  readonly waveformPeaks?: readonly number[] | null;
   readonly metadata?: Record<string, unknown> | null;
   readonly deliveryState: DeliveryState;
   readonly createdAt: string;
@@ -67,6 +72,9 @@ export interface SendMessageRequestDto {
   readonly clientMessageId: string;
   readonly body: string;
   readonly messageType?: MessageType;
+  readonly mediaUrl?: string;
+  readonly durationSeconds?: number;
+  readonly waveformPeaks?: readonly number[];
   readonly metadata?: Record<string, unknown>;
 }
 

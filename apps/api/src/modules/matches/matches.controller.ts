@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Delete,
   Param,
   Query,
@@ -23,7 +24,10 @@ import type {
   MatchDetailDto,
   UnmatchResponseDto,
   UnmatchRequestDto,
+  PostDateFeedbackResponseDto,
 } from '@platform/api-contracts';
+import { postDateFeedbackSchema, type PostDateFeedbackInput } from '@platform/validation';
+import { AppValidationPipe } from '../../common/pipes/app-validation.pipe.js';
 import { AuthGuard, type AuthenticatedPrincipal } from '../../common/guards/auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { MatchesService } from './services/matches.service.js';
@@ -133,5 +137,29 @@ export class MatchesController {
     @Body() body?: UnmatchRequestDto
   ): Promise<UnmatchResponseDto> {
     return this.matchesService.unmatch(user.userId, matchId, body?.reason);
+  }
+
+  @Post(':matchId/feedback')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Submit post-date feedback ("We Met")',
+    description:
+      'Submits private feedback on whether a couple met in person. If closeMatch is true, automatically dissolves the match to free an active slot in the 5-match cap.',
+  })
+  @ApiParam({
+    name: 'matchId',
+    type: String,
+    description: 'UUIDv7 of the match',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Post-date feedback recorded successfully',
+  })
+  async submitFeedback(
+    @CurrentUser() user: AuthenticatedPrincipal,
+    @Param('matchId') matchId: string,
+    @Body(new AppValidationPipe(postDateFeedbackSchema)) body: PostDateFeedbackInput
+  ): Promise<PostDateFeedbackResponseDto> {
+    return this.matchesService.submitFeedback(user.userId, matchId, body);
   }
 }

@@ -8,7 +8,9 @@ import { Text } from '../../src/design/primitives/Text.js';
 import { TextInput } from '../../src/design/components/input/TextInput.js';
 import { Button } from '../../src/design/components/button/Button.js';
 import { getDefaultAuthService } from '../../src/auth/auth-service.js';
+import { getDefaultAuthClient } from '../../src/auth/default-client.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
+import { useProfileStore } from '../../src/profile/profile-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 
 export default function LoginScreen(): React.JSX.Element {
@@ -133,6 +135,66 @@ export default function LoginScreen(): React.JSX.Element {
     setErrorMessage(
       `${provider === 'google' ? 'Google' : 'Apple'} Sign-In is configured for native releases.`
     );
+  };
+
+  const handleSkipAuth = async () => {
+    try {
+      const storage = getDefaultAuthClient().getStorage();
+      await storage.setAccessToken('dev-demo-token');
+      await storage.setRefreshToken('dev-demo-refresh-token');
+    } catch {
+      // ignore dev bypass failure
+    }
+
+    useProfileStore.getState().setProfile({
+      id: 'demo-user-1',
+      userId: 'demo-user-1',
+      displayName: 'Subham',
+      dateOfBirth: '2000-01-01',
+      age: 25,
+      gender: 'MAN',
+      bio: 'Building Nazar — mindful, intentional dating ✨',
+      occupation: 'Founder & Engineer',
+      education: 'Tech & Product',
+      city: 'Mumbai',
+      countryCode: 'IN',
+      visibility: 'ACTIVE',
+      completionStatus: {
+        percentage: 100,
+        missingRequired: [],
+        recommended: [],
+      },
+      interests: [
+        { id: '1', name: 'Design', slug: 'design', category: 'Creative' },
+        { id: '2', name: 'Coffee', slug: 'coffee', category: 'Food & Drink' },
+        { id: '3', name: 'Tech', slug: 'tech', category: 'Tech' },
+      ],
+      prompts: [
+        {
+          id: 'p1',
+          promptDefinitionId: 'pd1',
+          prompt: 'A life goal of mine is...',
+          answer: 'To build software that brings people together meaningfully.',
+          position: 0,
+        },
+      ],
+      media: [
+        {
+          id: 'm1',
+          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=80',
+          mediaType: 'IMAGE',
+          mimeType: 'image/jpeg',
+          status: 'READY',
+          position: 0,
+          isPrimary: true,
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    router.replace('/(tabs)/discovery');
   };
 
   return (
@@ -330,6 +392,22 @@ export default function LoginScreen(): React.JSX.Element {
             accessibilityLabel="Sign in with Passkey"
           >
             Sign in with Passkey 🔑
+          </Button>
+
+          {/* Dev Temporary Bypass Button */}
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
+            onPress={handleSkipAuth}
+            accessibilityLabel="Skip Authentication (Dev Demo)"
+            testID="skip-auth-button"
+            style={{
+              marginTop: 16,
+              backgroundColor: '#10B981',
+            }}
+          >
+            ⚡ Skip Auth & Go to Discovery (Dev)
           </Button>
         </View>
       </ScrollView>

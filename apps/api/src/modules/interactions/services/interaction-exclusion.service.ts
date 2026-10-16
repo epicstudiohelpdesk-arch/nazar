@@ -48,6 +48,23 @@ export class InteractionExclusionService implements ICandidateExclusionProvider 
       WHERE restriction_type IN ('DISCOVERY', 'FULL_ACCOUNT', 'PROFILE_VISIBILITY')
         AND revoked_at IS NULL
         AND (expires_at IS NULL OR expires_at > NOW())
+
+      UNION
+
+      -- Blocked contacts (Feature 2.1: Privacy-preserving SHA-256 address book blocking)
+      SELECT ui.user_id AS "userId"
+      FROM user_identities ui
+      JOIN blocked_contacts bc ON bc.phone_hash = encode(digest(ui.provider_subject, 'sha256'), 'hex')
+      WHERE bc.user_id = ${viewerUserId}
+        AND ui.provider = 'PHONE'
+
+      UNION
+
+      SELECT bc.user_id AS "userId"
+      FROM blocked_contacts bc
+      JOIN user_identities ui ON bc.phone_hash = encode(digest(ui.provider_subject, 'sha256'), 'hex')
+      WHERE ui.user_id = ${viewerUserId}
+        AND ui.provider = 'PHONE'
     `);
 
     const rows = (result.rows || result) as unknown as Array<{ userId: string }>;

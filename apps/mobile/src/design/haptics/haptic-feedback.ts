@@ -102,6 +102,27 @@ class HapticManager {
   error(): void {
     this.trigger('error', [0, 50, 60, 50, 60, 50]);
   }
+
+  // Convenience aliases adhering to standard haptic naming patterns
+  impactLight(): void {
+    this.light();
+  }
+
+  impactMedium(): void {
+    this.medium();
+  }
+
+  notificationSuccess(): void {
+    this.success();
+  }
+
+  notificationWarning(): void {
+    this.warning();
+  }
+
+  notificationError(): void {
+    this.error();
+  }
 }
 
 export const haptics = new HapticManager();

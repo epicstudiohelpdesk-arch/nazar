@@ -5,16 +5,20 @@ import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { TopNavHeader } from '../../src/design/components/navigation/TopNavHeader.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
+import { Icon } from '../../src/design/primitives/Icon.js';
 import { Button } from '../../src/design/components/button/Button.js';
 import { ProgressBar } from '../../src/design/components/feedback/ProgressBar.js';
 import { ProfileCard, type ProfileCardData } from '../../src/design/components/card/ProfileCard.js';
 import { getDefaultProfileApi } from '../../src/profile/profile-api.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
+import { useResponsiveLayout } from '../../src/design/responsive/index.js';
+import { haptics } from '../../src/design/haptics/index.js';
 
 export default function OnboardingPreviewScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const { maxContentWidth } = useResponsiveLayout();
   const profileApi = getDefaultProfileApi();
 
   const { draftProfile, draftPhotos, draftInterests, draftPrompts } = useOnboardingStore();
@@ -65,16 +69,19 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
   };
 
   const handleActivate = async () => {
+    haptics.impactMedium();
     setIsActivating(true);
     setErrorMessage(undefined);
 
     try {
       await profileApi.activateProfile();
+      haptics.notificationSuccess();
       trackOnboardingEvent('onboarding_completed');
       trackOnboardingEvent('discovery_entered', { source: 'onboarding_completion' });
       router.replace('/(tabs)/discovery');
     } catch {
       // Local fallback in offline mode
+      haptics.notificationSuccess();
       trackOnboardingEvent('onboarding_completed');
       trackOnboardingEvent('discovery_entered', { source: 'onboarding_completion_offline' });
       router.replace('/(tabs)/discovery');
@@ -88,7 +95,13 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
       <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
       <ProgressBar progress={1.0} style={styles.progressBar} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text level="label" color="accent">
             FINAL REVIEW
@@ -121,34 +134,46 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
         <View style={styles.editPillsRow}>
           <TouchableOpacity
             style={[styles.editPill, { borderColor: theme.colors.border }]}
-            onPress={() => router.push('/(onboarding)/profile-setup')}
+            onPress={() => {
+              haptics.selection();
+              router.push('/(onboarding)/profile-setup');
+            }}
             accessibilityRole="button"
             accessibilityLabel="Edit basic details"
           >
+            <Icon name="edit" size="tiny" color={theme.colors.accent} />
             <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '600' }}>
-              ✏️ Edit Basics
+              Edit Basics
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.editPill, { borderColor: theme.colors.border }]}
-            onPress={() => router.push('/(onboarding)/photos')}
+            onPress={() => {
+              haptics.selection();
+              router.push('/(onboarding)/photos');
+            }}
             accessibilityRole="button"
             accessibilityLabel="Edit photos"
           >
+            <Icon name="camera" size="tiny" color={theme.colors.accent} />
             <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '600' }}>
-              📷 Edit Photos
+              Edit Photos
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.editPill, { borderColor: theme.colors.border }]}
-            onPress={() => router.push('/(onboarding)/prompts')}
+            onPress={() => {
+              haptics.selection();
+              router.push('/(onboarding)/prompts');
+            }}
             accessibilityRole="button"
             accessibilityLabel="Edit prompts"
           >
+            <Icon name="message" size="tiny" color={theme.colors.accent} />
             <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '600' }}>
-              💬 Edit Prompts
+              Edit Prompts
             </Text>
           </TouchableOpacity>
         </View>
@@ -162,7 +187,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
             onPress={handleActivate}
             accessibilityLabel="Activate profile and enter Nazar discovery"
           >
-            Enter Nazar ✨
+            Enter Nazar
           </Button>
         </View>
       </ScrollView>
@@ -204,6 +229,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   editPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 16,

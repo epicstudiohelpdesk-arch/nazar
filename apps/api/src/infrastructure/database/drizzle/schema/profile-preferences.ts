@@ -3,11 +3,12 @@ import {
   uuid,
   integer,
   varchar,
+  boolean,
   jsonb,
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import type { Gender, RelationshipIntent } from '@platform/api-contracts';
+import type { Gender, RelationshipIntent, FamilyPlans } from '@platform/api-contracts';
 import { users } from './users.js';
 
 export const profilePreferences = pgTable(
@@ -20,12 +21,17 @@ export const profilePreferences = pgTable(
       .unique(),
     minAge: integer('min_age').notNull().default(18),
     maxAge: integer('max_age').notNull().default(99),
+    ageIsDealbreaker: boolean('age_is_dealbreaker').notNull().default(false),
     genderPreferences: jsonb('gender_preferences').notNull().$type<Gender[]>(),
     maxDistanceKm: integer('max_distance_km').notNull().default(50),
+    distanceIsDealbreaker: boolean('distance_is_dealbreaker').notNull().default(false),
     relationshipIntent: varchar('relationship_intent', { length: 32 })
       .notNull()
       .default('LONG_TERM')
       .$type<RelationshipIntent>(),
+    intentIsDealbreaker: boolean('intent_is_dealbreaker').notNull().default(false),
+    familyPlans: varchar('family_plans', { length: 32 }).$type<FamilyPlans>(),
+    familyPlansIsDealbreaker: boolean('family_plans_is_dealbreaker').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

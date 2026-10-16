@@ -429,6 +429,49 @@ describe('Mobile Matches & Connection Layer (F5)', () => {
     });
   });
 
+  describe('Post-Date Feedback ("We Met")', () => {
+    it('submits post-date feedback and tracks match closure', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              success: true,
+              feedbackId: 'fb-001',
+              matchId: 'match-001',
+              didMeet: true,
+              closedMatch: true,
+            },
+            requestId: 'req-we-met-1',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+
+      const matchesApi = createMatchesApi(authClient);
+      const res = await matchesApi.submitFeedback('match-001', {
+        didMeet: true,
+        wouldSeeAgain: true,
+        sentimentTags: ['GREAT_CONVERSATION', 'GOOD_CHEMISTRY'],
+        closeMatch: true,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.feedbackId).toBe('fb-001');
+      expect(res.didMeet).toBe(true);
+      expect(res.closedMatch).toBe(true);
+
+      const [url, init] = mockFetch.mock.calls[0];
+      expect(url).toBe('https://api.test.platform.com/v1/matches/match-001/feedback');
+      expect(init.method).toBe('POST');
+      const body = JSON.parse(init.body);
+      expect(body.didMeet).toBe(true);
+      expect(body.wouldSeeAgain).toBe(true);
+      expect(body.sentimentTags).toEqual(['GREAT_CONVERSATION', 'GOOD_CHEMISTRY']);
+      expect(body.closeMatch).toBe(true);
+    });
+  });
+
   describe('Query Keys & Cache Contracts', () => {
     it('provides structured, predictable query keys for cache invalidation', () => {
       expect(MATCHES_QUERY_KEYS.all).toEqual(['matches']);

@@ -33,6 +33,7 @@ import {
   type ICandidateExclusionProvider,
 } from '../exclusions/candidate-exclusion.interface.js';
 import type { DiscoveryViewerContext, DiscoveryCursorPayload } from '../domain/discovery.types.js';
+import { SmartPhotosService } from '../../profiles/services/smart-photos.service.js';
 
 export interface GetDiscoveryOptions {
   readonly limit?: number;
@@ -56,7 +57,9 @@ export class DiscoveryService {
     @Inject(DISCOVERY_CURSOR_SERVICE_TOKEN)
     private readonly cursorService: IDiscoveryCursorService,
     @Inject(CANDIDATE_EXCLUSION_PROVIDER_TOKEN)
-    private readonly exclusionProvider: ICandidateExclusionProvider
+    private readonly exclusionProvider: ICandidateExclusionProvider,
+    @Inject(SmartPhotosService)
+    private readonly smartPhotosService: SmartPhotosService
   ) {}
 
   async getDiscoveryFeed(
@@ -144,12 +147,22 @@ export class DiscoveryService {
         education: candidate.education,
         city: candidate.city,
         countryCode: candidate.countryCode,
+        travelMode: candidate.travelMode ?? false,
+        travelCity: candidate.travelCity || null,
+        travelCountry: candidate.travelCountry || null,
         interests: components.interests,
         prompts: components.prompts,
         media: components.media,
+        eventPlusOne: components.eventPlusOne ?? null,
       };
 
       const distanceBucket = getDistanceBucket(candidate.distanceMeters);
+
+      // Multi-Armed Bandit Photo optimization: record impression for primary photo
+      const primaryPhoto = components.media.find((m) => m.isPrimary) || components.media[0];
+      if (primaryPhoto && candidate.userId) {
+        void this.smartPhotosService.recordCandidateImpression(candidate.userId, primaryPhoto.id);
+      }
 
       return {
         profile: publicProfile,
@@ -191,12 +204,18 @@ export class DiscoveryService {
     const age = calculateAge(profile.dateOfBirth);
 
     const location =
-      profile.latitude !== null &&
-      profile.latitude !== undefined &&
-      profile.longitude !== null &&
-      profile.longitude !== undefined
-        ? { latitude: profile.latitude, longitude: profile.longitude }
-        : null;
+      profile.travelMode &&
+      profile.travelLatitude !== null &&
+      profile.travelLatitude !== undefined &&
+      profile.travelLongitude !== null &&
+      profile.travelLongitude !== undefined
+        ? { latitude: profile.travelLatitude, longitude: profile.travelLongitude }
+        : profile.latitude !== null &&
+          profile.latitude !== undefined &&
+          profile.longitude !== null &&
+          profile.longitude !== undefined
+          ? { latitude: profile.latitude, longitude: profile.longitude }
+          : null;
 
     return {
       userId: viewerUserId,
@@ -206,9 +225,14 @@ export class DiscoveryService {
       location,
       minAge: preferences?.minAge ?? 18,
       maxAge: preferences?.maxAge ?? 99,
+      ageIsDealbreaker: preferences?.ageIsDealbreaker ?? false,
       genderPreferences: preferences?.genderPreferences ?? ['WOMAN', 'MAN', 'NON_BINARY', 'OTHER'],
       maxDistanceKm: preferences?.maxDistanceKm ?? 50,
+      distanceIsDealbreaker: preferences?.distanceIsDealbreaker ?? false,
       relationshipIntent: preferences?.relationshipIntent ?? 'LONG_TERM',
+      intentIsDealbreaker: preferences?.intentIsDealbreaker ?? false,
+      familyPlans: preferences?.familyPlans ?? null,
+      familyPlansIsDealbreaker: preferences?.familyPlansIsDealbreaker ?? false,
     };
   }
 

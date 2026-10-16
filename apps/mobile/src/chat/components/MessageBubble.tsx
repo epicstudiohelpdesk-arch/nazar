@@ -143,9 +143,59 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           },
         ]}
       >
-        <Text variant="body" style={{ color: textColor, lineHeight: 20 }}>
-          {message.body}
-        </Text>
+        {message.messageType === 'AUDIO' ? (
+          <View style={styles.audioRow}>
+            <View
+              style={[
+                styles.audioPlayBtn,
+                { backgroundColor: isCurrentUser ? 'rgba(255,255,255,0.25)' : colors.accentSoft },
+              ]}
+            >
+              <Icon
+                name="mic"
+                size="sm"
+                color={isCurrentUser ? '#FFFFFF' : colors.accent}
+              />
+            </View>
+            <View style={styles.audioWaveform}>
+              <View style={styles.waveformBars}>
+                {((message.waveformPeaks && message.waveformPeaks.length > 0)
+                  ? message.waveformPeaks.slice(0, 20)
+                  : [0.3, 0.6, 0.9, 0.4, 0.7, 0.5, 0.8, 1.0, 0.6, 0.3, 0.5, 0.7, 0.4, 0.6, 0.8]
+                ).map((peak, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.waveformBar,
+                      {
+                        height: Math.max(4, Math.round(peak * 24)),
+                        backgroundColor: isCurrentUser
+                          ? 'rgba(255,255,255,0.85)'
+                          : colors.accent,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+              <Text
+                variant="caption"
+                style={{
+                  color: isCurrentUser ? 'rgba(255,255,255,0.8)' : colors.textSecondary,
+                  fontSize: 11,
+                  marginTop: 2,
+                }}
+              >
+                {message.durationSeconds
+                  ? `${Math.floor(message.durationSeconds / 60)}:${(message.durationSeconds % 60).toString().padStart(2, '0')}`
+                  : '0:15'}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <Text variant="body" style={{ color: textColor, lineHeight: 20 }}>
+            {message.body}
+          </Text>
+        )}
 
         <View style={styles.metaRow}>
           <Text variant="caption" style={{ color: timeColor, fontSize: 11 }}>
@@ -206,5 +256,33 @@ const styles = StyleSheet.create({
   retryButton: {
     paddingHorizontal: 2,
     paddingVertical: 1,
+  },
+  audioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    minWidth: 160,
+  },
+  audioPlayBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  audioWaveform: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  waveformBars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 24,
+    gap: 3,
+  },
+  waveformBar: {
+    width: 3,
+    borderRadius: 1.5,
   },
 });

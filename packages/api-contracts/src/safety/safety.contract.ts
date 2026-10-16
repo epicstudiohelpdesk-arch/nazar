@@ -110,3 +110,61 @@ export interface ReportResponseDto {
   readonly createdAt: string;
   readonly resolvedAt?: string | null;
 }
+
+export interface BlockedContactItemDto {
+  readonly id: string;
+  readonly phoneHash: string;
+  readonly label?: string | null;
+  readonly createdAt: string;
+}
+
+export interface BlockContactsRequestDto {
+  readonly contacts: readonly {
+    readonly phoneHash: string;
+    readonly label?: string | null;
+  }[];
+}
+
+export interface BlockContactsResponseDto {
+  readonly success: boolean;
+  readonly addedCount: number;
+  readonly totalBlockedCount: number;
+}
+
+export interface BlockedContactsListResponseDto {
+  readonly items: readonly BlockedContactItemDto[];
+  readonly totalCount: number;
+}
+
+export type VerificationGesture =
+  | 'HEAD_TURN_LEFT'
+  | 'HEAD_TURN_RIGHT'
+  | 'PEACE_SIGN'
+  | 'SMILE'
+  | 'THUMBS_UP';
+
+export interface VerificationChallengeResponseDto {
+  readonly challengeToken: string;
+  readonly gesture: VerificationGesture;
+  readonly gesturePrompt: string;
+  readonly expiresAt: string;
+}
+
+export interface SubmitVerificationRequestDto {
+  readonly challengeToken: string;
+  readonly selfiePhotoUrl: string;
+  readonly gesture: VerificationGesture;
+}
+
+export interface SubmitVerificationResponseDto {
+  readonly success: boolean;
+  readonly isVerified: boolean;
+  readonly message: string;
+  readonly verifiedAt: string;
+}
+
+export interface VerificationStatusResponseDto {
+  readonly isVerified: boolean;
+  readonly verifiedAt?: string | null;
+}
+

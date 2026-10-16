@@ -4,6 +4,7 @@ import { InterestsController } from './interests.controller.js';
 import { PromptsController } from './prompts.controller.js';
 import { ProfileService } from './services/profile.service.js';
 import { MediaService } from './services/media.service.js';
+import { SmartPhotosService } from './services/smart-photos.service.js';
 import { ProfileRepository, PROFILE_REPOSITORY_TOKEN } from './repositories/profile.repository.js';
 import {
   PreferencesRepository,
@@ -15,6 +16,7 @@ import {
 } from './repositories/interest.repository.js';
 import { PromptRepository, PROMPT_REPOSITORY_TOKEN } from './repositories/prompt.repository.js';
 import { MediaRepository, MEDIA_REPOSITORY_TOKEN } from './repositories/media.repository.js';
+import { PhotoBanditRepository } from './repositories/photo-bandit.repository.js';
 
 @Module({
   controllers: [ProfilesController, InterestsController, PromptsController],
@@ -44,12 +46,16 @@ import { MediaRepository, MEDIA_REPOSITORY_TOKEN } from './repositories/media.re
       provide: MEDIA_REPOSITORY_TOKEN,
       useClass: MediaRepository,
     },
+    PhotoBanditRepository,
     ProfileService,
     MediaService,
+    SmartPhotosService,
   ],
   exports: [
     ProfileService,
     MediaService,
+    SmartPhotosService,
+    PhotoBanditRepository,
     PROFILE_REPOSITORY_TOKEN,
     PREFERENCES_REPOSITORY_TOKEN,
     INTEREST_REPOSITORY_TOKEN,
