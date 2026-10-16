@@ -244,13 +244,10 @@ export function createProfileApi(authClient: AuthClient, customFetch?: typeof fe
     },
 
     async toggleSmartPhotos(enabled: boolean): Promise<{ enabled: boolean }> {
-      const res = await authClient.request<{ enabled: boolean }>(
-        '/v1/profiles/me/smart-photos',
-        {
-          method: 'POST',
-          body: JSON.stringify({ enabled }),
-        }
-      );
+      const res = await authClient.request<{ enabled: boolean }>('/v1/profiles/me/smart-photos', {
+        method: 'POST',
+        body: JSON.stringify({ enabled }),
+      });
       if (!res.success) throw new Error(res.error.message);
       return res.data;
     },
@@ -259,9 +256,7 @@ export function createProfileApi(authClient: AuthClient, customFetch?: typeof fe
     // Passport & Travel Mode (Feature 3.3)
     // ----------------------------------------------------
     async getPassportLocation(): Promise<PassportLocationResponseDto> {
-      const res = await authClient.request<PassportLocationResponseDto>(
-        '/v1/profiles/me/passport'
-      );
+      const res = await authClient.request<PassportLocationResponseDto>('/v1/profiles/me/passport');
       if (!res.success) throw new Error(res.error.message);
       return res.data;
     },

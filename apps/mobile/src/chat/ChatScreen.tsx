@@ -538,7 +538,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ conversationId, authClie
       try {
         await callingApi.endCall(activeCallSessionId);
         trackOnboardingEvent('call_ended', { conversationId, callSessionId: activeCallSessionId });
-      } catch {}
+      } catch {
+        // Silently ignore end call failure on local hangup
+      }
     }
     setActiveCallSessionId(null);
     setIsCallModalVisible(false);

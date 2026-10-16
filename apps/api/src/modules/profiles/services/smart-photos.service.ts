@@ -9,10 +9,7 @@ import {
   PROFILE_REPOSITORY_TOKEN,
   type IProfileRepository,
 } from '../repositories/profile.repository.js';
-import {
-  MEDIA_REPOSITORY_TOKEN,
-  type IMediaRepository,
-} from '../repositories/media.repository.js';
+import { MEDIA_REPOSITORY_TOKEN, type IMediaRepository } from '../repositories/media.repository.js';
 import { PhotoBanditRepository } from '../repositories/photo-bandit.repository.js';
 
 @Injectable()
@@ -58,9 +55,7 @@ export class SmartPhotosService {
       this.banditRepo.findStatsByUserId(userId),
     ]);
 
-    const activePhotos = mediaItems.filter(
-      (m) => m.status === 'READY' && m.mediaType === 'IMAGE'
-    );
+    const activePhotos = mediaItems.filter((m) => m.status === 'READY' && m.mediaType === 'IMAGE');
 
     const statsMap = new Map(banditStats.map((s) => [s.mediaId, s]));
 
@@ -138,9 +133,7 @@ export class SmartPhotosService {
       this.banditRepo.findStatsByUserId(userId),
     ]);
 
-    const activePhotos = mediaItems.filter(
-      (m) => m.status === 'READY' && m.mediaType === 'IMAGE'
-    );
+    const activePhotos = mediaItems.filter((m) => m.status === 'READY' && m.mediaType === 'IMAGE');
 
     if (activePhotos.length < 2) {
       return; // Need at least 2 photos to optimize

@@ -210,7 +210,8 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
               <View style={{ flex: 1 }}>
                 <Text level="title">Discreet Spreadsheet Disguise</Text>
                 <Text level="bodySmall" color="secondary" style={{ marginTop: 2 }}>
-                  Instantly masks dating UI with a realistic financial spreadsheet view when browsing in public or at work.
+                  Instantly masks dating UI with a realistic financial spreadsheet view when
+                  browsing in public or at work.
                 </Text>
               </View>
               <Icon name="eyeOff" size={18} color={theme.colors.accent} />
@@ -258,7 +259,10 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
                         marginLeft: 8,
                       }}
                     >
-                      <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '700' }}>
+                      <Text
+                        level="caption"
+                        style={{ color: theme.colors.accent, fontWeight: '700' }}
+                      >
                         ACTIVE
                       </Text>
                     </View>
@@ -309,10 +313,7 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
       />
 
       {/* Work Mode Overlay Disguise */}
-      <WorkModeOverlay
-        visible={isWorkModeVisible}
-        onClose={() => setIsWorkModeVisible(false)}
-      />
+      <WorkModeOverlay visible={isWorkModeVisible} onClose={() => setIsWorkModeVisible(false)} />
     </SafeAreaView>
   );
 }

@@ -1,12 +1,6 @@
 export type CallType = 'AUDIO' | 'VIDEO';
 
-export type CallStatus =
-  | 'RINGING'
-  | 'CONNECTED'
-  | 'ENDED'
-  | 'DECLINED'
-  | 'MISSED'
-  | 'BUSY';
+export type CallStatus = 'RINGING' | 'CONNECTED' | 'ENDED' | 'DECLINED' | 'MISSED' | 'BUSY';
 
 export interface InitiateCallRequestDto {
   readonly conversationId: string;

@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Modal,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../../design/theme/index.js';
 import { Heading } from '../../design/primitives/Heading.js';
@@ -15,10 +8,7 @@ import { Icon } from '../../design/primitives/Icon.js';
 import { SurfaceCard } from '../../design/primitives/SurfaceCard.js';
 import { Button } from '../../design/components/button/Button.js';
 import { haptics } from '../../design/haptics/index.js';
-import {
-  getDefaultSafetyApi,
-  invalidateSafetyCaches,
-} from '../safety-api.js';
+import { getDefaultSafetyApi, invalidateSafetyCaches } from '../safety-api.js';
 
 export interface PhotoVerificationModalProps {
   readonly visible: boolean;
@@ -97,18 +87,10 @@ export const PhotoVerificationModal: React.FC<PhotoVerificationModalProps> = ({
     >
       <View style={styles.overlay}>
         <View style={styles.backdrop} />
-        <SurfaceCard
-          elevation="lg"
-          style={[styles.card, { backgroundColor: colors.surface }]}
-        >
+        <SurfaceCard elevation="lg" style={[styles.card, { backgroundColor: colors.surface }]}>
           {/* Header */}
           <View style={styles.headerRow}>
-            <View
-              style={[
-                styles.badgeBox,
-                { backgroundColor: colors.accentSoft },
-              ]}
-            >
+            <View style={[styles.badgeBox, { backgroundColor: colors.accentSoft }]}>
               <Icon name="shield" size="md" color={colors.accent} />
             </View>
             <TouchableOpacity
@@ -131,7 +113,8 @@ export const PhotoVerificationModal: React.FC<PhotoVerificationModalProps> = ({
             color="secondary"
             style={{ textAlign: 'center', marginBottom: spacing.lg }}
           >
-            Prove you are genuinely you. Match the dynamic selfie pose below to earn the Verified badge.
+            Prove you are genuinely you. Match the dynamic selfie pose below to earn the Verified
+            badge.
           </Text>
 
           {challengeQuery.isLoading ? (
@@ -160,7 +143,12 @@ export const PhotoVerificationModal: React.FC<PhotoVerificationModalProps> = ({
                   <Icon name="user" size="lg" color={colors.accent} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text variant="caption" weight="bold" color="accent" style={{ textTransform: 'uppercase' }}>
+                  <Text
+                    variant="caption"
+                    weight="bold"
+                    color="accent"
+                    style={{ textTransform: 'uppercase' }}
+                  >
                     Assigned Pose: {challenge.gesture.replace(/_/g, ' ')}
                   </Text>
                   <Text variant="bodySmall" color="primary" style={{ marginTop: 2 }}>
@@ -184,7 +172,12 @@ export const PhotoVerificationModal: React.FC<PhotoVerificationModalProps> = ({
                 {hasCaptured ? (
                   <View style={styles.capturedState}>
                     <Icon name="check" size="lg" color={colors.success} />
-                    <Text variant="bodySmall" weight="semibold" color="success" style={{ marginTop: 4 }}>
+                    <Text
+                      variant="bodySmall"
+                      weight="semibold"
+                      color="success"
+                      style={{ marginTop: 4 }}
+                    >
                       Pose Captured!
                     </Text>
                     <Text variant="caption" color="secondary">
@@ -200,7 +193,12 @@ export const PhotoVerificationModal: React.FC<PhotoVerificationModalProps> = ({
                     testID="btn-capture-selfie"
                   >
                     <Icon name="camera" size="lg" color={colors.accent} />
-                    <Text variant="bodySmall" weight="medium" color="accent" style={{ marginTop: 6 }}>
+                    <Text
+                      variant="bodySmall"
+                      weight="medium"
+                      color="accent"
+                      style={{ marginTop: 6 }}
+                    >
                       Tap to Take Selfie
                     </Text>
                   </TouchableOpacity>

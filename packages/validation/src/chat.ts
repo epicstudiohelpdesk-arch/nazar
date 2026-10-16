@@ -13,11 +13,7 @@ export const sendMessageSchema = z
       .trim()
       .min(1, 'Client message ID cannot be empty')
       .max(64, 'Client message ID cannot exceed 64 characters'),
-    body: z
-      .string()
-      .trim()
-      .max(2000, 'Message body cannot exceed 2000 characters')
-      .default(''),
+    body: z.string().trim().max(2000, 'Message body cannot exceed 2000 characters').default(''),
     messageType: z.enum(['TEXT', 'IMAGE', 'AUDIO', 'SYSTEM'] as const).default('TEXT'),
     mediaUrl: z.string().url('Invalid media URL').optional(),
     durationSeconds: z.number().int().min(1).max(300).optional(),

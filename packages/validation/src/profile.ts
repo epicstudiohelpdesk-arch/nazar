@@ -185,10 +185,7 @@ export const setPassportLocationSchema = z
   .refine(
     (data) => {
       if (data.enabled) {
-        return (
-          typeof data.latitude === 'number' &&
-          typeof data.longitude === 'number'
-        );
+        return typeof data.latitude === 'number' && typeof data.longitude === 'number';
       }
       return true;
     },
@@ -265,10 +262,9 @@ export const updatePromptsSchema = z.object({
       })
     )
     .max(3, 'Maximum 3 prompts allowed')
-    .refine(
-      (prompts) => {
-        const ids = new Set(prompts.map((p) => p.promptDefinitionId));
-        return ids.size === prompts.length;
+    .refine((prompts) => {
+      const ids = new Set(prompts.map((p) => p.promptDefinitionId));
+      return ids.size === prompts.length;
     }),
 });
 export const createAudioPromptSchema = z.object({

@@ -118,13 +118,10 @@ export function createSafetyApi(authClient: AuthClient) {
     },
 
     async blockContacts(payload: BlockContactsRequestDto): Promise<BlockContactsResponseDto> {
-      const res = await authClient.request<BlockContactsResponseDto>(
-        '/v1/users/blocked-contacts',
-        {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await authClient.request<BlockContactsResponseDto>('/v1/users/blocked-contacts', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
       if (!res.success) {
         throw new Error(res.error?.message || 'Failed to block contacts');
       }
@@ -190,16 +187,11 @@ export function createSafetyApi(authClient: AuthClient) {
       return res.data;
     },
 
-    async createDateCheckin(
-      payload: CreateDateCheckinRequestDto
-    ): Promise<DateCheckinResponseDto> {
-      const res = await authClient.request<DateCheckinResponseDto>(
-        '/v1/safety/date-checkin',
-        {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        }
-      );
+    async createDateCheckin(payload: CreateDateCheckinRequestDto): Promise<DateCheckinResponseDto> {
+      const res = await authClient.request<DateCheckinResponseDto>('/v1/safety/date-checkin', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
       if (!res.success) {
         throw new Error(res.error?.message || 'Failed to create date check-in');
       }
@@ -230,13 +222,10 @@ export function createSafetyApi(authClient: AuthClient) {
     },
 
     async triggerSos(payload: TriggerSosRequestDto): Promise<TriggerSosResponseDto> {
-      const res = await authClient.request<TriggerSosResponseDto>(
-        '/v1/safety/sos',
-        {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await authClient.request<TriggerSosResponseDto>('/v1/safety/sos', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
       if (!res.success) {
         throw new Error(res.error?.message || 'Failed to trigger SOS');
       }

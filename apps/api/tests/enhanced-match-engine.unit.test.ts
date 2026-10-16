@@ -5,7 +5,10 @@ import type { IMatchesRepository } from '../src/modules/matches/repositories/mat
 import type { IProfileRepository } from '../src/modules/profiles/repositories/profile.repository.js';
 import type { IInterestRepository } from '../src/modules/profiles/repositories/interest.repository.js';
 import type { SafetyEnforcementService } from '../src/modules/safety/services/safety-enforcement.service.js';
-import type { DatabaseService, DrizzleDatabase } from '../src/infrastructure/database/database.service.js';
+import type {
+  DatabaseService,
+  DrizzleDatabase,
+} from '../src/infrastructure/database/database.service.js';
 
 describe('Enhanced Match Engine Unit Tests', () => {
   let interactionsService: InteractionsService;
@@ -75,14 +78,42 @@ describe('Enhanced Match Engine Unit Tests', () => {
       findByProfileId: vi.fn().mockImplementation((profileId: string) => {
         if (profileId === actorProfileId) {
           return Promise.resolve([
-            { id: '1', name: 'Bouldering', slug: 'bouldering', category: 'SPORTS', status: 'ACTIVE', createdAt: new Date() },
-            { id: '2', name: 'Indie Rock', slug: 'indie-rock', category: 'MUSIC', status: 'ACTIVE', createdAt: new Date() },
+            {
+              id: '1',
+              name: 'Bouldering',
+              slug: 'bouldering',
+              category: 'SPORTS',
+              status: 'ACTIVE',
+              createdAt: new Date(),
+            },
+            {
+              id: '2',
+              name: 'Indie Rock',
+              slug: 'indie-rock',
+              category: 'MUSIC',
+              status: 'ACTIVE',
+              createdAt: new Date(),
+            },
           ]);
         }
         if (profileId === targetProfileId) {
           return Promise.resolve([
-            { id: '1', name: 'Bouldering', slug: 'bouldering', category: 'SPORTS', status: 'ACTIVE', createdAt: new Date() },
-            { id: '3', name: 'Coffee', slug: 'coffee', category: 'FOOD', status: 'ACTIVE', createdAt: new Date() },
+            {
+              id: '1',
+              name: 'Bouldering',
+              slug: 'bouldering',
+              category: 'SPORTS',
+              status: 'ACTIVE',
+              createdAt: new Date(),
+            },
+            {
+              id: '3',
+              name: 'Coffee',
+              slug: 'coffee',
+              category: 'FOOD',
+              status: 'ACTIVE',
+              createdAt: new Date(),
+            },
           ]);
         }
         return Promise.resolve([]);
@@ -181,11 +212,25 @@ describe('Enhanced Match Engine Unit Tests', () => {
     vi.mocked(mockInterestRepo.findByProfileId!).mockImplementation((profileId: string) => {
       if (profileId === actorProfileId) {
         return Promise.resolve([
-          { id: '1', name: 'Chess', slug: 'chess', category: 'GAMES', status: 'ACTIVE', createdAt: new Date() },
+          {
+            id: '1',
+            name: 'Chess',
+            slug: 'chess',
+            category: 'GAMES',
+            status: 'ACTIVE',
+            createdAt: new Date(),
+          },
         ]);
       }
       return Promise.resolve([
-        { id: '2', name: 'Scuba Diving', slug: 'scuba', category: 'SPORTS', status: 'ACTIVE', createdAt: new Date() },
+        {
+          id: '2',
+          name: 'Scuba Diving',
+          slug: 'scuba',
+          category: 'SPORTS',
+          status: 'ACTIVE',
+          createdAt: new Date(),
+        },
       ]);
     });
 

@@ -206,10 +206,7 @@ export class PromptRepository implements IPromptRepository {
     const result = await client
       .delete(profileAudioPrompts)
       .where(
-        and(
-          eq(profileAudioPrompts.id, audioPromptId),
-          eq(profileAudioPrompts.profileId, profileId)
-        )
+        and(eq(profileAudioPrompts.id, audioPromptId), eq(profileAudioPrompts.profileId, profileId))
       )
       .returning({ id: profileAudioPrompts.id });
     return result.length > 0;

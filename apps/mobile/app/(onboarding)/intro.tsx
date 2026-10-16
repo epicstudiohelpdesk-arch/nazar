@@ -105,7 +105,10 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
                   <Text level="label" style={{ color: theme.colors.accent, fontWeight: '700' }}>
                     STEP {step.number}
                   </Text>
-                  <Text level="title" style={{ color: theme.colors.textPrimary, fontWeight: '700' }}>
+                  <Text
+                    level="title"
+                    style={{ color: theme.colors.textPrimary, fontWeight: '700' }}
+                  >
                     {step.title}
                   </Text>
                 </View>

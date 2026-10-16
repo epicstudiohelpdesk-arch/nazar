@@ -91,11 +91,7 @@ export class PhotoBanditRepository {
     return row;
   }
 
-  async updateScore(
-    mediaId: string,
-    score: number,
-    tx?: DrizzleDatabase
-  ): Promise<void> {
+  async updateScore(mediaId: string, score: number, tx?: DrizzleDatabase): Promise<void> {
     const client = this.getClient(tx);
     await client
       .update(photoBanditStats)
@@ -103,14 +99,8 @@ export class PhotoBanditRepository {
       .where(eq(photoBanditStats.mediaId, mediaId));
   }
 
-  async findStatsByUserId(
-    userId: string,
-    tx?: DrizzleDatabase
-  ): Promise<PhotoBanditStatRow[]> {
+  async findStatsByUserId(userId: string, tx?: DrizzleDatabase): Promise<PhotoBanditStatRow[]> {
     const client = this.getClient(tx);
-    return client
-      .select()
-      .from(photoBanditStats)
-      .where(eq(photoBanditStats.userId, userId));
+    return client.select().from(photoBanditStats).where(eq(photoBanditStats.userId, userId));
   }
 }

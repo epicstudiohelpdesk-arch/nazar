@@ -495,7 +495,9 @@ export default function EditProfileRoute(): React.JSX.Element {
             <View style={[styles.sectionIconCircle, { backgroundColor: theme.colors.accentSoft }]}>
               <Icon name="heart" size="sm" color={theme.colors.accent} />
             </View>
-            <Heading level="h3" style={{ flex: 1 }}>Personality Prompts ({prompts.length}/3)</Heading>
+            <Heading level="h3" style={{ flex: 1 }}>
+              Personality Prompts ({prompts.length}/3)
+            </Heading>
             {prompts.length < 3 && (
               <Button
                 variant="tertiary"

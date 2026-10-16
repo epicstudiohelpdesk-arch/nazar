@@ -60,9 +60,7 @@ export const RsvpComponent: React.FC<RsvpComponentProps> = ({
   const [isPlusOne, setIsPlusOne] = React.useState<boolean>(
     event.currentUserLookingForPlusOne ?? false
   );
-  const [plusOneNote, setPlusOneNote] = React.useState<string>(
-    event.currentUserPlusOneNote ?? ''
-  );
+  const [plusOneNote, setPlusOneNote] = React.useState<string>(event.currentUserPlusOneNote ?? '');
 
   React.useEffect(() => {
     setIsPlusOne(event.currentUserLookingForPlusOne ?? false);
@@ -274,7 +272,8 @@ export const RsvpComponent: React.FC<RsvpComponentProps> = ({
                 {isPlusOne ? <Badge label="Active" variant="accent" size="sm" /> : null}
               </View>
               <Text variant="caption" color="secondary" style={{ marginTop: 2 }}>
-                Feature your profile to other attendees and in the discovery feed looking for an event date.
+                Feature your profile to other attendees and in the discovery feed looking for an
+                event date.
               </Text>
             </View>
             <Switch

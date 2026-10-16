@@ -59,11 +59,7 @@ export class BlockedContactsRepository implements IBlockedContactsRepository {
     return { addedCount, totalCount };
   }
 
-  async unblockContact(
-    userId: string,
-    phoneHash: string,
-    tx?: DrizzleDatabase
-  ): Promise<boolean> {
+  async unblockContact(userId: string, phoneHash: string, tx?: DrizzleDatabase): Promise<boolean> {
     const client = this.getClient(tx);
     const deleted = await client
       .delete(blockedContacts)

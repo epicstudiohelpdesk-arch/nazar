@@ -23,10 +23,7 @@ export class CallingRepository {
     return tx || this.databaseService.client;
   }
 
-  async createCallSession(
-    row: NewCallSessionRow,
-    tx?: DrizzleDatabase
-  ): Promise<CallSessionRow> {
+  async createCallSession(row: NewCallSessionRow, tx?: DrizzleDatabase): Promise<CallSessionRow> {
     const client = this.getClient(tx);
     const [inserted] = await client.insert(callSessions).values(row).returning();
     if (!inserted) {
@@ -35,16 +32,9 @@ export class CallingRepository {
     return inserted;
   }
 
-  async findCallSessionById(
-    id: string,
-    tx?: DrizzleDatabase
-  ): Promise<CallSessionRow | null> {
+  async findCallSessionById(id: string, tx?: DrizzleDatabase): Promise<CallSessionRow | null> {
     const client = this.getClient(tx);
-    const rows = await client
-      .select()
-      .from(callSessions)
-      .where(eq(callSessions.id, id))
-      .limit(1);
+    const rows = await client.select().from(callSessions).where(eq(callSessions.id, id)).limit(1);
     return rows[0] || null;
   }
 
@@ -78,12 +68,7 @@ export class CallingRepository {
     const [res] = await client
       .select({ val: count() })
       .from(messages)
-      .where(
-        and(
-          eq(messages.conversationId, conversationId),
-          eq(messages.senderUserId, userId)
-        )
-      );
+      .where(and(eq(messages.conversationId, conversationId), eq(messages.senderUserId, userId)));
     return Number(res?.val || 0);
   }
 }

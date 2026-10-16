@@ -195,13 +195,18 @@ export class ProfileService {
       if (payload.education !== undefined) updateData.education = payload.education;
       if (payload.city !== undefined) updateData.city = payload.city;
       if (payload.countryCode !== undefined) updateData.countryCode = payload.countryCode;
-      if (payload.relationshipIntent !== undefined) updateData.relationshipIntent = payload.relationshipIntent;
+      if (payload.relationshipIntent !== undefined)
+        updateData.relationshipIntent = payload.relationshipIntent;
       if (payload.familyPlans !== undefined) updateData.familyPlans = payload.familyPlans;
-      if (payload.incognitoMode !== undefined && payload.incognitoMode !== null) updateData.incognitoMode = payload.incognitoMode;
-      if (payload.smartPhotos !== undefined && payload.smartPhotos !== null) updateData.smartPhotos = payload.smartPhotos;
-      if (payload.travelMode !== undefined && payload.travelMode !== null) updateData.travelMode = payload.travelMode;
+      if (payload.incognitoMode !== undefined && payload.incognitoMode !== null)
+        updateData.incognitoMode = payload.incognitoMode;
+      if (payload.smartPhotos !== undefined && payload.smartPhotos !== null)
+        updateData.smartPhotos = payload.smartPhotos;
+      if (payload.travelMode !== undefined && payload.travelMode !== null)
+        updateData.travelMode = payload.travelMode;
       if (payload.travelLatitude !== undefined) updateData.travelLatitude = payload.travelLatitude;
-      if (payload.travelLongitude !== undefined) updateData.travelLongitude = payload.travelLongitude;
+      if (payload.travelLongitude !== undefined)
+        updateData.travelLongitude = payload.travelLongitude;
       if (payload.travelCity !== undefined) updateData.travelCity = payload.travelCity;
       if (payload.travelCountry !== undefined) updateData.travelCountry = payload.travelCountry;
 

@@ -286,9 +286,7 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
                         styles.storyBarTrack,
                         {
                           backgroundColor:
-                            idx === activePhotoIndex
-                              ? '#FFFFFF'
-                              : 'rgba(255, 255, 255, 0.4)',
+                            idx === activePhotoIndex ? '#FFFFFF' : 'rgba(255, 255, 255, 0.4)',
                         },
                       ]}
                     />
@@ -321,7 +319,12 @@ export const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
                   { backgroundColor: 'rgba(0, 0, 0, 0.72)', borderColor: theme.colors.accent },
                 ]}
               >
-                <Icon name="heart" size="tiny" color={theme.colors.accent} fill={theme.colors.accent} />
+                <Icon
+                  name="heart"
+                  size="tiny"
+                  color={theme.colors.accent}
+                  fill={theme.colors.accent}
+                />
                 <Text level="caption" style={{ color: '#FFFFFF', fontWeight: '600' }}>
                   Matched on {formattedDate}
                 </Text>

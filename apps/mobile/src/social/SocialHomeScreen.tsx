@@ -103,7 +103,12 @@ export const SocialHomeScreen: React.FC<SocialHomeScreenProps> = ({ client }) =>
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={[
         styles.content,
-        { paddingBottom: spacing.xl, maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        {
+          paddingBottom: spacing.xl,
+          maxWidth: maxContentWidth,
+          width: '100%',
+          alignSelf: 'center',
+        },
       ]}
       showsVerticalScrollIndicator={false}
       testID="social-home"

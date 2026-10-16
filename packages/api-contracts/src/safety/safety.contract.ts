@@ -137,11 +137,7 @@ export interface BlockedContactsListResponseDto {
 }
 
 export type VerificationGesture =
-  | 'HEAD_TURN_LEFT'
-  | 'HEAD_TURN_RIGHT'
-  | 'PEACE_SIGN'
-  | 'SMILE'
-  | 'THUMBS_UP';
+  'HEAD_TURN_LEFT' | 'HEAD_TURN_RIGHT' | 'PEACE_SIGN' | 'SMILE' | 'THUMBS_UP';
 
 export interface VerificationChallengeResponseDto {
   readonly challengeToken: string;
@@ -167,4 +163,3 @@ export interface VerificationStatusResponseDto {
   readonly isVerified: boolean;
   readonly verifiedAt?: string | null;
 }
-

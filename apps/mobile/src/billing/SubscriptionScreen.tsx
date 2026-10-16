@@ -236,7 +236,12 @@ export function SubscriptionScreen({
         testID="subscription-header"
       />
 
-      <ScrollView contentContainerStyle={[styles.content, { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' }]}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+      >
         {/* Error Banner */}
         {errorMessage && (
           <Banner

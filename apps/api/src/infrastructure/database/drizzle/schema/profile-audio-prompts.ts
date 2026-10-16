@@ -1,4 +1,13 @@
-import { pgTable, uuid, text, integer, jsonb, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  text,
+  integer,
+  jsonb,
+  timestamp,
+  uniqueIndex,
+  index,
+} from 'drizzle-orm/pg-core';
 import { profiles } from './profiles.js';
 import { profilePromptDefinitions } from './profile-prompt-definitions.js';
 

@@ -40,7 +40,12 @@ import { DateSafetyController } from './controllers/date-safety.controller.js';
 
 @Module({
   imports: [InfrastructureModule, forwardRef(() => AuthModule), forwardRef(() => ProfilesModule)],
-  controllers: [BlockingController, ReportingController, VerificationController, DateSafetyController],
+  controllers: [
+    BlockingController,
+    ReportingController,
+    VerificationController,
+    DateSafetyController,
+  ],
   providers: [
     UserBlocksRepository,
     {

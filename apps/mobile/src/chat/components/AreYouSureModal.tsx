@@ -41,17 +41,9 @@ export const AreYouSureModal: React.FC<AreYouSureModalProps> = ({
     >
       <View style={styles.overlay}>
         <View style={styles.backdrop} />
-        <SurfaceCard
-          elevation="lg"
-          style={[styles.card, { backgroundColor: colors.surface }]}
-        >
+        <SurfaceCard elevation="lg" style={[styles.card, { backgroundColor: colors.surface }]}>
           {/* Header Icon */}
-          <View
-            style={[
-              styles.iconWrapper,
-              { backgroundColor: colors.warningSoft },
-            ]}
-          >
+          <View style={[styles.iconWrapper, { backgroundColor: colors.warningSoft }]}>
             <Icon name="shield" size="md" color={colors.warning} />
           </View>
 
@@ -82,7 +74,12 @@ export const AreYouSureModal: React.FC<AreYouSureModalProps> = ({
                 },
               ]}
             >
-              <Text variant="caption" weight="medium" color="warning" style={{ textAlign: 'center' }}>
+              <Text
+                variant="caption"
+                weight="medium"
+                color="warning"
+                style={{ textAlign: 'center' }}
+              >
                 {reason}
               </Text>
             </View>

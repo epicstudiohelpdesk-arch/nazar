@@ -17,16 +17,9 @@ export interface IVerificationRepository {
     tx?: DrizzleDatabase
   ): Promise<PhotoVerificationRow>;
 
-  getLatestVerification(
-    userId: string,
-    tx?: DrizzleDatabase
-  ): Promise<PhotoVerificationRow | null>;
+  getLatestVerification(userId: string, tx?: DrizzleDatabase): Promise<PhotoVerificationRow | null>;
 
-  markProfileVerified(
-    userId: string,
-    verifiedAt: Date,
-    tx?: DrizzleDatabase
-  ): Promise<boolean>;
+  markProfileVerified(userId: string, verifiedAt: Date, tx?: DrizzleDatabase): Promise<boolean>;
 
   getProfileVerificationStatus(
     userId: string,

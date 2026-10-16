@@ -8,21 +8,11 @@ export interface IBlockedContactsRepository {
     tx?: DrizzleDatabase
   ): Promise<{ addedCount: number; totalCount: number }>;
 
-  unblockContact(
-    userId: string,
-    phoneHash: string,
-    tx?: DrizzleDatabase
-  ): Promise<boolean>;
+  unblockContact(userId: string, phoneHash: string, tx?: DrizzleDatabase): Promise<boolean>;
 
-  listBlockedContacts(
-    userId: string,
-    tx?: DrizzleDatabase
-  ): Promise<readonly BlockedContactRow[]>;
+  listBlockedContacts(userId: string, tx?: DrizzleDatabase): Promise<readonly BlockedContactRow[]>;
 
-  getAllBlockedContactUserIds(
-    userId: string,
-    tx?: DrizzleDatabase
-  ): Promise<readonly string[]>;
+  getAllBlockedContactUserIds(userId: string, tx?: DrizzleDatabase): Promise<readonly string[]>;
 }
 
 export const BLOCKED_CONTACTS_REPOSITORY_TOKEN = Symbol('IBlockedContactsRepository');

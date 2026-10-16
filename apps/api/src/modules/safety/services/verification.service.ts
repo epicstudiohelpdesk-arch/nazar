@@ -9,9 +9,7 @@ import {
   type VerificationStatusResponseDto,
 } from '@platform/api-contracts';
 import type { SubmitVerificationInput } from '@platform/validation';
-import {
-  DatabaseService,
-} from '../../../infrastructure/database/database.service.js';
+import { DatabaseService } from '../../../infrastructure/database/database.service.js';
 import { VerificationRepository } from '../repositories/verification.repository.js';
 
 const GESTURE_PROMPTS: Record<VerificationGesture, string> = {
@@ -30,7 +28,8 @@ const GESTURES: readonly VerificationGesture[] = [
   'THUMBS_UP',
 ];
 
-const CHALLENGE_SECRET = process.env.VERIFICATION_SECRET || 'nazar-kyc-liveness-secret-token-key-2026';
+const CHALLENGE_SECRET =
+  process.env.VERIFICATION_SECRET || 'nazar-kyc-liveness-secret-token-key-2026';
 const TOKEN_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 @Injectable()
@@ -49,9 +48,7 @@ export class VerificationService {
     const expiresAt = new Date(expiresAtMs).toISOString();
 
     const payload = `${userId}:${gesture}:${expiresAtMs}`;
-    const signature = createHmac('sha256', CHALLENGE_SECRET)
-      .update(payload)
-      .digest('hex');
+    const signature = createHmac('sha256', CHALLENGE_SECRET).update(payload).digest('hex');
 
     const challengeToken = `${payload}:${signature}`;
 
@@ -131,7 +128,8 @@ export class VerificationService {
     return {
       success: true,
       isVerified: true,
-      message: 'Selfie pose verified successfully! Your profile has been granted the Verified badge.',
+      message:
+        'Selfie pose verified successfully! Your profile has been granted the Verified badge.',
       verifiedAt: verifiedAt.toISOString(),
     };
   }

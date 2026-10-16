@@ -104,34 +104,17 @@ const TabButton: React.FC<TabButtonProps> = ({
 
     if (routeName === 'messages/index') {
       return (
-        <Icon
-          name="message"
-          size={21}
-          color={iconColor}
-          strokeWidth={isFocused ? 2.2 : 1.9}
-        />
+        <Icon name="message" size={21} color={iconColor} strokeWidth={isFocused ? 2.2 : 1.9} />
       );
     }
 
     if (routeName === 'explore/index') {
       return (
-        <Icon
-          name="compass"
-          size={21}
-          color={iconColor}
-          strokeWidth={isFocused ? 2.2 : 1.9}
-        />
+        <Icon name="compass" size={21} color={iconColor} strokeWidth={isFocused ? 2.2 : 1.9} />
       );
     }
 
-    return (
-      <Icon
-        name="user"
-        size={21}
-        color={iconColor}
-        strokeWidth={isFocused ? 2.2 : 1.9}
-      />
-    );
+    return <Icon name="user" size={21} color={iconColor} strokeWidth={isFocused ? 2.2 : 1.9} />;
   };
 
   return (
@@ -156,10 +139,7 @@ const TabButton: React.FC<TabButtonProps> = ({
       >
         {renderIcon()}
         <Animated.Text
-          style={[
-            styles.tabLabel,
-            isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
-          ]}
+          style={[styles.tabLabel, isFocused ? styles.tabLabelActive : styles.tabLabelInactive]}
           numberOfLines={1}
         >
           {config.label}

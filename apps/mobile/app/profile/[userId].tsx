@@ -209,7 +209,10 @@ export default function PublicProfileRoute(): React.JSX.Element {
       ) : (
         <View style={styles.bodyWrapper}>
           <ScrollView
-            contentContainerStyle={[styles.content, { maxWidth: 540, alignSelf: 'center', width: '100%' }]}
+            contentContainerStyle={[
+              styles.content,
+              { maxWidth: 540, alignSelf: 'center', width: '100%' },
+            ]}
             showsVerticalScrollIndicator={false}
           >
             {/* Multi-Photo Carousel with Story Bars & Taps */}
@@ -235,9 +238,7 @@ export default function PublicProfileRoute(): React.JSX.Element {
                           styles.storyBarTrack,
                           {
                             backgroundColor:
-                              idx === activePhotoIndex
-                                ? '#FFFFFF'
-                                : 'rgba(255, 255, 255, 0.4)',
+                              idx === activePhotoIndex ? '#FFFFFF' : 'rgba(255, 255, 255, 0.4)',
                           },
                         ]}
                       />

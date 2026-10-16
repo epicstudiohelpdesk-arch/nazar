@@ -151,15 +151,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 { backgroundColor: isCurrentUser ? 'rgba(255,255,255,0.25)' : colors.accentSoft },
               ]}
             >
-              <Icon
-                name="mic"
-                size="sm"
-                color={isCurrentUser ? '#FFFFFF' : colors.accent}
-              />
+              <Icon name="mic" size="sm" color={isCurrentUser ? '#FFFFFF' : colors.accent} />
             </View>
             <View style={styles.audioWaveform}>
               <View style={styles.waveformBars}>
-                {((message.waveformPeaks && message.waveformPeaks.length > 0)
+                {(message.waveformPeaks && message.waveformPeaks.length > 0
                   ? message.waveformPeaks.slice(0, 20)
                   : [0.3, 0.6, 0.9, 0.4, 0.7, 0.5, 0.8, 1.0, 0.6, 0.3, 0.5, 0.7, 0.4, 0.6, 0.8]
                 ).map((peak, idx) => (
@@ -169,9 +165,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                       styles.waveformBar,
                       {
                         height: Math.max(4, Math.round(peak * 24)),
-                        backgroundColor: isCurrentUser
-                          ? 'rgba(255,255,255,0.85)'
-                          : colors.accent,
+                        backgroundColor: isCurrentUser ? 'rgba(255,255,255,0.85)' : colors.accent,
                       },
                     ]}
                   />

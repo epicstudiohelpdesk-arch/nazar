@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Inject, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { generateUuidV7 } from '@platform/domain';
 import {
   ErrorCode,
@@ -32,10 +27,7 @@ export class CallingService {
     input: InitiateCallInput
   ): Promise<InitiateCallResponseDto> {
     const { conversation, match, otherUserId } =
-      await this.conversationsService.assertConversationAccess(
-        callerUserId,
-        input.conversationId
-      );
+      await this.conversationsService.assertConversationAccess(callerUserId, input.conversationId);
 
     if (match.status !== 'ACTIVE' || conversation.status !== 'ACTIVE') {
       throw new ForbiddenException({
@@ -57,7 +49,8 @@ export class CallingService {
     if (callerMsgs === 0 || calleeMsgs === 0) {
       throw new ForbiddenException({
         code: ErrorCode.INTERACTION_NOT_ALLOWED,
-        message: 'Both members must exchange messages before starting an in-app audio or video call.',
+        message:
+          'Both members must exchange messages before starting an in-app audio or video call.',
       });
     }
 
@@ -109,12 +102,7 @@ export class CallingService {
 
     const status = input.reason === 'DECLINED' ? 'DECLINED' : 'ENDED';
 
-    await this.callingRepo.updateCallStatus(
-      session.id,
-      status,
-      now,
-      durationSeconds
-    );
+    await this.callingRepo.updateCallStatus(session.id, status, now, durationSeconds);
 
     return {
       success: true,

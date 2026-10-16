@@ -322,7 +322,8 @@ export class InteractionsService {
         interaction: 'LIKE' as const,
         matched,
         matchId,
-        targetAttachmentType: (interaction.targetAttachmentType as TargetAttachmentType) || undefined,
+        targetAttachmentType:
+          (interaction.targetAttachmentType as TargetAttachmentType) || undefined,
         targetAttachmentId: interaction.targetAttachmentId || undefined,
         comment: interaction.comment || undefined,
         ...(matched

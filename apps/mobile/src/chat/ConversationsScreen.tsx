@@ -157,7 +157,12 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({
   );
 
   const renderSkeletonList = () => (
-    <View style={[styles.skeletonContainer, { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' }]}>
+    <View
+      style={[
+        styles.skeletonContainer,
+        { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+      ]}
+    >
       {Array.from({ length: 5 }, (_, idx) => (
         <View
           key={idx}

@@ -181,7 +181,10 @@ export default function BlockedUsersRoute(): React.JSX.Element {
           <TouchableOpacity
             style={[
               styles.tabItem,
-              activeTab === 'members' && [styles.activeTabItem, { backgroundColor: theme.colors.surface }],
+              activeTab === 'members' && [
+                styles.activeTabItem,
+                { backgroundColor: theme.colors.surface },
+              ],
             ]}
             onPress={() => {
               haptics.selection();
@@ -203,7 +206,10 @@ export default function BlockedUsersRoute(): React.JSX.Element {
           <TouchableOpacity
             style={[
               styles.tabItem,
-              activeTab === 'contacts' && [styles.activeTabItem, { backgroundColor: theme.colors.surface }],
+              activeTab === 'contacts' && [
+                styles.activeTabItem,
+                { backgroundColor: theme.colors.surface },
+              ],
             ]}
             onPress={() => {
               haptics.selection();
@@ -243,8 +249,8 @@ export default function BlockedUsersRoute(): React.JSX.Element {
                 </View>
                 <Heading level="h3">No Blocked Members</Heading>
                 <Text level="bodySmall" color="secondary" style={styles.emptyText}>
-                  Anyone you block from chats or discovery feeds will appear here. You can unblock them
-                  at any time.
+                  Anyone you block from chats or discovery feeds will appear here. You can unblock
+                  them at any time.
                 </Text>
               </SurfaceCard>
             ) : (
@@ -298,8 +304,9 @@ export default function BlockedUsersRoute(): React.JSX.Element {
             <View style={styles.header}>
               <Heading level="h2">Block Contacts</Heading>
               <Text level="bodySmall" color="secondary">
-                Block acquaintances, colleagues, or ex-partners before they can ever see you. Phone numbers
-                are hashed with SHA-256 locally on your phone so your raw address book is never uploaded.
+                Block acquaintances, colleagues, or ex-partners before they can ever see you. Phone
+                numbers are hashed with SHA-256 locally on your phone so your raw address book is
+                never uploaded.
               </Text>
             </View>
 
@@ -307,7 +314,9 @@ export default function BlockedUsersRoute(): React.JSX.Element {
             <SurfaceCard elevation="sm" style={styles.addContactCard}>
               <Heading level="h3">Add Contact to Block</Heading>
               <View style={styles.inputGroup}>
-                <Text level="caption" color="secondary">Phone Number</Text>
+                <Text level="caption" color="secondary">
+                  Phone Number
+                </Text>
                 <TextInput
                   style={[
                     styles.textInput,
@@ -327,7 +336,9 @@ export default function BlockedUsersRoute(): React.JSX.Element {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text level="caption" color="secondary">Label (Optional)</Text>
+                <Text level="caption" color="secondary">
+                  Label (Optional)
+                </Text>
                 <TextInput
                   style={[
                     styles.textInput,
@@ -368,7 +379,8 @@ export default function BlockedUsersRoute(): React.JSX.Element {
                 </View>
                 <Heading level="h3">No Blocked Contacts</Heading>
                 <Text level="bodySmall" color="secondary" style={styles.emptyText}>
-                  Any phone numbers you block will be excluded from mutual discovery without exposing your contact list.
+                  Any phone numbers you block will be excluded from mutual discovery without
+                  exposing your contact list.
                 </Text>
               </SurfaceCard>
             ) : (

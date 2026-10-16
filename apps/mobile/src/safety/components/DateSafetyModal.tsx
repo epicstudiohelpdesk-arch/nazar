@@ -17,11 +17,7 @@ import { Icon } from '../../design/primitives/Icon.js';
 import { SurfaceCard } from '../../design/primitives/SurfaceCard.js';
 import { Button } from '../../design/components/button/Button.js';
 import { haptics } from '../../design/haptics/index.js';
-import {
-  getDefaultSafetyApi,
-  SAFETY_QUERY_KEYS,
-  invalidateSafetyCaches,
-} from '../safety-api.js';
+import { getDefaultSafetyApi, SAFETY_QUERY_KEYS, invalidateSafetyCaches } from '../safety-api.js';
 
 export interface DateSafetyModalProps {
   readonly visible: boolean;
@@ -105,11 +101,7 @@ export const DateSafetyModal: React.FC<DateSafetyModalProps> = ({
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: SAFETY_QUERY_KEYS.activeDateCheckin });
       haptics.notificationError();
-      Alert.alert(
-        'Emergency SOS Dispatched',
-        data.message,
-        [{ text: 'OK', style: 'destructive' }]
-      );
+      Alert.alert('Emergency SOS Dispatched', data.message, [{ text: 'OK', style: 'destructive' }]);
     },
     onError: (err: unknown) => {
       haptics.notificationError();
@@ -137,14 +129,14 @@ export const DateSafetyModal: React.FC<DateSafetyModalProps> = ({
   const active = activeCheckinQuery.data;
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalSheet, { backgroundColor: colors.background, borderRadius: radii.xl }]}>
+        <View
+          style={[
+            styles.modalSheet,
+            { backgroundColor: colors.background, borderRadius: radii.xl },
+          ]}
+        >
           {/* Header */}
           <View style={styles.headerRow}>
             <View style={styles.headerTitleGroup}>
@@ -153,7 +145,10 @@ export const DateSafetyModal: React.FC<DateSafetyModalProps> = ({
                 Date Safety & SOS
               </Heading>
             </View>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <TouchableOpacity
+              onPress={onClose}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Icon name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -177,7 +172,11 @@ export const DateSafetyModal: React.FC<DateSafetyModalProps> = ({
                 </Heading>
 
                 <Text variant="caption" style={{ color: colors.textSecondary, marginTop: 4 }}>
-                  Check-in deadline: {new Date(active.checkInDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  Check-in deadline:{' '}
+                  {new Date(active.checkInDeadline).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </Text>
                 <Text variant="caption" style={{ color: colors.textSecondary }}>
                   Emergency Contact: {active.emergencyContactName} ({active.emergencyContactPhone})
@@ -203,7 +202,8 @@ export const DateSafetyModal: React.FC<DateSafetyModalProps> = ({
             ) : (
               <SurfaceCard style={styles.infoCard}>
                 <Text variant="caption" style={{ color: colors.textSecondary, lineHeight: 18 }}>
-                  Going out on a date? Set your destination and trusted contact. If you don't check in by your deadline, we will alert your emergency contact.
+                  Going out on a date? Set your destination and trusted contact. If you don't check
+                  in by your deadline, we will alert your emergency contact.
                 </Text>
               </SurfaceCard>
             )}
@@ -226,7 +226,10 @@ export const DateSafetyModal: React.FC<DateSafetyModalProps> = ({
                   onChangeText={setMeetingLocation}
                 />
 
-                <Text variant="caption" style={{ color: colors.textSecondary, marginBottom: 4, marginTop: spacing.sm }}>
+                <Text
+                  variant="caption"
+                  style={{ color: colors.textSecondary, marginBottom: 4, marginTop: spacing.sm }}
+                >
                   Emergency Contact Name
                 </Text>
                 <TextInput
@@ -237,7 +240,10 @@ export const DateSafetyModal: React.FC<DateSafetyModalProps> = ({
                   onChangeText={setEmergencyContactName}
                 />
 
-                <Text variant="caption" style={{ color: colors.textSecondary, marginBottom: 4, marginTop: spacing.sm }}>
+                <Text
+                  variant="caption"
+                  style={{ color: colors.textSecondary, marginBottom: 4, marginTop: spacing.sm }}
+                >
                   Emergency Contact Phone Number
                 </Text>
                 <TextInput
@@ -249,7 +255,10 @@ export const DateSafetyModal: React.FC<DateSafetyModalProps> = ({
                   onChangeText={setEmergencyContactPhone}
                 />
 
-                <Text variant="caption" style={{ color: colors.textSecondary, marginBottom: 4, marginTop: spacing.sm }}>
+                <Text
+                  variant="caption"
+                  style={{ color: colors.textSecondary, marginBottom: 4, marginTop: spacing.sm }}
+                >
                   Date Starts In (Hours)
                 </Text>
                 <TextInput
@@ -266,7 +275,11 @@ export const DateSafetyModal: React.FC<DateSafetyModalProps> = ({
                   variant="primary"
                   onPress={() => createCheckinMutation.mutate()}
                   loading={createCheckinMutation.isPending}
-                  disabled={!meetingLocation.trim() || !emergencyContactName.trim() || !emergencyContactPhone.trim()}
+                  disabled={
+                    !meetingLocation.trim() ||
+                    !emergencyContactName.trim() ||
+                    !emergencyContactPhone.trim()
+                  }
                   style={{ marginTop: spacing.md }}
                 />
               </View>
@@ -277,8 +290,12 @@ export const DateSafetyModal: React.FC<DateSafetyModalProps> = ({
               <Heading level="title" style={{ color: colors.error }}>
                 Instant SOS Panic Button
               </Heading>
-              <Text variant="caption" style={{ color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md }}>
-                Feel unsafe right now? Tap below to dispatch your live coordinates immediately to your emergency contact & safety response team.
+              <Text
+                variant="caption"
+                style={{ color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md }}
+              >
+                Feel unsafe right now? Tap below to dispatch your live coordinates immediately to
+                your emergency contact & safety response team.
               </Text>
               <Button
                 label="TRIGGER INSTANT SOS"

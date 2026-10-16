@@ -211,9 +211,9 @@ export class DiscoveryService {
       profile.travelLongitude !== undefined
         ? { latitude: profile.travelLatitude, longitude: profile.travelLongitude }
         : profile.latitude !== null &&
-          profile.latitude !== undefined &&
-          profile.longitude !== null &&
-          profile.longitude !== undefined
+            profile.latitude !== undefined &&
+            profile.longitude !== null &&
+            profile.longitude !== undefined
           ? { latitude: profile.latitude, longitude: profile.longitude }
           : null;
 

@@ -569,7 +569,9 @@ export class EventsService {
           status: targetStatus,
           lookingForPlusOne: input.lookingForPlusOne ?? existingRsvp?.lookingForPlusOne ?? false,
           plusOneNote:
-            input.plusOneNote !== undefined ? input.plusOneNote : existingRsvp?.plusOneNote ?? null,
+            input.plusOneNote !== undefined
+              ? input.plusOneNote
+              : (existingRsvp?.plusOneNote ?? null),
           createdAt: existingRsvp?.createdAt || new Date(),
           updatedAt: new Date(),
         },

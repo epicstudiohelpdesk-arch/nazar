@@ -92,7 +92,11 @@ export default function SafetyHubRoute(): React.JSX.Element {
               <View
                 style={[
                   styles.iconBox,
-                  { backgroundColor: isVerified ? theme.colors.successSoft : theme.colors.accentSoft },
+                  {
+                    backgroundColor: isVerified
+                      ? theme.colors.successSoft
+                      : theme.colors.accentSoft,
+                  },
                 ]}
               >
                 <Icon
@@ -105,7 +109,9 @@ export default function SafetyHubRoute(): React.JSX.Element {
                 <View style={styles.verificationTitleRow}>
                   <Text level="title">Photo Verification</Text>
                   {isVerified && (
-                    <View style={[styles.verifiedPill, { backgroundColor: theme.colors.successSoft }]}>
+                    <View
+                      style={[styles.verifiedPill, { backgroundColor: theme.colors.successSoft }]}
+                    >
                       <Text variant="caption" weight="bold" color="success">
                         VERIFIED
                       </Text>
@@ -133,22 +139,14 @@ export default function SafetyHubRoute(): React.JSX.Element {
               accessibilityLabel="Date Safety and SOS Check-in"
               testID="btn-date-safety-row"
             >
-              <View
-                style={[
-                  styles.iconBox,
-                  { backgroundColor: theme.colors.errorSoft },
-                ]}
-              >
-                <Icon
-                  name="shield"
-                  size={20}
-                  color={theme.colors.error}
-                />
+              <View style={[styles.iconBox, { backgroundColor: theme.colors.errorSoft }]}>
+                <Icon name="shield" size={20} color={theme.colors.error} />
               </View>
               <View style={styles.itemText}>
                 <Text level="title">Date Safety & Emergency SOS</Text>
                 <Text level="bodySmall" color="secondary">
-                  Schedule date check-in alarms, automated emergency contact alerts, and instant SOS panic trigger.
+                  Schedule date check-in alarms, automated emergency contact alerts, and instant SOS
+                  panic trigger.
                 </Text>
               </View>
               <Icon name="chevron" size={18} color={theme.colors.textTertiary} />
@@ -189,8 +187,8 @@ export default function SafetyHubRoute(): React.JSX.Element {
                 3. Financial Boundaries
               </Text>
               <Text level="bodySmall" color="secondary">
-                Never send wire transfers, cryptocurrency, gift cards, or money to someone you
-                meet online. Report any financial requests immediately.
+                Never send wire transfers, cryptocurrency, gift cards, or money to someone you meet
+                online. Report any financial requests immediately.
               </Text>
             </View>
           </SurfaceCard>

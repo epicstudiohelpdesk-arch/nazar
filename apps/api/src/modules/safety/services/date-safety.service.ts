@@ -89,10 +89,7 @@ export class DateSafetyService {
     return active ? this.mapRowToDto(active) : null;
   }
 
-  async confirmCheckin(
-    userId: string,
-    checkinId: string
-  ): Promise<ConfirmCheckinResponseDto> {
+  async confirmCheckin(userId: string, checkinId: string): Promise<ConfirmCheckinResponseDto> {
     const checkin = await this.dateCheckinRepo.findCheckinById(checkinId);
     if (!checkin || checkin.userId !== userId) {
       throw new NotFoundException({
@@ -114,9 +111,7 @@ export class DateSafetyService {
       throw new BadRequestException('Failed to confirm check-in');
     }
 
-    this.logger.log(
-      `Safe date check-in confirmed id=${checkinId} by user=${userId}`
-    );
+    this.logger.log(`Safe date check-in confirmed id=${checkinId} by user=${userId}`);
 
     return {
       success: true,
@@ -125,10 +120,7 @@ export class DateSafetyService {
     };
   }
 
-  async triggerSos(
-    userId: string,
-    input: TriggerSosInput
-  ): Promise<TriggerSosResponseDto> {
+  async triggerSos(userId: string, input: TriggerSosInput): Promise<TriggerSosResponseDto> {
     const now = new Date();
     let targetCheckinId = input.dateCheckinId;
 
@@ -160,7 +152,8 @@ export class DateSafetyService {
     return {
       success: true,
       alertDispatched: true,
-      message: 'Emergency SOS alert dispatched to designated emergency contacts and Trust & Safety desk.',
+      message:
+        'Emergency SOS alert dispatched to designated emergency contacts and Trust & Safety desk.',
       timestamp: now.toISOString(),
     };
   }

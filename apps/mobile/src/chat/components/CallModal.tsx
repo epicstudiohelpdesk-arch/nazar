@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-} from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import type { CallType } from '@platform/api-contracts';
 import { useTheme } from '../../design/theme/index.js';
 import { Heading } from '../../design/primitives/Heading.js';

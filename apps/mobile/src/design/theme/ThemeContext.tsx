@@ -29,10 +29,7 @@ export interface ThemeProviderProps {
   readonly children: React.ReactNode;
 }
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({
-  initialMode = 'dark',
-  children,
-}) => {
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({ initialMode = 'dark', children }) => {
   const [mode, setMode] = useState<ThemeMode>(initialMode);
   const systemColorScheme = useColorScheme();
 

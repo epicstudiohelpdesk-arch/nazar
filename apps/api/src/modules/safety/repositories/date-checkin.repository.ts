@@ -21,10 +21,7 @@ export class DateCheckinRepository {
     return tx || this.databaseService.client;
   }
 
-  async createCheckin(
-    row: NewDateCheckinRow,
-    tx?: DrizzleDatabase
-  ): Promise<DateCheckinRow> {
+  async createCheckin(row: NewDateCheckinRow, tx?: DrizzleDatabase): Promise<DateCheckinRow> {
     const client = this.getClient(tx);
     const [inserted] = await client.insert(dateCheckins).values(row).returning();
     if (!inserted) {
@@ -33,16 +30,9 @@ export class DateCheckinRepository {
     return inserted;
   }
 
-  async findCheckinById(
-    id: string,
-    tx?: DrizzleDatabase
-  ): Promise<DateCheckinRow | null> {
+  async findCheckinById(id: string, tx?: DrizzleDatabase): Promise<DateCheckinRow | null> {
     const client = this.getClient(tx);
-    const rows = await client
-      .select()
-      .from(dateCheckins)
-      .where(eq(dateCheckins.id, id))
-      .limit(1);
+    const rows = await client.select().from(dateCheckins).where(eq(dateCheckins.id, id)).limit(1);
     return rows[0] || null;
   }
 
@@ -54,12 +44,7 @@ export class DateCheckinRepository {
     const rows = await client
       .select()
       .from(dateCheckins)
-      .where(
-        and(
-          eq(dateCheckins.userId, userId),
-          eq(dateCheckins.status, 'SCHEDULED')
-        )
-      )
+      .where(and(eq(dateCheckins.userId, userId), eq(dateCheckins.status, 'SCHEDULED')))
       .orderBy(desc(dateCheckins.createdAt))
       .limit(1);
     return rows[0] || null;

@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Modal,
-  View,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import { Modal, View, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
 import type { PostDateFeedbackRequestDto } from '@platform/api-contracts';
 import { useTheme } from '../../design/theme/index.js';
 import { Heading } from '../../design/primitives/Heading.js';
@@ -99,10 +92,7 @@ export const WeMetModal: React.FC<WeMetModalProps> = ({
     >
       <SafeAreaView style={styles.container}>
         <View style={styles.backdrop} />
-        <SurfaceCard
-          elevation="lg"
-          style={[styles.dialog, { backgroundColor: colors.surface }]}
-        >
+        <SurfaceCard elevation="lg" style={[styles.dialog, { backgroundColor: colors.surface }]}>
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Header */}
             <View style={styles.headerRow}>
@@ -199,7 +189,8 @@ export const WeMetModal: React.FC<WeMetModalProps> = ({
                     style={[
                       styles.optionButton,
                       {
-                        backgroundColor: wouldSeeAgain === true ? colors.accent : colors.surfaceMuted,
+                        backgroundColor:
+                          wouldSeeAgain === true ? colors.accent : colors.surfaceMuted,
                         borderColor: wouldSeeAgain === true ? colors.accent : colors.border,
                         borderRadius: radii.radiusMD,
                       },
@@ -223,7 +214,8 @@ export const WeMetModal: React.FC<WeMetModalProps> = ({
                     style={[
                       styles.optionButton,
                       {
-                        backgroundColor: wouldSeeAgain === false ? colors.accent : colors.surfaceMuted,
+                        backgroundColor:
+                          wouldSeeAgain === false ? colors.accent : colors.surfaceMuted,
                         borderColor: wouldSeeAgain === false ? colors.accent : colors.border,
                         borderRadius: radii.radiusMD,
                       },
@@ -247,7 +239,11 @@ export const WeMetModal: React.FC<WeMetModalProps> = ({
                 <Text
                   variant="label"
                   weight="bold"
-                  style={{ color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }}
+                  style={{
+                    color: colors.textPrimary,
+                    marginTop: spacing.md,
+                    marginBottom: spacing.xs,
+                  }}
                 >
                   How was the date?
                 </Text>

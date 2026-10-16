@@ -41,17 +41,16 @@ export const CompletenessCard: React.FC<CompletenessCardProps> = ({ completeness
 
       <View style={styles.progressContainer}>
         <View
-          style={[
-            styles.progressBarBackground,
-            { backgroundColor: theme.colors.surfaceMuted },
-          ]}
+          style={[styles.progressBarBackground, { backgroundColor: theme.colors.surfaceMuted }]}
         >
           <View
             style={[
               styles.progressBarFill,
               {
                 width: `${Math.min(100, Math.max(0, completeness.percentage))}%`,
-                backgroundColor: isComplete ? (theme.colors.success || '#10B981') : theme.colors.accent,
+                backgroundColor: isComplete
+                  ? theme.colors.success || '#10B981'
+                  : theme.colors.accent,
               },
             ]}
           />
@@ -65,7 +64,11 @@ export const CompletenessCard: React.FC<CompletenessCardProps> = ({ completeness
         <View style={[styles.missingContainer, { borderTopColor: theme.colors.border }]}>
           <View style={styles.missingHeaderRow}>
             <Icon name="alertCircle" size="tiny" color={theme.colors.warning} />
-            <Text level="caption" weight="bold" style={{ color: theme.colors.warning, marginLeft: 4 }}>
+            <Text
+              level="caption"
+              weight="bold"
+              style={{ color: theme.colors.warning, marginLeft: 4 }}
+            >
               Required for discovery activation:
             </Text>
           </View>

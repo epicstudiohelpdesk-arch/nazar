@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Modal,
-  View,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { Modal, View, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from '../../design/primitives/Text.js';
 import { Icon } from '../../design/primitives/Icon.js';
 
@@ -108,11 +101,13 @@ export const WorkModeOverlay: React.FC<WorkModeOverlayProps> = ({ visible, onClo
 
         {/* Menu Bar Disguise */}
         <View style={styles.menuBar}>
-          {['File', 'Edit', 'View', 'Insert', 'Format', 'Data', 'Tools', 'Extensions'].map((tab) => (
-            <Text key={tab} level="caption" style={styles.menuItem}>
-              {tab}
-            </Text>
-          ))}
+          {['File', 'Edit', 'View', 'Insert', 'Format', 'Data', 'Tools', 'Extensions'].map(
+            (tab) => (
+              <Text key={tab} level="caption" style={styles.menuItem}>
+                {tab}
+              </Text>
+            )
+          )}
         </View>
 
         {/* Formula Bar */}
@@ -131,25 +126,39 @@ export const WorkModeOverlay: React.FC<WorkModeOverlayProps> = ({ visible, onClo
             {/* Header Row */}
             <View style={styles.gridHeaderRow}>
               <View style={[styles.cell, styles.headerCell, { width: 44 }]}>
-                <Text level="caption" style={styles.headerCellText}>#</Text>
+                <Text level="caption" style={styles.headerCellText}>
+                  #
+                </Text>
               </View>
               <View style={[styles.cell, styles.headerCell, { width: 80 }]}>
-                <Text level="caption" style={styles.headerCellText}>Code</Text>
+                <Text level="caption" style={styles.headerCellText}>
+                  Code
+                </Text>
               </View>
               <View style={[styles.cell, styles.headerCell, { width: 220 }]}>
-                <Text level="caption" style={styles.headerCellText}>Strategic Objective</Text>
+                <Text level="caption" style={styles.headerCellText}>
+                  Strategic Objective
+                </Text>
               </View>
               <View style={[styles.cell, styles.headerCell, { width: 100 }]}>
-                <Text level="caption" style={styles.headerCellText}>Owner</Text>
+                <Text level="caption" style={styles.headerCellText}>
+                  Owner
+                </Text>
               </View>
               <View style={[styles.cell, styles.headerCell, { width: 85 }]}>
-                <Text level="caption" style={styles.headerCellText}>Target</Text>
+                <Text level="caption" style={styles.headerCellText}>
+                  Target
+                </Text>
               </View>
               <View style={[styles.cell, styles.headerCell, { width: 85 }]}>
-                <Text level="caption" style={styles.headerCellText}>Actual</Text>
+                <Text level="caption" style={styles.headerCellText}>
+                  Actual
+                </Text>
               </View>
               <View style={[styles.cell, styles.headerCell, { width: 95 }]}>
-                <Text level="caption" style={styles.headerCellText}>Status</Text>
+                <Text level="caption" style={styles.headerCellText}>
+                  Status
+                </Text>
               </View>
             </View>
 
@@ -157,10 +166,14 @@ export const WorkModeOverlay: React.FC<WorkModeOverlayProps> = ({ visible, onClo
             {ROWS.map((row, idx) => (
               <View key={row.id} style={[styles.gridRow, idx % 2 === 1 && styles.gridRowAlt]}>
                 <View style={[styles.cell, { width: 44, backgroundColor: '#F8FAFC' }]}>
-                  <Text level="caption" style={styles.rowNumberText}>{idx + 1}</Text>
+                  <Text level="caption" style={styles.rowNumberText}>
+                    {idx + 1}
+                  </Text>
                 </View>
                 <View style={[styles.cell, { width: 80 }]}>
-                  <Text level="caption" style={{ fontWeight: '600', color: '#1E293B' }}>{row.code}</Text>
+                  <Text level="caption" style={{ fontWeight: '600', color: '#1E293B' }}>
+                    {row.code}
+                  </Text>
                 </View>
                 <View style={[styles.cell, { width: 220 }]}>
                   <Text level="caption" numberOfLines={1} style={{ color: '#334155' }}>
@@ -168,13 +181,19 @@ export const WorkModeOverlay: React.FC<WorkModeOverlayProps> = ({ visible, onClo
                   </Text>
                 </View>
                 <View style={[styles.cell, { width: 100 }]}>
-                  <Text level="caption" style={{ color: '#475569' }}>{row.owner}</Text>
+                  <Text level="caption" style={{ color: '#475569' }}>
+                    {row.owner}
+                  </Text>
                 </View>
                 <View style={[styles.cell, { width: 85 }]}>
-                  <Text level="caption" style={{ color: '#475569' }}>{row.target}</Text>
+                  <Text level="caption" style={{ color: '#475569' }}>
+                    {row.target}
+                  </Text>
                 </View>
                 <View style={[styles.cell, { width: 85 }]}>
-                  <Text level="caption" style={{ fontWeight: '600', color: '#0F172A' }}>{row.actual}</Text>
+                  <Text level="caption" style={{ fontWeight: '600', color: '#0F172A' }}>
+                    {row.actual}
+                  </Text>
                 </View>
                 <View style={[styles.cell, { width: 95 }]}>
                   <View
@@ -185,7 +204,9 @@ export const WorkModeOverlay: React.FC<WorkModeOverlayProps> = ({ visible, onClo
                       row.status === 'In Review' && styles.statusInReview,
                     ]}
                   >
-                    <Text level="caption" style={styles.statusText}>{row.status}</Text>
+                    <Text level="caption" style={styles.statusText}>
+                      {row.status}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -196,16 +217,24 @@ export const WorkModeOverlay: React.FC<WorkModeOverlayProps> = ({ visible, onClo
         {/* Footer Sheet tabs */}
         <View style={styles.sheetBar}>
           <View style={styles.sheetTabActive}>
-            <Text level="caption" style={styles.sheetTabTextActive}>Q4_Actuals</Text>
+            <Text level="caption" style={styles.sheetTabTextActive}>
+              Q4_Actuals
+            </Text>
           </View>
           <View style={styles.sheetTab}>
-            <Text level="caption" style={styles.sheetTabText}>P&L_Forecast</Text>
+            <Text level="caption" style={styles.sheetTabText}>
+              P&L_Forecast
+            </Text>
           </View>
           <View style={styles.sheetTab}>
-            <Text level="caption" style={styles.sheetTabText}>Team_Capacity</Text>
+            <Text level="caption" style={styles.sheetTabText}>
+              Team_Capacity
+            </Text>
           </View>
           <TouchableOpacity style={styles.unmaskBtn} onPress={onClose}>
-            <Text level="caption" style={{ color: '#94A3B8', fontSize: 11 }}>Tap to exit disguise</Text>
+            <Text level="caption" style={{ color: '#94A3B8', fontSize: 11 }}>
+              Tap to exit disguise
+            </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

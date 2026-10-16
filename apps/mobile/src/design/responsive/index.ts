@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dimensions, ScaledSize } from 'react-native';
+import { Dimensions, type ScaledSize } from 'react-native';
 
 const BASE_WIDTH = 375;
 const BASE_HEIGHT = 812;

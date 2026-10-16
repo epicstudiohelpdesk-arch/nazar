@@ -10,13 +10,7 @@ import { useResponsiveLayout } from '../../responsive/index.js';
 import { haptics } from '../../haptics/index.js';
 
 export type ProfileCardContext =
-  | 'discovery'
-  | 'likes'
-  | 'matches'
-  | 'search'
-  | 'community'
-  | 'event'
-  | 'profilePreview';
+  'discovery' | 'likes' | 'matches' | 'search' | 'community' | 'event' | 'profilePreview';
 
 export interface ProfileCardData {
   readonly id: string;
@@ -99,13 +93,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   const effectiveVerified = profile.isVerified ?? profile.verified;
   const effectiveCity = profile.city || profile.location;
 
-  const dynamicImageHeight = isCompact
-    ? 220
-    : isSmallScreen
-      ? 350
-      : isLargeScreen
-        ? 450
-        : 400;
+  const dynamicImageHeight = isCompact ? 220 : isSmallScreen ? 350 : isLargeScreen ? 450 : 400;
 
   const handleNextPhoto = (e: any) => {
     e?.stopPropagation?.();
@@ -127,7 +115,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     const featuredPrompt =
       profile.prompts && profile.prompts.length > 0 ? profile.prompts[0] : null;
     const effectiveDistance = profile.contextualInfo
-      ? profile.contextualInfo.replace(/[🎟️✈️]/g, '').trim()
+      ? profile.contextualInfo.replace(/🎟️|✈️/g, '').trim()
       : null;
 
     const lifestylePills: { id: string; emoji: string; text: string }[] = [];
@@ -141,7 +129,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
       profile.interests.slice(0, 4).forEach((interest, idx) => {
         const lower = interest.toLowerCase();
         let emoji = '✨';
-        if (lower.includes('coffee') || lower.includes('drink') || lower.includes('wine')) emoji = '🍷';
+        if (lower.includes('coffee') || lower.includes('drink') || lower.includes('wine'))
+          emoji = '🍷';
         else if (lower.includes('design') || lower.includes('art')) emoji = '🎨';
         else if (lower.includes('architecture')) emoji = '🏛️';
         else if (lower.includes('book') || lower.includes('read')) emoji = '📚';
@@ -261,9 +250,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 style={styles.matchScoreGradientPill}
               >
                 <Icon name="sparkles" size={11} color="#FFFFFF" style={{ marginRight: 4 }} />
-                <Text style={styles.matchScoreText}>
-                  {profile.matchPercentage ?? 94}% MATCH
-                </Text>
+                <Text style={styles.matchScoreText}>{profile.matchPercentage ?? 94}% MATCH</Text>
               </LinearGradient>
 
               {/* Right Location & Counter Badges */}
@@ -271,9 +258,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 {effectiveDistance && (
                   <View style={styles.frostedPill}>
                     <Icon name="location" size={11} color="#FFFFFF" style={{ marginRight: 3 }} />
-                    <Text style={styles.frostedPillText}>
-                      {effectiveDistance}
-                    </Text>
+                    <Text style={styles.frostedPillText}>{effectiveDistance}</Text>
                   </View>
                 )}
                 {mediaList.length > 1 && (
@@ -326,7 +311,12 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 
               {/* 2. Category Title: Basics & Lifestyle */}
               <View style={styles.lifestyleHeaderRow}>
-                <Icon name="briefcase" size={13} color="rgba(255, 255, 255, 0.9)" style={{ marginRight: 6 }} />
+                <Icon
+                  name="briefcase"
+                  size={13}
+                  color="rgba(255, 255, 255, 0.9)"
+                  style={{ marginRight: 6 }}
+                />
                 <Text style={styles.lifestyleHeaderText}>Basics & Lifestyle</Text>
               </View>
 
@@ -488,7 +478,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 style={{ color: '#FFFFFF', letterSpacing: 0.2 }}
                 numberOfLines={1}
               >
-                {profile.contextualInfo.replace(/[🎟️✈️]/g, '').trim()}
+                {profile.contextualInfo.replace(/🎟️|✈️/g, '').trim()}
               </Text>
             </View>
           ) : (
@@ -531,7 +521,11 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           {profile.occupation && (
             <View style={styles.occupationRow}>
               <Icon name="briefcase" size={12} color="#D1C9BE" style={{ marginRight: 5 }} />
-              <Text variant="caption" style={{ color: '#D1C9BE', fontWeight: '400' }} numberOfLines={1}>
+              <Text
+                variant="caption"
+                style={{ color: '#D1C9BE', fontWeight: '400' }}
+                numberOfLines={1}
+              >
                 {profile.occupation}
                 {profile.education ? ` · ${profile.education}` : ''}
               </Text>
@@ -697,18 +691,22 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                       <View
-                        style={[
-                          styles.audioPromptPlayBtn,
-                          { backgroundColor: colors.accentSoft },
-                        ]}
+                        style={[styles.audioPromptPlayBtn, { backgroundColor: colors.accentSoft }]}
                       >
                         <Icon name="mic" size="sm" color={colors.accent} />
                       </View>
                       <View style={{ marginLeft: spacing.sm }}>
-                        <Text variant="caption" weight="semibold" style={{ color: colors.textPrimary }}>
+                        <Text
+                          variant="caption"
+                          weight="semibold"
+                          style={{ color: colors.textPrimary }}
+                        >
                           Voice Prompt
                         </Text>
-                        <Text variant="caption" style={{ color: colors.textSecondary, fontSize: 11 }}>
+                        <Text
+                          variant="caption"
+                          style={{ color: colors.textSecondary, fontSize: 11 }}
+                        >
                           {audioPrompt.durationSeconds}s audio recording
                         </Text>
                       </View>

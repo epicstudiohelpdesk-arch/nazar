@@ -74,9 +74,12 @@ export default function SafetyReportModalRoute(): React.JSX.Element {
             </View>
             <Badge variant="accent" label="Confidential Safety Review" size="sm" />
           </View>
-          <Heading level="h2" style={{ marginTop: 4 }}>Safety Report</Heading>
+          <Heading level="h2" style={{ marginTop: 4 }}>
+            Safety Report
+          </Heading>
           <Text level="body" color="secondary" style={{ lineHeight: 22 }}>
-            Your report is strictly confidential. The reported member will never know who filed this report.
+            Your report is strictly confidential. The reported member will never know who filed this
+            report.
           </Text>
         </SurfaceCard>
 

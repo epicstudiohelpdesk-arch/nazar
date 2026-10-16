@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-} from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import type { PassportLocationResponseDto } from '@platform/api-contracts';
 import { useTheme } from '../../design/theme/ThemeContext.js';
 import { Heading } from '../../design/primitives/Heading.js';
@@ -25,18 +18,95 @@ export interface GlobalHubPreset {
 }
 
 export const POPULAR_TRAVEL_HUBS: readonly GlobalHubPreset[] = [
-  { id: 'mumbai', name: 'Mumbai', country: 'India', flag: '🇮🇳', latitude: 19.076, longitude: 72.8777 },
-  { id: 'delhi', name: 'Delhi', country: 'India', flag: '🇮🇳', latitude: 28.6139, longitude: 77.209 },
-  { id: 'bengaluru', name: 'Bengaluru', country: 'India', flag: '🇮🇳', latitude: 12.9716, longitude: 77.5946 },
-  { id: 'london', name: 'London', country: 'UK', flag: '🇬🇧', latitude: 51.5074, longitude: -0.1278 },
-  { id: 'newyork', name: 'New York', country: 'USA', flag: '🇺🇸', latitude: 40.7128, longitude: -74.006 },
+  {
+    id: 'mumbai',
+    name: 'Mumbai',
+    country: 'India',
+    flag: '🇮🇳',
+    latitude: 19.076,
+    longitude: 72.8777,
+  },
+  {
+    id: 'delhi',
+    name: 'Delhi',
+    country: 'India',
+    flag: '🇮🇳',
+    latitude: 28.6139,
+    longitude: 77.209,
+  },
+  {
+    id: 'bengaluru',
+    name: 'Bengaluru',
+    country: 'India',
+    flag: '🇮🇳',
+    latitude: 12.9716,
+    longitude: 77.5946,
+  },
+  {
+    id: 'london',
+    name: 'London',
+    country: 'UK',
+    flag: '🇬🇧',
+    latitude: 51.5074,
+    longitude: -0.1278,
+  },
+  {
+    id: 'newyork',
+    name: 'New York',
+    country: 'USA',
+    flag: '🇺🇸',
+    latitude: 40.7128,
+    longitude: -74.006,
+  },
   { id: 'dubai', name: 'Dubai', country: 'UAE', flag: '🇦🇪', latitude: 25.2048, longitude: 55.2708 },
-  { id: 'tokyo', name: 'Tokyo', country: 'Japan', flag: '🇯🇵', latitude: 35.6762, longitude: 139.6503 },
-  { id: 'paris', name: 'Paris', country: 'France', flag: '🇫🇷', latitude: 48.8566, longitude: 2.3522 },
-  { id: 'singapore', name: 'Singapore', country: 'Singapore', flag: '🇸🇬', latitude: 1.3521, longitude: 103.8198 },
-  { id: 'sydney', name: 'Sydney', country: 'Australia', flag: '🇦🇺', latitude: -33.8688, longitude: 151.2093 },
-  { id: 'toronto', name: 'Toronto', country: 'Canada', flag: '🇨🇦', latitude: 43.6532, longitude: -79.3832 },
-  { id: 'amsterdam', name: 'Amsterdam', country: 'Netherlands', flag: '🇳🇱', latitude: 52.3676, longitude: 4.9041 },
+  {
+    id: 'tokyo',
+    name: 'Tokyo',
+    country: 'Japan',
+    flag: '🇯🇵',
+    latitude: 35.6762,
+    longitude: 139.6503,
+  },
+  {
+    id: 'paris',
+    name: 'Paris',
+    country: 'France',
+    flag: '🇫🇷',
+    latitude: 48.8566,
+    longitude: 2.3522,
+  },
+  {
+    id: 'singapore',
+    name: 'Singapore',
+    country: 'Singapore',
+    flag: '🇸🇬',
+    latitude: 1.3521,
+    longitude: 103.8198,
+  },
+  {
+    id: 'sydney',
+    name: 'Sydney',
+    country: 'Australia',
+    flag: '🇦🇺',
+    latitude: -33.8688,
+    longitude: 151.2093,
+  },
+  {
+    id: 'toronto',
+    name: 'Toronto',
+    country: 'Canada',
+    flag: '🇨🇦',
+    latitude: 43.6532,
+    longitude: -79.3832,
+  },
+  {
+    id: 'amsterdam',
+    name: 'Amsterdam',
+    country: 'Netherlands',
+    flag: '🇳🇱',
+    latitude: 52.3676,
+    longitude: 4.9041,
+  },
 ];
 
 export interface PassportModalProps {
@@ -111,12 +181,7 @@ export function PassportModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalCard, { backgroundColor: theme.colors.surface }]}>
           {/* Header */}
@@ -148,7 +213,13 @@ export function PassportModal({
               ]}
             >
               <View style={styles.statusLeft}>
-                <Text level="caption" style={{ fontWeight: '700', color: enabled ? theme.colors.accent : theme.colors.textSecondary }}>
+                <Text
+                  level="caption"
+                  style={{
+                    fontWeight: '700',
+                    color: enabled ? theme.colors.accent : theme.colors.textSecondary,
+                  }}
+                >
                   {enabled ? '✈️ PASSPORT ACTIVE' : '📍 REAL GPS LOCATION'}
                 </Text>
                 <Text level="body" style={{ fontWeight: '600', marginTop: 2 }}>
@@ -172,8 +243,8 @@ export function PassportModal({
             </View>
 
             <Text level="bodySmall" color="secondary" style={styles.subtext}>
-              Match with locals and other travelers anywhere in the world before you arrive. Your profile
-              will show a discreet "Visiting {selectedCity || 'City'}" badge.
+              Match with locals and other travelers anywhere in the world before you arrive. Your
+              profile will show a discreet "Visiting {selectedCity || 'City'}" badge.
             </Text>
 
             {/* Popular Global Hubs */}
@@ -183,7 +254,8 @@ export function PassportModal({
               </Text>
               <View style={styles.hubGrid}>
                 {POPULAR_TRAVEL_HUBS.map((hub) => {
-                  const isSelected = enabled && selectedCity.toLowerCase() === hub.name.toLowerCase();
+                  const isSelected =
+                    enabled && selectedCity.toLowerCase() === hub.name.toLowerCase();
                   return (
                     <TouchableOpacity
                       key={hub.id}

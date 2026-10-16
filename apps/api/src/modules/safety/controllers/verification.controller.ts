@@ -8,21 +8,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import {
   type VerificationChallengeResponseDto,
   type SubmitVerificationResponseDto,
   type VerificationStatusResponseDto,
 } from '@platform/api-contracts';
-import {
-  submitVerificationSchema,
-  type SubmitVerificationInput,
-} from '@platform/validation';
+import { submitVerificationSchema, type SubmitVerificationInput } from '@platform/validation';
 import { AppValidationPipe } from '../../../common/pipes/app-validation.pipe.js';
 import { AuthGuard, type AuthenticatedPrincipal } from '../../../common/guards/auth.guard.js';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator.js';
@@ -45,9 +37,7 @@ export class VerificationController {
       'Returns a dynamic pose requirement (e.g. smile, peace sign) and signed challenge token to prove real-time liveness.',
   })
   @ApiResponse({ status: 200, description: 'Challenge created successfully' })
-  getChallenge(
-    @CurrentUser() user: AuthenticatedPrincipal
-  ): VerificationChallengeResponseDto {
+  getChallenge(@CurrentUser() user: AuthenticatedPrincipal): VerificationChallengeResponseDto {
     return this.verificationService.generateChallenge(user.userId);
   }
 

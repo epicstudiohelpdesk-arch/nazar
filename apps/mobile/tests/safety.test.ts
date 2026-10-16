@@ -253,8 +253,14 @@ describe('Mobile Safety Layer: API Client & Trust Primitives', () => {
       const api = createSafetyApi(authClient);
       const res = await api.blockContacts({
         contacts: [
-          { phoneHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', label: 'Ex' },
-          { phoneHash: 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', label: 'Boss' },
+          {
+            phoneHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+            label: 'Ex',
+          },
+          {
+            phoneHash: 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3',
+            label: 'Boss',
+          },
         ],
       });
 
@@ -268,8 +274,14 @@ describe('Mobile Safety Layer: API Client & Trust Primitives', () => {
           method: 'POST',
           body: JSON.stringify({
             contacts: [
-              { phoneHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', label: 'Ex' },
-              { phoneHash: 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', label: 'Boss' },
+              {
+                phoneHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+                label: 'Ex',
+              },
+              {
+                phoneHash: 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3',
+                label: 'Boss',
+              },
             ],
           }),
         })
@@ -320,7 +332,9 @@ describe('Mobile Safety Layer: API Client & Trust Primitives', () => {
       });
 
       const api = createSafetyApi(authClient);
-      const res = await api.unblockContact('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+      const res = await api.unblockContact(
+        'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+      );
 
       expect(res.success).toBe(true);
       expect(mockFetch).toHaveBeenCalledWith(

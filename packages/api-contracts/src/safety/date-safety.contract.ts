@@ -1,8 +1,4 @@
-export type DateCheckinStatus =
-  | 'SCHEDULED'
-  | 'CHECKED_IN'
-  | 'SOS_TRIGGERED'
-  | 'CANCELLED';
+export type DateCheckinStatus = 'SCHEDULED' | 'CHECKED_IN' | 'SOS_TRIGGERED' | 'CANCELLED';
 
 export interface CreateDateCheckinRequestDto {
   readonly matchId: string;

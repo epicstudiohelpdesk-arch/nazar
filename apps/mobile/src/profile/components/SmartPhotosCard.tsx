@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  StyleSheet,
-  Switch,
-  Image,
-  ActivityIndicator,
-  ScrollView,
-} from 'react-native';
+import { View, StyleSheet, Switch, Image, ActivityIndicator, ScrollView } from 'react-native';
 import type { SmartPhotoStatItemDto } from '@platform/api-contracts';
 import { useTheme } from '../../design/theme/ThemeContext.js';
 import { Heading } from '../../design/primitives/Heading.js';
@@ -136,10 +129,7 @@ export function SmartPhotosCard({
                         <Image source={{ uri: item.photoUrl }} style={styles.thumbnail} />
                         {item.isPrimary && (
                           <View
-                            style={[
-                              styles.primaryPill,
-                              { backgroundColor: theme.colors.accent },
-                            ]}
+                            style={[styles.primaryPill, { backgroundColor: theme.colors.accent }]}
                           >
                             <Text level="caption" style={styles.pillText}>
                               1st (Active)

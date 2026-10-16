@@ -657,7 +657,9 @@ describe('Mobile Chat Layer: API Client, Inverted Pagination & Realtime Reconcil
 
       expect(detectToxicity('Hey! How was your weekend?').isToxic).toBe(false);
       expect(detectToxicity('I love your third photo, where was that taken?').isToxic).toBe(false);
-      expect(detectToxicity('Would you like to grab coffee at Blue Tokai tomorrow?').isToxic).toBe(false);
+      expect(detectToxicity('Would you like to grab coffee at Blue Tokai tomorrow?').isToxic).toBe(
+        false
+      );
     });
   });
 

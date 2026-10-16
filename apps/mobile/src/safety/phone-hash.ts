@@ -1,6 +1,6 @@
 /**
  * Phone Number Normalization and Privacy-Preserving SHA-256 Hashing.
- * 
+ *
  * Used for address book contact blocking without revealing plaintext phone numbers.
  */
 
@@ -72,7 +72,7 @@ function sha256Fallback(ascii: string): string {
   words.push((asciiBitLength / maxWord) | 0);
   words.push(asciiBitLength);
 
-  for (j = 0; j < words.length; ) {
+  for (j = 0; j < words.length;) {
     const w = words.slice(j, (j += 16));
     const oldHash = hash.slice(0);
 
@@ -84,9 +84,7 @@ function sha256Fallback(ascii: string): string {
       const s1 = rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10);
       const wiMinus16 = w[i - 16] ?? 0;
       const wiMinus7 = w[i - 7] ?? 0;
-      w[i] = i < 16
-        ? (w[i] ?? 0)
-        : (((wiMinus16 + s0) | 0) + ((wiMinus7 + s1) | 0)) | 0;
+      w[i] = i < 16 ? (w[i] ?? 0) : (((wiMinus16 + s0) | 0) + ((wiMinus7 + s1) | 0)) | 0;
 
       const h0 = hash[0] ?? 0;
       const h1 = hash[1] ?? 0;

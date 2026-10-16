@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Alert, Switch } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  Switch,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Gender, RelationshipIntent, FamilyPlans } from '@platform/api-contracts';
@@ -57,14 +65,19 @@ export default function FiltersModalRoute(): React.JSX.Element {
   useEffect(() => {
     if (serverPreferences) {
       if (serverPreferences.maxDistanceKm) setDistanceKm(serverPreferences.maxDistanceKm);
-      if (serverPreferences.distanceIsDealbreaker !== undefined) setDistanceIsDealbreaker(serverPreferences.distanceIsDealbreaker);
+      if (serverPreferences.distanceIsDealbreaker !== undefined)
+        setDistanceIsDealbreaker(serverPreferences.distanceIsDealbreaker);
       if (serverPreferences.minAge) setMinAge(serverPreferences.minAge);
       if (serverPreferences.maxAge) setMaxAge(serverPreferences.maxAge);
-      if (serverPreferences.ageIsDealbreaker !== undefined) setAgeIsDealbreaker(serverPreferences.ageIsDealbreaker);
+      if (serverPreferences.ageIsDealbreaker !== undefined)
+        setAgeIsDealbreaker(serverPreferences.ageIsDealbreaker);
       if (serverPreferences.relationshipIntent) setIntentPref(serverPreferences.relationshipIntent);
-      if (serverPreferences.intentIsDealbreaker !== undefined) setIntentIsDealbreaker(serverPreferences.intentIsDealbreaker);
-      if (serverPreferences.familyPlans) setFamilyPlans(serverPreferences.familyPlans as FamilyPlans);
-      if (serverPreferences.familyPlansIsDealbreaker !== undefined) setFamilyPlansIsDealbreaker(serverPreferences.familyPlansIsDealbreaker);
+      if (serverPreferences.intentIsDealbreaker !== undefined)
+        setIntentIsDealbreaker(serverPreferences.intentIsDealbreaker);
+      if (serverPreferences.familyPlans)
+        setFamilyPlans(serverPreferences.familyPlans as FamilyPlans);
+      if (serverPreferences.familyPlansIsDealbreaker !== undefined)
+        setFamilyPlansIsDealbreaker(serverPreferences.familyPlansIsDealbreaker);
 
       const prefs = serverPreferences.genderPreferences || [];
       if (prefs.length === 1 && prefs[0]) {
@@ -385,7 +398,9 @@ export default function FiltersModalRoute(): React.JSX.Element {
                     <Text level="bodySmall" weight="bold">
                       Dealbreaker
                     </Text>
-                    {familyPlansIsDealbreaker && <Badge variant="accent" label="Strict" size="sm" />}
+                    {familyPlansIsDealbreaker && (
+                      <Badge variant="accent" label="Strict" size="sm" />
+                    )}
                   </View>
                   <Text level="caption" color="secondary" style={{ marginTop: 2 }}>
                     Only show people with matching family plans

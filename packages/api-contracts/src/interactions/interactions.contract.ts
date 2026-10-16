@@ -77,4 +77,3 @@ export interface LikesYouResponseDto {
   readonly items: readonly InboundLikeItemDto[];
   readonly nextCursor?: string | null;
 }
-

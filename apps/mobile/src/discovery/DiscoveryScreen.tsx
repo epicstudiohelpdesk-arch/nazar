@@ -668,8 +668,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
         }
       },
       onPanResponderRelease: (_, gesture) => {
-        const isSwipeRight =
-          gesture.dx > SWIPE_THRESHOLD || (gesture.dx > 40 && gesture.vx > 0.65);
+        const isSwipeRight = gesture.dx > SWIPE_THRESHOLD || (gesture.dx > 40 && gesture.vx > 0.65);
         const isSwipeLeft =
           gesture.dx < -SWIPE_THRESHOLD || (gesture.dx < -40 && gesture.vx < -0.65);
 
@@ -769,14 +768,13 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
       age: profile.age,
       city: profile.city || undefined,
       country: profile.countryCode || undefined,
-      contextualInfo:
-        profile.eventPlusOne
-          ? `🎟️ Looking for +1 to ${profile.eventPlusOne.eventTitle}`
-          : profile.travelMode && profile.travelCity
-            ? `✈️ Visiting ${profile.travelCity}${profile.travelCountry ? `, ${profile.travelCountry}` : ''}`
-            : distanceBucket
-              ? `${distanceBucket} away`
-              : undefined,
+      contextualInfo: profile.eventPlusOne
+        ? `🎟️ Looking for +1 to ${profile.eventPlusOne.eventTitle}`
+        : profile.travelMode && profile.travelCity
+          ? `✈️ Visiting ${profile.travelCity}${profile.travelCountry ? `, ${profile.travelCountry}` : ''}`
+          : distanceBucket
+            ? `${distanceBucket} away`
+            : undefined,
       bio: profile.bio || undefined,
       occupation: profile.occupation || undefined,
       education: profile.education || undefined,
@@ -852,7 +850,9 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             <Text
               style={[
                 styles.tinderPillText,
-                activeFeedTab === 'for_you' ? styles.tinderPillTextActive : styles.tinderPillTextInactive,
+                activeFeedTab === 'for_you'
+                  ? styles.tinderPillTextActive
+                  : styles.tinderPillTextInactive,
               ]}
             >
               For You
@@ -860,10 +860,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[
-              styles.tinderPillTab,
-              activeFeedTab === 'nearby' && styles.tinderPillTabActive,
-            ]}
+            style={[styles.tinderPillTab, activeFeedTab === 'nearby' && styles.tinderPillTabActive]}
             onPress={() => {
               if (activeFeedTab !== 'nearby') {
                 haptics.selection();
@@ -876,7 +873,9 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             <Text
               style={[
                 styles.tinderPillText,
-                activeFeedTab === 'nearby' ? styles.tinderPillTextActive : styles.tinderPillTextInactive,
+                activeFeedTab === 'nearby'
+                  ? styles.tinderPillTextActive
+                  : styles.tinderPillTextInactive,
               ]}
             >
               Nearby
@@ -953,7 +952,10 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             ]}
             onPress={() => {
               haptics.medium();
-              Alert.alert('Nazar Spotlight', 'Boost your profile to be the top candidate in your area for 30 minutes.');
+              Alert.alert(
+                'Nazar Spotlight',
+                'Boost your profile to be the top candidate in your area for 30 minutes.'
+              );
             }}
             accessibilityRole="button"
             accessibilityLabel="Spotlight Boost"
@@ -1034,7 +1036,10 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
           // Empty State (All Candidates Evaluated)
           <SurfaceCard
             elevation="none"
-            style={[styles.emptyCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            style={[
+              styles.emptyCard,
+              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+            ]}
           >
             <View
               style={[
@@ -1048,7 +1053,8 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
               You're All Caught Up
             </Heading>
             <Text level="body" color="secondary" style={styles.messageText}>
-              You've seen all potential matches nearby. Broaden your distance or age preferences to meet more incredible people.
+              You've seen all potential matches nearby. Broaden your distance or age preferences to
+              meet more incredible people.
             </Text>
 
             <View style={styles.emptyActions}>
@@ -1182,12 +1188,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
       {/* Bottom Floating Luxury Action Bar */}
       {activeCandidate && (
-        <View
-          style={[
-            styles.bottomActionBar,
-            { paddingBottom: Math.max(insets.bottom, 12) + 74 },
-          ]}
-        >
+        <View style={[styles.bottomActionBar, { paddingBottom: Math.max(insets.bottom, 12) + 74 }]}>
           {/* Undo Button */}
           <FloatingActionButton
             size={44}
@@ -1311,7 +1312,11 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
             <View style={styles.inlineTargetHeader}>
               <Icon name="heart" size="sm" color={theme.colors.accent} />
-              <Text variant="label" weight="bold" style={{ marginLeft: 6, color: theme.colors.accent }}>
+              <Text
+                variant="label"
+                weight="bold"
+                style={{ marginLeft: 6, color: theme.colors.accent }}
+              >
                 {inlineLikeModal?.attachmentType === 'PROMPT' ? 'Like Prompt' : 'Like Photo'}
               </Text>
             </View>
@@ -1326,7 +1331,10 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                   },
                 ]}
               >
-                <Text variant="bodySmall" style={{ color: theme.colors.textPrimary, fontStyle: 'italic' }}>
+                <Text
+                  variant="bodySmall"
+                  style={{ color: theme.colors.textPrimary, fontStyle: 'italic' }}
+                >
                   "{inlineLikeModal.attachmentText}"
                 </Text>
               </View>
@@ -1355,16 +1363,17 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                 style={[styles.modalSecondaryBtn, { borderColor: theme.colors.border }]}
                 onPress={() => setInlineLikeModal(null)}
               >
-                <Text variant="caption" weight="medium" style={{ color: theme.colors.textSecondary }}>
+                <Text
+                  variant="caption"
+                  weight="medium"
+                  style={{ color: theme.colors.textSecondary }}
+                >
                   Cancel
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[
-                  styles.modalPrimaryBtn,
-                  { backgroundColor: theme.colors.accent },
-                ]}
+                style={[styles.modalPrimaryBtn, { backgroundColor: theme.colors.accent }]}
                 onPress={handleSendInlineLike}
               >
                 <Text variant="caption" weight="bold" style={{ color: '#FFFFFF' }}>
@@ -1377,10 +1386,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
       </Modal>
 
       {/* Work Mode Discreet Disguise Overlay */}
-      <WorkModeOverlay
-        visible={isWorkModeVisible}
-        onClose={() => setIsWorkModeVisible(false)}
-      />
+      <WorkModeOverlay visible={isWorkModeVisible} onClose={() => setIsWorkModeVisible(false)} />
 
       {/* Passport & Travel Mode Modal (Feature 3.3) */}
       <PassportModal

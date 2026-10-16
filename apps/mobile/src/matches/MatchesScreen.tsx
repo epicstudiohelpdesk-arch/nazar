@@ -196,12 +196,25 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
       />
 
       {/* Segmented Tab Switcher */}
-      <View style={[styles.tabBarContainer, { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' }]}>
-        <View style={[styles.tabSegmentWrapper, { backgroundColor: theme.colors.surfaceMuted, borderColor: theme.colors.border }]}>
+      <View
+        style={[
+          styles.tabBarContainer,
+          { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+        ]}
+      >
+        <View
+          style={[
+            styles.tabSegmentWrapper,
+            { backgroundColor: theme.colors.surfaceMuted, borderColor: theme.colors.border },
+          ]}
+        >
           <TouchableOpacity
             style={[
               styles.tabItem,
-              activeTab === 'MATCHES' && [styles.activeTabItem, { backgroundColor: theme.colors.surface }],
+              activeTab === 'MATCHES' && [
+                styles.activeTabItem,
+                { backgroundColor: theme.colors.surface },
+              ],
             ]}
             onPress={() => {
               haptics.selection();
@@ -220,7 +233,8 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
             <Text
               level="title"
               style={{
-                color: activeTab === 'MATCHES' ? theme.colors.textPrimary : theme.colors.textSecondary,
+                color:
+                  activeTab === 'MATCHES' ? theme.colors.textPrimary : theme.colors.textSecondary,
                 fontWeight: activeTab === 'MATCHES' ? '700' : '500',
                 fontSize: 14,
               }}
@@ -232,7 +246,10 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
           <TouchableOpacity
             style={[
               styles.tabItem,
-              activeTab === 'LIKES_YOU' && [styles.activeTabItem, { backgroundColor: theme.colors.surface }],
+              activeTab === 'LIKES_YOU' && [
+                styles.activeTabItem,
+                { backgroundColor: theme.colors.surface },
+              ],
             ]}
             onPress={() => {
               haptics.selection();
@@ -267,7 +284,12 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
           onOpenProfile={(userId) => router.push(`/profiles/${userId}`)}
         />
       ) : isLoading && allMatches.length === 0 ? (
-        <View style={[styles.centerContainer, { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' }]}>
+        <View
+          style={[
+            styles.centerContainer,
+            { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+          ]}
+        >
           <ActivityIndicator size="large" color={theme.colors.accent} />
           <Text level="bodySmall" color="secondary" style={{ marginTop: 12 }}>
             Loading mutual connections...
@@ -275,7 +297,12 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
         </View>
       ) : isError && allMatches.length === 0 ? (
         // Error State
-        <View style={[styles.centerContainer, { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' }]}>
+        <View
+          style={[
+            styles.centerContainer,
+            { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+          ]}
+        >
           <Icon name="warning" size="lg" color={theme.colors.warning} />
           <Heading level="h2" style={{ marginTop: 12, textAlign: 'center' }}>
             Unable to load matches
@@ -296,7 +323,12 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
         </View>
       ) : allMatches.length === 0 ? (
         // Empty State
-        <View style={[styles.emptyContainer, { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' }]}>
+        <View
+          style={[
+            styles.emptyContainer,
+            { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+          ]}
+        >
           <SurfaceCard
             elevation="none"
             style={[styles.emptyCard, { borderColor: theme.colors.border }]}
@@ -332,7 +364,12 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
         </View>
       ) : (
         // Matches List
-        <View style={[styles.listWrapper, { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' }]}>
+        <View
+          style={[
+            styles.listWrapper,
+            { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+          ]}
+        >
           <View style={styles.premiumBannerWrapper}>
             <PremiumGate
               feature="SEE_LIKES"

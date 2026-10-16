@@ -1,4 +1,13 @@
-import { pgTable, uuid, boolean, text, jsonb, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  boolean,
+  text,
+  jsonb,
+  timestamp,
+  uniqueIndex,
+  index,
+} from 'drizzle-orm/pg-core';
 import { users } from './users.js';
 import { matches } from './matches.js';
 
