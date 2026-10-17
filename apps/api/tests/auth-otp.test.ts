@@ -7,7 +7,7 @@ import { DatabaseService } from '../src/infrastructure/database/database.service
 import { otpChallenges } from '../src/infrastructure/database/drizzle/schema/index.js';
 import { generateUuidV7 } from '@platform/domain';
 
-describe.skip('Auth: Phone OTP Verification (Removed per OTP backend deprecation)', () => {
+describe('Auth: Phone OTP Verification', () => {
   let app: INestApplication;
   let mockSmsProvider: MockSmsProvider;
   let databaseService: DatabaseService;

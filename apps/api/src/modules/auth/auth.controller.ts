@@ -20,6 +20,7 @@ import {
 import type { Request } from 'express';
 import {
   type AuthTokensResponse,
+  type GenericAuthNoticeResponse,
   type SessionItemResponse,
   type DeviceItemResponse,
   type RefreshTokenResponse,
@@ -28,6 +29,8 @@ import {
   type RevokeDeviceResponse,
   type PasskeyRegisterOptionsResponse,
   type PasskeyLoginOptionsResponse,
+  type VerifyOtpPayload,
+  type VerifyEmailPayload,
   type GoogleAuthPayload,
   type AppleAuthPayload,
   type FirebaseAuthPayload,
@@ -44,6 +47,10 @@ import { AuthGuard, type AuthenticatedPrincipal } from '../../common/guards/auth
 import { AuthService } from './services/auth.service.js';
 import { PasskeyService } from './providers/passkey.service.js';
 import {
+  requestOtpSchema,
+  verifyOtpSchema,
+  requestEmailSchema,
+  verifyEmailSchema,
   checkIdentifierSchema,
   googleAuthSchema,
   appleAuthSchema,
@@ -65,6 +72,66 @@ export class AuthController {
     @Inject(PasskeyService)
     private readonly passkeyService: PasskeyService
   ) {}
+
+  // ----------------------------------------------------
+  // Phone OTP Endpoints
+  // ----------------------------------------------------
+
+  @Public()
+  @Post('otp/request')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request phone number OTP challenge' })
+  @SwaggerResponse({ status: 200, description: 'Generic verification notice' })
+  async requestOtp(
+    @Body(new AppValidationPipe(requestOtpSchema)) body: { phoneNumber: string; deviceId?: string },
+    @Req() req: Request
+  ): Promise<GenericAuthNoticeResponse> {
+    return this.authService.requestOtp(body.phoneNumber, req.ip, body.deviceId);
+  }
+
+  @Public()
+  @Post('otp/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify phone number OTP and create session' })
+  @SwaggerResponse({ status: 200, description: 'Authenticated session tokens' })
+  async verifyOtp(
+    @Body(new AppValidationPipe(verifyOtpSchema))
+    body: VerifyOtpPayload,
+    @Req() req: Request
+  ): Promise<AuthTokensResponse> {
+    const userAgent = req.headers['user-agent'];
+    return this.authService.verifyOtp(body.phoneNumber, body.code, body.device, req.ip, userAgent);
+  }
+
+  // ----------------------------------------------------
+  // Email Passwordless Endpoints
+  // ----------------------------------------------------
+
+  @Public()
+  @Post('email/request-verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request email verification challenge' })
+  @SwaggerResponse({ status: 200, description: 'Generic verification notice' })
+  async requestEmailVerification(
+    @Body(new AppValidationPipe(requestEmailSchema)) body: { email: string },
+    @Req() req: Request
+  ): Promise<GenericAuthNoticeResponse> {
+    return this.authService.requestEmailVerification(body.email, req.ip);
+  }
+
+  @Public()
+  @Post('email/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify email challenge and create session' })
+  @SwaggerResponse({ status: 200, description: 'Authenticated session tokens' })
+  async verifyEmail(
+    @Body(new AppValidationPipe(verifyEmailSchema))
+    body: VerifyEmailPayload,
+    @Req() req: Request
+  ): Promise<AuthTokensResponse> {
+    const userAgent = req.headers['user-agent'];
+    return this.authService.verifyEmail(body.email, body.code, body.device, req.ip, userAgent);
+  }
 
   // ----------------------------------------------------
   // Identifier Existence Check (Anti-Enumeration Guarded)

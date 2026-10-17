@@ -10,7 +10,7 @@ import { DatabaseService } from '../src/infrastructure/database/database.service
 import { otpChallenges } from '../src/infrastructure/database/drizzle/schema/index.js';
 import { generateUuidV7 } from '@platform/domain';
 
-describe.skip('Auth: Email Passwordless Verification (Removed per OTP backend deprecation)', () => {
+describe('Auth: Email Passwordless Verification', () => {
   let app: INestApplication;
   let mockEmailProvider: MockEmailProvider;
   let databaseService: DatabaseService;
