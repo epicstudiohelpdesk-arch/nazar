@@ -17,6 +17,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFonts } from 'expo-font';
 import {
   Phone,
   Mail,
@@ -299,8 +300,14 @@ export default function LoginScreen(): React.JSX.Element {
   const countryListMaxHeight = Math.min(360, Math.round(windowHeight * 0.45));
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isSignUp = mode !== 'signin';
-
   const { theme } = useTheme();
+
+  // Load Folkra brand font
+  const [fontsLoaded] = useFonts({
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Folkra: require('../../assets/fonts/folkra.ttf'),
+  });
+  const folkraFont = fontsLoaded ? 'Folkra' : undefined;
 
   const [activeTab, setActiveTab] = useState<'phone' | 'email'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -318,6 +325,50 @@ export default function LoginScreen(): React.JSX.Element {
   const emailInputRef = useRef<RNTextInput>(null);
   const searchInputRef = useRef<RNTextInput>(null);
   const scrollViewRef = useRef<any>(null);
+
+  // Field shake animation & attention highlight state
+  const fieldShakeAnim = useRef(new Animated.Value(0)).current;
+  const [isFieldHighlighted, setIsFieldHighlighted] = useState(false);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const triggerFieldShake = () => {
+    setErrorMessage(undefined);
+    setSuggestionMode(null);
+    haptics.notificationError();
+    setIsFieldHighlighted(true);
+
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+    highlightTimeoutRef.current = setTimeout(() => {
+      setIsFieldHighlighted(false);
+    }, 1800);
+
+    if (activeTab === 'phone') {
+      phoneInputRef.current?.focus();
+    } else {
+      emailInputRef.current?.focus();
+    }
+
+    fieldShakeAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(fieldShakeAnim, { toValue: -8, duration: 40, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: 8, duration: 40, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: -6, duration: 40, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: 6, duration: 40, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: -3, duration: 35, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: 3, duration: 35, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: 0, duration: 30, useNativeDriver: true }),
+    ]).start();
+  };
 
   // Animated scroll listener for glossy top vignette
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -338,6 +389,8 @@ export default function LoginScreen(): React.JSX.Element {
     setActiveTab(newTab);
     setErrorMessage(undefined);
     setSuggestionMode(null);
+    setIsFieldHighlighted(false);
+    fieldShakeAnim.setValue(0);
     // Smoothly focus corresponding input if already focused
     if (isInputFocused) {
       setTimeout(() => {
@@ -390,12 +443,14 @@ export default function LoginScreen(): React.JSX.Element {
     setPhoneNumber(cleaned);
     if (errorMessage) setErrorMessage(undefined);
     if (suggestionMode) setSuggestionMode(null);
+    if (isFieldHighlighted) setIsFieldHighlighted(false);
   };
 
   const handleEmailChange = (text: string) => {
     setEmail(text.trim());
     if (errorMessage) setErrorMessage(undefined);
     if (suggestionMode) setSuggestionMode(null);
+    if (isFieldHighlighted) setIsFieldHighlighted(false);
   };
 
   const formatPhoneNumber = (num: string): string => {
@@ -430,8 +485,7 @@ export default function LoginScreen(): React.JSX.Element {
     if (activeTab === 'phone') {
       const minLength = Math.max(6, selectedCountry.maxLength - 3);
       if (phoneNumber.length < minLength) {
-        setErrorMessage(`Please enter a valid mobile number for ${selectedCountry.name}.`);
-        setSuggestionMode(null);
+        triggerFieldShake();
         return;
       }
       fullIdentifier = `${selectedCountry.dialCode}${phoneNumber}`;
@@ -440,8 +494,7 @@ export default function LoginScreen(): React.JSX.Element {
       // Email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        setErrorMessage('Please enter a valid email address.');
-        setSuggestionMode(null);
+        triggerFieldShake();
         return;
       }
       fullIdentifier = email.trim();
@@ -912,27 +965,35 @@ export default function LoginScreen(): React.JSX.Element {
                     style={[
                       styles.inputLabel,
                       {
-                        color: errorMessage ? theme.colors.error : theme.colors.textSecondary,
+                        color: isFieldHighlighted
+                          ? isDark
+                            ? '#FFFFFF'
+                            : '#1C1917'
+                          : errorMessage
+                            ? theme.colors.error
+                            : theme.colors.textSecondary,
                       },
                     ]}
                   >
                     Mobile Number
                   </Text>
-                  <View
+                  <Animated.View
                     style={[
                       styles.inputCard,
                       {
                         backgroundColor: isDark
                           ? 'rgba(255, 255, 255, 0.05)'
                           : theme.colors.surface,
-                        borderColor: errorMessage
-                          ? theme.colors.error
-                          : isInputFocused
-                            ? theme.colors.accent
+                        borderColor:
+                          isInputFocused || isFieldHighlighted
+                            ? isDark
+                              ? '#FFFFFF'
+                              : '#1C1917'
                             : isDark
-                              ? 'rgba(255, 255, 255, 0.1)'
-                              : theme.colors.border,
-                        borderWidth: isInputFocused || errorMessage ? 1.5 : 1,
+                              ? 'rgba(255, 255, 255, 0.22)'
+                              : 'rgba(0, 0, 0, 0.15)',
+                        borderWidth: 1,
+                        transform: [{ translateX: fieldShakeAnim }],
                       },
                     ]}
                   >
@@ -967,7 +1028,9 @@ export default function LoginScreen(): React.JSX.Element {
                           styles.badgeDivider,
                           {
                             backgroundColor: isDark
-                              ? 'rgba(255, 255, 255, 0.12)'
+                              ? isInputFocused || isFieldHighlighted
+                                ? 'rgba(255, 255, 255, 0.22)'
+                                : 'rgba(255, 255, 255, 0.12)'
                               : theme.colors.border,
                           },
                         ]}
@@ -1004,7 +1067,7 @@ export default function LoginScreen(): React.JSX.Element {
                         <X size={14} color={theme.colors.textTertiary} />
                       </TouchableOpacity>
                     )}
-                  </View>
+                  </Animated.View>
                   <Text level="caption" color="tertiary" style={styles.helperText}>
                     We will send a 6-digit SMS verification code to this mobile number.
                   </Text>
@@ -1015,33 +1078,47 @@ export default function LoginScreen(): React.JSX.Element {
                     style={[
                       styles.inputLabel,
                       {
-                        color: errorMessage ? theme.colors.error : theme.colors.textSecondary,
+                        color: isFieldHighlighted
+                          ? isDark
+                            ? '#FFFFFF'
+                            : '#1C1917'
+                          : errorMessage
+                            ? theme.colors.error
+                            : theme.colors.textSecondary,
                       },
                     ]}
                   >
                     Email Address
                   </Text>
-                  <View
+                  <Animated.View
                     style={[
                       styles.inputCard,
                       {
                         backgroundColor: isDark
                           ? 'rgba(255, 255, 255, 0.05)'
                           : theme.colors.surface,
-                        borderColor: errorMessage
-                          ? theme.colors.error
-                          : isInputFocused
-                            ? theme.colors.accent
+                        borderColor:
+                          isInputFocused || isFieldHighlighted
+                            ? isDark
+                              ? '#FFFFFF'
+                              : '#1C1917'
                             : isDark
-                              ? 'rgba(255, 255, 255, 0.1)'
-                              : theme.colors.border,
-                        borderWidth: isInputFocused || errorMessage ? 1.5 : 1,
+                              ? 'rgba(255, 255, 255, 0.22)'
+                              : 'rgba(0, 0, 0, 0.15)',
+                        borderWidth: 1,
+                        transform: [{ translateX: fieldShakeAnim }],
                       },
                     ]}
                   >
                     <Mail
                       size={17}
-                      color={isInputFocused ? theme.colors.accent : theme.colors.textTertiary}
+                      color={
+                        isInputFocused || isFieldHighlighted
+                          ? isDark
+                            ? '#FFFFFF'
+                            : '#1C1917'
+                          : theme.colors.textTertiary
+                      }
                       style={{ marginRight: 10 }}
                     />
                     <RNTextInput
@@ -1078,7 +1155,7 @@ export default function LoginScreen(): React.JSX.Element {
                         <X size={14} color={theme.colors.textTertiary} />
                       </TouchableOpacity>
                     )}
-                  </View>
+                  </Animated.View>
                   <Text level="caption" color="tertiary" style={styles.helperText}>
                     We will send a 6-digit confirmation code to your inbox.
                   </Text>
@@ -1146,9 +1223,12 @@ export default function LoginScreen(): React.JSX.Element {
                 style={[
                   styles.primaryButton,
                   {
-                    backgroundColor: theme.colors.accent,
+                    backgroundColor: '#FFFFFF',
+                    borderColor: isDark ? 'transparent' : 'rgba(0, 0, 0, 0.12)',
+                    borderWidth: isDark ? 0 : 1,
                     opacity: rateLimitSeconds > 0 || isLoading ? 0.7 : 1,
-                    shadowColor: theme.colors.accent,
+                    shadowColor: '#000000',
+                    shadowOpacity: isDark ? 0.28 : 0.12,
                   },
                 ]}
                 onPress={handleContinue}
@@ -1158,14 +1238,22 @@ export default function LoginScreen(): React.JSX.Element {
                 accessibilityLabel="Continue to OTP verification"
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#000000" />
                 ) : (
                   <View style={styles.primaryButtonContent}>
-                    <Text style={styles.primaryButtonText}>
+                    <Text
+                      style={[
+                        styles.primaryButtonText,
+                        {
+                          fontFamily: folkraFont,
+                          color: '#000000',
+                        },
+                      ]}
+                    >
                       {rateLimitSeconds > 0 ? `Wait (${rateLimitSeconds}s)` : 'Continue'}
                     </Text>
                     {rateLimitSeconds === 0 && (
-                      <ArrowRight size={16} color="#FFFFFF" style={{ marginLeft: 6 }} />
+                      <ArrowRight size={16} color="#000000" style={{ marginLeft: 6 }} />
                     )}
                   </View>
                 )}
@@ -1621,8 +1709,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15.5,
+    color: '#000000',
+    fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
