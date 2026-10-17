@@ -10,9 +10,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Modal,
   FlatList,
   Animated,
+  useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,7 +21,6 @@ import {
   Phone,
   Mail,
   AlertCircle,
-  Sparkles,
   Clock,
   ArrowRight,
   ArrowLeft,
@@ -33,10 +32,9 @@ import {
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { Text } from '../../src/design/primitives/Text.js';
 import { haptics } from '../../src/design/haptics/index.js';
-import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { SmoothBottomSheetModal } from '../../src/design/components/modal/SmoothBottomSheetModal.js';
 import { getDefaultAuthService } from '../../src/auth/auth-service.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
-import { useProfileStore } from '../../src/profile/profile-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 import { GoogleIcon, PasskeyIcon } from '../../src/design/components/icons/BrandIcons.js';
 import { promptGoogleSignIn } from '../../src/auth/google-auth.js';
@@ -297,6 +295,8 @@ const COUNTRIES: Country[] = [
 export default function LoginScreen(): React.JSX.Element {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const countryListMaxHeight = Math.min(360, Math.round(windowHeight * 0.45));
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isSignUp = mode !== 'signin';
 
@@ -667,68 +667,6 @@ export default function LoginScreen(): React.JSX.Element {
       }
       return;
     }
-  };
-
-  const handleSkipAuth = async () => {
-    Keyboard.dismiss();
-    haptics.success();
-    try {
-      const storage = getDefaultAuthClient().getStorage();
-      await storage.setAccessToken('dev-demo-token');
-      await storage.setRefreshToken('dev-demo-refresh-token');
-    } catch {
-      // ignore dev bypass failure
-    }
-
-    useProfileStore.getState().setProfile({
-      id: 'demo-user-1',
-      userId: 'demo-user-1',
-      displayName: 'Subham',
-      dateOfBirth: '2000-01-01',
-      age: 25,
-      gender: 'MAN',
-      bio: 'Building Nazar — mindful, intentional dating ✨',
-      occupation: 'Founder & Engineer',
-      education: 'Tech & Product',
-      city: 'Mumbai',
-      countryCode: 'IN',
-      visibility: 'ACTIVE',
-      completionStatus: {
-        percentage: 100,
-        missingRequired: [],
-        recommended: [],
-      },
-      interests: [
-        { id: '1', name: 'Design', slug: 'design', category: 'Creative' },
-        { id: '2', name: 'Coffee', slug: 'coffee', category: 'Food & Drink' },
-        { id: '3', name: 'Tech', slug: 'tech', category: 'Tech' },
-      ],
-      prompts: [
-        {
-          id: 'p1',
-          promptDefinitionId: 'pd1',
-          prompt: 'A life goal of mine is...',
-          answer: 'To build software that brings people together meaningfully.',
-          position: 0,
-        },
-      ],
-      media: [
-        {
-          id: 'm1',
-          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=80',
-          mediaType: 'IMAGE',
-          mimeType: 'image/jpeg',
-          status: 'READY',
-          position: 0,
-          isPrimary: true,
-          createdAt: new Date().toISOString(),
-        },
-      ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-
-    router.replace('/(tabs)/discovery');
   };
 
   const isDark = theme.mode === 'dark';
@@ -1308,25 +1246,6 @@ export default function LoginScreen(): React.JSX.Element {
                     : `Sign in with ${passkeyInfo?.label || 'Passkey'}`}
                 </Text>
               </TouchableOpacity>
-
-              {/* Discreet Dev Explore Pill */}
-              <TouchableOpacity
-                style={[
-                  styles.devBypassPill,
-                  {
-                    backgroundColor: 'rgba(16, 185, 129, 0.07)',
-                    borderColor: 'rgba(16, 185, 129, 0.22)',
-                  },
-                ]}
-                onPress={handleSkipAuth}
-                activeOpacity={0.75}
-                accessibilityRole="button"
-                accessibilityLabel="Explore Preview Demo Mode"
-                testID="skip-auth-button"
-              >
-                <Sparkles size={13} color="#10B981" style={{ marginRight: 6 }} />
-                <Text style={styles.devBypassText}>Explore Preview (Demo Mode)</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Mode Switcher Toggle */}
@@ -1361,165 +1280,134 @@ export default function LoginScreen(): React.JSX.Element {
       </TouchableWithoutFeedback>
 
       {/* Bottom Sheet Country Code Modal */}
-      <Modal
+      <SmoothBottomSheetModal
         visible={isCountryModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => {
+        onClose={() => {
           setIsCountryModalVisible(false);
           setCountrySearch('');
         }}
+        showHandle={true}
+        sheetStyle={{ maxHeight: '72%' }}
       >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            setIsCountryModalVisible(false);
-            setCountrySearch('');
-          }}
+        {/* Modal Header */}
+        <View style={styles.modalHeader}>
+          <Text style={[styles.modalTitle, { color: theme.colors.textPrimary }]}>
+            Select Country / Region
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              haptics.light();
+              setIsCountryModalVisible(false);
+              setCountrySearch('');
+            }}
+            style={[
+              styles.modalCloseButton,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : theme.colors.surfaceMuted,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Close country selection"
+          >
+            <X size={16} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Input */}
+        <View
+          style={[
+            styles.modalSearchCard,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : theme.colors.surfaceMuted,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : theme.colors.border,
+            },
+          ]}
         >
-          <View style={styles.modalBackdrop}>
-            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-              <View
+          <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          <RNTextInput
+            ref={searchInputRef}
+            style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
+            placeholder="Search country or dial code..."
+            placeholderTextColor={theme.colors.textTertiary}
+            value={countrySearch}
+            onChangeText={setCountrySearch}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+          />
+          {countrySearch.length > 0 && (
+            <TouchableOpacity onPress={() => setCountrySearch('')}>
+              <X size={14} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Country List */}
+        <FlatList
+          style={[styles.countryList, { maxHeight: countryListMaxHeight }]}
+          data={filteredCountries}
+          keyExtractor={(item) => item.code}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.countryListContent}
+          renderItem={({ item }) => {
+            const isSelected = item.code === selectedCountry.code;
+            return (
+              <TouchableOpacity
                 style={[
-                  styles.modalContent,
-                  {
-                    backgroundColor: isDark ? '#141216' : theme.colors.surface,
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : theme.colors.border,
+                  styles.countryRow,
+                  isSelected && {
+                    backgroundColor: isDark ? 'rgba(230, 57, 32, 0.14)' : 'rgba(230, 57, 32, 0.08)',
                   },
                 ]}
+                onPress={() => {
+                  haptics.selection();
+                  setSelectedCountry(item);
+                  setIsCountryModalVisible(false);
+                  setCountrySearch('');
+                  if (phoneNumber.length > item.maxLength) {
+                    setPhoneNumber(phoneNumber.slice(0, item.maxLength));
+                  }
+                  setTimeout(() => {
+                    phoneInputRef.current?.focus();
+                  }, 300);
+                }}
+                activeOpacity={0.7}
               >
-                {/* Drag Handle Indicator */}
-                <View style={styles.modalHandle} />
-
-                {/* Modal Header */}
-                <View style={styles.modalHeader}>
-                  <Text style={[styles.modalTitle, { color: theme.colors.textPrimary }]}>
-                    Select Country / Region
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      haptics.light();
-                      setIsCountryModalVisible(false);
-                      setCountrySearch('');
-                    }}
+                <Text style={styles.countryRowFlag}>{item.flag}</Text>
+                <View style={styles.countryRowInfo}>
+                  <Text
                     style={[
-                      styles.modalCloseButton,
+                      styles.countryRowName,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : theme.colors.surfaceMuted,
+                        color: isSelected ? theme.colors.accent : theme.colors.textPrimary,
+                        fontWeight: isSelected ? '700' : '500',
                       },
                     ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Close country selection"
                   >
-                    <X size={16} color={theme.colors.textSecondary} />
-                  </TouchableOpacity>
+                    {item.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.countryRowCodeBadge,
+                      {
+                        color: isSelected ? theme.colors.accent : theme.colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {item.dialCode}
+                  </Text>
                 </View>
-
-                {/* Search Input */}
-                <View
-                  style={[
-                    styles.modalSearchCard,
-                    {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.06)'
-                        : theme.colors.surfaceMuted,
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : theme.colors.border,
-                    },
-                  ]}
-                >
-                  <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
-                  <RNTextInput
-                    ref={searchInputRef}
-                    style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
-                    placeholder="Search country or dial code..."
-                    placeholderTextColor={theme.colors.textTertiary}
-                    value={countrySearch}
-                    onChangeText={setCountrySearch}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    returnKeyType="search"
-                    clearButtonMode="while-editing"
-                  />
-                  {countrySearch.length > 0 && (
-                    <TouchableOpacity onPress={() => setCountrySearch('')}>
-                      <X size={14} color={theme.colors.textTertiary} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* Country List */}
-                <FlatList
-                  data={filteredCountries}
-                  keyExtractor={(item) => item.code}
-                  keyboardShouldPersistTaps="handled"
-                  keyboardDismissMode="on-drag"
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={styles.countryListContent}
-                  renderItem={({ item }) => {
-                    const isSelected = item.code === selectedCountry.code;
-                    return (
-                      <TouchableOpacity
-                        style={[
-                          styles.countryRow,
-                          isSelected && {
-                            backgroundColor: isDark
-                              ? 'rgba(230, 57, 32, 0.14)'
-                              : 'rgba(230, 57, 32, 0.08)',
-                          },
-                        ]}
-                        onPress={() => {
-                          haptics.selection();
-                          setSelectedCountry(item);
-                          setIsCountryModalVisible(false);
-                          setCountrySearch('');
-                          if (phoneNumber.length > item.maxLength) {
-                            setPhoneNumber(phoneNumber.slice(0, item.maxLength));
-                          }
-                          setTimeout(() => {
-                            phoneInputRef.current?.focus();
-                          }, 300);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.countryRowFlag}>{item.flag}</Text>
-                        <View style={styles.countryRowInfo}>
-                          <Text
-                            style={[
-                              styles.countryRowName,
-                              {
-                                color: isSelected ? theme.colors.accent : theme.colors.textPrimary,
-                                fontWeight: isSelected ? '700' : '500',
-                              },
-                            ]}
-                          >
-                            {item.name}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.countryRowCodeBadge,
-                              {
-                                color: isSelected
-                                  ? theme.colors.accent
-                                  : theme.colors.textSecondary,
-                              },
-                            ]}
-                          >
-                            {item.dialCode}
-                          </Text>
-                        </View>
-                        {isSelected && (
-                          <Check size={18} color={theme.colors.accent} style={{ marginLeft: 8 }} />
-                        )}
-                      </TouchableOpacity>
-                    );
-                  }}
-                />
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+                {isSelected && (
+                  <Check size={18} color={theme.colors.accent} style={{ marginLeft: 8 }} />
+                )}
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </SmoothBottomSheetModal>
     </View>
   );
 }
@@ -1785,23 +1673,6 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     fontWeight: '600',
   },
-  devBypassPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    borderWidth: 1,
-    alignSelf: 'center',
-  },
-  devBypassText: {
-    color: '#10B981',
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
   legalNotice: {
     color: '#71717A',
     fontSize: 11,
@@ -1824,29 +1695,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 18,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: Platform?.OS === 'ios' ? 36 : 28,
-    maxHeight: '82%',
-  },
-  modalHandle: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
-    alignSelf: 'center',
-    marginBottom: 14,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1879,6 +1727,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14.5,
     paddingVertical: 0,
+  },
+  countryList: {
+    width: '100%',
   },
   countryListContent: {
     paddingBottom: 24,

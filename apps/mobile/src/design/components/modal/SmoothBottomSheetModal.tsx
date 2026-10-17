@@ -22,6 +22,7 @@ export interface SmoothBottomSheetModalProps {
   readonly children: React.ReactNode;
   readonly sheetStyle?: StyleProp<ViewStyle>;
   readonly testID?: string;
+  readonly height?: number | `${number}%`;
   readonly maxHeight?: number | `${number}%`;
   readonly blurIntensity?: number;
   readonly showHandle?: boolean;
@@ -33,6 +34,8 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
   children,
   sheetStyle,
   testID,
+  height,
+  maxHeight,
   blurIntensity = Platform.OS === 'ios' ? 2 : 1,
   showHandle = true,
 }) => {
@@ -145,6 +148,8 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
                 paddingBottom: Math.max(insets.bottom + 12, Platform.OS === 'ios' ? 36 : 24),
                 transform: [{ translateY: sheetTranslateY }],
               },
+              height != null ? { height } : null,
+              maxHeight != null ? { maxHeight } : null,
               sheetStyle,
             ]}
           >
