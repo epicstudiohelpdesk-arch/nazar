@@ -53,3 +53,9 @@ docker-data/
 postgres-data/
 redis-data/
 minio-data/
+
+# Secrets and credentials
+secrets/
+*-firebase-*.json
+firebase-service-account*.json
+

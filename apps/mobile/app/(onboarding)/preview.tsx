@@ -90,9 +90,18 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
     }
   };
 
+  const handleBack = () => {
+    haptics.impactLight();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(onboarding)/permissions');
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
+      <TopNavHeader title="" onBack={handleBack} leftAction="back" />
       <ProgressBar progress={1.0} style={styles.progressBar} />
 
       <ScrollView

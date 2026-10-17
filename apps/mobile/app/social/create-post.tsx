@@ -24,8 +24,20 @@ export default function CreatePostRoute(): React.JSX.Element {
       client={client}
       communityId={communityId}
       communityName={communityQuery.data?.name}
-      onCancel={() => router.back()}
-      onPostCreated={() => router.back()}
+      onCancel={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/social/feed');
+        }
+      }}
+      onPostCreated={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/social/feed');
+        }
+      }}
     />
   );
 }

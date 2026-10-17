@@ -5,6 +5,9 @@ export interface ITokenStorage {
   setRefreshToken(token: string): Promise<void>;
   getDeviceId(): Promise<string | null>;
   setDeviceId(id: string): Promise<void>;
+  getPasskeyCredentialId(): Promise<string | null>;
+  setPasskeyCredentialId(id: string): Promise<void>;
+  clearPasskeyCredentialId(): Promise<void>;
   clearTokens(): Promise<void>;
 }
 
@@ -12,6 +15,7 @@ export class InMemoryTokenStorage implements ITokenStorage {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
   private deviceId: string | null = null;
+  private passkeyCredentialId: string | null = null;
 
   async getAccessToken(): Promise<string | null> {
     return this.accessToken;
@@ -37,6 +41,18 @@ export class InMemoryTokenStorage implements ITokenStorage {
     this.deviceId = id;
   }
 
+  async getPasskeyCredentialId(): Promise<string | null> {
+    return this.passkeyCredentialId;
+  }
+
+  async setPasskeyCredentialId(id: string): Promise<void> {
+    this.passkeyCredentialId = id;
+  }
+
+  async clearPasskeyCredentialId(): Promise<void> {
+    this.passkeyCredentialId = null;
+  }
+
   async clearTokens(): Promise<void> {
     this.accessToken = null;
     this.refreshToken = null;
@@ -53,6 +69,7 @@ export class SecureTokenStorage implements ITokenStorage {
   private static readonly ACCESS_TOKEN_KEY = 'nazar_auth_access_token';
   private static readonly REFRESH_TOKEN_KEY = 'nazar_auth_refresh_token';
   private static readonly DEVICE_ID_KEY = 'nazar_auth_device_id';
+  private static readonly PASSKEY_CREDENTIAL_KEY = 'nazar_auth_passkey_credential_id';
 
   constructor(
     private readonly secureStore: ISecureStoreAdapter,
@@ -110,6 +127,35 @@ export class SecureTokenStorage implements ITokenStorage {
       if (this.fallbackStorage) {
         await this.fallbackStorage.setDeviceId(id);
       }
+    }
+  }
+
+  async getPasskeyCredentialId(): Promise<string | null> {
+    try {
+      return await this.secureStore.getItemAsync(SecureTokenStorage.PASSKEY_CREDENTIAL_KEY);
+    } catch {
+      return this.fallbackStorage ? this.fallbackStorage.getPasskeyCredentialId() : null;
+    }
+  }
+
+  async setPasskeyCredentialId(id: string): Promise<void> {
+    try {
+      await this.secureStore.setItemAsync(SecureTokenStorage.PASSKEY_CREDENTIAL_KEY, id);
+    } catch {
+      if (this.fallbackStorage) {
+        await this.fallbackStorage.setPasskeyCredentialId(id);
+      }
+    }
+  }
+
+  async clearPasskeyCredentialId(): Promise<void> {
+    try {
+      await this.secureStore.deleteItemAsync(SecureTokenStorage.PASSKEY_CREDENTIAL_KEY);
+    } catch {
+      // Ignore
+    }
+    if (this.fallbackStorage) {
+      await this.fallbackStorage.clearPasskeyCredentialId();
     }
   }
 

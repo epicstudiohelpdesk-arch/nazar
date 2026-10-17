@@ -16,6 +16,8 @@ export interface OtpInputProps {
   readonly onChangeOtp?: (otp: string) => void;
   readonly onChangeCode?: (otp: string) => void;
   readonly onChangeText?: (otp: string) => void;
+  readonly onComplete?: (code: string) => void;
+  readonly autoFocus?: boolean;
   readonly error?: string;
   readonly errorMessage?: string;
   readonly disabled?: boolean;
@@ -29,6 +31,8 @@ export const OtpInput: React.FC<OtpInputProps> = ({
   onChangeOtp,
   onChangeCode,
   onChangeText,
+  onComplete,
+  autoFocus = true,
   error,
   errorMessage,
   disabled = false,
@@ -48,67 +52,78 @@ export const OtpInput: React.FC<OtpInputProps> = ({
     onChangeOtp?.(cleanDigits);
     onChangeCode?.(cleanDigits);
     onChangeText?.(cleanDigits);
+    if (cleanDigits.length === length) {
+      onComplete?.(cleanDigits);
+    }
   };
 
   return (
     <View style={[styles.container, style]} testID={testID}>
-      {/* Hidden real text input captures keystrokes and system OTP autofill */}
-      <RNTextInput
-        ref={hiddenInputRef}
-        value={value}
-        onChangeText={handleChange}
-        maxLength={length}
-        keyboardType="number-pad"
-        textContentType="oneTimeCode"
-        autoComplete="one-time-code"
-        editable={!disabled}
-        style={styles.hiddenInput}
-        accessibilityLabel={`Enter ${length}-digit verification code`}
-      />
-
-      {/* Visual discrete digit boxes */}
+      {/* Box container holding discrete cells and full touch hit-area text input */}
       <TouchableOpacity
         activeOpacity={1}
         onPress={() => hiddenInputRef.current?.focus()}
-        style={styles.boxesRow}
+        style={styles.inputBoxContainer}
         accessibilityRole="none"
       >
-        {digits.map((digit, index) => {
-          const isFocused =
-            !disabled &&
-            (index === activeIndex || (index === length - 1 && value.length === length));
-          const isFilled = Boolean(digit);
+        {/* Visual discrete digit boxes */}
+        <View style={styles.boxesRow} pointerEvents="none">
+          {digits.map((digit, index) => {
+            const isFocused =
+              !disabled &&
+              (index === activeIndex || (index === length - 1 && value.length === length));
+            const isFilled = Boolean(digit);
 
-          let borderColor: string = colors.border;
-          if (hasError) borderColor = colors.error;
-          else if (isFocused) borderColor = colors.accent;
-          else if (isFilled) borderColor = colors.borderStrong;
+            let borderColor: string = colors.border;
+            if (hasError) borderColor = colors.error;
+            else if (isFocused) borderColor = colors.accent;
+            else if (isFilled) borderColor = colors.borderStrong;
 
-          return (
-            <View
-              key={index}
-              style={[
-                styles.digitBox,
-                {
-                  borderRadius: radii.radiusMD,
-                  borderColor,
-                  borderWidth: isFocused || hasError ? 2 : 1,
-                  backgroundColor: disabled ? colors.surfaceMuted : colors.surface,
-                },
-              ]}
-            >
-              <Text
-                variant="heading2"
-                style={{
-                  color: disabled ? colors.textTertiary : colors.textPrimary,
-                  textAlign: 'center',
-                }}
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.digitBox,
+                  {
+                    borderRadius: radii.radiusMD,
+                    borderColor,
+                    borderWidth: isFocused || hasError ? 2 : 1,
+                    backgroundColor: disabled ? colors.surfaceMuted : colors.surface,
+                  },
+                ]}
               >
-                {digit}
-              </Text>
-            </View>
-          );
-        })}
+                <Text
+                  variant="heading2"
+                  style={{
+                    color: disabled ? colors.textTertiary : colors.textPrimary,
+                    textAlign: 'center',
+                  }}
+                >
+                  {digit}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Real text input overlay captures keystrokes and iOS SMS autofill directly */}
+        <RNTextInput
+          ref={hiddenInputRef}
+          value={value}
+          onChangeText={handleChange}
+          maxLength={length}
+          keyboardType="number-pad"
+          inputMode="numeric"
+          textContentType="oneTimeCode"
+          autoComplete="one-time-code"
+          autoCorrect={false}
+          spellCheck={false}
+          keyboardAppearance="dark"
+          editable={!disabled}
+          autoFocus={autoFocus}
+          style={styles.hiddenInputOverlay}
+          accessibilityLabel={`Enter ${length}-digit verification code`}
+        />
       </TouchableOpacity>
 
       {hasError && (
@@ -136,23 +151,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 8,
   },
-  hiddenInput: {
-    position: 'absolute',
-    width: 1,
-    height: 1,
-    opacity: 0,
+  inputBoxContainer: {
+    width: '100%',
+    maxWidth: 340,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hiddenInputOverlay: {
+    ...StyleSheet.absoluteFill,
+    opacity: 0.01,
+    color: 'transparent',
+    fontSize: 24,
   },
   boxesRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 10,
+    alignItems: 'center',
+    gap: 8,
     width: '100%',
   },
   digitBox: {
-    width: 48,
-    height: 56,
+    flex: 1,
+    maxWidth: 46,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   feedbackRow: {
     flexDirection: 'row',

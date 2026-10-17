@@ -150,7 +150,13 @@ export default function PublicProfileRoute(): React.JSX.Element {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <TopNavHeader
         title={profile ? profile.displayName : 'Profile'}
-        onBack={() => router.back()}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)/discovery');
+          }
+        }}
         leftAction="back"
         rightAction={
           <View style={styles.headerActions}>

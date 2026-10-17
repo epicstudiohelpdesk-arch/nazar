@@ -89,6 +89,13 @@ export default function SettingsHubRoute(): React.JSX.Element {
           try {
             await purgeAccountSessionAndCaches(queryClient, authClient);
           } finally {
+            try {
+              if (router.canDismiss()) {
+                router.dismissAll();
+              }
+            } catch {
+              // fallback
+            }
             router.replace('/(auth)/welcome');
           }
         },
@@ -98,7 +105,17 @@ export default function SettingsHubRoute(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="Settings" onBack={() => router.back()} leftAction="back" />
+      <TopNavHeader
+        title="Settings"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)/profile');
+          }
+        }}
+        leftAction="back"
+      />
       <ScrollView
         contentContainerStyle={[
           styles.content,

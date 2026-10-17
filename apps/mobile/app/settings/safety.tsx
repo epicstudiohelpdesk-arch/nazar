@@ -42,7 +42,17 @@ export default function SafetyHubRoute(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="Safety & Trust" onBack={() => router.back()} leftAction="back" />
+      <TopNavHeader
+        title="Safety & Trust"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/settings');
+          }
+        }}
+        leftAction="back"
+      />
       <ScrollView
         contentContainerStyle={[
           styles.content,

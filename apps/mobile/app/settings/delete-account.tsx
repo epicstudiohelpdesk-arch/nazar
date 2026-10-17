@@ -51,7 +51,16 @@ export default function DeleteAccountRoute(): React.JSX.Element {
                 [
                   {
                     text: 'OK',
-                    onPress: () => router.replace('/(auth)/welcome'),
+                    onPress: () => {
+                      try {
+                        if (router.canDismiss()) {
+                          router.dismissAll();
+                        }
+                      } catch {
+                        // fallback
+                      }
+                      router.replace('/(auth)/welcome');
+                    },
                   },
                 ]
               );
@@ -68,7 +77,17 @@ export default function DeleteAccountRoute(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="Delete Account" onBack={() => router.back()} leftAction="back" />
+      <TopNavHeader
+        title="Delete Account"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/settings/account');
+          }
+        }}
+        leftAction="back"
+      />
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -144,7 +163,13 @@ export default function DeleteAccountRoute(): React.JSX.Element {
             variant="secondary"
             size="lg"
             fullWidth
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/settings/account');
+              }
+            }}
             accessibilityLabel="Cancel and keep account"
           >
             Keep My Account

@@ -256,4 +256,16 @@ export class AppConfigService {
   get billingProviderMock(): boolean {
     return this.env.BILLING_PROVIDER_MOCK;
   }
+
+  get firebaseProjectId(): string {
+    return this.env.FIREBASE_PROJECT_ID;
+  }
+
+  get firebaseServiceAccountPath(): string | undefined {
+    return this.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+  }
+
+  get firebaseServiceAccountJson(): string | undefined {
+    return this.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  }
 }

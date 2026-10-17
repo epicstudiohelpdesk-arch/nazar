@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { e164PhoneSchema, standardEmailSchema } from '@platform/validation';
 
+export const checkIdentifierSchema = z.object({
+  identifier: z.string().trim().min(3).max(255),
+  type: z.enum(['PHONE', 'EMAIL']).optional(),
+});
+
 export const deviceRegistrationSchema = z.object({
   platform: z.enum(['ios', 'android', 'web']),
   deviceModel: z.string().max(128).optional(),
@@ -50,6 +55,12 @@ export const appleAuthSchema = z
   .refine((data) => data.idToken || data.authorizationCode, {
     message: 'Either idToken or authorizationCode is required',
   });
+
+export const firebaseAuthSchema = z.object({
+  idToken: z.string().trim().min(1, 'Firebase ID token is required'),
+  device: deviceRegistrationSchema.optional(),
+});
+
 
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().trim().min(1, 'Refresh token is required'),

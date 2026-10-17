@@ -139,7 +139,13 @@ export function BillingHistoryScreen({ client }: BillingHistoryScreenProps): Rea
       <TopNavHeader
         title="Billing History"
         leftAction="back"
-        onBack={() => router.back()}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/settings');
+          }
+        }}
         testID="billing-history-header"
       />
 

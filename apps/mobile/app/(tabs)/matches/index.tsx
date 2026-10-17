@@ -11,7 +11,13 @@ export default function MatchesTabRoute(): React.JSX.Element {
     <MatchesScreen
       authClient={authClient}
       onSelectMatch={(matchId) => router.push(`/matches/${matchId}`)}
-      onBack={() => router.back()}
+      onBack={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/discovery');
+        }
+      }}
     />
   );
 }

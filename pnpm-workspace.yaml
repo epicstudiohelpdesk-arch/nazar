@@ -6,7 +6,11 @@ packages:
 allowBuilds:
   esbuild: true
   '@scarf/scarf': false
+  '@firebase/util': true
+  protobufjs: true
 
 onlyBuiltDependencies:
   - esbuild
   - '@turbo/darwin-arm64'
+  - '@firebase/util'
+  - protobufjs

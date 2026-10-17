@@ -15,7 +15,11 @@ export default function BlockModalRoute(): React.JSX.Element {
 
   const handleConfirmBlock = async () => {
     if (!targetUserId) {
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/discovery');
+      }
       return;
     }
 
@@ -43,6 +47,14 @@ export default function BlockModalRoute(): React.JSX.Element {
     }
   };
 
+  const handleCancel = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/discovery');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Dialog
@@ -54,7 +66,7 @@ export default function BlockModalRoute(): React.JSX.Element {
         cancelLabel="Cancel"
         isSubmitting={isSubmitting}
         onConfirm={handleConfirmBlock}
-        onCancel={() => router.back()}
+        onCancel={handleCancel}
       />
     </View>
   );

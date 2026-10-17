@@ -4,10 +4,32 @@ export type MobileEnvironment = 'development' | 'test' | 'staging' | 'production
 
 let cachedConfig: ClientEnv | null = null;
 
+function getDevHost(): string {
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
+    return 'localhost';
+  }
+  try {
+    // Use dynamic require so Node.js test environments without __DEV__ don't throw
+    const Constants = (require('expo-constants')?.default ?? require('expo-constants')) as any;
+    const hostUri = Constants?.expoConfig?.hostUri;
+    if (hostUri) {
+      const ip = hostUri.split(':')[0];
+      if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
+        return ip;
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return '192.168.31.250';
+}
+
 export function getMobileConfig(envOverrides?: Partial<Record<string, string>>): ClientEnv {
   if (cachedConfig && !envOverrides) {
     return cachedConfig;
   }
+
+  const devHost = getDevHost();
 
   const rawEnv: Record<string, unknown> = {
     EXPO_PUBLIC_APP_ENV:
@@ -17,11 +39,11 @@ export function getMobileConfig(envOverrides?: Partial<Record<string, string>>):
     EXPO_PUBLIC_API_URL:
       envOverrides?.EXPO_PUBLIC_API_URL ||
       (typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_API_URL : undefined) ||
-      'http://localhost:4000/api/v1',
+      `http://${devHost}:4000/api/v1`,
     EXPO_PUBLIC_WS_URL:
       envOverrides?.EXPO_PUBLIC_WS_URL ||
       (typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_WS_URL : undefined) ||
-      'ws://localhost:4000',
+      `ws://${devHost}:4000`,
     EXPO_PUBLIC_APP_VERSION:
       envOverrides?.EXPO_PUBLIC_APP_VERSION ||
       (typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_APP_VERSION : undefined) ||

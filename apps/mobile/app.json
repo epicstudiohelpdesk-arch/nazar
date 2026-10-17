@@ -17,18 +17,37 @@
       "bundleIdentifier": "com.nazar.app",
       "buildNumber": "10000",
       "icon": "./assets/icon.png",
-      "associatedDomains": ["applinks:nazar.app", "applinks:links.nazar.app"],
+      "associatedDomains": [
+        "applinks:nazar.app",
+        "applinks:links.nazar.app",
+        "webcredentials:nazar.app"
+      ],
       "entitlements": {
         "aps-environment": "production",
-        "com.apple.developer.applesignin": ["Default"],
-        "com.apple.developer.associated-domains": ["applinks:nazar.app", "applinks:links.nazar.app"]
+        "com.apple.developer.associated-domains": [
+          "applinks:nazar.app",
+          "applinks:links.nazar.app",
+          "webcredentials:nazar.app"
+        ]
       },
       "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "nazar",
+              "com.nazar.app",
+              "com.googleusercontent.apps.929075066798-ms4sneu7ac8i4s20o8ktdh30jlvseak3"
+            ]
+          }
+        ],
         "NSCameraUsageDescription": "Nazar needs camera access to let you capture and upload photos for your dating profile.",
         "NSPhotoLibraryUsageDescription": "Nazar needs photo library access so you can select and upload photos for your dating profile.",
         "NSLocationWhenInUseUsageDescription": "Nazar uses your location while using the app to show relevant potential matches and community events near you. Exact coordinates are never shared with other users.",
+        "NSFaceIDUsageDescription": "Nazar uses Face ID to allow you to securely and quickly sign in with your passkey and biometrics.",
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
       "privacyManifests": {
         "NSPrivacyTracking": false,
@@ -72,27 +91,37 @@
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCrashData",
             "NSPrivacyCollectedDataTypeLinked": false,
             "NSPrivacyCollectedDataTypeTracking": false,
-            "NSPrivacyCollectedDataTypePurposes": ["NSPrivacyCollectedDataTypePurposeAnalytics"]
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
+            ]
           },
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
             "NSPrivacyCollectedDataTypeLinked": false,
             "NSPrivacyCollectedDataTypeTracking": false,
-            "NSPrivacyCollectedDataTypePurposes": ["NSPrivacyCollectedDataTypePurposeAnalytics"]
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
+            ]
           }
         ],
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
-            "NSPrivacyAccessedAPITypeReasons": ["35F9.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "35F9.1"
+            ]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
-            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "C617.1"
+            ]
           }
         ]
       }
@@ -127,7 +156,10 @@
               "pathPrefix": "/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -135,7 +167,10 @@
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-web-browser"
+    ],
     "extra": {
       "eas": {
         "projectId": "nazar-release-candidate"

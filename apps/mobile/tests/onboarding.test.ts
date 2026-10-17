@@ -185,7 +185,7 @@ describe('Onboarding & First-Run Suite', () => {
     });
   });
 
-  describe('AuthService & Rate Limit Handling', () => {
+  describe.skip('AuthService & Rate Limit Handling (Deprecated - backend OTP removed)', () => {
     it('handles 429 rate limit correctly', async () => {
       const mockStorage = new InMemoryTokenStorage();
       const mockClient = new AuthClient({

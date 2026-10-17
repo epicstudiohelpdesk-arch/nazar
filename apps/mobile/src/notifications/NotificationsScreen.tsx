@@ -31,6 +31,7 @@ export interface NotificationsScreenProps {
   readonly isEnablingPush?: boolean;
   /** Hides the permission card, e.g. once push is granted. */
   readonly showPermissionCard?: boolean;
+  readonly onBack?: () => void;
 }
 
 const SKELETON_ROWS = 6;
@@ -50,6 +51,7 @@ export function NotificationsScreen({
   onEnablePush,
   isEnablingPush = false,
   showPermissionCard = true,
+  onBack,
 }: NotificationsScreenProps): React.JSX.Element {
   const router = useRouter();
   const { colors, spacing } = useTheme();
@@ -153,6 +155,7 @@ export function NotificationsScreen({
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]} edges={['top']}>
       <TopNavHeader
         title="Activity"
+        onBack={onBack}
         rightAction={
           unread.count > 0 ? (
             <UnreadBadge count={unread.count} testID="activity-center-badge" />

@@ -124,9 +124,18 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     new Set(availableInterests.map((item) => item.category || 'General'))
   );
 
+  const handleBack = () => {
+    haptics.impactLight();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(onboarding)/photos');
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
+      <TopNavHeader title="" onBack={handleBack} leftAction="back" />
       <ProgressBar progress={0.5} style={styles.progressBar} />
 
       <ScrollView

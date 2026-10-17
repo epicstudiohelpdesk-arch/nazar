@@ -12,7 +12,13 @@ export default function ChatRoute(): React.JSX.Element {
     <ChatScreen
       conversationId={conversationId || ''}
       authClient={authClient}
-      onBack={() => router.back()}
+      onBack={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/messages');
+        }
+      }}
     />
   );
 }

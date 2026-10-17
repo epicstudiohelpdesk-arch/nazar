@@ -29,6 +29,20 @@ export interface GenericAuthNoticeResponse {
 }
 
 // ----------------------------------------------------
+// Identifier Existence Check (Anti-Enumeration Guarded)
+// ----------------------------------------------------
+
+export interface CheckIdentifierPayload {
+  readonly identifier: string;
+  readonly type?: 'PHONE' | 'EMAIL';
+}
+
+export interface CheckIdentifierResponse {
+  readonly exists: boolean;
+  readonly provider?: 'PHONE' | 'EMAIL' | 'GOOGLE' | 'APPLE' | 'PASSKEY';
+}
+
+// ----------------------------------------------------
 // Phone OTP Contracts
 // ----------------------------------------------------
 
@@ -74,6 +88,16 @@ export interface AppleAuthPayload {
   readonly nonce?: string;
   readonly device?: DeviceRegistrationPayload;
 }
+
+// ----------------------------------------------------
+// Firebase Auth Contracts
+// ----------------------------------------------------
+
+export interface FirebaseAuthPayload {
+  readonly idToken: string;
+  readonly device?: DeviceRegistrationPayload;
+}
+
 
 // ----------------------------------------------------
 // Passkey (WebAuthn) Contracts

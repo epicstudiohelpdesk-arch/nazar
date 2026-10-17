@@ -47,7 +47,18 @@ export default function SafetyReportModalRoute(): React.JSX.Element {
       Alert.alert(
         'Report Received',
         'Thank you for looking out for our community. Our safety moderation team is actively reviewing this account.',
-        [{ text: 'OK', onPress: () => router.back() }]
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/discovery');
+              }
+            },
+          },
+        ]
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unable to submit report';
@@ -57,9 +68,17 @@ export default function SafetyReportModalRoute(): React.JSX.Element {
     }
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/discovery');
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="Report Member" onBack={() => router.back()} leftAction="close" />
+      <TopNavHeader title="Report Member" onBack={handleBack} leftAction="close" />
       <ScrollView
         contentContainerStyle={[
           styles.content,

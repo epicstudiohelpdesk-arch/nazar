@@ -11,7 +11,6 @@ import {
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Icon, type IconName } from '../../primitives/Icon.js';
-import { haptics } from '../../haptics/index.js';
 import { ensureMinTouchTarget, MIN_TOUCH_TARGET } from '../../a11y/index.js';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive';
@@ -78,11 +77,6 @@ export const Button: React.FC<ButtonProps> = ({
     // Prevent accidental rapid double tap within 400ms
     if (now - lastPressTime.current < 400) return;
     lastPressTime.current = now;
-    if (variant === 'destructive') {
-      haptics.warning();
-    } else {
-      haptics.selection();
-    }
     onPress();
   };
 

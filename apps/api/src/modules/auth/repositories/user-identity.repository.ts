@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { DatabaseService } from '../../../infrastructure/database/database.service.js';
 import type { DrizzleDatabase } from '../../../infrastructure/database/drizzle/client.js';
 import {
@@ -13,6 +13,11 @@ export interface IUserIdentityRepository {
   findByProvider(
     provider: IdentityProviderType,
     providerSubject: string,
+    db?: DrizzleDatabase
+  ): Promise<UserIdentityRow | null>;
+  findByIdentifier(
+    identifier: string,
+    type?: 'PHONE' | 'EMAIL',
     db?: DrizzleDatabase
   ): Promise<UserIdentityRow | null>;
   findById(id: string, db?: DrizzleDatabase): Promise<UserIdentityRow | null>;
@@ -43,6 +48,51 @@ export class UserIdentityRepository implements IUserIdentityRepository {
         and(
           eq(userIdentities.provider, provider),
           eq(userIdentities.providerSubject, providerSubject)
+        )
+      )
+      .limit(1);
+
+    return rows[0] ?? null;
+  }
+
+  async findByIdentifier(
+    identifier: string,
+    type?: 'PHONE' | 'EMAIL',
+    db?: DrizzleDatabase
+  ): Promise<UserIdentityRow | null> {
+    const runner = db ?? this.databaseService.client;
+    const clean = identifier.trim();
+
+    if (type === 'PHONE' || clean.startsWith('+')) {
+      const rows = await runner
+        .select()
+        .from(userIdentities)
+        .where(
+          and(
+            eq(userIdentities.provider, 'PHONE'),
+            eq(userIdentities.providerSubject, clean)
+          )
+        )
+        .limit(1);
+      if (rows[0]) return rows[0];
+    }
+
+    if (type === 'EMAIL' || clean.includes('@')) {
+      const rows = await runner
+        .select()
+        .from(userIdentities)
+        .where(eq(userIdentities.email, clean.toLowerCase()))
+        .limit(1);
+      if (rows[0]) return rows[0];
+    }
+
+    const rows = await runner
+      .select()
+      .from(userIdentities)
+      .where(
+        or(
+          eq(userIdentities.providerSubject, clean),
+          eq(userIdentities.email, clean.toLowerCase())
         )
       )
       .limit(1);

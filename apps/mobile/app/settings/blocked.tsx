@@ -168,7 +168,17 @@ export default function BlockedUsersRoute(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="Blocked Management" onBack={() => router.back()} leftAction="back" />
+      <TopNavHeader
+        title="Blocked Management"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/settings/safety');
+          }
+        }}
+        leftAction="back"
+      />
       <ScrollView
         contentContainerStyle={[
           styles.content,

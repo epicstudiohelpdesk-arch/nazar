@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import type { CommunityDto } from '@platform/api-contracts';
 import { CommunityMembersScreen } from '../../../../src/social/CommunityMembersScreen.js';
@@ -8,6 +8,7 @@ import { SOCIAL_QUERY_KEYS } from '../../../../src/social/social-api.js';
 
 export default function CommunityMembersRoute(): React.JSX.Element {
   const client = useSocialApi();
+  const router = useRouter();
   const { communityId } = useLocalSearchParams<{ communityId: string }>();
   const id = communityId ?? '';
 
@@ -21,12 +22,21 @@ export default function CommunityMembersRoute(): React.JSX.Element {
     staleTime: 60_000,
   });
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(id ? `/social/community/${id}` : '/social/communities');
+    }
+  };
+
   return (
     <CommunityMembersScreen
       client={client}
       communityId={id}
       currentUserRole={community?.currentUserRole ?? null}
       currentUserMembershipStatus={community?.currentUserMembershipStatus ?? null}
+      onBack={handleBack}
     />
   );
 }

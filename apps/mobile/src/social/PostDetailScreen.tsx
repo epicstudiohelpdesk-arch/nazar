@@ -180,7 +180,8 @@ export const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ client, post
       queryClient.removeQueries({ queryKey: SOCIAL_QUERY_KEYS.comments(postId) });
       invalidateFeedLists(queryClient, post?.communityId ?? null);
       if (onBack) onBack();
-      else router.back();
+      else if (router.canGoBack()) router.back();
+      else router.replace('/social/feed');
     },
   });
 
@@ -228,7 +229,8 @@ export const PostDetailScreen: React.FC<PostDetailScreenProps> = ({ client, post
     // return, so the affected caches are refetched.
     invalidateFeedLists(queryClient, post?.communityId ?? null);
     if (onBack) onBack();
-    else router.back();
+    else if (router.canGoBack()) router.back();
+    else router.replace('/social/feed');
   };
 
   if (isLoadingPost) {

@@ -11,7 +11,13 @@ export default function ConversationsRoute(): React.JSX.Element {
     <ConversationsScreen
       authClient={authClient}
       onSelectConversation={(conversationId) => router.push(`/chat/${conversationId}` as any)} // eslint-disable-line @typescript-eslint/no-explicit-any
-      onBack={() => router.back()}
+      onBack={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/discovery');
+        }
+      }}
     />
   );
 }

@@ -19,7 +19,13 @@ export default function CreateCommunityRoute(): React.JSX.Element {
   return (
     <CreateCommunityScreen
       client={client}
-      onCancel={() => router.back()}
+      onCancel={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/social/communities');
+        }
+      }}
       onCreated={(community) => router.replace(`/social/community/${community.id}`)}
     />
   );

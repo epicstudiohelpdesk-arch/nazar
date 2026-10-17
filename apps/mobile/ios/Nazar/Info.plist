@@ -29,6 +29,7 @@
 			<array>
 				<string>nazar</string>
 				<string>com.nazar.app</string>
+				<string>com.googleusercontent.apps.929075066798-ms4sneu7ac8i4s20o8ktdh30jlvseak3</string>
 			</array>
 		</dict>
 	</array>
@@ -51,6 +52,8 @@
 	<string>Nazar needs camera access to let you capture and upload photos for your dating profile.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Nazar uses your location while using the app to show relevant potential matches and community events near you. Exact coordinates are never shared with other users.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Nazar uses Face ID to allow you to securely and quickly sign in with your passkey and biometrics.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Nazar needs photo library access so you can select and upload photos for your dating profile.</string>
 	<key>NSUserActivityTypes</key>

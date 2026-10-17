@@ -68,7 +68,17 @@ export default function PermissionsSettingsRoute(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="App Permissions" onBack={() => router.back()} leftAction="back" />
+      <TopNavHeader
+        title="App Permissions"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/settings');
+          }
+        }}
+        leftAction="back"
+      />
       <ScrollView
         contentContainerStyle={[
           styles.content,

@@ -81,7 +81,11 @@ export default function MatchCelebrationModalRoute(): React.JSX.Element {
 
   const handleKeepBrowsing = () => {
     haptics.light();
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/discovery');
+    }
   };
 
   return (

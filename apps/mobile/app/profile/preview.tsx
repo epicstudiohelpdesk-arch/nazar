@@ -66,7 +66,14 @@ export default function ProfilePreviewRoute(): React.JSX.Element {
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <TopNavHeader title="Profile Preview" onBack={() => router.back()} leftAction="close" />
+        <TopNavHeader
+          title="Profile Preview"
+          onBack={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/profile/edit');
+          }}
+          leftAction="close"
+        />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={theme.colors.accent} />
           <Text level="bodySmall" color="secondary" style={{ marginTop: 12 }}>
@@ -81,7 +88,10 @@ export default function ProfilePreviewRoute(): React.JSX.Element {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <TopNavHeader
         title="Profile Preview"
-        onBack={() => router.back()}
+        onBack={() => {
+          if (router.canGoBack()) router.back();
+          else router.replace('/profile/edit');
+        }}
         leftAction="close"
         rightAction={
           profile?.id ? (

@@ -24,7 +24,13 @@ export default function CreateEventRoute(): React.JSX.Element {
       client={client}
       communityId={communityId}
       communityName={communityQuery.data?.name}
-      onCancel={() => router.back()}
+      onCancel={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/social/events');
+        }
+      }}
       onCreated={(event) => router.replace(`/social/event/${event.id}`)}
     />
   );

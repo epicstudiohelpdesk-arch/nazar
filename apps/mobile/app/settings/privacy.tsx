@@ -150,7 +150,17 @@ export default function PrivacySettingsRoute(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="Privacy Controls" onBack={() => router.back()} leftAction="back" />
+      <TopNavHeader
+        title="Privacy Controls"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/settings');
+          }
+        }}
+        leftAction="back"
+      />
       <ScrollView
         contentContainerStyle={[
           styles.content,

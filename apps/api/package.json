@@ -31,6 +31,7 @@
     "@platform/domain": "workspace:*",
     "@platform/validation": "workspace:*",
     "drizzle-orm": "^0.45.3",
+    "firebase-admin": "^14.5.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",

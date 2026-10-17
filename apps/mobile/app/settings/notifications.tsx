@@ -77,7 +77,13 @@ export default function NotificationSettingsRoute(): React.JSX.Element {
         pushPermission={permission}
         onEnablePush={() => void handleEnable()}
         isEnablingPush={isEnabling}
-        onBack={() => router.back()}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/settings');
+          }
+        }}
       />
     </SafeAreaView>
   );

@@ -10,7 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from './users.js';
 
-export type IdentityProviderType = 'PHONE' | 'EMAIL' | 'GOOGLE' | 'APPLE';
+export type IdentityProviderType = 'PHONE' | 'EMAIL' | 'GOOGLE' | 'APPLE' | 'FIREBASE';
 
 /**
  * User Identities Table

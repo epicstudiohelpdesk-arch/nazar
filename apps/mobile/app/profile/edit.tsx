@@ -221,7 +221,16 @@ export default function EditProfileRoute(): React.JSX.Element {
       void queryClient.invalidateQueries({ queryKey: ['discovery'] });
       trackOnboardingEvent('profile_updated');
       Alert.alert('Saved', 'Your profile updates have been published.', [
-        { text: 'OK', onPress: () => router.back() },
+        {
+          text: 'OK',
+          onPress: () => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)/profile');
+            }
+          },
+        },
       ]);
     },
     onError: (err: unknown) => {
@@ -240,12 +249,22 @@ export default function EditProfileRoute(): React.JSX.Element {
           {
             text: 'Discard',
             style: 'destructive',
-            onPress: () => router.back(),
+            onPress: () => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/profile');
+              }
+            },
           },
         ]
       );
     } else {
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/profile');
+      }
     }
   };
 
@@ -330,7 +349,14 @@ export default function EditProfileRoute(): React.JSX.Element {
   if (isLoadingInitial) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <TopNavHeader title="Edit Profile" onBack={() => router.back()} leftAction="back" />
+        <TopNavHeader
+          title="Edit Profile"
+          onBack={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(tabs)/profile');
+          }}
+          leftAction="back"
+        />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={theme.colors.accent} />
           <Text level="bodySmall" color="secondary" style={{ marginTop: 12 }}>

@@ -20,7 +20,6 @@ import {
 import type { Request } from 'express';
 import {
   type AuthTokensResponse,
-  type GenericAuthNoticeResponse,
   type SessionItemResponse,
   type DeviceItemResponse,
   type RefreshTokenResponse,
@@ -29,13 +28,14 @@ import {
   type RevokeDeviceResponse,
   type PasskeyRegisterOptionsResponse,
   type PasskeyLoginOptionsResponse,
-  type VerifyOtpPayload,
-  type VerifyEmailPayload,
   type GoogleAuthPayload,
   type AppleAuthPayload,
+  type FirebaseAuthPayload,
   type PasskeyRegisterVerifyPayload,
   type PasskeyLoginVerifyPayload,
   type DeviceRegistrationPayload,
+  type CheckIdentifierPayload,
+  type CheckIdentifierResponse,
 } from '@platform/api-contracts';
 import { AppValidationPipe } from '../../common/pipes/app-validation.pipe.js';
 import { Public } from '../../common/decorators/public.decorator.js';
@@ -44,12 +44,10 @@ import { AuthGuard, type AuthenticatedPrincipal } from '../../common/guards/auth
 import { AuthService } from './services/auth.service.js';
 import { PasskeyService } from './providers/passkey.service.js';
 import {
-  requestOtpSchema,
-  verifyOtpSchema,
-  requestEmailSchema,
-  verifyEmailSchema,
+  checkIdentifierSchema,
   googleAuthSchema,
   appleAuthSchema,
+  firebaseAuthSchema,
   refreshTokenSchema,
   passkeyRegisterVerifySchema,
   passkeyLoginOptionsSchema,
@@ -69,63 +67,18 @@ export class AuthController {
   ) {}
 
   // ----------------------------------------------------
-  // Phone OTP Endpoints
+  // Identifier Existence Check (Anti-Enumeration Guarded)
   // ----------------------------------------------------
 
   @Public()
-  @Post('otp/request')
+  @Post('check-identifier')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Request phone number OTP challenge' })
-  @SwaggerResponse({ status: 200, description: 'Generic verification notice' })
-  async requestOtp(
-    @Body(new AppValidationPipe(requestOtpSchema)) body: { phoneNumber: string; deviceId?: string },
-    @Req() req: Request
-  ): Promise<GenericAuthNoticeResponse> {
-    return this.authService.requestOtp(body.phoneNumber, req.ip, body.deviceId);
-  }
-
-  @Public()
-  @Post('otp/verify')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verify phone number OTP and create session' })
-  @SwaggerResponse({ status: 200, description: 'Authenticated session tokens' })
-  async verifyOtp(
-    @Body(new AppValidationPipe(verifyOtpSchema))
-    body: VerifyOtpPayload,
-    @Req() req: Request
-  ): Promise<AuthTokensResponse> {
-    const userAgent = req.headers['user-agent'];
-    return this.authService.verifyOtp(body.phoneNumber, body.code, body.device, req.ip, userAgent);
-  }
-
-  // ----------------------------------------------------
-  // Email Passwordless Endpoints
-  // ----------------------------------------------------
-
-  @Public()
-  @Post('email/request-verification')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Request email verification challenge' })
-  @SwaggerResponse({ status: 200, description: 'Generic verification notice' })
-  async requestEmailVerification(
-    @Body(new AppValidationPipe(requestEmailSchema)) body: { email: string },
-    @Req() req: Request
-  ): Promise<GenericAuthNoticeResponse> {
-    return this.authService.requestEmailVerification(body.email, req.ip);
-  }
-
-  @Public()
-  @Post('email/verify')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verify email challenge and create session' })
-  @SwaggerResponse({ status: 200, description: 'Authenticated session tokens' })
-  async verifyEmail(
-    @Body(new AppValidationPipe(verifyEmailSchema))
-    body: VerifyEmailPayload,
-    @Req() req: Request
-  ): Promise<AuthTokensResponse> {
-    const userAgent = req.headers['user-agent'];
-    return this.authService.verifyEmail(body.email, body.code, body.device, req.ip, userAgent);
+  @ApiOperation({ summary: 'Check if phone or email is registered (with anti-enumeration timing normalization)' })
+  @SwaggerResponse({ status: 200, description: 'Identifier check outcome' })
+  async checkIdentifier(
+    @Body(new AppValidationPipe(checkIdentifierSchema)) body: CheckIdentifierPayload
+  ): Promise<CheckIdentifierResponse> {
+    return this.authService.checkIdentifier(body.identifier, body.type);
   }
 
   // ----------------------------------------------------
@@ -157,6 +110,24 @@ export class AuthController {
     const userAgent = req.headers['user-agent'];
     return this.authService.loginWithApple(body, req.ip, userAgent);
   }
+
+  // ----------------------------------------------------
+  // Firebase Auth Endpoints (Phone OTP & Email)
+  // ----------------------------------------------------
+
+  @Public()
+  @Post('firebase')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Authenticate with Firebase ID token (Phone OTP or Email)' })
+  @SwaggerResponse({ status: 200, description: 'Authenticated session tokens' })
+  async loginWithFirebase(
+    @Body(new AppValidationPipe(firebaseAuthSchema)) body: FirebaseAuthPayload,
+    @Req() req: Request
+  ): Promise<AuthTokensResponse> {
+    const userAgent = req.headers['user-agent'];
+    return this.authService.loginWithFirebase(body, req.ip, userAgent);
+  }
+
 
   // ----------------------------------------------------
   // Passkey Endpoints (WebAuthn)

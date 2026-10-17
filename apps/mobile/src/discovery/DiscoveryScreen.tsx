@@ -1188,10 +1188,10 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
       {/* Bottom Floating Luxury Action Bar */}
       {activeCandidate && (
-        <View style={[styles.bottomActionBar, { paddingBottom: Math.max(insets.bottom, 12) + 74 }]}>
+        <View style={[styles.bottomActionBar, { marginBottom: Math.max(insets.bottom, 12) + 70 }]}>
           {/* Undo Button */}
           <FloatingActionButton
-            size={44}
+            size={42}
             style={[
               styles.actionCircle,
               {
@@ -1206,12 +1206,12 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             accessibilityLabel="Undo last pass or like"
             testID="discovery-undo-btn"
           >
-            <Icon name="refresh" size={19} color="#F59E0B" strokeWidth={2.4} />
+            <Icon name="refresh" size={18} color="#F59E0B" strokeWidth={2.4} />
           </FloatingActionButton>
 
           {/* Pass Button */}
           <FloatingActionButton
-            size={62}
+            size={58}
             style={[
               styles.actionCircle,
               {
@@ -1224,12 +1224,12 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             accessibilityLabel={`Pass on ${activeCandidate.profile.displayName}`}
             testID="discovery-pass-btn"
           >
-            <Icon name="close" size={26} color="#FB7185" strokeWidth={2.8} />
+            <Icon name="close" size={25} color="#FB7185" strokeWidth={2.8} />
           </FloatingActionButton>
 
           {/* Super Like / Blue Star Button */}
           <FloatingActionButton
-            size={48}
+            size={46}
             style={[
               styles.actionCircle,
               {
@@ -1242,12 +1242,12 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             accessibilityLabel={`Super like ${activeCandidate.profile.displayName}`}
             testID="discovery-super-btn"
           >
-            <Icon name="star" size={21} color="#38BDF8" strokeWidth={2.2} />
+            <Icon name="star" size={20} color="#38BDF8" strokeWidth={2.2} />
           </FloatingActionButton>
 
           {/* Hero Like Button (Ruby Red Accent) */}
           <FloatingActionButton
-            size={68}
+            size={64}
             style={[
               styles.actionCircle,
               styles.likeCircleGlow,
@@ -1261,12 +1261,12 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             accessibilityLabel={`Like ${activeCandidate.profile.displayName}`}
             testID="discovery-like-btn"
           >
-            <Icon name="heart" size={29} color="#DC0C24" fill="#DC0C24" strokeWidth={2.4} />
+            <Icon name="heart" size={27} color="#DC0C24" fill="#DC0C24" strokeWidth={2.4} />
           </FloatingActionButton>
 
           {/* Boost / Instant Message / Detail Button */}
           <FloatingActionButton
-            size={44}
+            size={42}
             style={[
               styles.actionCircle,
               {
@@ -1281,7 +1281,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             accessibilityLabel={`View full profile for ${activeCandidate.profile.displayName}`}
             testID="discovery-info-btn"
           >
-            <Icon name="zap" size={19} color="#C084FC" fill="#C084FC" />
+            <Icon name="zap" size={18} color="#C084FC" fill="#C084FC" />
           </FloatingActionButton>
         </View>
       )}
@@ -1419,9 +1419,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 10,
+    paddingHorizontal: 14,
+    paddingTop: 4,
+    paddingBottom: 4,
+    height: 46,
   },
   headerLeftRow: {
     flexDirection: 'row',
@@ -1557,9 +1558,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 4,
-    paddingBottom: 4,
+    paddingHorizontal: 10,
+    paddingTop: 0,
+    paddingBottom: 2,
   },
   centerContainer: {
     alignItems: 'center',
@@ -1640,10 +1641,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-evenly',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 2,
+    paddingHorizontal: 14,
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 390,
     alignSelf: 'center',
   },
   actionCircle: {

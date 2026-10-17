@@ -57,9 +57,18 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
     router.push('/(onboarding)/profile-setup');
   };
 
+  const handleBack = () => {
+    haptics.impactLight();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(auth)/login');
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TopNavHeader title="" onBack={() => router.back()} leftAction="back" />
+      <TopNavHeader title="" onBack={handleBack} leftAction="back" />
 
       <ScrollView
         contentContainerStyle={[

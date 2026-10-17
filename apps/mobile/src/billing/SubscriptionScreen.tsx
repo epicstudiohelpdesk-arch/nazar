@@ -151,8 +151,10 @@ export function SubscriptionScreen({
                   router.replace(returnRoute as never);
                 } else if (onDismiss) {
                   onDismiss();
-                } else {
+                } else if (router.canGoBack()) {
                   router.back();
+                } else {
+                  router.replace('/(tabs)/profile');
                 }
               },
             },
@@ -206,8 +208,10 @@ export function SubscriptionScreen({
   const handleBack = () => {
     if (onDismiss) {
       onDismiss();
-    } else {
+    } else if (router.canGoBack()) {
       router.back();
+    } else {
+      router.replace('/(tabs)/profile');
     }
   };
 

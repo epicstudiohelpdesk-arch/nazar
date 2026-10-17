@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
   StatusBar,
   PanResponder,
+  Platform,
   Text as RNText,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -18,18 +19,38 @@ import { Icon } from '../../src/design/primitives/Icon.js';
 import { haptics } from '../../src/design/haptics/index.js';
 import { useReducedMotion } from '../../src/design/motion/index.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
-import { useProfileStore } from '../../src/profile/profile-store.js';
-import { getDefaultAuthClient } from '../../src/auth/default-client.js';
+import { useFonts } from 'expo-font';
 
 export default function WelcomeScreen(): React.JSX.Element {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const isReducedMotion = useReducedMotion();
 
+  // Load Folkra and Ethnocentric brand fonts
+  const [fontsLoaded] = useFonts({
+    Folkra: require('../../assets/fonts/folkra.otf'),
+    Ethnocentric: require('../../assets/fonts/Ethnocentric-Regular.otf'),
+  });
+
   // Responsive scale factors based on screen dimensions
   const isCompact = height < 700;
   const cardWidth = Math.min(width * 0.44, 185);
   const cardHeight = Math.min(cardWidth * 1.38, 255);
+
+  // Kabir photo is landscape (800x512) with subject located on the right side (~68%).
+  // Explicitly frame and position photo so Kabir is placed clear and visible on the left side of the card, away from the overlapping right card.
+  const kabirImageStyle = useMemo(() => {
+    const imgWidth = cardHeight * (800 / 512);
+    const extraWidth = imgWidth - cardWidth;
+    return {
+      position: 'absolute' as const,
+      top: 0,
+      bottom: 0,
+      height: cardHeight,
+      width: imgWidth,
+      left: -extraWidth * 0.94,
+    };
+  }, [cardHeight, cardWidth]);
 
   // Animation values for smooth entrance
   const entranceAnim = useRef(new Animated.Value(isReducedMotion ? 1 : 0)).current;
@@ -42,9 +63,9 @@ export default function WelcomeScreen(): React.JSX.Element {
   const isConfirmed = useRef(false);
   const hasTriggeredThreshold = useRef(false);
 
-  // Calculate maximum slide distance based on container width
+  // Calculate maximum slide distance based on container width (accounting for 3px horizontal margin)
   const maxSlide = useMemo(() => {
-    const effectiveWidth = pillWidth > 0 ? pillWidth : Math.max(280, width - 52);
+    const effectiveWidth = pillWidth > 0 ? pillWidth : Math.max(280, width - 58);
     return Math.max(0, effectiveWidth - 66);
   }, [pillWidth, width]);
 
@@ -73,111 +94,13 @@ export default function WelcomeScreen(): React.JSX.Element {
   const handleGetStarted = () => {
     haptics.medium();
     trackOnboardingEvent('onboarding_started', { entryPoint: 'get_started' });
-    router.push('/(auth)/login');
+    router.push({ pathname: '/(auth)/login', params: { mode: 'signup' } });
   };
 
   const handleSignIn = () => {
     haptics.light();
     trackOnboardingEvent('onboarding_started', { entryPoint: 'sign_in' });
-    router.push('/(auth)/login');
-  };
-
-  const handleSkipAuth = async () => {
-    haptics.success();
-    try {
-      const storage = getDefaultAuthClient().getStorage();
-      await storage.setAccessToken('dev-demo-token');
-      await storage.setRefreshToken('dev-demo-refresh-token');
-    } catch {
-      // ignore dev bypass failure
-    }
-
-    useProfileStore.getState().setProfile({
-      id: 'demo-user-1',
-      userId: 'demo-user-1',
-      displayName: 'Subham',
-      dateOfBirth: '2000-01-01',
-      age: 25,
-      gender: 'MAN',
-      bio: 'Building Nazar — mindful, intentional dating ✨',
-      occupation: 'Founder & Engineer',
-      education: 'Tech & Product',
-      city: 'Mumbai',
-      countryCode: 'IN',
-      visibility: 'ACTIVE',
-      completionStatus: {
-        percentage: 100,
-        missingRequired: [],
-        recommended: [],
-      },
-      interests: [
-        { id: '1', name: 'Design', slug: 'design', category: 'Creative' },
-        { id: '2', name: 'Coffee', slug: 'coffee', category: 'Food & Drink' },
-        { id: '3', name: 'Tech', slug: 'tech', category: 'Tech' },
-      ],
-      prompts: [
-        {
-          id: 'p1',
-          promptDefinitionId: 'pd1',
-          prompt: 'A life goal of mine is...',
-          answer: 'To build software that brings people together meaningfully.',
-          position: 0,
-        },
-      ],
-      media: [
-        {
-          id: 'm1',
-          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=80',
-          mediaType: 'IMAGE',
-          mimeType: 'image/jpeg',
-          status: 'READY',
-          position: 0,
-          isPrimary: true,
-          createdAt: new Date().toISOString(),
-        },
-      ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-
-    router.replace('/(tabs)/discovery');
-  };
-
-  // Fallback tap trigger: glides smoothly across and initiates Get Started
-  const handlePillTap = () => {
-    if (isConfirmed.current) return;
-    isConfirmed.current = true;
-    haptics.medium();
-    const currentMax = maxSlideRef.current;
-    Animated.parallel([
-      Animated.spring(slideAnim, {
-        toValue: currentMax,
-        tension: 80,
-        friction: 9,
-        useNativeDriver: true,
-      }),
-      Animated.spring(thumbScaleAnim, {
-        toValue: 1.0,
-        tension: 80,
-        friction: 9,
-        useNativeDriver: true,
-      }),
-      Animated.spring(pillScaleAnim, {
-        toValue: 1.0,
-        tension: 80,
-        friction: 9,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      haptics.success();
-      handleGetStarted();
-      setTimeout(() => {
-        isConfirmed.current = false;
-        slideAnim.setValue(0);
-        thumbScaleAnim.setValue(1);
-        pillScaleAnim.setValue(1);
-      }, 800);
-    });
+    router.push({ pathname: '/(auth)/login', params: { mode: 'signin' } });
   };
 
   // Ultra-smooth physics-based PanResponder attached to the entire pill button
@@ -225,12 +148,6 @@ export default function WelcomeScreen(): React.JSX.Element {
         onPanResponderRelease: (_, gestureState) => {
           if (isConfirmed.current) return;
           const currentMax = maxSlideRef.current;
-
-          // Pure tap without significant swipe: auto-glide to complete
-          if (Math.abs(gestureState.dx) < 8 && Math.abs(gestureState.dy) < 8) {
-            handlePillTap();
-            return;
-          }
 
           const threshold = currentMax * 0.55;
           const isFlicked = gestureState.vx > 0.38 && gestureState.dx > 25;
@@ -329,14 +246,21 @@ export default function WelcomeScreen(): React.JSX.Element {
       />
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Top Header Branding */}
+        {/* Top Header: Pure textual brand mark with ETHNOCENTRIC typography */}
         <View style={styles.header}>
-          <Text style={styles.brandTitle}>Nazar</Text>
+          <RNText
+            style={[
+              styles.brandTitle,
+              fontsLoaded && { fontFamily: 'Ethnocentric' },
+            ]}
+          >
+            NAZAR
+          </RNText>
         </View>
 
         {/* Hero Interactive Visual: Dual Overlapping Profile Cards */}
         <View style={[styles.heroSection, { height: isCompact ? 240 : 290 }]}>
-          {/* Card 1: Left / Background Profile */}
+          {/* Card 1: Left / Background Profile (shifted downwards) */}
           <Animated.View
             style={[
               styles.cardWrapper,
@@ -357,7 +281,7 @@ export default function WelcomeScreen(): React.JSX.Element {
                       outputRange: [0.92, 1],
                     }),
                   },
-                  { translateY: 8 },
+                  { translateY: 26 }, // shifted downwards
                 ],
               },
             ]}
@@ -366,34 +290,34 @@ export default function WelcomeScreen(): React.JSX.Element {
               {!maleImageError ? (
                 <Image
                   source={{
-                    uri: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80',
+                    uri: 'https://images.unsplash.com/photo-1607346256330-dee7af15f7c5?w=800&auto=format&fit=crop&q=80',
                   }}
-                  style={styles.cardImage}
+                  style={[styles.cardImage, kabirImageStyle]}
                   resizeMode="cover"
                   onError={() => setMaleImageError(true)}
                 />
               ) : (
                 <LinearGradient colors={['#3F3F46', '#18181B']} style={styles.cardImagePlaceholder}>
-                  <Text style={styles.placeholderInitials}>JM</Text>
+                  <Text style={styles.placeholderInitials}>KM</Text>
                 </LinearGradient>
               )}
 
               {/* Bottom vignette overlay for text legibility */}
               <LinearGradient
-                colors={['transparent', 'rgba(0, 0, 0, 0.45)', 'rgba(0, 0, 0, 0.9)']}
-                locations={[0, 0.5, 1]}
+                colors={['transparent', 'rgba(0, 0, 0, 0.45)', 'rgba(0, 0, 0, 0.92)']}
+                locations={[0, 0.45, 1]}
                 style={styles.cardVignette}
               >
                 <Text style={styles.cardName} numberOfLines={1}>
-                  Jastin M, 28
+                  Kabir, 27
                 </Text>
                 <Text style={styles.cardLocation} numberOfLines={1}>
-                  New York, USA
+                  Bandra, Mumbai
                 </Text>
               </LinearGradient>
             </View>
 
-            {/* Left Floating Badge: Violet Gift / Sparkle Icon */}
+            {/* Left Floating Badge: Restored Purple Sparkles Icon */}
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => haptics.selection()}
@@ -405,7 +329,7 @@ export default function WelcomeScreen(): React.JSX.Element {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Card 2: Right / Foreground Profile */}
+          {/* Card 2: Right / Foreground Profile (shifted upwards) */}
           <Animated.View
             style={[
               styles.cardWrapper,
@@ -426,7 +350,7 @@ export default function WelcomeScreen(): React.JSX.Element {
                       outputRange: [0.94, 1],
                     }),
                   },
-                  { translateY: -6 },
+                  { translateY: -10 }, // slightly moved down
                 ],
               },
             ]}
@@ -435,7 +359,7 @@ export default function WelcomeScreen(): React.JSX.Element {
               {!femaleImageError ? (
                 <Image
                   source={{
-                    uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
+                    uri: 'https://images.unsplash.com/photo-1617297873650-aef8f4e00b9b?w=800&auto=format&fit=crop&q=80',
                   }}
                   style={styles.cardImage}
                   resizeMode="cover"
@@ -443,29 +367,29 @@ export default function WelcomeScreen(): React.JSX.Element {
                 />
               ) : (
                 <LinearGradient colors={['#4C1D95', '#1E1B4B']} style={styles.cardImagePlaceholder}>
-                  <Text style={styles.placeholderInitials}>JL</Text>
+                  <Text style={styles.placeholderInitials}>AS</Text>
                 </LinearGradient>
               )}
 
               {/* Bottom vignette overlay */}
               <LinearGradient
-                colors={['transparent', 'rgba(0, 0, 0, 0.45)', 'rgba(0, 0, 0, 0.9)']}
-                locations={[0, 0.5, 1]}
+                colors={['transparent', 'rgba(0, 0, 0, 0.45)', 'rgba(0, 0, 0, 0.92)']}
+                locations={[0, 0.45, 1]}
                 style={styles.cardVignette}
               >
                 <View style={styles.nameRow}>
                   <Text style={styles.cardName} numberOfLines={1}>
-                    Julia Lode, 27
+                    Ananya, 25
                   </Text>
                   <View style={styles.onlineDot} />
                 </View>
                 <Text style={styles.cardLocation} numberOfLines={1}>
-                  Los Angeles
+                  Indiranagar, Bengaluru
                 </Text>
               </LinearGradient>
             </View>
 
-            {/* Top-Left Floating Badge: Blue Message Bubble */}
+            {/* Top-Left Floating Badge: Restored Blue Message Bubble */}
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => haptics.selection()}
@@ -476,7 +400,7 @@ export default function WelcomeScreen(): React.JSX.Element {
               <Icon name="message" size={22} color="#FFFFFF" />
             </TouchableOpacity>
 
-            {/* Bottom-Right Floating Badge: Red Heart */}
+            {/* Bottom-Right Floating Badge: Restored Red Heart */}
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => haptics.selection()}
@@ -627,17 +551,6 @@ export default function WelcomeScreen(): React.JSX.Element {
             </RNText>
           </TouchableOpacity>
 
-          {/* Dev Temporary Bypass Button */}
-          <TouchableOpacity
-            style={styles.skipAuthButton}
-            onPress={handleSkipAuth}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Skip Authentication (Dev Demo)"
-          >
-            <RNText style={styles.skipAuthText}>⚡ Skip Auth & Go to Discovery (Dev)</RNText>
-          </TouchableOpacity>
-
           {/* Legal Notice */}
           <RNText style={styles.legalNotice}>
             By continuing, you agree to our Terms of Service & Privacy Policy.
@@ -660,22 +573,27 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   header: {
-    paddingTop: 12,
+    paddingTop: 18,
+    paddingBottom: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   brandTitle: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontSize: 17.5,
+    letterSpacing: 2.2,
+    textTransform: 'uppercase',
+    fontFamily: Platform?.select
+      ? Platform.select({ ios: 'Ethnocentric', default: 'sans-serif' })
+      : 'Ethnocentric',
+    paddingLeft: 2.2,
   },
   heroSection: {
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     position: 'relative',
-    marginTop: 8,
+    marginTop: 6,
   },
   cardWrapper: {
     position: 'absolute',
@@ -756,37 +674,39 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
     elevation: 8,
   },
   leftPurpleBadge: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#7C3AED',
-    left: -14,
+    left: -12,
     bottom: 64,
     zIndex: 10,
   },
   topBlueBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#2563EB',
-    left: -14,
-    top: -10,
+    left: -12,
+    top: -8,
     zIndex: 10,
   },
   bottomHeartBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#EA3829',
-    right: -12,
-    bottom: 44,
+    right: -10,
+    bottom: 42,
     zIndex: 10,
     shadowColor: '#EA3829',
     shadowOpacity: 0.6,
@@ -795,7 +715,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
-    marginVertical: 6,
+    marginVertical: 4,
     width: '100%',
   },
   headingContainer: {
@@ -821,7 +741,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     lineHeight: 42,
     fontWeight: '800',
-    color: '#E64A19',
+    color: '#FF4D36',
     textAlign: 'center',
     letterSpacing: -0.6,
   },
@@ -838,34 +758,35 @@ const styles = StyleSheet.create({
     lineHeight: 38,
   },
   subtitle: {
-    color: '#9CA3AF',
-    fontSize: 14.5,
-    lineHeight: 22,
+    color: '#A1A1AA',
+    fontSize: 14,
+    lineHeight: 21,
     textAlign: 'center',
-    marginTop: 10,
-    maxWidth: 320,
+    marginTop: 8,
+    maxWidth: 310,
     letterSpacing: 0.1,
   },
   actionsSection: {
     width: '100%',
-    paddingHorizontal: 6,
-    gap: 12,
-    marginTop: 8,
+    paddingHorizontal: 4,
+    gap: 10,
+    marginTop: 6,
   },
   pillContainer: {
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#26262A',
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#1E1D24',
+    borderColor: 'rgba(255, 255, 255, 0.14)',
     borderWidth: 1,
     position: 'relative',
     justifyContent: 'center',
     overflow: 'hidden',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 6,
+    marginHorizontal: 3, // slightly reduced horizontal width by 3px on both sides
   },
   pillLabelContainer: {
     position: 'absolute',
@@ -876,9 +797,9 @@ const styles = StyleSheet.create({
   },
   pillLabel: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   chevronGroup: {
     position: 'absolute',
@@ -888,18 +809,18 @@ const styles = StyleSheet.create({
   },
   pillHeartCircle: {
     position: 'absolute',
-    left: 6,
+    left: 5,
     top: 5,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#E63920',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#DC0C24',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
+    shadowColor: '#DC0C24',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
     elevation: 6,
     zIndex: 10,
   },
@@ -925,25 +846,5 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     paddingHorizontal: 16,
     marginTop: -4,
-  },
-  skipAuthButton: {
-    backgroundColor: '#10B981',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 4,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  skipAuthText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.2,
   },
 });

@@ -201,7 +201,8 @@ export const CommunityDetailScreen: React.FC<CommunityDetailScreenProps> = ({
 
   const handleBack = () => {
     if (onBack) onBack();
-    else router.back();
+    else if (router.canGoBack()) router.back();
+    else router.replace('/social/communities');
   };
 
   if (isLoadingCommunity) {

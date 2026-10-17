@@ -11,7 +11,13 @@ export default function MessagesTabRoute(): React.JSX.Element {
     <ConversationsScreen
       authClient={authClient}
       onSelectConversation={(conversationId) => router.push(`/chat/${conversationId}`)}
-      onBack={() => router.back()}
+      onBack={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/discovery');
+        }
+      }}
     />
   );
 }

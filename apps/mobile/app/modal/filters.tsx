@@ -123,7 +123,11 @@ export default function FiltersModalRoute(): React.JSX.Element {
       queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEYS.preferences });
       queryClient.invalidateQueries({ queryKey: DISCOVERY_QUERY_KEYS.feed });
 
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/discovery');
+      }
     },
     onError: (err: unknown) => {
       const msg = err instanceof Error ? err.message : 'Failed to save preferences';
@@ -154,11 +158,19 @@ export default function FiltersModalRoute(): React.JSX.Element {
     setFamilyPlansIsDealbreaker(false);
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/discovery');
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <TopNavHeader
         title="Discovery Preferences"
-        onBack={() => router.back()}
+        onBack={handleBack}
         leftAction="close"
         rightAction={
           <Button

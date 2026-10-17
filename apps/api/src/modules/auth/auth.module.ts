@@ -12,6 +12,10 @@ import {
   GOOGLE_OAUTH_PROVIDER_TOKEN,
   APPLE_OAUTH_PROVIDER_TOKEN,
 } from './providers/oauth.provider.js';
+import {
+  FirebaseAuthProvider,
+  FIREBASE_AUTH_PROVIDER_TOKEN,
+} from './providers/firebase.provider.js';
 import { PasskeyService } from './providers/passkey.service.js';
 import {
   UserIdentityRepository,
@@ -59,6 +63,11 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
     },
     AppleOAuthProvider,
     {
+      provide: FIREBASE_AUTH_PROVIDER_TOKEN,
+      useClass: FirebaseAuthProvider,
+    },
+    FirebaseAuthProvider,
+    {
       provide: USER_IDENTITY_REPOSITORY_TOKEN,
       useClass: UserIdentityRepository,
     },
@@ -94,6 +103,8 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
     GoogleOAuthProvider,
     APPLE_OAUTH_PROVIDER_TOKEN,
     AppleOAuthProvider,
+    FIREBASE_AUTH_PROVIDER_TOKEN,
+    FirebaseAuthProvider,
     USER_IDENTITY_REPOSITORY_TOKEN,
     UserIdentityRepository,
     SESSION_REPOSITORY_TOKEN,

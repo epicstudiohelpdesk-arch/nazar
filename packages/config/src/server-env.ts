@@ -37,7 +37,9 @@ export const serverEnvSchema = z
     OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
     OTP_LENGTH: z.coerce.number().int().positive().default(6),
     EMAIL_VERIFICATION_EXPIRATION_SECONDS: z.coerce.number().int().positive().default(900),
-    GOOGLE_CLIENT_ID: z.string().default('mock-google-client-id'),
+    GOOGLE_CLIENT_ID: z
+      .string()
+      .default('929075066798-o6qemj04rnrrlm870fgm43jfif4pp8cj.apps.googleusercontent.com'),
     APPLE_CLIENT_ID: z.string().default('mock-apple-client-id'),
     PASSKEY_RP_ID: z.string().default('localhost'),
     PASSKEY_RP_NAME: z.string().default('Nazar Social Discovery'),
@@ -75,6 +77,10 @@ export const serverEnvSchema = z
     // Google Gemini AI Configuration
     GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
     GEMINI_API_KEY: z.string().optional(),
+    // Firebase Authentication Configuration
+    FIREBASE_PROJECT_ID: z.string().default('nazar-85664'),
+    FIREBASE_SERVICE_ACCOUNT_PATH: z.string().optional(),
+    FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),
   })
   .refine(
     (data) => {

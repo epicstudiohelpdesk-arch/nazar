@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { getDefaultAuthClient } from '../../src/auth/default-client';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics';
 import { createNotificationsApi } from '../../src/notifications/notifications-api';
@@ -17,6 +18,7 @@ import {
 } from '../../src/notifications/useNotifications';
 
 export default function NotificationsRoute(): React.JSX.Element {
+  const router = useRouter();
   const authClient = getDefaultAuthClient();
   const client = useMemo(() => createNotificationsApi(authClient), [authClient]);
 
@@ -84,12 +86,21 @@ export default function NotificationsRoute(): React.JSX.Element {
     }
   }, [client]);
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/profile');
+    }
+  };
+
   return (
     <NotificationsScreen
       client={client}
       pushPermission={permission}
       onEnablePush={() => void handleEnable()}
       isEnablingPush={isEnabling}
+      onBack={handleBack}
     />
   );
 }

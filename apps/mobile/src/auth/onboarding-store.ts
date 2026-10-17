@@ -100,8 +100,10 @@ export interface DraftProfile {
   displayName: string;
   dateOfBirth: string; // YYYY-MM-DD
   gender: Gender;
+  genderIdentity?: string; // Specific modern gender identity (e.g. Transgender Woman, Genderfluid, Non-binary)
   intent: RelationshipIntent;
   city: string;
+  coordinates?: { latitude: number; longitude: number };
   bio: string;
   occupation: string;
   education: string;
@@ -109,7 +111,7 @@ export interface DraftProfile {
 
 export interface OnboardingState {
   // Auth state
-  authMethod: 'phone' | 'email' | 'google' | 'apple' | 'passkey';
+  authMethod: 'phone' | 'email' | 'google' | 'passkey';
   pendingIdentifier: string; // E.g. "+91 9876543210" or "user@example.com"
 
   // Current active step
@@ -129,7 +131,7 @@ export interface OnboardingState {
 
   // Actions
   setAuthIdentifier: (
-    method: 'phone' | 'email' | 'google' | 'apple' | 'passkey',
+    method: 'phone' | 'email' | 'google' | 'passkey',
     identifier: string
   ) => void;
   setCurrentStep: (step: OnboardingStep) => void;
@@ -155,6 +157,7 @@ const initialDraftProfile: DraftProfile = {
   displayName: '',
   dateOfBirth: '',
   gender: 'WOMAN',
+  genderIdentity: 'Woman',
   intent: 'LONG_TERM',
   city: '',
   bio: '',

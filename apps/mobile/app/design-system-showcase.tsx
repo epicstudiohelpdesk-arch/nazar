@@ -123,7 +123,13 @@ export default function DesignSystemShowcaseScreen(): React.JSX.Element {
         title="Nazar Design System"
         subtitle={`Mode: ${mode.toUpperCase()} (F0 Foundation QA)`}
         leftAction="back"
-        onLeftAction={() => router.back()}
+        onLeftAction={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)/discovery');
+          }
+        }}
         rightAction={{
           label: isDark ? 'Light ☀️' : 'Dark 🌙',
           onPress: () => setMode(isDark ? 'light' : 'dark'),

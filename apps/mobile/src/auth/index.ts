@@ -4,3 +4,7 @@ export * from './default-client.js';
 export * from './auth-service.js';
 export * from './onboarding-store.js';
 export * from './session-service.js';
+export * from './firebase.js';
+export * from './firebase-auth-service.js';
+export * from './google-auth.js';
+export * from './passkey-auth.js';
