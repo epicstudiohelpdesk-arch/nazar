@@ -398,6 +398,7 @@ describe('Mobile Chat Layer: API Client, Inverted Pagination & Realtime Reconcil
 
   describe('Inverted FlatList Message History & Date Separators', () => {
     it('structures messages in descending order and dynamically calculates date separators', () => {
+      const baseDate = new Date('2026-10-15T12:00:00Z').getTime();
       const messages: MessageItemDto[] = [
         {
           id: 'm3',
@@ -408,7 +409,7 @@ describe('Mobile Chat Layer: API Client, Inverted Pagination & Realtime Reconcil
           body: 'Latest message today',
           metadata: null,
           deliveryState: 'SENT',
-          createdAt: new Date().toISOString(), // Today
+          createdAt: new Date(baseDate).toISOString(), // Same day
           editedAt: null,
           deletedAt: null,
         },
@@ -421,7 +422,7 @@ describe('Mobile Chat Layer: API Client, Inverted Pagination & Realtime Reconcil
           body: 'Earlier today',
           metadata: null,
           deliveryState: 'READ',
-          createdAt: new Date(Date.now() - 3600 * 1000).toISOString(), // Today 1 hr ago
+          createdAt: new Date(baseDate - 3600 * 1000).toISOString(), // Same day 1 hr earlier
           editedAt: null,
           deletedAt: null,
         },
@@ -434,7 +435,7 @@ describe('Mobile Chat Layer: API Client, Inverted Pagination & Realtime Reconcil
           body: 'Yesterday message',
           metadata: null,
           deliveryState: 'READ',
-          createdAt: new Date(Date.now() - 86400 * 1000 * 2).toISOString(), // Older
+          createdAt: new Date(baseDate - 86400 * 1000 * 2).toISOString(), // 2 days earlier
           editedAt: null,
           deletedAt: null,
         },

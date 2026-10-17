@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -54,6 +54,7 @@ import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 import { useResponsiveLayout } from '../../src/design/responsive/index.js';
 import { haptics } from '../../src/design/haptics/index.js';
+import { SmoothBottomSheetModal } from '../../src/design/components/modal/SmoothBottomSheetModal.js';
 
 // ============================================================================
 // Modern Inclusive Gender Spectrum Definitions
@@ -249,6 +250,38 @@ export interface LocationSuggestion {
   longitude: number;
 }
 
+export interface EducationSuggestion {
+  name: string;
+  location?: string;
+  country?: string;
+}
+
+const EDUCATION_ABBREVIATIONS: Record<string, string> = {
+  mit: 'Massachusetts Institute of Technology',
+  iit: 'Indian Institute of Technology',
+  iitb: 'IIT Bombay',
+  iitd: 'IIT Delhi',
+  iitm: 'IIT Madras',
+  iitk: 'IIT Kanpur',
+  iitkgp: 'IIT Kharagpur',
+  bits: 'Birla Institute of Technology and Science',
+  iim: 'Indian Institute of Management',
+  nid: 'National Institute of Design',
+  nift: 'National Institute of Fashion Technology',
+  du: 'Delhi University',
+  ucla: 'University of California, Los Angeles',
+  nyu: 'New York University',
+  cmu: 'Carnegie Mellon University',
+  nus: 'National University of Singapore',
+  ntu: 'Nanyang Technological University',
+  ucb: 'UC Berkeley',
+  lse: 'London School of Economics',
+  oxford: 'University of Oxford',
+  cambridge: 'University of Cambridge',
+  harvard: 'Harvard University',
+  stanford: 'Stanford University',
+};
+
 export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -256,10 +289,17 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const { maxContentWidth } = useResponsiveLayout();
   const profileApi = getDefaultProfileApi();
 
-  // Animated scroll listener for glossy top vignette
+  // Animated scroll listener for glossy top vignette & position tracking
   const scrollY = useRef(new Animated.Value(0)).current;
+  const currentScrollY = useRef(0);
   const handleScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
     useNativeDriver: true,
+    listener: (e: any) => {
+      const y = e?.nativeEvent?.contentOffset?.y;
+      if (typeof y === 'number') {
+        currentScrollY.current = y;
+      }
+    },
   });
   const headerGlossOpacity = scrollY.interpolate({
     inputRange: [0, 20, 60],
@@ -338,6 +378,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const [bio, setBio] = useState(draftProfile.bio || '');
   const [occupation, setOccupation] = useState(draftProfile.occupation || '');
   const [education, setEducation] = useState(draftProfile.education || '');
+  const [educationSuggestions, setEducationSuggestions] = useState<EducationSuggestion[]>([]);
+  const [isSearchingEducation, setIsSearchingEducation] = useState(false);
+  const [showEducationDropdown, setShowEducationDropdown] = useState(false);
+  const educationSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const educationInputRef = useRef<RNTextInput>(null);
 
   // Modals & Focus States
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
@@ -345,6 +390,24 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const [genderSearchText, setGenderSearchText] = useState('');
   const [isIntentModalVisible, setIsIntentModalVisible] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardVisible(true);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Date picker scratch state
   const initialDate = dateOfBirth || new Date(2000, 0, 15);
@@ -355,9 +418,45 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
+  const scrollViewRef = useRef<ScrollView>(null);
   const nameInputRef = useRef<RNTextInput>(null);
   const cityInputRef = useRef<RNTextInput>(null);
   const genderSearchInputRef = useRef<RNTextInput>(null);
+
+  // Field shake animations & smooth scroll tracking
+  const nameShakeAnim = useRef(new Animated.Value(0)).current;
+  const dobShakeAnim = useRef(new Animated.Value(0)).current;
+  const cityShakeAnim = useRef(new Animated.Value(0)).current;
+  const [highlightedField, setHighlightedField] = useState<'displayName' | 'dob' | 'city' | null>(
+    null
+  );
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Fallback and dynamic Y coordinates for smooth scroll targets
+  const section1Y = useRef(200);
+  const nameCardRelY = useRef(40);
+  const dobCardRelY = useRef(180);
+  const section3Y = useRef(560);
+  const cityCardRelY = useRef(40);
+  const section4Y = useRef(750);
+  const bioCardRelY = useRef(40);
+  const section5Y = useRef(950);
+  const occupationCardRelY = useRef(40);
+  const educationCardRelY = useRef(120);
+  const lastScrollRedirectTime = useRef(0);
+
+  const ensureFieldInView = useCallback((targetY: number) => {
+    const clampedTarget = Math.max(0, targetY);
+    const diff = Math.abs(currentScrollY.current - clampedTarget);
+    const now = Date.now();
+    if (diff > 45 && now - lastScrollRedirectTime.current > 350) {
+      lastScrollRedirectTime.current = now;
+      scrollViewRef.current?.scrollTo({
+        y: clampedTarget,
+        animated: true,
+      });
+    }
+  }, []);
 
   // ============================================================================
   // Age Calculations
@@ -381,6 +480,15 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const currentAge = useMemo(() => {
     return dateOfBirth ? calculateAge(dateOfBirth) : null;
   }, [dateOfBirth]);
+
+  const isFormValid = useMemo(() => {
+    const hasName = Boolean(displayName.trim() && displayName.trim().length <= 30);
+    const hasDob = Boolean(
+      dateOfBirth && currentAge !== null && currentAge >= 18 && currentAge <= 100
+    );
+    const hasCity = Boolean(city.trim());
+    return hasName && hasDob && hasCity;
+  }, [displayName, dateOfBirth, currentAge, city]);
 
   const maxDaysInTempMonth = useMemo(() => {
     return new Date(tempYear, tempMonth + 1, 0).getDate();
@@ -493,6 +601,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const handleCityTextChange = (text: string) => {
     setCity(text);
     if (errorMessage) setErrorMessage(undefined);
+    ensureFieldInView(section3Y.current + cityCardRelY.current - 95);
 
     if (searchDebounceTimerRef.current) {
       clearTimeout(searchDebounceTimerRef.current);
@@ -514,6 +623,116 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     setSelectedCoords({ latitude: item.latitude, longitude: item.longitude });
     setShowSuggestionsDropdown(false);
     setLocationSuggestions([]);
+    Keyboard.dismiss();
+  };
+
+  // ============================================================================
+  // Internet Education / University Autocomplete Search (Photon OpenStreetMap API)
+  // ============================================================================
+
+  const fetchEducationSuggestions = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setEducationSuggestions([]);
+      setShowEducationDropdown(false);
+      setIsSearchingEducation(false);
+      return;
+    }
+
+    setIsSearchingEducation(true);
+    try {
+      const lower = trimmed.toLowerCase();
+      const expandedQuery = EDUCATION_ABBREVIATIONS[lower] || trimmed;
+      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(expandedQuery)}&limit=6&osm_tag=amenity:university&osm_tag=amenity:college`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Education query failed');
+      const data = await response.json();
+
+      let features = Array.isArray(data?.features) ? data.features : [];
+
+      if (features.length === 0) {
+        const fallbackUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(trimmed + ' university')}&limit=4`;
+        const fbRes = await fetch(fallbackUrl);
+        if (fbRes.ok) {
+          const fbData = await fbRes.json();
+          if (Array.isArray(fbData?.features)) {
+            features = fbData.features;
+          }
+        }
+      }
+
+      if (features.length > 0) {
+        const parsed: EducationSuggestion[] = [];
+        const seenNames = new Set<string>();
+
+        if (EDUCATION_ABBREVIATIONS[lower]) {
+          const abbrevTitle = EDUCATION_ABBREVIATIONS[lower];
+          parsed.push({
+            name: abbrevTitle,
+            location: 'Higher Education Institution',
+          });
+          seenNames.add(abbrevTitle.toLowerCase());
+        }
+
+        for (const f of features) {
+          const props = f.properties || {};
+          const name = props.name;
+          if (!name) continue;
+          const nameKey = name.toLowerCase().trim();
+          if (seenNames.has(nameKey)) continue;
+          seenNames.add(nameKey);
+
+          const secondary = [props.city, props.state, props.country]
+            .filter(Boolean)
+            .filter((v, idx, arr) => arr.indexOf(v) === idx && v !== name)
+            .join(', ');
+
+          parsed.push({
+            name,
+            location: secondary || props.country || undefined,
+            country: props.country || '',
+          });
+
+          if (parsed.length >= 5) break;
+        }
+
+        setEducationSuggestions(parsed);
+        setShowEducationDropdown(parsed.length > 0);
+      } else {
+        setEducationSuggestions([]);
+        setShowEducationDropdown(false);
+      }
+    } catch {
+      setEducationSuggestions([]);
+      setShowEducationDropdown(false);
+    } finally {
+      setIsSearchingEducation(false);
+    }
+  }, []);
+
+  const handleEducationTextChange = (text: string) => {
+    setEducation(text);
+    ensureFieldInView(section5Y.current + educationCardRelY.current - 95);
+
+    if (educationSearchDebounceRef.current) {
+      clearTimeout(educationSearchDebounceRef.current);
+    }
+
+    if (text.trim().length >= 2) {
+      educationSearchDebounceRef.current = setTimeout(() => {
+        fetchEducationSuggestions(text);
+      }, 350);
+    } else {
+      setEducationSuggestions([]);
+      setShowEducationDropdown(false);
+    }
+  };
+
+  const handleSelectEducationSuggestion = (item: EducationSuggestion) => {
+    haptics.selection();
+    setEducation(item.name);
+    setShowEducationDropdown(false);
+    setEducationSuggestions([]);
     Keyboard.dismiss();
   };
 
@@ -695,40 +914,61 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     if (errorMessage) setErrorMessage(undefined);
   };
 
+  const triggerFieldShake = (
+    anim: Animated.Value,
+    field: 'displayName' | 'dob' | 'city',
+    targetScrollY: number
+  ) => {
+    setErrorMessage(undefined);
+    haptics.notificationError();
+    setHighlightedField(field);
+
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+    highlightTimeoutRef.current = setTimeout(() => {
+      setHighlightedField(null);
+    }, 1800);
+
+    scrollViewRef.current?.scrollTo({
+      y: Math.max(0, targetScrollY - 95),
+      animated: true,
+    });
+
+    anim.setValue(0);
+    Animated.sequence([
+      Animated.timing(anim, { toValue: -8, duration: 40, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 8, duration: 40, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: -6, duration: 40, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 6, duration: 40, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: -3, duration: 35, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 3, duration: 35, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 0, duration: 30, useNativeDriver: true }),
+    ]).start();
+  };
+
   const handleNext = async () => {
-    if (!displayName.trim()) {
-      haptics.notificationError();
-      setErrorMessage('Please enter your first name.');
+    if (!displayName.trim() || displayName.trim().length > 30) {
+      triggerFieldShake(nameShakeAnim, 'displayName', section1Y.current + nameCardRelY.current);
       nameInputRef.current?.focus();
       return;
     }
-    if (displayName.trim().length > 30) {
-      haptics.notificationError();
-      setErrorMessage('First name cannot exceed 30 characters.');
-      return;
-    }
+
     if (!dateOfBirth) {
-      haptics.notificationError();
-      setErrorMessage('Please select your date of birth.');
+      triggerFieldShake(dobShakeAnim, 'dob', section1Y.current + dobCardRelY.current);
       handleOpenDatePicker();
       return;
     }
 
     const age = calculateAge(dateOfBirth);
-    if (age < 18) {
-      haptics.notificationError();
-      setErrorMessage('You must be at least 18 years old to join Nazar.');
-      return;
-    }
-    if (age > 100) {
-      haptics.notificationError();
-      setErrorMessage('Please enter a valid date of birth.');
+    if (age < 18 || age > 100) {
+      triggerFieldShake(dobShakeAnim, 'dob', section1Y.current + dobCardRelY.current);
+      handleOpenDatePicker();
       return;
     }
 
     if (!city.trim()) {
-      haptics.notificationError();
-      setErrorMessage('Please specify your location or select from map.');
+      triggerFieldShake(cityShakeAnim, 'city', section3Y.current + cityCardRelY.current);
       cityInputRef.current?.focus();
       return;
     }
@@ -965,6 +1205,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <Animated.ScrollView
+            ref={scrollViewRef as any}
             contentContainerStyle={[
               styles.scrollContent,
               {
@@ -972,6 +1213,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                 width: '100%',
                 alignSelf: 'center',
                 paddingTop: Math.max(insets.top + 64, 76),
+                paddingBottom: isKeyboardVisible ? 16 : Math.max(insets.bottom + 115, 135),
               },
             ]}
             keyboardShouldPersistTaps="handled"
@@ -1058,7 +1300,12 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                 {/* ======================================================== */}
                 {/* Section 1: Who You Are */}
                 {/* ======================================================== */}
-                <View style={styles.sectionGroup}>
+                <View
+                  style={styles.sectionGroup}
+                  onLayout={(e) => {
+                    section1Y.current = e.nativeEvent.layout.y;
+                  }}
+                >
                   <View style={styles.sectionHeaderRow}>
                     <Text
                       style={[
@@ -1071,18 +1318,22 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                   </View>
 
                   {/* First Name Card */}
-                  <View
+                  <Animated.View
+                    onLayout={(e) => {
+                      nameCardRelY.current = e.nativeEvent.layout.y;
+                    }}
                     style={[
                       styles.cardBox,
                       {
                         backgroundColor: isDark ? '#121216' : '#FFFFFF',
                         borderColor:
-                          focusedField === 'displayName'
+                          focusedField === 'displayName' || highlightedField === 'displayName'
                             ? theme.colors.textPrimary
                             : isDark
                               ? 'rgba(255, 255, 255, 0.08)'
                               : '#E4E4E7',
                         marginBottom: 14,
+                        transform: [{ translateX: nameShakeAnim }],
                       },
                     ]}
                   >
@@ -1123,6 +1374,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       onChangeText={(t) => {
                         setDisplayName(t);
                         if (errorMessage) setErrorMessage(undefined);
+                        ensureFieldInView(section1Y.current + nameCardRelY.current - 95);
                       }}
                       maxLength={30}
                       autoCapitalize="words"
@@ -1132,16 +1384,25 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     <Text level="caption" color="tertiary" style={styles.microNotice}>
                       This will be displayed on your profile and cannot be changed later.
                     </Text>
-                  </View>
+                  </Animated.View>
 
                   {/* Date of Birth Trigger Card */}
-                  <View
+                  <Animated.View
+                    onLayout={(e) => {
+                      dobCardRelY.current = e.nativeEvent.layout.y;
+                    }}
                     style={[
                       styles.cardBox,
                       {
                         backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
+                        borderColor:
+                          highlightedField === 'dob'
+                            ? theme.colors.textPrimary
+                            : isDark
+                              ? 'rgba(255, 255, 255, 0.08)'
+                              : '#E4E4E7',
                         marginBottom: 14,
+                        transform: [{ translateX: dobShakeAnim }],
                       },
                     ]}
                   >
@@ -1237,7 +1498,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         private.
                       </Text>
                     </View>
-                  </View>
+                  </Animated.View>
 
                   {/* Modern Gender Identity Trigger Card */}
                   <View
@@ -1408,7 +1669,12 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                 {/* ======================================================== */}
                 {/* Section 3: Where You Live (Internet Search + Map Picker) */}
                 {/* ======================================================== */}
-                <View style={styles.sectionGroup}>
+                <View
+                  style={styles.sectionGroup}
+                  onLayout={(e) => {
+                    section3Y.current = e.nativeEvent.layout.y;
+                  }}
+                >
                   <View style={styles.sectionHeaderRow}>
                     <Text
                       style={[
@@ -1420,17 +1686,21 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     </Text>
                   </View>
 
-                  <View
+                  <Animated.View
+                    onLayout={(e) => {
+                      cityCardRelY.current = e.nativeEvent.layout.y;
+                    }}
                     style={[
                       styles.cardBox,
                       {
                         backgroundColor: isDark ? '#121216' : '#FFFFFF',
                         borderColor:
-                          focusedField === 'city'
+                          focusedField === 'city' || highlightedField === 'city'
                             ? theme.colors.textPrimary
                             : isDark
                               ? 'rgba(255, 255, 255, 0.08)'
                               : '#E4E4E7',
+                        transform: [{ translateX: cityShakeAnim }],
                       },
                     ]}
                   >
@@ -1613,13 +1883,18 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       Nearby matches will see your general city area. Your exact GPS coordinates
                       remain strictly private.
                     </Text>
-                  </View>
+                  </Animated.View>
                 </View>
 
                 {/* ======================================================== */}
                 {/* Section 4: About You (Bio) */}
                 {/* ======================================================== */}
-                <View style={styles.sectionGroup}>
+                <View
+                  style={styles.sectionGroup}
+                  onLayout={(e) => {
+                    section4Y.current = e.nativeEvent.layout.y;
+                  }}
+                >
                   <View style={styles.sectionHeaderRow}>
                     <Text
                       style={[
@@ -1632,6 +1907,9 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                   </View>
 
                   <View
+                    onLayout={(e) => {
+                      bioCardRelY.current = e.nativeEvent.layout.y;
+                    }}
                     style={[
                       styles.cardBox,
                       {
@@ -1678,7 +1956,10 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       value={bio}
                       onFocus={() => setFocusedField('bio')}
                       onBlur={() => setFocusedField(null)}
-                      onChangeText={(t) => setBio(t.slice(0, 300))}
+                      onChangeText={(t) => {
+                        setBio(t.slice(0, 300));
+                        ensureFieldInView(section4Y.current + bioCardRelY.current - 95);
+                      }}
                       multiline
                       numberOfLines={4}
                       textAlignVertical="top"
@@ -1796,7 +2077,12 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                 {/* ======================================================== */}
                 {/* Section 5: Career & Education (Optional) */}
                 {/* ======================================================== */}
-                <View style={styles.sectionGroup}>
+                <View
+                  style={[styles.sectionGroup, isKeyboardVisible && { marginBottom: 8 }]}
+                  onLayout={(e) => {
+                    section5Y.current = e.nativeEvent.layout.y;
+                  }}
+                >
                   <View style={styles.sectionHeaderRow}>
                     <Text
                       style={[
@@ -1818,7 +2104,12 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     ]}
                   >
                     {/* Occupation */}
-                    <View style={styles.fieldInnerRow}>
+                    <View
+                      style={styles.fieldInnerRow}
+                      onLayout={(e) => {
+                        occupationCardRelY.current = e.nativeEvent.layout.y;
+                      }}
+                    >
                       <View style={styles.cardHeader}>
                         <View style={styles.cardTitleCluster}>
                           <View
@@ -1853,13 +2144,21 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         value={occupation}
                         onFocus={() => setFocusedField('occupation')}
                         onBlur={() => setFocusedField(null)}
-                        onChangeText={setOccupation}
+                        onChangeText={(t) => {
+                          setOccupation(t);
+                          ensureFieldInView(section5Y.current + occupationCardRelY.current - 95);
+                        }}
                         autoCapitalize="words"
                       />
                     </View>
 
                     {/* Education */}
-                    <View style={[styles.fieldInnerRow, { marginTop: 14 }]}>
+                    <View
+                      style={[styles.fieldInnerRow, { marginTop: 14 }]}
+                      onLayout={(e) => {
+                        educationCardRelY.current = e.nativeEvent.layout.y;
+                      }}
+                    >
                       <View style={styles.cardHeader}>
                         <View style={styles.cardTitleCluster}>
                           <View
@@ -1875,74 +2174,124 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                           </Text>
                         </View>
                       </View>
-                      <RNTextInput
-                        style={[
-                          styles.textInput,
-                          {
-                            color: theme.colors.textPrimary,
-                            borderColor:
-                              focusedField === 'education'
-                                ? theme.colors.textPrimary
-                                : isDark
-                                  ? 'rgba(255, 255, 255, 0.1)'
-                                  : '#E4E4E7',
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
-                          },
-                        ]}
-                        placeholder="e.g. IIT Bombay, NID, St. Xavier's"
-                        placeholderTextColor={theme.colors.textTertiary}
-                        value={education}
-                        onFocus={() => setFocusedField('education')}
-                        onBlur={() => setFocusedField(null)}
-                        onChangeText={setEducation}
-                        autoCapitalize="words"
-                      />
-                    </View>
-                  </View>
-                </View>
-
-                {/* ======================================================== */}
-                {/* Redesigned Professional CTA Button */}
-                {/* ======================================================== */}
-                <View style={styles.bottomCtaSection}>
-                  <TouchableOpacity
-                    onPress={handleNext}
-                    disabled={isLoading}
-                    style={[
-                      styles.professionalCtaButton,
-                      {
-                        backgroundColor: isDark ? '#FFFFFF' : '#111114',
-                        opacity: isLoading ? 0.75 : 1,
-                      },
-                    ]}
-                    activeOpacity={0.88}
-                    accessibilityRole="button"
-                    accessibilityLabel="Continue to Photos"
-                    testID="submit-button"
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator size="small" color={isDark ? '#000000' : '#FFFFFF'} />
-                    ) : (
-                      <View style={styles.buttonInnerRow}>
-                        <Text
+                      {/* Education Input with Real-time Search and Inline Spinner / Clear Button */}
+                      <View style={styles.cityInputContainer}>
+                        <RNTextInput
+                          ref={educationInputRef}
                           style={[
-                            styles.professionalCtaText,
+                            styles.textInput,
                             {
-                              color: isDark ? '#000000' : '#FFFFFF',
-                              fontFamily: folkraFont,
+                              color: theme.colors.textPrimary,
+                              borderColor:
+                                focusedField === 'education'
+                                  ? theme.colors.textPrimary
+                                  : isDark
+                                    ? 'rgba(255, 255, 255, 0.1)'
+                                    : '#E4E4E7',
+                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
+                              paddingRight: isSearchingEducation
+                                ? 44
+                                : education.length > 0
+                                  ? 44
+                                  : 14,
+                            },
+                          ]}
+                          placeholder="e.g. IIT Bombay, NID, St. Xavier's"
+                          placeholderTextColor={theme.colors.textTertiary}
+                          value={education}
+                          onFocus={() => {
+                            setFocusedField('education');
+                            if (educationSuggestions.length > 0) setShowEducationDropdown(true);
+                          }}
+                          onBlur={() => {
+                            setFocusedField(null);
+                            setTimeout(() => setShowEducationDropdown(false), 250);
+                          }}
+                          onChangeText={handleEducationTextChange}
+                          autoCapitalize="words"
+                          returnKeyType="done"
+                          testID="education-input"
+                        />
+
+                        {/* Trailing action: Activity indicator or Clear X button */}
+                        <View style={styles.cityInputTrailingAction}>
+                          {isSearchingEducation ? (
+                            <ActivityIndicator size="small" color={theme.colors.textSecondary} />
+                          ) : education.length > 0 ? (
+                            <TouchableOpacity
+                              onPress={() => {
+                                haptics.selection();
+                                setEducation('');
+                                setEducationSuggestions([]);
+                                setShowEducationDropdown(false);
+                              }}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                              style={{ padding: 3 }}
+                              accessibilityRole="button"
+                              accessibilityLabel="Clear education input"
+                            >
+                              <X size={14} color={theme.colors.textTertiary} />
+                            </TouchableOpacity>
+                          ) : null}
+                        </View>
+                      </View>
+
+                      {/* Real-time Internet Autocomplete Dropdown for Education */}
+                      {showEducationDropdown && educationSuggestions.length > 0 && (
+                        <View
+                          style={[
+                            styles.suggestionsDropdownCard,
+                            {
+                              backgroundColor: isDark ? '#18181E' : '#FFFFFF',
+                              borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7',
                             },
                           ]}
                         >
-                          Continue to Photos
-                        </Text>
-                        <ArrowRight
-                          size={17}
-                          color={isDark ? '#000000' : '#FFFFFF'}
-                          style={{ marginLeft: 8 }}
-                        />
-                      </View>
-                    )}
-                  </TouchableOpacity>
+                          {educationSuggestions.map((item, idx) => (
+                            <TouchableOpacity
+                              key={`${item.name}-${idx}`}
+                              style={[
+                                styles.suggestionRow,
+                                idx > 0 && {
+                                  borderTopWidth: 1,
+                                  borderTopColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4',
+                                },
+                              ]}
+                              onPress={() => handleSelectEducationSuggestion(item)}
+                              activeOpacity={0.7}
+                            >
+                              <GraduationCap
+                                size={15}
+                                color={theme.colors.textSecondary}
+                                style={{ marginRight: 10, marginTop: 2 }}
+                              />
+                              <View style={{ flex: 1 }}>
+                                <Text
+                                  style={{
+                                    color: theme.colors.textPrimary,
+                                    fontWeight: '600',
+                                    fontSize: 13.5,
+                                  }}
+                                >
+                                  {item.name}
+                                </Text>
+                                {item.location ? (
+                                  <Text
+                                    level="caption"
+                                    color="tertiary"
+                                    numberOfLines={1}
+                                    style={{ marginTop: 1 }}
+                                  >
+                                    {item.location}
+                                  </Text>
+                                ) : null}
+                              </View>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  </View>
                 </View>
               </View>
             </TouchableWithoutFeedback>
@@ -1951,287 +2300,361 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       </TouchableWithoutFeedback>
 
       {/* ======================================================== */}
+      {/* Floating Bottom Action Dock with 8-Stop Feather Fade     */}
+      {/* ======================================================== */}
+      <View
+        style={[styles.bottomDock, isKeyboardVisible && { opacity: 0, pointerEvents: 'none' }]}
+        pointerEvents={isKeyboardVisible ? 'none' : 'box-none'}
+      >
+        {/* Soft, Natural Feathered Fade Above the Button */}
+        <LinearGradient
+          colors={
+            isDark
+              ? [
+                  'rgba(11, 11, 14, 0.0)',
+                  'rgba(11, 11, 14, 0.05)',
+                  'rgba(11, 11, 14, 0.16)',
+                  'rgba(11, 11, 14, 0.38)',
+                  'rgba(11, 11, 14, 0.68)',
+                  'rgba(11, 11, 14, 0.90)',
+                  'rgba(11, 11, 14, 1.0)',
+                  'rgba(11, 11, 14, 1.0)',
+                ]
+              : [
+                  'rgba(250, 250, 250, 0.0)',
+                  'rgba(250, 250, 250, 0.05)',
+                  'rgba(250, 250, 250, 0.16)',
+                  'rgba(250, 250, 250, 0.38)',
+                  'rgba(250, 250, 250, 0.68)',
+                  'rgba(250, 250, 250, 0.90)',
+                  'rgba(250, 250, 250, 1.0)',
+                  'rgba(250, 250, 250, 1.0)',
+                ]
+          }
+          locations={[0, 0.04, 0.1, 0.16, 0.22, 0.3, 0.38, 1.0]}
+          style={styles.dockGradientBackdrop}
+          pointerEvents="none"
+        />
+
+        <View
+          style={[
+            styles.dockInner,
+            {
+              maxWidth: maxContentWidth || 520,
+              paddingBottom: Math.max(insets.bottom + 14, 20),
+            },
+          ]}
+        >
+          {/* Professional CTA Button (Monochromatic High-Contrast matching The Basics) */}
+          <TouchableOpacity
+            onPress={handleNext}
+            disabled={isLoading}
+            style={[
+              styles.professionalCtaButton,
+              {
+                backgroundColor: isFormValid
+                  ? isDark
+                    ? '#FFFFFF'
+                    : '#111114'
+                  : isDark
+                    ? '#1C1C22'
+                    : '#E4E4E7',
+                shadowColor: isFormValid ? '#FFFFFF' : 'transparent',
+                opacity: isLoading ? 0.75 : 1,
+              },
+            ]}
+            activeOpacity={0.88}
+            accessibilityRole="button"
+            accessibilityLabel="Continue to Photos"
+            testID="submit-button"
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color={isDark ? '#000000' : '#FFFFFF'} />
+            ) : (
+              <View style={styles.buttonInnerRow}>
+                <Text
+                  style={[
+                    styles.professionalCtaText,
+                    {
+                      color: isFormValid
+                        ? isDark
+                          ? '#000000'
+                          : '#FFFFFF'
+                        : isDark
+                          ? 'rgba(255, 255, 255, 0.40)'
+                          : '#8E8E93',
+                      fontFamily: folkraFont,
+                    },
+                  ]}
+                >
+                  Continue to Photos
+                </Text>
+                <ArrowRight
+                  size={17}
+                  color={
+                    isFormValid
+                      ? isDark
+                        ? '#000000'
+                        : '#FFFFFF'
+                      : isDark
+                        ? 'rgba(255, 255, 255, 0.40)'
+                        : '#8E8E93'
+                  }
+                  style={{ marginLeft: 8 }}
+                />
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ======================================================== */}
       {/* 1. Modern Gender Identity Modal with Search Facility */}
       {/* ======================================================== */}
-      <Modal
+      <SmoothBottomSheetModal
         visible={isGenderModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => {
+        onClose={() => {
           setIsGenderModalVisible(false);
           setGenderSearchText('');
         }}
+        sheetStyle={{ maxHeight: '86%' }}
+        showHandle={true}
       >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            setIsGenderModalVisible(false);
-            setGenderSearchText('');
-          }}
+        {/* Modal Header */}
+        <View style={styles.modalHeader}>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.modalTitle,
+                { color: theme.colors.textPrimary, fontFamily: folkraFont },
+              ]}
+            >
+              Gender Identity
+            </Text>
+            <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
+              Select the identity that feels most authentic to you.
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              haptics.selection();
+              setIsGenderModalVisible(false);
+              setGenderSearchText('');
+            }}
+            style={[
+              styles.modalCloseBtn,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Close gender selection modal"
+          >
+            <X size={16} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Bar Facility */}
+        <View
+          style={[
+            styles.modalSearchContainer,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F4F4F6',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
+            },
+          ]}
         >
-          <View style={styles.modalBackdrop}>
-            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-              <View
+          <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          <RNTextInput
+            ref={genderSearchInputRef}
+            style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
+            placeholder="Search gender identities..."
+            placeholderTextColor={theme.colors.textTertiary}
+            value={genderSearchText}
+            onChangeText={setGenderSearchText}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {genderSearchText.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setGenderSearchText('')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={15} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Scrollable Genders List */}
+        <ScrollView
+          style={{ maxHeight: 420 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {filteredGenders.map((item) => {
+            const isSelected = selectedGenderId === item.id;
+            return (
+              <TouchableOpacity
+                key={item.id}
                 style={[
-                  styles.modalSheet,
+                  styles.selectionOptionRow,
                   {
-                    backgroundColor: isDark ? '#141418' : '#FFFFFF',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E4E4E7',
-                    maxHeight: '86%',
+                    backgroundColor: isSelected
+                      ? isDark
+                        ? 'rgba(255, 255, 255, 0.09)'
+                        : '#F4F4F6'
+                      : 'transparent',
+                    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
                   },
                 ]}
+                onPress={() => {
+                  haptics.selection();
+                  setSelectedGenderId(item.id);
+                  if (item.id !== 'other') {
+                    setIsGenderModalVisible(false);
+                    setGenderSearchText('');
+                  }
+                }}
+                activeOpacity={0.7}
               >
-                <View style={styles.modalHandle} />
-
-                {/* Modal Header */}
-                <View style={styles.modalHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.modalTitle,
-                        { color: theme.colors.textPrimary, fontFamily: folkraFont },
-                      ]}
-                    >
-                      Gender Identity
-                    </Text>
-                    <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
-                      Select the identity that feels most authentic to you.
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => {
-                      haptics.selection();
-                      setIsGenderModalVisible(false);
-                      setGenderSearchText('');
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text
+                    style={{
+                      color: theme.colors.textPrimary,
+                      fontWeight: isSelected ? '700' : '600',
+                      fontSize: 15,
                     }}
-                    style={[
-                      styles.modalCloseBtn,
-                      {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
-                      },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Close gender selection modal"
                   >
-                    <X size={16} color={theme.colors.textSecondary} />
-                  </TouchableOpacity>
+                    {item.label}
+                  </Text>
+                  <Text level="caption" color="tertiary" style={{ marginTop: 2, lineHeight: 16 }}>
+                    {item.desc}
+                  </Text>
                 </View>
 
-                {/* Search Bar Facility */}
                 <View
                   style={[
-                    styles.modalSearchContainer,
+                    styles.radioIndicator,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F4F4F6',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
+                      borderColor: isSelected
+                        ? theme.colors.textPrimary
+                        : isDark
+                          ? 'rgba(255, 255, 255, 0.25)'
+                          : '#D4D4D8',
+                      backgroundColor: isSelected ? theme.colors.textPrimary : 'transparent',
                     },
                   ]}
                 >
-                  <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
-                  <RNTextInput
-                    ref={genderSearchInputRef}
-                    style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
-                    placeholder="Search gender identities..."
-                    placeholderTextColor={theme.colors.textTertiary}
-                    value={genderSearchText}
-                    onChangeText={setGenderSearchText}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  {genderSearchText.length > 0 && (
-                    <TouchableOpacity
-                      onPress={() => setGenderSearchText('')}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <X size={15} color={theme.colors.textTertiary} />
-                    </TouchableOpacity>
-                  )}
+                  {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
                 </View>
+              </TouchableOpacity>
+            );
+          })}
 
-                {/* Scrollable Genders List */}
-                <ScrollView
-                  style={{ maxHeight: 420 }}
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  {filteredGenders.map((item) => {
-                    const isSelected = selectedGenderId === item.id;
-                    return (
-                      <TouchableOpacity
-                        key={item.id}
-                        style={[
-                          styles.selectionOptionRow,
-                          {
-                            backgroundColor: isSelected
-                              ? isDark
-                                ? 'rgba(255, 255, 255, 0.09)'
-                                : '#F4F4F6'
-                              : 'transparent',
-                            borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
-                          },
-                        ]}
-                        onPress={() => {
-                          haptics.selection();
-                          setSelectedGenderId(item.id);
-                          if (item.id !== 'other') {
-                            setIsGenderModalVisible(false);
-                            setGenderSearchText('');
-                          }
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <View style={{ flex: 1, paddingRight: 10 }}>
-                          <Text
-                            style={{
-                              color: theme.colors.textPrimary,
-                              fontWeight: isSelected ? '700' : '600',
-                              fontSize: 15,
-                            }}
-                          >
-                            {item.label}
-                          </Text>
-                          <Text
-                            level="caption"
-                            color="tertiary"
-                            style={{ marginTop: 2, lineHeight: 16 }}
-                          >
-                            {item.desc}
-                          </Text>
-                        </View>
-
-                        <View
-                          style={[
-                            styles.radioIndicator,
-                            {
-                              borderColor: isSelected
-                                ? theme.colors.textPrimary
-                                : isDark
-                                  ? 'rgba(255, 255, 255, 0.25)'
-                                  : '#D4D4D8',
-                              backgroundColor: isSelected
-                                ? theme.colors.textPrimary
-                                : 'transparent',
-                            },
-                          ]}
-                        >
-                          {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-
-                  {/* Custom Self-Describe Input if selected or no matches */}
-                  {selectedGenderId === 'other' && (
-                    <View style={styles.customGenderInputBox}>
-                      <Text
-                        level="caption"
-                        style={{
-                          color: theme.colors.textSecondary,
-                          marginBottom: 6,
-                          fontWeight: '600',
-                        }}
-                      >
-                        Type your self-described identity:
-                      </Text>
-                      <RNTextInput
-                        style={[
-                          styles.textInput,
-                          {
-                            color: theme.colors.textPrimary,
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#E4E4E7',
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F8F8FA',
-                          },
-                        ]}
-                        placeholder="e.g. Demigirl, Neutrois, Two-Spirit"
-                        placeholderTextColor={theme.colors.textTertiary}
-                        value={customGenderText}
-                        onChangeText={setCustomGenderText}
-                        maxLength={40}
-                      />
-                      <TouchableOpacity
-                        style={[
-                          styles.confirmCustomButton,
-                          { backgroundColor: theme.colors.textPrimary },
-                        ]}
-                        onPress={() => {
-                          haptics.notificationSuccess();
-                          setIsGenderModalVisible(false);
-                          setGenderSearchText('');
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: isDark ? '#000000' : '#FFFFFF',
-                            fontWeight: '700',
-                            fontSize: 13,
-                          }}
-                        >
-                          Confirm Identity
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </ScrollView>
-
-                {/* Show on Profile Toggle */}
-                <TouchableOpacity
-                  style={[
-                    styles.showOnProfileRow,
-                    {
-                      borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
-                    },
-                  ]}
-                  onPress={() => {
-                    haptics.selection();
-                    setShowGenderOnProfile((prev) => !prev);
+          {/* Custom Self-Describe Input if selected or no matches */}
+          {selectedGenderId === 'other' && (
+            <View style={styles.customGenderInputBox}>
+              <Text
+                level="caption"
+                style={{
+                  color: theme.colors.textSecondary,
+                  marginBottom: 6,
+                  fontWeight: '600',
+                }}
+              >
+                Type your self-described identity:
+              </Text>
+              <RNTextInput
+                style={[
+                  styles.textInput,
+                  {
+                    color: theme.colors.textPrimary,
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#E4E4E7',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F8F8FA',
+                  },
+                ]}
+                placeholder="e.g. Demigirl, Neutrois, Two-Spirit"
+                placeholderTextColor={theme.colors.textTertiary}
+                value={customGenderText}
+                onChangeText={setCustomGenderText}
+                maxLength={40}
+              />
+              <TouchableOpacity
+                style={[styles.confirmCustomButton, { backgroundColor: theme.colors.textPrimary }]}
+                onPress={() => {
+                  haptics.notificationSuccess();
+                  setIsGenderModalVisible(false);
+                  setGenderSearchText('');
+                }}
+              >
+                <Text
+                  style={{
+                    color: isDark ? '#000000' : '#FFFFFF',
+                    fontWeight: '700',
+                    fontSize: 13,
                   }}
-                  activeOpacity={0.8}
                 >
-                  <View style={{ flex: 1, paddingRight: 10 }}>
-                    <Text
-                      style={{ color: theme.colors.textPrimary, fontWeight: '600', fontSize: 13.5 }}
-                    >
-                      Visible on my profile
-                    </Text>
-                    <Text level="caption" color="tertiary" style={{ marginTop: 1 }}>
-                      {showGenderOnProfile
-                        ? 'Your identity is shown on your card'
-                        : 'Hidden from public profile card'}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.toggleCapsule,
-                      {
-                        backgroundColor: showGenderOnProfile
-                          ? theme.colors.textPrimary
-                          : isDark
-                            ? 'rgba(255, 255, 255, 0.14)'
-                            : '#D4D4D8',
-                      },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.toggleKnob,
-                        {
-                          backgroundColor: showGenderOnProfile
-                            ? isDark
-                              ? '#000000'
-                              : '#FFFFFF'
-                            : isDark
-                              ? '#FFFFFF'
-                              : '#FFFFFF',
-                          alignSelf: showGenderOnProfile ? 'flex-end' : 'flex-start',
-                        },
-                      ]}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
+                  Confirm Identity
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Show on Profile Toggle */}
+        <TouchableOpacity
+          style={[
+            styles.showOnProfileRow,
+            {
+              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
+            },
+          ]}
+          onPress={() => {
+            haptics.selection();
+            setShowGenderOnProfile((prev) => !prev);
+          }}
+          activeOpacity={0.8}
+        >
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <Text style={{ color: theme.colors.textPrimary, fontWeight: '600', fontSize: 13.5 }}>
+              Visible on my profile
+            </Text>
+            <Text level="caption" color="tertiary" style={{ marginTop: 1 }}>
+              {showGenderOnProfile
+                ? 'Your identity is shown on your card'
+                : 'Hidden from public profile card'}
+            </Text>
           </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+          <View
+            style={[
+              styles.toggleCapsule,
+              {
+                backgroundColor: showGenderOnProfile
+                  ? theme.colors.textPrimary
+                  : isDark
+                    ? 'rgba(255, 255, 255, 0.14)'
+                    : '#D4D4D8',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.toggleKnob,
+                {
+                  backgroundColor: showGenderOnProfile
+                    ? isDark
+                      ? '#000000'
+                      : '#FFFFFF'
+                    : isDark
+                      ? '#FFFFFF'
+                      : '#FFFFFF',
+                  alignSelf: showGenderOnProfile ? 'flex-end' : 'flex-start',
+                },
+              ]}
+            />
+          </View>
+        </TouchableOpacity>
+      </SmoothBottomSheetModal>
 
       {/* ======================================================== */}
       {/* 2. Interactive Map Location Picker Modal */}
@@ -2433,376 +2856,314 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       {/* ======================================================== */}
       {/* 3. Birthday Picker Bottom Sheet Modal */}
       {/* ======================================================== */}
-      <Modal
+      <SmoothBottomSheetModal
         visible={isDatePickerVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsDatePickerVisible(false)}
+        onClose={() => setIsDatePickerVisible(false)}
+        showHandle={true}
       >
-        <TouchableWithoutFeedback onPress={() => setIsDatePickerVisible(false)}>
-          <View style={styles.modalBackdrop}>
-            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-              <View
-                style={[
-                  styles.modalSheet,
-                  {
-                    backgroundColor: isDark ? '#141418' : '#FFFFFF',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E4E4E7',
-                  },
-                ]}
-              >
-                <View style={styles.modalHandle} />
+        {/* Header */}
+        <View style={styles.modalHeader}>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.modalTitle,
+                { color: theme.colors.textPrimary, fontFamily: folkraFont },
+              ]}
+            >
+              When&apos;s your birthday?
+            </Text>
+            <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
+              Must be 18+ to join Nazar. Exact birthday remains private.
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => setIsDatePickerVisible(false)}
+            style={[
+              styles.modalCloseBtn,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
+              },
+            ]}
+          >
+            <X size={16} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
 
-                {/* Header */}
-                <View style={styles.modalHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.modalTitle,
-                        { color: theme.colors.textPrimary, fontFamily: folkraFont },
-                      ]}
-                    >
-                      When&apos;s your birthday?
-                    </Text>
-                    <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
-                      Must be 18+ to join Nazar. Exact birthday remains private.
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => setIsDatePickerVisible(false)}
-                    style={[
-                      styles.modalCloseBtn,
-                      {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
-                      },
-                    ]}
-                  >
-                    <X size={16} color={theme.colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
+        {/* Real-time Age Calculation Badge */}
+        <View
+          style={[
+            styles.ageStatusBox,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F4F4F6',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#E4E4E7',
+            },
+          ]}
+        >
+          <ShieldCheck size={16} color={theme.colors.textPrimary} style={{ marginRight: 6 }} />
+          <Text style={{ color: theme.colors.textPrimary, fontWeight: '700', fontSize: 13 }}>
+            Age: {tempAge} years old {tempAge >= 18 ? '· Verified 18+' : '· (Under 18 not allowed)'}
+          </Text>
+        </View>
 
-                {/* Real-time Age Calculation Badge */}
-                <View
-                  style={[
-                    styles.ageStatusBox,
-                    {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F4F4F6',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#E4E4E7',
-                    },
-                  ]}
-                >
-                  <ShieldCheck
-                    size={16}
-                    color={theme.colors.textPrimary}
-                    style={{ marginRight: 6 }}
-                  />
-                  <Text
-                    style={{ color: theme.colors.textPrimary, fontWeight: '700', fontSize: 13 }}
-                  >
-                    Age: {tempAge} years old{' '}
-                    {tempAge >= 18 ? '· Verified 18+' : '· (Under 18 not allowed)'}
-                  </Text>
-                </View>
-
-                {/* 3-Column Picker */}
-                <View style={styles.pickerColumnsRow}>
-                  {/* Day Column */}
-                  <View style={styles.pickerColumn}>
-                    <Text style={[styles.pickerColHeader, { color: theme.colors.textSecondary }]}>
-                      DAY
-                    </Text>
-                    <ScrollView
-                      style={styles.pickerColScroll}
-                      contentContainerStyle={styles.pickerColScrollContent}
-                      showsVerticalScrollIndicator={false}
-                    >
-                      {daysList.map((d) => (
-                        <TouchableOpacity
-                          key={d}
-                          style={[
-                            styles.pickerItem,
-                            tempDay === d && [
-                              styles.pickerItemSelected,
-                              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7' },
-                            ],
-                          ]}
-                          onPress={() => {
-                            haptics.selection();
-                            setTempDay(d);
-                          }}
-                        >
-                          <Text
-                            style={[
-                              styles.pickerItemText,
-                              {
-                                color:
-                                  tempDay === d
-                                    ? theme.colors.textPrimary
-                                    : theme.colors.textTertiary,
-                                fontWeight: tempDay === d ? '700' : '400',
-                              },
-                            ]}
-                          >
-                            {d}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-
-                  {/* Month Column */}
-                  <View style={[styles.pickerColumn, { flex: 1.4 }]}>
-                    <Text style={[styles.pickerColHeader, { color: theme.colors.textSecondary }]}>
-                      MONTH
-                    </Text>
-                    <ScrollView
-                      style={styles.pickerColScroll}
-                      contentContainerStyle={styles.pickerColScrollContent}
-                      showsVerticalScrollIndicator={false}
-                    >
-                      {MONTHS.map((m) => (
-                        <TouchableOpacity
-                          key={m.value}
-                          style={[
-                            styles.pickerItem,
-                            tempMonth === m.value && [
-                              styles.pickerItemSelected,
-                              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7' },
-                            ],
-                          ]}
-                          onPress={() => {
-                            haptics.selection();
-                            setTempMonth(m.value);
-                          }}
-                        >
-                          <Text
-                            style={[
-                              styles.pickerItemText,
-                              {
-                                color:
-                                  tempMonth === m.value
-                                    ? theme.colors.textPrimary
-                                    : theme.colors.textTertiary,
-                                fontWeight: tempMonth === m.value ? '700' : '400',
-                              },
-                            ]}
-                          >
-                            {m.short}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-
-                  {/* Year Column */}
-                  <View style={styles.pickerColumn}>
-                    <Text style={[styles.pickerColHeader, { color: theme.colors.textSecondary }]}>
-                      YEAR
-                    </Text>
-                    <ScrollView
-                      style={styles.pickerColScroll}
-                      contentContainerStyle={styles.pickerColScrollContent}
-                      showsVerticalScrollIndicator={false}
-                    >
-                      {yearsList.map((y) => (
-                        <TouchableOpacity
-                          key={y}
-                          style={[
-                            styles.pickerItem,
-                            tempYear === y && [
-                              styles.pickerItemSelected,
-                              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7' },
-                            ],
-                          ]}
-                          onPress={() => {
-                            haptics.selection();
-                            setTempYear(y);
-                          }}
-                        >
-                          <Text
-                            style={[
-                              styles.pickerItemText,
-                              {
-                                color:
-                                  tempYear === y
-                                    ? theme.colors.textPrimary
-                                    : theme.colors.textTertiary,
-                                fontWeight: tempYear === y ? '700' : '400',
-                              },
-                            ]}
-                          >
-                            {y}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                </View>
-
-                {/* Confirm Date Button */}
+        {/* 3-Column Picker */}
+        <View style={styles.pickerColumnsRow}>
+          {/* Day Column */}
+          <View style={styles.pickerColumn}>
+            <Text style={[styles.pickerColHeader, { color: theme.colors.textSecondary }]}>DAY</Text>
+            <ScrollView
+              style={styles.pickerColScroll}
+              contentContainerStyle={styles.pickerColScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {daysList.map((d) => (
                 <TouchableOpacity
+                  key={d}
                   style={[
-                    styles.modalConfirmBtn,
-                    {
-                      backgroundColor:
-                        tempAge >= 18
-                          ? isDark
-                            ? '#FFFFFF'
-                            : '#111114'
-                          : 'rgba(255, 255, 255, 0.12)',
-                    },
+                    styles.pickerItem,
+                    tempDay === d && [
+                      styles.pickerItemSelected,
+                      { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7' },
+                    ],
                   ]}
-                  onPress={handleConfirmDate}
-                  disabled={tempAge < 18}
-                  activeOpacity={0.85}
+                  onPress={() => {
+                    haptics.selection();
+                    setTempDay(d);
+                  }}
                 >
                   <Text
                     style={[
-                      styles.modalConfirmBtnText,
+                      styles.pickerItemText,
                       {
-                        color:
-                          tempAge >= 18
-                            ? isDark
-                              ? '#000000'
-                              : '#FFFFFF'
-                            : 'rgba(255, 255, 255, 0.4)',
+                        color: tempDay === d ? theme.colors.textPrimary : theme.colors.textTertiary,
+                        fontWeight: tempDay === d ? '700' : '400',
                       },
                     ]}
                   >
-                    {tempAge >= 18 ? 'Set Date of Birth' : 'Must be 18+ to Continue'}
+                    {d}
                   </Text>
                 </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
+              ))}
+            </ScrollView>
           </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+
+          {/* Month Column */}
+          <View style={[styles.pickerColumn, { flex: 1.4 }]}>
+            <Text style={[styles.pickerColHeader, { color: theme.colors.textSecondary }]}>
+              MONTH
+            </Text>
+            <ScrollView
+              style={styles.pickerColScroll}
+              contentContainerStyle={styles.pickerColScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {MONTHS.map((m) => (
+                <TouchableOpacity
+                  key={m.value}
+                  style={[
+                    styles.pickerItem,
+                    tempMonth === m.value && [
+                      styles.pickerItemSelected,
+                      { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7' },
+                    ],
+                  ]}
+                  onPress={() => {
+                    haptics.selection();
+                    setTempMonth(m.value);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.pickerItemText,
+                      {
+                        color:
+                          tempMonth === m.value
+                            ? theme.colors.textPrimary
+                            : theme.colors.textTertiary,
+                        fontWeight: tempMonth === m.value ? '700' : '400',
+                      },
+                    ]}
+                  >
+                    {m.short}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Year Column */}
+          <View style={styles.pickerColumn}>
+            <Text style={[styles.pickerColHeader, { color: theme.colors.textSecondary }]}>
+              YEAR
+            </Text>
+            <ScrollView
+              style={styles.pickerColScroll}
+              contentContainerStyle={styles.pickerColScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {yearsList.map((y) => (
+                <TouchableOpacity
+                  key={y}
+                  style={[
+                    styles.pickerItem,
+                    tempYear === y && [
+                      styles.pickerItemSelected,
+                      { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7' },
+                    ],
+                  ]}
+                  onPress={() => {
+                    haptics.selection();
+                    setTempYear(y);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.pickerItemText,
+                      {
+                        color:
+                          tempYear === y ? theme.colors.textPrimary : theme.colors.textTertiary,
+                        fontWeight: tempYear === y ? '700' : '400',
+                      },
+                    ]}
+                  >
+                    {y}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+
+        {/* Confirm Date Button */}
+        <TouchableOpacity
+          style={[
+            styles.modalConfirmBtn,
+            {
+              backgroundColor:
+                tempAge >= 18 ? (isDark ? '#FFFFFF' : '#111114') : 'rgba(255, 255, 255, 0.12)',
+            },
+          ]}
+          onPress={handleConfirmDate}
+          disabled={tempAge < 18}
+          activeOpacity={0.85}
+        >
+          <Text
+            style={[
+              styles.modalConfirmBtnText,
+              {
+                color:
+                  tempAge >= 18 ? (isDark ? '#000000' : '#FFFFFF') : 'rgba(255, 255, 255, 0.4)',
+              },
+            ]}
+          >
+            {tempAge >= 18 ? 'Set Date of Birth' : 'Must be 18+ to Continue'}
+          </Text>
+        </TouchableOpacity>
+      </SmoothBottomSheetModal>
 
       {/* ======================================================== */}
       {/* 4. Relationship Intent Modal */}
       {/* ======================================================== */}
-      <Modal
+      <SmoothBottomSheetModal
         visible={isIntentModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsIntentModalVisible(false)}
+        onClose={() => setIsIntentModalVisible(false)}
+        showHandle={true}
       >
-        <TouchableWithoutFeedback onPress={() => setIsIntentModalVisible(false)}>
-          <View style={styles.modalBackdrop}>
-            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-              <View
+        {/* Header */}
+        <View style={styles.modalHeader}>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.modalTitle,
+                { color: theme.colors.textPrimary, fontFamily: folkraFont },
+              ]}
+            >
+              Relationship Intent
+            </Text>
+            <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
+              Be intentional about what you&apos;re looking for.
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => setIsIntentModalVisible(false)}
+            style={[
+              styles.modalCloseBtn,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
+              },
+            ]}
+          >
+            <X size={16} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* List of Intent Options */}
+        <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
+          {INTENT_OPTIONS.map((item) => {
+            const isSelected = intent === item.value;
+            return (
+              <TouchableOpacity
+                key={item.value}
                 style={[
-                  styles.modalSheet,
+                  styles.selectionOptionRow,
                   {
-                    backgroundColor: isDark ? '#141418' : '#FFFFFF',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E4E4E7',
+                    backgroundColor: isSelected
+                      ? isDark
+                        ? 'rgba(255, 255, 255, 0.08)'
+                        : '#F4F4F6'
+                      : 'transparent',
+                    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
                   },
                 ]}
+                onPress={() => {
+                  haptics.selection();
+                  setIntent(item.value);
+                  setIsIntentModalVisible(false);
+                }}
+                activeOpacity={0.7}
               >
-                <View style={styles.modalHandle} />
-
-                {/* Header */}
-                <View style={styles.modalHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.modalTitle,
-                        { color: theme.colors.textPrimary, fontFamily: folkraFont },
-                      ]}
-                    >
-                      Relationship Intent
-                    </Text>
-                    <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
-                      Be intentional about what you&apos;re looking for.
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => setIsIntentModalVisible(false)}
-                    style={[
-                      styles.modalCloseBtn,
-                      {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
-                      },
-                    ]}
+                <View style={{ flex: 1, paddingRight: 10, minWidth: 0 }}>
+                  <Text
+                    style={{
+                      color: theme.colors.textPrimary,
+                      fontWeight: isSelected ? '700' : '600',
+                      fontSize: 15,
+                    }}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
                   >
-                    <X size={16} color={theme.colors.textSecondary} />
-                  </TouchableOpacity>
+                    {item.label}
+                  </Text>
+                  <Text
+                    level="caption"
+                    color="tertiary"
+                    style={{ marginTop: 2 }}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {item.desc}
+                  </Text>
                 </View>
 
-                {/* List of Intent Options */}
-                <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
-                  {INTENT_OPTIONS.map((item) => {
-                    const isSelected = intent === item.value;
-                    return (
-                      <TouchableOpacity
-                        key={item.value}
-                        style={[
-                          styles.selectionOptionRow,
-                          {
-                            backgroundColor: isSelected
-                              ? isDark
-                                ? 'rgba(255, 255, 255, 0.08)'
-                                : '#F4F4F6'
-                              : 'transparent',
-                            borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
-                          },
-                        ]}
-                        onPress={() => {
-                          haptics.selection();
-                          setIntent(item.value);
-                          setIsIntentModalVisible(false);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <View style={{ flex: 1, paddingRight: 10, minWidth: 0 }}>
-                          <Text
-                            style={{
-                              color: theme.colors.textPrimary,
-                              fontWeight: isSelected ? '700' : '600',
-                              fontSize: 15,
-                            }}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                          >
-                            {item.label}
-                          </Text>
-                          <Text
-                            level="caption"
-                            color="tertiary"
-                            style={{ marginTop: 2 }}
-                            numberOfLines={2}
-                            ellipsizeMode="tail"
-                          >
-                            {item.desc}
-                          </Text>
-                        </View>
-
-                        <View
-                          style={[
-                            styles.radioIndicator,
-                            {
-                              borderColor: isSelected
-                                ? theme.colors.textPrimary
-                                : isDark
-                                  ? 'rgba(255, 255, 255, 0.25)'
-                                  : '#D4D4D8',
-                              backgroundColor: isSelected
-                                ? theme.colors.textPrimary
-                                : 'transparent',
-                            },
-                          ]}
-                        >
-                          {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+                <View
+                  style={[
+                    styles.radioIndicator,
+                    {
+                      borderColor: isSelected
+                        ? theme.colors.textPrimary
+                        : isDark
+                          ? 'rgba(255, 255, 255, 0.25)'
+                          : '#D4D4D8',
+                      backgroundColor: isSelected ? theme.colors.textPrimary : 'transparent',
+                    },
+                  ]}
+                >
+                  {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </SmoothBottomSheetModal>
     </View>
   );
 }
@@ -3086,6 +3447,26 @@ const styles = StyleSheet.create({
   },
   bottomCtaSection: {
     marginTop: 10,
+  },
+  bottomDock: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 36,
+    paddingHorizontal: 18,
+    zIndex: 30,
+  },
+  dockGradientBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  dockInner: {
+    width: '100%',
+    alignSelf: 'center',
   },
   professionalCtaButton: {
     height: 54,

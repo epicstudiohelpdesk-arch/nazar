@@ -31,6 +31,7 @@ export default defineConfig({
         'tests/mocks/expo-local-authentication.ts'
       ),
       'expo-crypto': path.resolve(__dirname, 'tests/mocks/expo-crypto.ts'),
+      'expo-blur': path.resolve(__dirname, 'tests/mocks/expo-blur.ts'),
     },
   },
 });
