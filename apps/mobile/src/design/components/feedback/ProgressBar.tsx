@@ -24,7 +24,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 }) => {
   const { colors, radii } = useTheme();
 
-  const normalized = Math.max(0, Math.min(100, progress));
+  const rawProgress = progress <= 1 && progress > 0 ? progress * 100 : progress;
+  const normalized = Math.max(0, Math.min(100, rawProgress));
   const fillColor = color || colors.accent;
 
   return (

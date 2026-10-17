@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { ThemeProvider } from '../src/design/theme/ThemeContext.js';
 import { LocalizationProvider } from '../src/design/localization/LocalizationContext.js';
 import { haptics } from '../src/design/haptics/index.js';
@@ -9,6 +10,14 @@ import { haptics } from '../src/design/haptics/index.js';
 haptics.setEnabled(false);
 
 export default function RootLayout(): React.JSX.Element {
+  // Preload brand fonts globally for entire application
+  useFonts({
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Folkra: require('../assets/fonts/folkra.ttf'),
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Ethnocentric: require('../assets/fonts/Ethnocentric-Regular.otf'),
+  });
+
   const [queryClient] = useState(
     () =>
       new QueryClient({

@@ -89,7 +89,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({
 
         <View style={styles.infoCol}>
           <View style={styles.nameRow}>
-            <Text variant="body" weight="semibold" numberOfLines={1}>
+            <Text variant="body" weight="semibold" numberOfLines={1} style={styles.nameText}>
               {name}
               {age ? `, ${age}` : ''}
             </Text>
@@ -204,6 +204,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingRight: 8,
     gap: 6,
+  },
+  nameText: {
+    fontFamily: 'Folkra',
+    fontSize: 16,
+    letterSpacing: -0.2,
   },
   sparkBadge: {
     flexDirection: 'row',

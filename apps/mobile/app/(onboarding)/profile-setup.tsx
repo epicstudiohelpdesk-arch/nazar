@@ -12,9 +12,11 @@ import {
   Platform,
   ActivityIndicator,
   Keyboard,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
+import { LinearGradient } from 'expo-linear-gradient';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import {
   ArrowLeft,
@@ -46,7 +48,7 @@ import type { Gender, RelationshipIntent } from '@platform/api-contracts';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
-import { ProgressBar } from '../../src/design/components/feedback/ProgressBar.js';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getDefaultProfileApi } from '../../src/profile/profile-api.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
@@ -249,9 +251,21 @@ export interface LocationSuggestion {
 
 export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
   const { maxContentWidth } = useResponsiveLayout();
   const profileApi = getDefaultProfileApi();
+
+  // Animated scroll listener for glossy top vignette
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const handleScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+    useNativeDriver: true,
+  });
+  const headerGlossOpacity = scrollY.interpolate({
+    inputRange: [0, 20, 60],
+    outputRange: [0, 0.45, 1],
+    extrapolate: 'clamp',
+  });
 
   // Load Folkra brand font
   const [fontsLoaded] = useFonts({
@@ -871,84 +885,145 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   }, []);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0B0B0E' : '#FAFAFA' }]}>
-      {/* ======================================================== */}
-      {/* Redesigned Minimalist Monochromatic Header Portion */}
-      {/* ======================================================== */}
-      <View style={styles.topNavigationRow}>
-        <TouchableOpacity
-          style={[
-            styles.monochromeBackButton,
-            {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7',
-            },
-          ]}
-          onPress={handleBack}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
-          testID="onboarding-back-button"
-        >
-          <ArrowLeft size={18} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
+    <View style={[styles.safeArea, { backgroundColor: isDark ? '#0B0B0E' : '#FAFAFA' }]}>
+      {/* Glossy, Faded, Frosted-Glass Top Vignette (Reveals dynamically on scroll) */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.glossyTopOverlay,
+          {
+            height: Math.max(insets.top + 54, 70),
+            opacity: headerGlossOpacity,
+          },
+        ]}
+      >
+        <LinearGradient
+          colors={
+            isDark
+              ? [
+                  'rgba(11, 11, 14, 0.98)',
+                  'rgba(11, 11, 14, 0.92)',
+                  'rgba(11, 11, 14, 0.70)',
+                  'rgba(11, 11, 14, 0.28)',
+                  'rgba(11, 11, 14, 0.0)',
+                ]
+              : [
+                  'rgba(250, 250, 250, 0.98)',
+                  'rgba(250, 250, 250, 0.92)',
+                  'rgba(250, 250, 250, 0.70)',
+                  'rgba(250, 250, 250, 0.28)',
+                  'rgba(250, 250, 250, 0.0)',
+                ]
+          }
+          locations={[0, 0.4, 0.68, 0.88, 1.0]}
+          style={StyleSheet.absoluteFill}
+        />
+        {/* Specular Gloss Sheen Layer */}
+        <LinearGradient
+          colors={
+            isDark
+              ? [
+                  'rgba(255, 255, 255, 0.08)',
+                  'rgba(255, 255, 255, 0.03)',
+                  'rgba(255, 255, 255, 0.0)',
+                ]
+              : [
+                  'rgba(255, 255, 255, 0.70)',
+                  'rgba(255, 255, 255, 0.25)',
+                  'rgba(255, 255, 255, 0.0)',
+                ]
+          }
+          locations={[0, 0.45, 1.0]}
+          style={styles.glossySheenLayer}
+        />
+      </Animated.View>
 
-        {/* Monochromatic Step Capsule */}
-        <View
-          style={[
-            styles.monochromeStepCapsule,
-            {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F4F4F6',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E4E4E7',
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.stepCapsuleText,
-              { color: theme.colors.textPrimary, fontFamily: folkraFont },
-            ]}
-          >
-            STEP 01 OF 06
-          </Text>
-        </View>
-
-        <View style={styles.topNavigationPlaceholder} />
-      </View>
-
-      {/* Monochromatic High-Precision Progress Bar */}
-      <View style={styles.progressBarWrapper}>
-        <ProgressBar progress={0.16} style={styles.progressBar} />
-      </View>
+      {/* Encircled floating circular back button on top left corner (identical to login/otp) */}
+      <TouchableOpacity
+        onPress={handleBack}
+        style={[
+          styles.encircledBackButton,
+          {
+            top: Math.max(insets.top + 8, 16),
+            left: Math.max(insets.left + 16, 16),
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.1)',
+          },
+        ]}
+        activeOpacity={0.7}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        testID="onboarding-back-button"
+      >
+        <ArrowLeft size={20} color={theme.colors.textPrimary} />
+      </TouchableOpacity>
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <KeyboardAvoidingView
           style={styles.keyboardContainer}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <ScrollView
+          <Animated.ScrollView
             contentContainerStyle={[
               styles.scrollContent,
-              { maxWidth: maxContentWidth, width: '100%', alignSelf: 'center' },
+              {
+                maxWidth: maxContentWidth,
+                width: '100%',
+                alignSelf: 'center',
+                paddingTop: Math.max(insets.top + 64, 76),
+              },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="none"
             showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
           >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
               <View style={{ flex: 1 }}>
-                {/* Redesigned Monochromatic Hero Section */}
+                {/* Redesigned Monochromatic Hero Section with Inline 01/06 */}
                 <View style={styles.heroSection}>
-                  <Heading
-                    level="h1"
-                    style={[
-                      styles.heroTitle,
-                      { fontFamily: folkraFont, color: theme.colors.textPrimary },
-                    ]}
-                  >
-                    The Basics
-                  </Heading>
+                  <View style={styles.heroTitleRow}>
+                    <Heading
+                      level="h1"
+                      style={[
+                        styles.heroTitle,
+                        { fontFamily: folkraFont, color: theme.colors.textPrimary },
+                      ]}
+                    >
+                      The Basics
+                    </Heading>
+
+                    {/* Refined Pure Typographic 01/06 Indicator beside Heading */}
+                    <View style={styles.stepBadgeInline}>
+                      <Text
+                        style={[
+                          styles.stepCurrentText,
+                          { color: theme.colors.textPrimary, fontFamily: folkraFont },
+                        ]}
+                      >
+                        01
+                      </Text>
+                      <Text
+                        style={[
+                          styles.stepDividerText,
+                          { color: theme.colors.textTertiary, fontFamily: folkraFont },
+                        ]}
+                      >
+                        /
+                      </Text>
+                      <Text
+                        style={[
+                          styles.stepTotalText,
+                          { color: theme.colors.textTertiary, fontFamily: folkraFont },
+                        ]}
+                      >
+                        06
+                      </Text>
+                    </View>
+                  </View>
+
                   <Text level="body" color="secondary" style={styles.heroSubtitle}>
                     Begin your authentic narrative. Your name, age, identity, and location form the
                     foundation of who you meet on Nazar.
@@ -1007,6 +1082,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                             : isDark
                               ? 'rgba(255, 255, 255, 0.08)'
                               : '#E4E4E7',
+                        marginBottom: 14,
                       },
                     ]}
                   >
@@ -1065,6 +1141,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       {
                         backgroundColor: isDark ? '#121216' : '#FFFFFF',
                         borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
+                        marginBottom: 14,
                       },
                     ]}
                   >
@@ -1117,6 +1194,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         {
                           borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
                           backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
+                          height: 52,
                         },
                       ]}
                       onPress={handleOpenDatePicker}
@@ -1134,7 +1212,18 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       >
                         {formattedDateString}
                       </Text>
-                      <ChevronDown size={17} color={theme.colors.textTertiary} />
+                      <View
+                        style={[
+                          styles.intentChevronBadge,
+                          {
+                            backgroundColor: isDark
+                              ? 'rgba(255, 255, 255, 0.06)'
+                              : 'rgba(0, 0, 0, 0.04)',
+                          },
+                        ]}
+                      >
+                        <ChevronDown size={15} color={theme.colors.textSecondary} />
+                      </View>
                     </TouchableOpacity>
 
                     <View style={styles.securityFootnote}>
@@ -1181,7 +1270,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
                     <TouchableOpacity
                       style={[
-                        styles.dropdownBox,
+                        styles.intentDropdownBox,
                         {
                           borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
                           backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
@@ -1196,26 +1285,34 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       accessibilityRole="button"
                       accessibilityLabel="Select gender identity"
                     >
-                      <View style={{ flex: 1 }}>
+                      <View style={styles.intentContentContainer}>
                         <Text
-                          style={{
-                            color: theme.colors.textPrimary,
-                            fontWeight: '700',
-                            fontSize: 15,
-                          }}
+                          style={[styles.intentLabelText, { color: theme.colors.textPrimary }]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
                         >
                           {activeGenderLabel}
                         </Text>
                         <Text
-                          level="caption"
-                          color="tertiary"
+                          style={[styles.intentDescText, { color: theme.colors.textTertiary }]}
                           numberOfLines={1}
-                          style={{ marginTop: 2 }}
+                          ellipsizeMode="tail"
                         >
                           {activeGenderOption.desc}
                         </Text>
                       </View>
-                      <ChevronDown size={17} color={theme.colors.textTertiary} />
+                      <View
+                        style={[
+                          styles.intentChevronBadge,
+                          {
+                            backgroundColor: isDark
+                              ? 'rgba(255, 255, 255, 0.06)'
+                              : 'rgba(0, 0, 0, 0.04)',
+                          },
+                        ]}
+                      >
+                        <ChevronDown size={15} color={theme.colors.textSecondary} />
+                      </View>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -1262,11 +1359,10 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
                     <TouchableOpacity
                       style={[
-                        styles.dropdownBox,
+                        styles.intentDropdownBox,
                         {
                           borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
                           backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
-                          height: 58,
                         },
                       ]}
                       onPress={() => {
@@ -1277,26 +1373,34 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       accessibilityRole="button"
                       accessibilityLabel="Select relationship intent"
                     >
-                      <View style={{ flex: 1 }}>
+                      <View style={styles.intentContentContainer}>
                         <Text
-                          style={{
-                            color: theme.colors.textPrimary,
-                            fontWeight: '700',
-                            fontSize: 14.5,
-                          }}
+                          style={[styles.intentLabelText, { color: theme.colors.textPrimary }]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
                         >
                           {activeIntentOption.label}
                         </Text>
                         <Text
-                          level="caption"
-                          color="tertiary"
+                          style={[styles.intentDescText, { color: theme.colors.textTertiary }]}
                           numberOfLines={1}
-                          style={{ marginTop: 2 }}
+                          ellipsizeMode="tail"
                         >
                           {activeIntentOption.desc}
                         </Text>
                       </View>
-                      <ChevronDown size={17} color={theme.colors.textTertiary} />
+                      <View
+                        style={[
+                          styles.intentChevronBadge,
+                          {
+                            backgroundColor: isDark
+                              ? 'rgba(255, 255, 255, 0.06)'
+                              : 'rgba(0, 0, 0, 0.04)',
+                          },
+                        ]}
+                      >
+                        <ChevronDown size={15} color={theme.colors.textSecondary} />
+                      </View>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -1331,12 +1435,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     ]}
                   >
                     <View style={styles.cardHeader}>
-                      <View
-                        style={[
-                          styles.cardTitleCluster,
-                          { flex: 1, flexShrink: 1, marginRight: 8 },
-                        ]}
-                      >
+                      <View style={styles.cardTitleCluster}>
                         <View
                           style={[
                             styles.monochromeIconBadge,
@@ -1349,46 +1448,9 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                           City / Neighborhood
                         </Text>
                       </View>
-
-                      {/* Compact Choose on Map Quick Action */}
-                      <TouchableOpacity
-                        onPress={() => {
-                          haptics.selection();
-                          Keyboard.dismiss();
-                          setShowSuggestionsDropdown(false);
-                          setIsMapModalVisible(true);
-                        }}
-                        style={[
-                          styles.chooseOnMapButton,
-                          {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7',
-                          },
-                        ]}
-                        activeOpacity={0.75}
-                        accessibilityRole="button"
-                        accessibilityLabel="Choose location from map"
-                      >
-                        <Crosshair
-                          size={12}
-                          color={theme.colors.textPrimary}
-                          style={{ marginRight: 4 }}
-                        />
-                        <Text
-                          style={{
-                            color: theme.colors.textPrimary,
-                            fontWeight: '700',
-                            fontSize: 11.5,
-                            letterSpacing: -0.1,
-                          }}
-                          numberOfLines={1}
-                        >
-                          Choose on Map
-                        </Text>
-                      </TouchableOpacity>
                     </View>
 
-                    {/* City Input with Real-time Search */}
+                    {/* City Input with Real-time Search and Inline Map Button */}
                     <View style={styles.cityInputContainer}>
                       <RNTextInput
                         ref={cityInputRef}
@@ -1396,12 +1458,20 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                           styles.textInput,
                           {
                             color: theme.colors.textPrimary,
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
+                            borderColor:
+                              focusedField === 'city'
+                                ? theme.colors.textPrimary
+                                : isDark
+                                  ? 'rgba(255, 255, 255, 0.1)'
+                                  : '#E4E4E7',
                             backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
-                            paddingRight: city.length > 0 ? 40 : 14,
+                            height: 50,
+                            paddingLeft: 14,
+                            paddingRight: isSearchingLocation ? 154 : city.length > 0 ? 154 : 124,
+                            fontSize: 14.5,
                           },
                         ]}
-                        placeholder="Type a city, locality, or district..."
+                        placeholder="Type a city or locality..."
                         placeholderTextColor={theme.colors.textTertiary}
                         value={city}
                         onFocus={() => {
@@ -1419,25 +1489,69 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         testID="city-input"
                       />
 
-                      {isSearchingLocation ? (
-                        <View style={styles.cityInputTrailingAction}>
-                          <ActivityIndicator size="small" color={theme.colors.textSecondary} />
-                        </View>
-                      ) : city.length > 0 ? (
+                      {/* Right-aligned actions inside text field: Activity indicator or Clear X + Choose on Map button */}
+                      <View style={styles.cityInputInlineActions}>
+                        {isSearchingLocation ? (
+                          <ActivityIndicator
+                            size="small"
+                            color={theme.colors.textSecondary}
+                            style={{ marginRight: 6 }}
+                          />
+                        ) : city.length > 0 ? (
+                          <TouchableOpacity
+                            onPress={() => {
+                              haptics.selection();
+                              setCity('');
+                              setLocationSuggestions([]);
+                              setShowSuggestionsDropdown(false);
+                              setSelectedCoords(null);
+                            }}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            style={{ marginRight: 6, padding: 3 }}
+                            accessibilityRole="button"
+                            accessibilityLabel="Clear city input"
+                          >
+                            <X size={14} color={theme.colors.textTertiary} />
+                          </TouchableOpacity>
+                        ) : null}
+
+                        {/* Compact Button-Style Choose on Map */}
                         <TouchableOpacity
-                          style={styles.cityInputTrailingAction}
                           onPress={() => {
                             haptics.selection();
-                            setCity('');
-                            setLocationSuggestions([]);
+                            Keyboard.dismiss();
                             setShowSuggestionsDropdown(false);
-                            setSelectedCoords(null);
+                            setIsMapModalVisible(true);
                           }}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          style={[
+                            styles.inlineMapButton,
+                            {
+                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#EBEBEF',
+                              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#DCDCE0',
+                            },
+                          ]}
+                          activeOpacity={0.75}
+                          accessibilityRole="button"
+                          accessibilityLabel="Choose location from map"
                         >
-                          <X size={15} color={theme.colors.textTertiary} />
+                          <Crosshair
+                            size={11.5}
+                            color={theme.colors.textPrimary}
+                            style={{ marginRight: 4 }}
+                          />
+                          <Text
+                            style={{
+                              color: theme.colors.textPrimary,
+                              fontWeight: '700',
+                              fontSize: 11,
+                              letterSpacing: -0.1,
+                            }}
+                            numberOfLines={1}
+                          >
+                            Choose on Map
+                          </Text>
                         </TouchableOpacity>
-                      ) : null}
+                      </View>
                     </View>
 
                     {/* Real-time Internet Autocomplete Dropdown */}
@@ -1832,7 +1946,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                 </View>
               </View>
             </TouchableWithoutFeedback>
-          </ScrollView>
+          </Animated.ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
 
@@ -2640,17 +2754,25 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         }}
                         activeOpacity={0.7}
                       >
-                        <View style={{ flex: 1, paddingRight: 10 }}>
+                        <View style={{ flex: 1, paddingRight: 10, minWidth: 0 }}>
                           <Text
                             style={{
                               color: theme.colors.textPrimary,
                               fontWeight: isSelected ? '700' : '600',
                               fontSize: 15,
                             }}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
                           >
                             {item.label}
                           </Text>
-                          <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
+                          <Text
+                            level="caption"
+                            color="tertiary"
+                            style={{ marginTop: 2 }}
+                            numberOfLines={2}
+                            ellipsizeMode="tail"
+                          >
                             {item.desc}
                           </Text>
                         </View>
@@ -2681,7 +2803,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -2693,60 +2815,74 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  topNavigationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    paddingBottom: 10,
-  },
-  monochromeBackButton: {
+  encircledBackButton: {
+    position: 'absolute',
+    zIndex: 25,
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  monochromeStepCapsule: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
+  glossyTopOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 15,
   },
-  stepCapsuleText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-  },
-  topNavigationPlaceholder: {
-    width: 40,
-  },
-  progressBarWrapper: {
-    paddingHorizontal: 18,
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 2.5,
-    borderRadius: 2,
+  glossySheenLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '55%',
   },
   keyboardContainer: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
     paddingBottom: 48,
   },
   heroSection: {
     marginBottom: 20,
   },
+  heroTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   heroTitle: {
     fontSize: 32,
     fontWeight: '700',
     letterSpacing: -0.6,
-    marginBottom: 8,
+  },
+  stepBadgeInline: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  stepCurrentText: {
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  stepDividerText: {
+    fontSize: 13.5,
+    fontWeight: '400',
+    marginHorizontal: 2,
+  },
+  stepTotalText: {
+    fontSize: 13.5,
+    fontWeight: '500',
+    letterSpacing: 0.5,
   },
   heroSubtitle: {
     fontSize: 14.5,
@@ -2842,9 +2978,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexShrink: 0,
   },
+  inlineMapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 5.5,
+    borderRadius: 7,
+    borderWidth: 1,
+    flexShrink: 0,
+  },
   cityInputContainer: {
     position: 'relative',
     justifyContent: 'center',
+  },
+  cityInputInlineActions: {
+    position: 'absolute',
+    right: 8,
+    top: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   cityInputTrailingAction: {
     position: 'absolute',
@@ -2852,6 +3005,41 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     paddingHorizontal: 4,
+  },
+  intentDropdownBox: {
+    minHeight: 62,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  intentContentContainer: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: 10,
+    justifyContent: 'center',
+  },
+  intentLabelText: {
+    fontWeight: '700',
+    fontSize: 14.5,
+    lineHeight: 19,
+    letterSpacing: -0.2,
+  },
+  intentDescText: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 2.5,
+  },
+  intentChevronBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   suggestionsDropdownCard: {
     marginTop: 6,

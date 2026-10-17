@@ -649,6 +649,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardName: {
+    fontFamily: 'Folkra',
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
@@ -721,6 +722,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   headingFindYour: {
+    fontFamily: 'Folkra',
     fontSize: 34,
     lineHeight: 42,
     fontWeight: '800',
@@ -735,6 +737,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   headingPerfect: {
+    fontFamily: 'Folkra',
     fontSize: 34,
     lineHeight: 42,
     fontWeight: '800',
@@ -743,6 +746,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.6,
   },
   headingMatch: {
+    fontFamily: 'Folkra',
     fontSize: 34,
     lineHeight: 42,
     fontWeight: '800',

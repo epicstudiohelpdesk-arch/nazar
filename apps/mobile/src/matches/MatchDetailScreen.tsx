@@ -683,9 +683,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   promptQuestion: {
+    fontFamily: 'Folkra',
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
   },
   promptAnswer: {
     fontWeight: '500',

@@ -57,6 +57,7 @@ export const Heading: React.FC<HeadingProps> = ({
           letterSpacing: 'letterSpacing' in scaleStyle ? scaleStyle.letterSpacing : undefined,
           color: color || colors.textPrimary,
           textAlign: align,
+          fontFamily: 'Folkra',
         },
         style,
       ]}

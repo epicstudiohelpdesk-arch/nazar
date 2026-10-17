@@ -1276,6 +1276,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.85)',
   },
   discoveryNameText: {
+    fontFamily: 'Folkra',
     fontSize: 26,
     fontWeight: '800',
     color: '#FFFFFF',

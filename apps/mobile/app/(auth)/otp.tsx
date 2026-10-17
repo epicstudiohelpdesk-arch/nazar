@@ -8,9 +8,10 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
@@ -51,6 +52,17 @@ export default function OtpVerificationScreen(): React.JSX.Element {
 
   const lastAttemptedCodeRef = useRef<string>('');
   const isDark = theme.mode === 'dark';
+
+  // Animated scroll listener for glossy top vignette
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const handleScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+    useNativeDriver: true,
+  });
+  const headerGlossOpacity = scrollY.interpolate({
+    inputRange: [0, 20, 60],
+    outputRange: [0, 0.45, 1],
+    extrapolate: 'clamp',
+  });
 
   // 45s countdown timer for resending
   useEffect(() => {
@@ -124,10 +136,11 @@ export default function OtpVerificationScreen(): React.JSX.Element {
       }
 
       if (sessionResult.status === 'INCOMPLETE' || isSignUp) {
-        const nextStep = isSignUp ? 'profile-setup' : sessionResult.nextStep || 'profile-setup';
+        const nextStep = isSignUp ? 'intro' : sessionResult.nextStep || 'intro';
         trackOnboardingEvent('profile_started', { resumeStep: nextStep });
 
         const stepRoutes: Record<string, `/(onboarding)/${string}`> = {
+          intro: '/(onboarding)/intro',
           'profile-setup': '/(onboarding)/profile-setup',
           photos: '/(onboarding)/photos',
           interests: '/(onboarding)/interests',
@@ -136,7 +149,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
           permissions: '/(onboarding)/permissions',
           preview: '/(onboarding)/preview',
         };
-        const route = stepRoutes[nextStep] || '/(onboarding)/profile-setup';
+        const route = stepRoutes[nextStep] || '/(onboarding)/intro';
         router.replace(route);
         return;
       }
@@ -146,8 +159,8 @@ export default function OtpVerificationScreen(): React.JSX.Element {
 
     setIsLoading(false);
     if (isSignUp) {
-      trackOnboardingEvent('profile_started', { resumeStep: 'profile-setup' });
-      router.replace('/(onboarding)/profile-setup');
+      trackOnboardingEvent('profile_started', { resumeStep: 'intro' });
+      router.replace('/(onboarding)/intro');
       return;
     }
     // Ensure active profile exists so discovery tabs work seamlessly
@@ -227,6 +240,58 @@ export default function OtpVerificationScreen(): React.JSX.Element {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
+      {/* Glossy, Faded, Frosted-Glass Top Vignette (Reveals dynamically on scroll) */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.glossyTopOverlay,
+          {
+            height: Math.max(insets.top + 54, 70),
+            opacity: headerGlossOpacity,
+          },
+        ]}
+      >
+        <LinearGradient
+          colors={
+            isDark
+              ? [
+                  'rgba(11, 11, 14, 0.98)',
+                  'rgba(11, 11, 14, 0.92)',
+                  'rgba(11, 11, 14, 0.70)',
+                  'rgba(11, 11, 14, 0.28)',
+                  'rgba(11, 11, 14, 0.0)',
+                ]
+              : [
+                  'rgba(250, 250, 250, 0.98)',
+                  'rgba(250, 250, 250, 0.92)',
+                  'rgba(250, 250, 250, 0.70)',
+                  'rgba(250, 250, 250, 0.28)',
+                  'rgba(250, 250, 250, 0.0)',
+                ]
+          }
+          locations={[0, 0.4, 0.68, 0.88, 1.0]}
+          style={StyleSheet.absoluteFill}
+        />
+        {/* Specular Gloss Sheen Layer */}
+        <LinearGradient
+          colors={
+            isDark
+              ? [
+                  'rgba(255, 255, 255, 0.08)',
+                  'rgba(255, 255, 255, 0.03)',
+                  'rgba(255, 255, 255, 0.0)',
+                ]
+              : [
+                  'rgba(255, 255, 255, 0.70)',
+                  'rgba(255, 255, 255, 0.25)',
+                  'rgba(255, 255, 255, 0.0)',
+                ]
+          }
+          locations={[0, 0.45, 1.0]}
+          style={styles.glossySheenLayer}
+        />
+      </Animated.View>
+
       {/* Encircled floating circular back button on top left corner */}
       <TouchableOpacity
         onPress={() => {
@@ -260,7 +325,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
           keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
           style={styles.keyboardContainer}
         >
-          <ScrollView
+          <Animated.ScrollView
             contentContainerStyle={[
               styles.scrollContent,
               {
@@ -271,6 +336,8 @@ export default function OtpVerificationScreen(): React.JSX.Element {
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
           >
             {/* Header / Security Badge */}
             <View style={styles.header}>
@@ -464,7 +531,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                 Encrypted & protected with zero-knowledge verification
               </Text>
             </View>
-          </ScrollView>
+          </Animated.ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
     </View>
@@ -483,7 +550,7 @@ const styles = StyleSheet.create({
   },
   encircledBackButton: {
     position: 'absolute',
-    zIndex: 20,
+    zIndex: 25,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -494,7 +561,21 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
+  },
+  glossyTopOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 15,
+  },
+  glossySheenLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '55%',
   },
   header: {
     alignItems: 'center',
@@ -515,12 +596,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   eyebrow: {
+    fontFamily: 'Folkra',
     fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 4.5,
     marginBottom: 6,
   },
   title: {
+    fontFamily: 'Folkra',
     textAlign: 'center',
     marginBottom: 6,
     fontSize: 25,
