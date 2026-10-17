@@ -16,5 +16,7 @@ export default function CommunityFeedRoute(): React.JSX.Element {
     }
   };
 
-  return <CommunityFeedScreen client={client} communityId={communityId ?? ''} onBack={handleBack} />;
+  return (
+    <CommunityFeedScreen client={client} communityId={communityId ?? ''} onBack={handleBack} />
+  );
 }

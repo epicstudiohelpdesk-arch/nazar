@@ -73,7 +73,9 @@ export class AuthController {
   @Public()
   @Post('check-identifier')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Check if phone or email is registered (with anti-enumeration timing normalization)' })
+  @ApiOperation({
+    summary: 'Check if phone or email is registered (with anti-enumeration timing normalization)',
+  })
   @SwaggerResponse({ status: 200, description: 'Identifier check outcome' })
   async checkIdentifier(
     @Body(new AppValidationPipe(checkIdentifierSchema)) body: CheckIdentifierPayload
@@ -127,7 +129,6 @@ export class AuthController {
     const userAgent = req.headers['user-agent'];
     return this.authService.loginWithFirebase(body, req.ip, userAgent);
   }
-
 
   // ----------------------------------------------------
   // Passkey Endpoints (WebAuthn)

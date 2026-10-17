@@ -37,10 +37,7 @@ import { getDefaultAuthService } from '../../src/auth/auth-service.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { useProfileStore } from '../../src/profile/profile-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
-import {
-  GoogleIcon,
-  PasskeyIcon,
-} from '../../src/design/components/icons/BrandIcons.js';
+import { GoogleIcon, PasskeyIcon } from '../../src/design/components/icons/BrandIcons.js';
 import { promptGoogleSignIn } from '../../src/auth/google-auth.js';
 import {
   promptPasskeyLogin,
@@ -70,34 +67,230 @@ const DEFAULT_COUNTRY: Country = {
 
 const COUNTRIES: Country[] = [
   DEFAULT_COUNTRY,
-  { name: 'United States', code: 'US', dialCode: '+1', flag: '🇺🇸', placeholder: '202 555 0199', maxLength: 10 },
-  { name: 'United Kingdom', code: 'GB', dialCode: '+44', flag: '🇬🇧', placeholder: '7911 123456', maxLength: 10 },
-  { name: 'Canada', code: 'CA', dialCode: '+1', flag: '🇨🇦', placeholder: '416 555 0143', maxLength: 10 },
-  { name: 'Australia', code: 'AU', dialCode: '+61', flag: '🇦🇺', placeholder: '412 345 678', maxLength: 9 },
-  { name: 'United Arab Emirates', code: 'AE', dialCode: '+971', flag: '🇦🇪', placeholder: '50 123 4567', maxLength: 9 },
-  { name: 'Singapore', code: 'SG', dialCode: '+65', flag: '🇸🇬', placeholder: '8123 4567', maxLength: 8 },
-  { name: 'Germany', code: 'DE', dialCode: '+49', flag: '🇩🇪', placeholder: '151 23456789', maxLength: 11 },
-  { name: 'France', code: 'FR', dialCode: '+33', flag: '🇫🇷', placeholder: '6 12 34 56 78', maxLength: 9 },
-  { name: 'Netherlands', code: 'NL', dialCode: '+31', flag: '🇳🇱', placeholder: '6 12345678', maxLength: 9 },
-  { name: 'Saudi Arabia', code: 'SA', dialCode: '+966', flag: '🇸🇦', placeholder: '50 123 4567', maxLength: 9 },
-  { name: 'Qatar', code: 'QA', dialCode: '+974', flag: '🇶🇦', placeholder: '3312 3456', maxLength: 8 },
-  { name: 'Kuwait', code: 'KW', dialCode: '+965', flag: '🇰🇼', placeholder: '9123 4567', maxLength: 8 },
-  { name: 'New Zealand', code: 'NZ', dialCode: '+64', flag: '🇳🇿', placeholder: '21 123 4567', maxLength: 9 },
-  { name: 'Ireland', code: 'IE', dialCode: '+353', flag: '🇮🇪', placeholder: '85 123 4567', maxLength: 9 },
-  { name: 'Switzerland', code: 'CH', dialCode: '+41', flag: '🇨🇭', placeholder: '78 123 45 67', maxLength: 9 },
-  { name: 'Sweden', code: 'SE', dialCode: '+46', flag: '🇸🇪', placeholder: '70 123 45 67', maxLength: 9 },
-  { name: 'Spain', code: 'ES', dialCode: '+34', flag: '🇪🇸', placeholder: '612 34 56 78', maxLength: 9 },
-  { name: 'Italy', code: 'IT', dialCode: '+39', flag: '🇮🇹', placeholder: '312 345 6789', maxLength: 10 },
-  { name: 'Japan', code: 'JP', dialCode: '+81', flag: '🇯🇵', placeholder: '90 1234 5678', maxLength: 10 },
-  { name: 'South Korea', code: 'KR', dialCode: '+82', flag: '🇰🇷', placeholder: '10 1234 5678', maxLength: 10 },
-  { name: 'Brazil', code: 'BR', dialCode: '+55', flag: '🇧🇷', placeholder: '11 91234 5678', maxLength: 11 },
-  { name: 'South Africa', code: 'ZA', dialCode: '+27', flag: '🇿🇦', placeholder: '71 123 4567', maxLength: 9 },
-  { name: 'Malaysia', code: 'MY', dialCode: '+60', flag: '🇲🇾', placeholder: '12 345 6789', maxLength: 10 },
-  { name: 'Indonesia', code: 'ID', dialCode: '+62', flag: '🇮🇩', placeholder: '812 3456 7890', maxLength: 11 },
-  { name: 'Philippines', code: 'PH', dialCode: '+63', flag: '🇵🇭', placeholder: '917 123 4567', maxLength: 10 },
-  { name: 'Nepal', code: 'NP', dialCode: '+977', flag: '🇳🇵', placeholder: '984 1234567', maxLength: 10 },
-  { name: 'Bangladesh', code: 'BD', dialCode: '+880', flag: '🇧🇩', placeholder: '1712 345678', maxLength: 10 },
-  { name: 'Sri Lanka', code: 'LK', dialCode: '+94', flag: '🇱🇰', placeholder: '71 234 5678', maxLength: 9 },
+  {
+    name: 'United States',
+    code: 'US',
+    dialCode: '+1',
+    flag: '🇺🇸',
+    placeholder: '202 555 0199',
+    maxLength: 10,
+  },
+  {
+    name: 'United Kingdom',
+    code: 'GB',
+    dialCode: '+44',
+    flag: '🇬🇧',
+    placeholder: '7911 123456',
+    maxLength: 10,
+  },
+  {
+    name: 'Canada',
+    code: 'CA',
+    dialCode: '+1',
+    flag: '🇨🇦',
+    placeholder: '416 555 0143',
+    maxLength: 10,
+  },
+  {
+    name: 'Australia',
+    code: 'AU',
+    dialCode: '+61',
+    flag: '🇦🇺',
+    placeholder: '412 345 678',
+    maxLength: 9,
+  },
+  {
+    name: 'United Arab Emirates',
+    code: 'AE',
+    dialCode: '+971',
+    flag: '🇦🇪',
+    placeholder: '50 123 4567',
+    maxLength: 9,
+  },
+  {
+    name: 'Singapore',
+    code: 'SG',
+    dialCode: '+65',
+    flag: '🇸🇬',
+    placeholder: '8123 4567',
+    maxLength: 8,
+  },
+  {
+    name: 'Germany',
+    code: 'DE',
+    dialCode: '+49',
+    flag: '🇩🇪',
+    placeholder: '151 23456789',
+    maxLength: 11,
+  },
+  {
+    name: 'France',
+    code: 'FR',
+    dialCode: '+33',
+    flag: '🇫🇷',
+    placeholder: '6 12 34 56 78',
+    maxLength: 9,
+  },
+  {
+    name: 'Netherlands',
+    code: 'NL',
+    dialCode: '+31',
+    flag: '🇳🇱',
+    placeholder: '6 12345678',
+    maxLength: 9,
+  },
+  {
+    name: 'Saudi Arabia',
+    code: 'SA',
+    dialCode: '+966',
+    flag: '🇸🇦',
+    placeholder: '50 123 4567',
+    maxLength: 9,
+  },
+  {
+    name: 'Qatar',
+    code: 'QA',
+    dialCode: '+974',
+    flag: '🇶🇦',
+    placeholder: '3312 3456',
+    maxLength: 8,
+  },
+  {
+    name: 'Kuwait',
+    code: 'KW',
+    dialCode: '+965',
+    flag: '🇰🇼',
+    placeholder: '9123 4567',
+    maxLength: 8,
+  },
+  {
+    name: 'New Zealand',
+    code: 'NZ',
+    dialCode: '+64',
+    flag: '🇳🇿',
+    placeholder: '21 123 4567',
+    maxLength: 9,
+  },
+  {
+    name: 'Ireland',
+    code: 'IE',
+    dialCode: '+353',
+    flag: '🇮🇪',
+    placeholder: '85 123 4567',
+    maxLength: 9,
+  },
+  {
+    name: 'Switzerland',
+    code: 'CH',
+    dialCode: '+41',
+    flag: '🇨🇭',
+    placeholder: '78 123 45 67',
+    maxLength: 9,
+  },
+  {
+    name: 'Sweden',
+    code: 'SE',
+    dialCode: '+46',
+    flag: '🇸🇪',
+    placeholder: '70 123 45 67',
+    maxLength: 9,
+  },
+  {
+    name: 'Spain',
+    code: 'ES',
+    dialCode: '+34',
+    flag: '🇪🇸',
+    placeholder: '612 34 56 78',
+    maxLength: 9,
+  },
+  {
+    name: 'Italy',
+    code: 'IT',
+    dialCode: '+39',
+    flag: '🇮🇹',
+    placeholder: '312 345 6789',
+    maxLength: 10,
+  },
+  {
+    name: 'Japan',
+    code: 'JP',
+    dialCode: '+81',
+    flag: '🇯🇵',
+    placeholder: '90 1234 5678',
+    maxLength: 10,
+  },
+  {
+    name: 'South Korea',
+    code: 'KR',
+    dialCode: '+82',
+    flag: '🇰🇷',
+    placeholder: '10 1234 5678',
+    maxLength: 10,
+  },
+  {
+    name: 'Brazil',
+    code: 'BR',
+    dialCode: '+55',
+    flag: '🇧🇷',
+    placeholder: '11 91234 5678',
+    maxLength: 11,
+  },
+  {
+    name: 'South Africa',
+    code: 'ZA',
+    dialCode: '+27',
+    flag: '🇿🇦',
+    placeholder: '71 123 4567',
+    maxLength: 9,
+  },
+  {
+    name: 'Malaysia',
+    code: 'MY',
+    dialCode: '+60',
+    flag: '🇲🇾',
+    placeholder: '12 345 6789',
+    maxLength: 10,
+  },
+  {
+    name: 'Indonesia',
+    code: 'ID',
+    dialCode: '+62',
+    flag: '🇮🇩',
+    placeholder: '812 3456 7890',
+    maxLength: 11,
+  },
+  {
+    name: 'Philippines',
+    code: 'PH',
+    dialCode: '+63',
+    flag: '🇵🇭',
+    placeholder: '917 123 4567',
+    maxLength: 10,
+  },
+  {
+    name: 'Nepal',
+    code: 'NP',
+    dialCode: '+977',
+    flag: '🇳🇵',
+    placeholder: '984 1234567',
+    maxLength: 10,
+  },
+  {
+    name: 'Bangladesh',
+    code: 'BD',
+    dialCode: '+880',
+    flag: '🇧🇩',
+    placeholder: '1712 345678',
+    maxLength: 10,
+  },
+  {
+    name: 'Sri Lanka',
+    code: 'LK',
+    dialCode: '+94',
+    flag: '🇱🇰',
+    placeholder: '71 234 5678',
+    maxLength: 9,
+  },
 ];
 
 export default function LoginScreen(): React.JSX.Element {
@@ -317,9 +510,7 @@ export default function LoginScreen(): React.JSX.Element {
           }
 
           const identifier =
-            activeTab === 'phone'
-              ? `${selectedCountry.dialCode}${phoneNumber}`
-              : email.trim();
+            activeTab === 'phone' ? `${selectedCountry.dialCode}${phoneNumber}` : email.trim();
 
           try {
             const authService = getDefaultAuthService();
@@ -695,7 +886,12 @@ export default function LoginScreen(): React.JSX.Element {
                 <Clock size={15} color={theme.colors.warning} style={{ marginRight: 8 }} />
                 <Text
                   level="bodySmall"
-                  style={{ color: theme.colors.warning, fontWeight: '600', flex: 1, fontSize: 12.5 }}
+                  style={{
+                    color: theme.colors.warning,
+                    fontWeight: '600',
+                    flex: 1,
+                    fontSize: 12.5,
+                  }}
                 >
                   Too many attempts. Please wait {rateLimitSeconds}s before requesting a new code.
                 </Text>
@@ -720,7 +916,9 @@ export default function LoginScreen(): React.JSX.Element {
                     style={[
                       styles.inputCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : theme.colors.surface,
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.05)'
+                          : theme.colors.surface,
                         borderColor: errorMessage
                           ? theme.colors.error
                           : isInputFocused
@@ -821,7 +1019,9 @@ export default function LoginScreen(): React.JSX.Element {
                     style={[
                       styles.inputCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : theme.colors.surface,
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.05)'
+                          : theme.colors.surface,
                         borderColor: errorMessage
                           ? theme.colors.error
                           : isInputFocused
@@ -1016,7 +1216,9 @@ export default function LoginScreen(): React.JSX.Element {
                 style={[
                   styles.passkeyButton,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : theme.colors.surfaceMuted,
+                    backgroundColor: isDark
+                      ? 'rgba(255, 255, 255, 0.04)'
+                      : theme.colors.surfaceMuted,
                     borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : theme.colors.border,
                   },
                 ]}
@@ -1031,10 +1233,7 @@ export default function LoginScreen(): React.JSX.Element {
               >
                 <PasskeyIcon size={17} color={theme.colors.textSecondary} />
                 <Text
-                  style={[
-                    styles.passkeyText,
-                    { color: theme.colors.textPrimary, marginLeft: 8 },
-                  ]}
+                  style={[styles.passkeyText, { color: theme.colors.textPrimary, marginLeft: 8 }]}
                 >
                   {isSignUp
                     ? `Sign up with ${passkeyInfo?.label || 'Passkey'}`
@@ -1079,10 +1278,7 @@ export default function LoginScreen(): React.JSX.Element {
                 accessibilityRole="button"
                 accessibilityLabel={isSignUp ? 'Switch to Sign In' : 'Switch to Sign Up'}
               >
-                <Text
-                  level="bodySmall"
-                  style={{ color: theme.colors.accent, fontWeight: '700' }}
-                >
+                <Text level="bodySmall" style={{ color: theme.colors.accent, fontWeight: '700' }}>
                   {isSignUp ? 'Sign In' : 'Sign Up'}
                 </Text>
               </TouchableOpacity>
@@ -1160,9 +1356,7 @@ export default function LoginScreen(): React.JSX.Element {
                       backgroundColor: isDark
                         ? 'rgba(255, 255, 255, 0.06)'
                         : theme.colors.surfaceMuted,
-                      borderColor: isDark
-                        ? 'rgba(255, 255, 255, 0.1)'
-                        : theme.colors.border,
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : theme.colors.border,
                     },
                   ]}
                 >
@@ -1226,9 +1420,7 @@ export default function LoginScreen(): React.JSX.Element {
                             style={[
                               styles.countryRowName,
                               {
-                                color: isSelected
-                                  ? theme.colors.accent
-                                  : theme.colors.textPrimary,
+                                color: isSelected ? theme.colors.accent : theme.colors.textPrimary,
                                 fontWeight: isSelected ? '700' : '500',
                               },
                             ]}
@@ -1238,7 +1430,11 @@ export default function LoginScreen(): React.JSX.Element {
                           <Text
                             style={[
                               styles.countryRowCodeBadge,
-                              { color: isSelected ? theme.colors.accent : theme.colors.textSecondary },
+                              {
+                                color: isSelected
+                                  ? theme.colors.accent
+                                  : theme.colors.textSecondary,
+                              },
                             ]}
                           >
                             {item.dialCode}

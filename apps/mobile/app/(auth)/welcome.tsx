@@ -28,7 +28,9 @@ export default function WelcomeScreen(): React.JSX.Element {
 
   // Load Folkra and Ethnocentric brand fonts
   const [fontsLoaded] = useFonts({
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     Folkra: require('../../assets/fonts/folkra.otf'),
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     Ethnocentric: require('../../assets/fonts/Ethnocentric-Regular.otf'),
   });
 
@@ -248,12 +250,7 @@ export default function WelcomeScreen(): React.JSX.Element {
       <SafeAreaView style={styles.safeArea}>
         {/* Top Header: Pure textual brand mark with ETHNOCENTRIC typography */}
         <View style={styles.header}>
-          <RNText
-            style={[
-              styles.brandTitle,
-              fontsLoaded && { fontFamily: 'Ethnocentric' },
-            ]}
-          >
+          <RNText style={[styles.brandTitle, fontsLoaded && { fontFamily: 'Ethnocentric' }]}>
             NAZAR
           </RNText>
         </View>

@@ -13,7 +13,15 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ShieldCheck, RotateCcw, Clock, ArrowRight, ArrowLeft, Edit3, Lock } from 'lucide-react-native';
+import {
+  ShieldCheck,
+  RotateCcw,
+  Clock,
+  ArrowRight,
+  ArrowLeft,
+  Edit3,
+  Lock,
+} from 'lucide-react-native';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
@@ -116,7 +124,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
       }
 
       if (sessionResult.status === 'INCOMPLETE' || isSignUp) {
-        const nextStep = isSignUp ? 'profile-setup' : (sessionResult.nextStep || 'profile-setup');
+        const nextStep = isSignUp ? 'profile-setup' : sessionResult.nextStep || 'profile-setup';
         trackOnboardingEvent('profile_started', { resumeStep: nextStep });
 
         const stepRoutes: Record<string, `/(onboarding)/${string}`> = {
@@ -270,7 +278,9 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                 style={[
                   styles.badgeWrapper,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : theme.colors.surfaceMuted,
+                    backgroundColor: isDark
+                      ? 'rgba(255, 255, 255, 0.05)'
+                      : theme.colors.surfaceMuted,
                     borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : theme.colors.border,
                     shadowColor: theme.colors.accent,
                   },
@@ -294,7 +304,9 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                 style={[
                   styles.destinationCard,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : theme.colors.surfaceMuted,
+                    backgroundColor: isDark
+                      ? 'rgba(255, 255, 255, 0.06)'
+                      : theme.colors.surfaceMuted,
                     borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : theme.colors.border,
                   },
                 ]}
@@ -360,7 +372,8 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                   accessibilityLabel="Auto-fill dev verification code"
                 >
                   <Text style={styles.devHintText}>
-                    ⚡ Dev Mode: Tap to auto-fill test code <Text style={styles.devHintBold}>123456</Text>
+                    ⚡ Dev Mode: Tap to auto-fill test code{' '}
+                    <Text style={styles.devHintBold}>123456</Text>
                   </Text>
                 </TouchableOpacity>
               )}
@@ -372,13 +385,19 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                     style={[
                       styles.resendBadge,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : theme.colors.surfaceMuted,
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.05)'
+                          : theme.colors.surfaceMuted,
                         borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : theme.colors.border,
                       },
                     ]}
                   >
                     <Clock size={13} color={theme.colors.textTertiary} style={{ marginRight: 6 }} />
-                    <Text level="bodySmall" color="tertiary" style={{ fontWeight: '500', fontSize: 12.5 }}>
+                    <Text
+                      level="bodySmall"
+                      color="tertiary"
+                      style={{ fontWeight: '500', fontSize: 12.5 }}
+                    >
                       Resend code in {resendCooldown}s
                     </Text>
                   </View>
@@ -388,7 +407,9 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                     style={[
                       styles.resendActiveButton,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : theme.colors.surfaceMuted,
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.05)'
+                          : theme.colors.surfaceMuted,
                         borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : theme.colors.border,
                       },
                     ]}
@@ -396,11 +417,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                     accessibilityRole="button"
                     accessibilityLabel="Resend verification code"
                   >
-                    <RotateCcw
-                      size={13}
-                      color={theme.colors.accent}
-                      style={{ marginRight: 6 }}
-                    />
+                    <RotateCcw size={13} color={theme.colors.accent} style={{ marginRight: 6 }} />
                     <Text
                       level="bodySmall"
                       style={{ color: theme.colors.accent, fontWeight: '600', fontSize: 12.5 }}

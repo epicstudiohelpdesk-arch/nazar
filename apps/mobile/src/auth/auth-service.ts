@@ -34,13 +34,10 @@ export class AuthService {
     type?: 'PHONE' | 'EMAIL'
   ): Promise<AuthOperationResult<CheckIdentifierResponse>> {
     try {
-      const res = await this.client.request<CheckIdentifierResponse>(
-        '/v1/auth/check-identifier',
-        {
-          method: 'POST',
-          body: JSON.stringify({ identifier, type }),
-        }
-      );
+      const res = await this.client.request<CheckIdentifierResponse>('/v1/auth/check-identifier', {
+        method: 'POST',
+        body: JSON.stringify({ identifier, type }),
+      });
 
       if (!res.success) {
         return this.handleApiError(res.error, 'check_identifier');
@@ -195,7 +192,6 @@ export class AuthService {
       return this.handleNetworkError(err, 'google');
     }
   }
-
 
   /**
    * Authenticate via Firebase ID token (Phone OTP or Email).

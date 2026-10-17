@@ -96,12 +96,7 @@ export const FirebaseRecaptchaModal: React.FC<FirebaseRecaptchaModalProps> = ({
   if (!visible) return null;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <SafeAreaView style={styles.safeContainer}>
           <View

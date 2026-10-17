@@ -16,5 +16,7 @@ export default function CommunityDetailRoute(): React.JSX.Element {
     }
   };
 
-  return <CommunityDetailScreen client={client} communityId={communityId ?? ''} onBack={handleBack} />;
+  return (
+    <CommunityDetailScreen client={client} communityId={communityId ?? ''} onBack={handleBack} />
+  );
 }

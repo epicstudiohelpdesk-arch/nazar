@@ -9,7 +9,8 @@ describe('FirebaseAuthProvider (Backend)', () => {
   beforeEach(() => {
     mockConfigService = {
       firebaseProjectId: 'nazar-85664',
-      firebaseServiceAccountPath: '/Users/subhamdas/Downloads/nazar-85664-firebase-adminsdk-fbsvc-f507fa6678.json',
+      firebaseServiceAccountPath:
+        '/Users/subhamdas/Downloads/nazar-85664-firebase-adminsdk-fbsvc-f507fa6678.json',
     } as unknown as AppConfigService;
 
     provider = new FirebaseAuthProvider(mockConfigService);
@@ -17,10 +18,14 @@ describe('FirebaseAuthProvider (Backend)', () => {
 
   it('rejects empty or non-string ID tokens with UnauthorizedException', async () => {
     await expect(provider.verifyIdToken('')).rejects.toThrow('Firebase ID token is required');
-    await expect(provider.verifyIdToken(null as any)).rejects.toThrow('Firebase ID token is required');
+    await expect(provider.verifyIdToken(null as any)).rejects.toThrow(
+      'Firebase ID token is required'
+    );
   });
 
   it('rejects invalid or malformed Firebase ID tokens', async () => {
-    await expect(provider.verifyIdToken('invalid.jwt.token')).rejects.toThrow('Invalid or expired Firebase ID token');
+    await expect(provider.verifyIdToken('invalid.jwt.token')).rejects.toThrow(
+      'Invalid or expired Firebase ID token'
+    );
   });
 });

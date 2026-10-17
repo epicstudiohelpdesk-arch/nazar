@@ -106,8 +106,7 @@ export async function promptGoogleSignIn(): Promise<GoogleSignInResult> {
   } catch (err: unknown) {
     return {
       success: false,
-      error:
-        err instanceof Error ? err.message : 'An error occurred during Google Sign-In.',
+      error: err instanceof Error ? err.message : 'An error occurred during Google Sign-In.',
     };
   }
 }

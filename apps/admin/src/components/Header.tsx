@@ -25,7 +25,15 @@ export function Header({ title }: HeaderProps): React.JSX.Element {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-        <h1 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: theme.text, letterSpacing: '-0.01em' }}>
+        <h1
+          style={{
+            margin: 0,
+            fontSize: '1.125rem',
+            fontWeight: 700,
+            color: theme.text,
+            letterSpacing: '-0.01em',
+          }}
+        >
           {title}
         </h1>
         <span

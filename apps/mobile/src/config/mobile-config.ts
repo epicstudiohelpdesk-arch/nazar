@@ -10,7 +10,9 @@ function getDevHost(): string {
   }
   try {
     // Use dynamic require so Node.js test environments without __DEV__ don't throw
-    const Constants = (require('expo-constants')?.default ?? require('expo-constants')) as any;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const expoConstants = require('expo-constants');
+    const Constants = (expoConstants?.default ?? expoConstants) as any;
     const hostUri = Constants?.expoConfig?.hostUri;
     if (hostUri) {
       const ip = hostUri.split(':')[0];

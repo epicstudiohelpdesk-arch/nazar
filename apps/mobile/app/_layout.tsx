@@ -34,7 +34,10 @@ export default function RootLayout(): React.JSX.Element {
           >
             <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false, gestureEnabled: false }} />
-            <Stack.Screen name="(onboarding)" options={{ headerShown: false, gestureEnabled: false }} />
+            <Stack.Screen
+              name="(onboarding)"
+              options={{ headerShown: false, gestureEnabled: false }}
+            />
             <Stack.Screen
               name="modal/filters"
               options={{ presentation: 'modal', headerShown: false, gestureEnabled: false }}
@@ -45,11 +48,19 @@ export default function RootLayout(): React.JSX.Element {
             />
             <Stack.Screen
               name="modal/block"
-              options={{ presentation: 'transparentModal', headerShown: false, gestureEnabled: false }}
+              options={{
+                presentation: 'transparentModal',
+                headerShown: false,
+                gestureEnabled: false,
+              }}
             />
             <Stack.Screen
               name="modal/celebration"
-              options={{ presentation: 'transparentModal', headerShown: false, gestureEnabled: false }}
+              options={{
+                presentation: 'transparentModal',
+                headerShown: false,
+                gestureEnabled: false,
+              }}
             />
           </Stack>
         </LocalizationProvider>

@@ -67,12 +67,7 @@ export class UserIdentityRepository implements IUserIdentityRepository {
       const rows = await runner
         .select()
         .from(userIdentities)
-        .where(
-          and(
-            eq(userIdentities.provider, 'PHONE'),
-            eq(userIdentities.providerSubject, clean)
-          )
-        )
+        .where(and(eq(userIdentities.provider, 'PHONE'), eq(userIdentities.providerSubject, clean)))
         .limit(1);
       if (rows[0]) return rows[0];
     }
@@ -90,10 +85,7 @@ export class UserIdentityRepository implements IUserIdentityRepository {
       .select()
       .from(userIdentities)
       .where(
-        or(
-          eq(userIdentities.providerSubject, clean),
-          eq(userIdentities.email, clean.toLowerCase())
-        )
+        or(eq(userIdentities.providerSubject, clean), eq(userIdentities.email, clean.toLowerCase()))
       )
       .limit(1);
 

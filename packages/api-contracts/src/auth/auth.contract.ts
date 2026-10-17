@@ -98,7 +98,6 @@ export interface FirebaseAuthPayload {
   readonly device?: DeviceRegistrationPayload;
 }
 
-
 // ----------------------------------------------------
 // Passkey (WebAuthn) Contracts
 // ----------------------------------------------------

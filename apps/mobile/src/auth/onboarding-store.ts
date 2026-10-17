@@ -130,10 +130,7 @@ export interface OnboardingState {
   };
 
   // Actions
-  setAuthIdentifier: (
-    method: 'phone' | 'email' | 'google' | 'passkey',
-    identifier: string
-  ) => void;
+  setAuthIdentifier: (method: 'phone' | 'email' | 'google' | 'passkey', identifier: string) => void;
   setCurrentStep: (step: OnboardingStep) => void;
   updateDraftProfile: (updates: Partial<DraftProfile>) => void;
   setDraftPhotos: (photos: DraftPhotoItem[]) => void;

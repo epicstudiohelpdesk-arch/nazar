@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, type ViewStyle, type GestureResponderEvent } from 'react-native';
+import {
+  View,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  type ViewStyle,
+  type GestureResponderEvent,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
@@ -216,7 +223,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 'rgba(0, 0, 0, 0.08)',
                 'transparent',
               ]}
-              locations={[0, 0.38, 0.70, 1]}
+              locations={[0, 0.38, 0.7, 1]}
               style={styles.topVignette}
               pointerEvents="none"
             />
@@ -230,7 +237,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 'rgba(12, 10, 16, 0.84)',
                 'rgba(12, 10, 16, 0.98)',
               ]}
-              locations={[0, 0.22, 0.50, 0.78, 1]}
+              locations={[0, 0.22, 0.5, 0.78, 1]}
               style={styles.discoveryScrim}
               pointerEvents="none"
             />
@@ -359,7 +366,10 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
               <View style={styles.preferenceMatchRow}>
                 <Icon name="sparkles" size={11} color="#FF4D6D" style={{ marginRight: 4 }} />
                 <Text style={styles.preferenceMatchText}>
-                  Matched {profile.interests?.length ? `${Math.min(profile.interests.length, 5)}+ Preferences` : 'Key Preferences'}
+                  Matched{' '}
+                  {profile.interests?.length
+                    ? `${Math.min(profile.interests.length, 5)}+ Preferences`
+                    : 'Key Preferences'}
                 </Text>
               </View>
 

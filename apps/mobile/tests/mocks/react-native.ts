@@ -109,17 +109,14 @@ export const Keyboard = {
   addListener: () => ({ remove: () => {} }),
 };
 
-export const TouchableWithoutFeedback = (
-  props: React.PropsWithChildren<Record<string, unknown>>
-) => React.createElement('div', props, props.children);
+export const TouchableWithoutFeedback = (props: React.PropsWithChildren<Record<string, unknown>>) =>
+  React.createElement('div', props, props.children);
 
-export const KeyboardAvoidingView = (
-  props: React.PropsWithChildren<Record<string, unknown>>
-) => React.createElement('div', props, props.children);
+export const KeyboardAvoidingView = (props: React.PropsWithChildren<Record<string, unknown>>) =>
+  React.createElement('div', props, props.children);
 
-export const InputAccessoryView = (
-  props: React.PropsWithChildren<Record<string, unknown>>
-) => React.createElement('div', props, props.children);
+export const InputAccessoryView = (props: React.PropsWithChildren<Record<string, unknown>>) =>
+  React.createElement('div', props, props.children);
 
 export const Modal = (props: React.PropsWithChildren<Record<string, unknown>>) =>
   React.createElement('div', props, props.children);

@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, type GestureResponderEvent } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  type GestureResponderEvent,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { DiscoveryItemDto } from '@platform/api-contracts';
 import { useTheme } from '../../design/theme/index.js';
@@ -32,9 +40,7 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
 
   const mediaList =
-    profile.media && profile.media.length > 0
-      ? profile.media.map((m) => m.url)
-      : [];
+    profile.media && profile.media.length > 0 ? profile.media.map((m) => m.url) : [];
 
   const currentPhoto = mediaList[activePhotoIdx] || mediaList[0] || null;
   const featuredPrompt = profile.prompts && profile.prompts.length > 0 ? profile.prompts[0] : null;
@@ -156,7 +162,7 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
             'rgba(0, 0, 0, 0.08)',
             'transparent',
           ]}
-          locations={[0, 0.38, 0.70, 1]}
+          locations={[0, 0.38, 0.7, 1]}
           style={styles.topVignette}
           pointerEvents="none"
         />
@@ -170,7 +176,7 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
             'rgba(12, 10, 16, 0.84)',
             'rgba(12, 10, 16, 0.98)',
           ]}
-          locations={[0, 0.22, 0.50, 0.78, 1]}
+          locations={[0, 0.22, 0.5, 0.78, 1]}
           style={styles.discoveryScrim}
           pointerEvents="none"
         />
@@ -282,7 +288,10 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
           <View style={styles.preferenceMatchRow}>
             <Icon name="sparkles" size={11} color="#FF4D6D" style={{ marginRight: 4 }} />
             <Text style={styles.preferenceMatchText}>
-              Matched {profile.interests?.length ? `${Math.min(profile.interests.length, 5)}+ Preferences` : 'Key Preferences'}
+              Matched{' '}
+              {profile.interests?.length
+                ? `${Math.min(profile.interests.length, 5)}+ Preferences`
+                : 'Key Preferences'}
             </Text>
           </View>
 
@@ -328,7 +337,11 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
             <View style={styles.actionsRow}>
               {onPass && (
                 <TouchableOpacity
-                  style={[styles.actionBtnCircle, styles.passCircle, isSubmitting && styles.disabledButton]}
+                  style={[
+                    styles.actionBtnCircle,
+                    styles.passCircle,
+                    isSubmitting && styles.disabledButton,
+                  ]}
                   onPress={handlePass}
                   disabled={isSubmitting}
                   accessibilityRole="button"
@@ -341,7 +354,11 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
 
               {onLike && (
                 <TouchableOpacity
-                  style={[styles.actionBtnCircle, styles.likeCircle, isSubmitting && styles.disabledButton]}
+                  style={[
+                    styles.actionBtnCircle,
+                    styles.likeCircle,
+                    isSubmitting && styles.disabledButton,
+                  ]}
                   onPress={handleLike}
                   disabled={isSubmitting}
                   accessibilityRole="button"

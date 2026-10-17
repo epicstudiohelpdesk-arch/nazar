@@ -31,7 +31,8 @@ export function LoginView(): React.JSX.Element {
         justifyContent: 'center',
         minHeight: '100vh',
         backgroundColor: '#0c0f17',
-        backgroundImage: 'radial-gradient(circle at 50% 20%, rgba(219, 39, 119, 0.12) 0%, transparent 55%), radial-gradient(circle at 80% 80%, rgba(30, 41, 59, 0.4) 0%, transparent 60%)',
+        backgroundImage:
+          'radial-gradient(circle at 50% 20%, rgba(219, 39, 119, 0.12) 0%, transparent 55%), radial-gradient(circle at 80% 80%, rgba(30, 41, 59, 0.4) 0%, transparent 60%)',
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         padding: '1.5rem',
         boxSizing: 'border-box',

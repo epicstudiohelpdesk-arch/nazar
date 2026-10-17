@@ -61,7 +61,8 @@ export async function sendFirebasePhoneOtpWithRecaptcha(
 
     const data = await res.json();
     if (!res.ok || data.error) {
-      const errMsg = data.error?.message || 'Failed to dispatch verification SMS via Google Firebase';
+      const errMsg =
+        data.error?.message || 'Failed to dispatch verification SMS via Google Firebase';
       return { success: false, error: errMsg };
     }
 
@@ -138,7 +139,8 @@ export async function sendFirebasePhoneOtp(
     activeConfirmationResult = confirmationResult;
     return { success: true, confirmationResult };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to send verification SMS via Firebase';
+    const message =
+      err instanceof Error ? err.message : 'Failed to send verification SMS via Firebase';
     return {
       success: false,
       error: message,

@@ -14,7 +14,11 @@ import {
 } from '../src/auth/google-auth.js';
 import { AuthService } from '../src/auth/auth-service.js';
 import { AuthClient } from '../src/auth/auth-client.js';
-import { InMemoryTokenStorage, SecureTokenStorage, type ISecureStoreAdapter } from '../src/auth/token-storage.js';
+import {
+  InMemoryTokenStorage,
+  SecureTokenStorage,
+  type ISecureStoreAdapter,
+} from '../src/auth/token-storage.js';
 
 describe('Google & Passkey Authentication Suite', () => {
   let storage: InMemoryTokenStorage;
@@ -95,9 +99,7 @@ describe('Google & Passkey Authentication Suite', () => {
       expect(await secureStore.getPasskeyCredentialId()).toBe('pk_secure_123');
 
       await secureStore.clearPasskeyCredentialId();
-      expect(mockAdapter.deleteItemAsync).toHaveBeenCalledWith(
-        'nazar_auth_passkey_credential_id'
-      );
+      expect(mockAdapter.deleteItemAsync).toHaveBeenCalledWith('nazar_auth_passkey_credential_id');
       expect(await secureStore.getPasskeyCredentialId()).toBeNull();
     });
   });
