@@ -85,9 +85,33 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   // 1. Food & Drink
   // --------------------------------------------------------------------------
   {
+    id: 'int_118',
+    name: 'Masala Chai & Tapri Strolls',
+    slug: 'masala-chai-tapri',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_119',
+    name: 'Biryani Debates & Dawat',
+    slug: 'biryani-debates',
+    category: 'Food & Drink',
+  },
+  {
     id: 'int_1',
-    name: 'Filter Coffee & Pour-Overs',
+    name: 'Filter Coffee & Dosas',
     slug: 'filter-coffee',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_3',
+    name: 'Pani Puri & Street Chaat',
+    slug: 'street-food',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_120',
+    name: 'Late Night Maggi & Parathas',
+    slug: 'late-night-maggi',
     category: 'Food & Drink',
   },
   {
@@ -97,27 +121,15 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Food & Drink',
   },
   {
-    id: 'int_3',
-    name: 'Street Food & Chaat Crawls',
-    slug: 'street-food',
+    id: 'int_121',
+    name: 'Momos & Dim Sum Trails',
+    slug: 'momos-dimsum',
     category: 'Food & Drink',
   },
   {
     id: 'int_4',
     name: 'Home Cooking & Rich Spices',
     slug: 'home-cooking',
-    category: 'Food & Drink',
-  },
-  {
-    id: 'int_5',
-    name: 'Wine Tasting & Natural Wines',
-    slug: 'wine-tasting',
-    category: 'Food & Drink',
-  },
-  {
-    id: 'int_6',
-    name: 'Specialty Tea & Matcha',
-    slug: 'specialty-tea',
     category: 'Food & Drink',
   },
   {
@@ -139,6 +151,24 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Food & Drink',
   },
   {
+    id: 'int_122',
+    name: 'Sweet Tooth & Desserts',
+    slug: 'sweet-tooth-desserts',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_5',
+    name: 'Wine Tasting & Natural Wines',
+    slug: 'wine-tasting',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_6',
+    name: 'Specialty Tea & Matcha',
+    slug: 'specialty-tea',
+    category: 'Food & Drink',
+  },
+  {
     id: 'int_48',
     name: 'Plant-Based & Vegan Cooking',
     slug: 'plant-based-vegan',
@@ -149,27 +179,27 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   // 2. Movies & Cinema
   // --------------------------------------------------------------------------
   {
-    id: 'int_15',
-    name: 'Indie Cinema & A24',
-    slug: 'indie-cinema',
+    id: 'int_109',
+    name: 'Bollywood & 90s Rom-Coms',
+    slug: 'bollywood-romcoms',
     category: 'Movies & Cinema',
   },
   {
-    id: 'int_51',
-    name: 'Psychological Thrillers',
-    slug: 'psychological-thrillers',
+    id: 'int_110',
+    name: 'Hollywood & Blockbusters',
+    slug: 'hollywood-blockbusters',
     category: 'Movies & Cinema',
   },
   {
-    id: 'int_52',
-    name: 'Sci-Fi & Cyberpunk',
-    slug: 'sci-fi-cyberpunk',
+    id: 'int_111',
+    name: 'Harry Potter & Potterheads',
+    slug: 'harry-potter-potterheads',
     category: 'Movies & Cinema',
   },
   {
-    id: 'int_53',
-    name: 'Anime & Studio Ghibli',
-    slug: 'anime-ghibli',
+    id: 'int_112',
+    name: 'Marvel & DC Universe',
+    slug: 'marvel-dc-universe',
     category: 'Movies & Cinema',
   },
   {
@@ -179,14 +209,50 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Movies & Cinema',
   },
   {
+    id: 'int_113',
+    name: 'South Indian Cinema',
+    slug: 'south-indian-cinema',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_53',
+    name: 'Anime & Studio Ghibli',
+    slug: 'anime-ghibli',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_58',
+    name: 'Stand-Up Comedy & Roasts',
+    slug: 'standup-comedy',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_15',
+    name: 'Indie Cinema & A24',
+    slug: 'indie-cinema',
+    category: 'Movies & Cinema',
+  },
+  {
     id: 'int_55',
     name: 'True Crime & Docuseries',
     slug: 'true-crime-docs',
     category: 'Movies & Cinema',
   },
   {
+    id: 'int_114',
+    name: 'Binge-Watching OTT Series',
+    slug: 'binge-watching-ott',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_51',
+    name: 'Psychological Thrillers',
+    slug: 'psychological-thrillers',
+    category: 'Movies & Cinema',
+  },
+  {
     id: 'int_56',
-    name: 'Classic 90s & Cult Cinema',
+    name: 'Classic 90s Cult Movies',
     slug: 'classic-cult-cinema',
     category: 'Movies & Cinema',
   },
@@ -197,27 +263,9 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Movies & Cinema',
   },
   {
-    id: 'int_58',
-    name: 'Stand-Up Comedy Specials',
-    slug: 'standup-comedy',
-    category: 'Movies & Cinema',
-  },
-  {
-    id: 'int_59',
-    name: 'Foreign & World Cinema',
-    slug: 'world-cinema',
-    category: 'Movies & Cinema',
-  },
-  {
-    id: 'int_60',
-    name: 'Rom-Coms & Cozy Rewatches',
-    slug: 'rom-coms',
-    category: 'Movies & Cinema',
-  },
-  {
-    id: 'int_61',
-    name: 'Film Festivals & Curation',
-    slug: 'film-festivals',
+    id: 'int_52',
+    name: 'Sci-Fi & Cyberpunk',
+    slug: 'sci-fi-cyberpunk',
     category: 'Movies & Cinema',
   },
 
@@ -225,9 +273,33 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   // 3. Books & Literature
   // --------------------------------------------------------------------------
   {
+    id: 'int_115',
+    name: 'Harry Potter & Hogwarts',
+    slug: 'harry-potter-hogwarts',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_18',
+    name: 'Urdu Poetry, Ghalib & Shayari',
+    slug: 'poetry-shayari',
+    category: 'Books & Literature',
+  },
+  {
     id: 'int_29',
     name: 'Contemporary Fiction',
     slug: 'contemporary-fiction',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_116',
+    name: 'Indian Authors & Literature',
+    slug: 'indian-authors-lit',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_63',
+    name: 'Mystery, Crime & Agatha Christie',
+    slug: 'mystery-thrillers',
     category: 'Books & Literature',
   },
   {
@@ -237,27 +309,15 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Books & Literature',
   },
   {
-    id: 'int_63',
-    name: 'Mystery & Crime Thrillers',
-    slug: 'mystery-thrillers',
-    category: 'Books & Literature',
-  },
-  {
-    id: 'int_18',
-    name: 'Poetry & Urdu Shayari',
-    slug: 'poetry-shayari',
-    category: 'Books & Literature',
-  },
-  {
     id: 'int_64',
     name: 'Philosophy & Existentialism',
     slug: 'philosophy-essays',
     category: 'Books & Literature',
   },
   {
-    id: 'int_65',
-    name: 'Book Clubs & Annotation',
-    slug: 'book-clubs-annotating',
+    id: 'int_117',
+    name: 'Mythology & Epics Retold',
+    slug: 'mythology-epics',
     category: 'Books & Literature',
   },
   {
@@ -267,15 +327,21 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Books & Literature',
   },
   {
-    id: 'int_67',
-    name: 'Biographies & Deep Dives',
-    slug: 'biographies-memoirs',
+    id: 'int_65',
+    name: 'Book Clubs & Annotations',
+    slug: 'book-clubs-annotating',
     category: 'Books & Literature',
   },
   {
     id: 'int_68',
     name: 'Audiobooks on Daily Walks',
     slug: 'audiobooks-walks',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_67',
+    name: 'Biographies & Memoirs',
+    slug: 'biographies-memoirs',
     category: 'Books & Literature',
   },
   {
@@ -286,7 +352,7 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   },
   {
     id: 'int_70',
-    name: 'Magical Realism & Dystopia',
+    name: 'Magical Realism & Murakami',
     slug: 'magical-realism',
     category: 'Books & Literature',
   },
@@ -301,15 +367,15 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   // 4. Music & Audio
   // --------------------------------------------------------------------------
   {
-    id: 'int_8',
-    name: 'Hindustani Classical',
-    slug: 'hindustani-classical',
+    id: 'int_123',
+    name: 'Bollywood Classics & Arijit Singh',
+    slug: 'bollywood-classics',
     category: 'Music & Audio',
   },
   {
-    id: 'int_9',
-    name: 'Live Indie Gigs & Concerts',
-    slug: 'live-gigs',
+    id: 'int_124',
+    name: 'Punjabi Hits & AP Dhillon',
+    slug: 'punjabi-hits-diljit',
     category: 'Music & Audio',
   },
   {
@@ -319,15 +385,45 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Music & Audio',
   },
   {
+    id: 'int_125',
+    name: 'Coke Studio & Fusion',
+    slug: 'coke-studio-fusion',
+    category: 'Music & Audio',
+  },
+  {
+    id: 'int_73',
+    name: 'Indian Indie & Acoustic Pop',
+    slug: 'indie-rock-pop',
+    category: 'Music & Audio',
+  },
+  {
+    id: 'int_9',
+    name: 'Live Concerts & Gigs',
+    slug: 'live-gigs',
+    category: 'Music & Audio',
+  },
+  {
+    id: 'int_12',
+    name: 'Electronic, Techno & Sunburn',
+    slug: 'electronic-techno',
+    category: 'Music & Audio',
+  },
+  {
+    id: 'int_8',
+    name: 'Hindustani Classical',
+    slug: 'hindustani-classical',
+    category: 'Music & Audio',
+  },
+  {
     id: 'int_11',
     name: 'Vinyl Records & Turntables',
     slug: 'vinyl-records',
     category: 'Music & Audio',
   },
   {
-    id: 'int_12',
-    name: 'Electronic & Techno Raves',
-    slug: 'electronic-techno',
+    id: 'int_126',
+    name: '90s & 2000s Nostalgia Tracks',
+    slug: '90s-nostalgia-tracks',
     category: 'Music & Audio',
   },
   {
@@ -344,14 +440,8 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   },
   {
     id: 'int_72',
-    name: 'Hip-Hop, R&B & Beats',
+    name: 'Hip-Hop, Desi Hip-Hop & Rap',
     slug: 'hip-hop-rnb',
-    category: 'Music & Audio',
-  },
-  {
-    id: 'int_73',
-    name: 'Indie Rock & Bedroom Pop',
-    slug: 'indie-rock-pop',
     category: 'Music & Audio',
   },
   {
@@ -365,14 +455,8 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   // 5. Arts & Culture
   // --------------------------------------------------------------------------
   {
-    id: 'int_16',
-    name: 'Modern Art & Gallery Nights',
-    slug: 'modern-art',
-    category: 'Arts & Culture',
-  },
-  {
     id: 'int_17',
-    name: 'Architecture & Heritage Walks',
+    name: 'Heritage & Monument Walks',
     slug: 'architecture',
     category: 'Arts & Culture',
   },
@@ -383,15 +467,21 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Arts & Culture',
   },
   {
-    id: 'int_20',
-    name: 'Museums & After-Hours',
-    slug: 'museums-galleries',
+    id: 'int_21',
+    name: 'Prithvi Theatre & Plays',
+    slug: 'theater',
     category: 'Arts & Culture',
   },
   {
-    id: 'int_21',
-    name: 'Theater & Performing Arts',
-    slug: 'theater',
+    id: 'int_131',
+    name: 'Classical & Folk Dance',
+    slug: 'classical-folk-dance',
+    category: 'Arts & Culture',
+  },
+  {
+    id: 'int_16',
+    name: 'Modern Indian Art & Galleries',
+    slug: 'modern-art',
     category: 'Arts & Culture',
   },
   {
@@ -402,13 +492,13 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   },
   {
     id: 'int_34',
-    name: 'Vintage Thrifting & Fashion',
+    name: 'Vintage Thrifting & Handlooms',
     slug: 'vintage-thrifting',
     category: 'Arts & Culture',
   },
   {
     id: 'int_77',
-    name: 'Creative Writing & Journals',
+    name: 'Creative Writing & Shayari',
     slug: 'creative-writing',
     category: 'Arts & Culture',
   },
@@ -419,9 +509,9 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Arts & Culture',
   },
   {
-    id: 'int_79',
-    name: 'Art History & Heritage',
-    slug: 'art-history',
+    id: 'int_20',
+    name: 'Museums & Exhibitions',
+    slug: 'museums-galleries',
     category: 'Arts & Culture',
   },
 
@@ -448,7 +538,7 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   },
   {
     id: 'int_25',
-    name: 'Yoga, Breathwork & Mind',
+    name: 'Yoga, Pranayama & Mind',
     slug: 'yoga-mindfulness',
     category: 'Active & Outdoors',
   },
@@ -494,14 +584,8 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   // --------------------------------------------------------------------------
   {
     id: 'int_35',
-    name: 'Cricket & Stadium Matchdays',
+    name: 'Cricket & IPL Nights',
     slug: 'cricket',
-    category: 'Sports & Fitness',
-  },
-  {
-    id: 'int_36',
-    name: 'Formula 1 Race Weekends',
-    slug: 'formula-1',
     category: 'Sports & Fitness',
   },
   {
@@ -511,15 +595,15 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Sports & Fitness',
   },
   {
-    id: 'int_38',
-    name: 'Tennis, Padel & Pickleball',
-    slug: 'tennis-padel',
+    id: 'int_83',
+    name: 'Badminton & Gully Matches',
+    slug: 'badminton',
     category: 'Sports & Fitness',
   },
   {
-    id: 'int_39',
-    name: 'Chess Tactics & Blitz Games',
-    slug: 'chess',
+    id: 'int_36',
+    name: 'Formula 1 Race Weekends',
+    slug: 'formula-1',
     category: 'Sports & Fitness',
   },
   {
@@ -529,9 +613,21 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Sports & Fitness',
   },
   {
-    id: 'int_83',
-    name: 'Badminton & Fast Rallies',
-    slug: 'badminton',
+    id: 'int_39',
+    name: 'Chess Tactics & Blitz Games',
+    slug: 'chess',
+    category: 'Sports & Fitness',
+  },
+  {
+    id: 'int_38',
+    name: 'Tennis, Padel & Pickleball',
+    slug: 'tennis-padel',
+    category: 'Sports & Fitness',
+  },
+  {
+    id: 'int_136',
+    name: 'Morning Runs & Marathons',
+    slug: 'morning-runs-marathons',
     category: 'Sports & Fitness',
   },
   {
@@ -557,15 +653,33 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   // 8. Gaming & Tech
   // --------------------------------------------------------------------------
   {
-    id: 'int_41',
-    name: 'Creative Coding & Open Source',
-    slug: 'creative-coding',
+    id: 'int_87',
+    name: 'PC & Console Gaming',
+    slug: 'pc-console-gaming',
     category: 'Gaming & Tech',
   },
   {
-    id: 'int_42',
-    name: 'Design & Typography',
-    slug: 'design-typography',
+    id: 'int_30',
+    name: 'Board Games & Catan Nights',
+    slug: 'board-games',
+    category: 'Gaming & Tech',
+  },
+  {
+    id: 'int_132',
+    name: 'Chess & Tactical Battles',
+    slug: 'chess-tactics-battles',
+    category: 'Gaming & Tech',
+  },
+  {
+    id: 'int_133',
+    name: 'BGMI & Mobile Gaming',
+    slug: 'bgmi-mobile-gaming',
+    category: 'Gaming & Tech',
+  },
+  {
+    id: 'int_41',
+    name: 'Creative Coding & Open Source',
+    slug: 'creative-coding',
     category: 'Gaming & Tech',
   },
   {
@@ -578,18 +692,6 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     id: 'int_45',
     name: 'Custom Mechanical Keyboards',
     slug: 'mechanical-keyboards',
-    category: 'Gaming & Tech',
-  },
-  {
-    id: 'int_87',
-    name: 'PC & Console Gaming',
-    slug: 'pc-console-gaming',
-    category: 'Gaming & Tech',
-  },
-  {
-    id: 'int_30',
-    name: 'Board Games & Catan Nights',
-    slug: 'board-games',
     category: 'Gaming & Tech',
   },
   {
@@ -610,20 +712,44 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     slug: 'cybersecurity-tech',
     category: 'Gaming & Tech',
   },
-  {
-    id: 'int_91',
-    name: 'Retro Arcade & Emulation',
-    slug: 'retro-arcade',
-    category: 'Gaming & Tech',
-  },
 
   // --------------------------------------------------------------------------
   // 9. Travel & Adventure
   // --------------------------------------------------------------------------
   {
+    id: 'int_127',
+    name: 'Goa Sunsets & Shack Hopping',
+    slug: 'goa-beach-sunsets',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_100',
+    name: 'Himachal & Mountain Treks',
+    slug: 'mountain-sunrises',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_128',
+    name: 'Spiti & Ladakh Road Trips',
+    slug: 'spiti-ladakh-roadtrips',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_106',
+    name: 'Train Journeys & Window Seats',
+    slug: 'train-journeys',
+    category: 'Travel & Adventure',
+  },
+  {
     id: 'int_32',
-    name: 'Solo Backpacking Adventures',
+    name: 'Solo Backpacking & Hostels',
     slug: 'solo-traveling',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_129',
+    name: 'Pondicherry & French Quarters',
+    slug: 'pondicherry-french-quarters',
     category: 'Travel & Adventure',
   },
   {
@@ -633,15 +759,9 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Travel & Adventure',
   },
   {
-    id: 'int_100',
-    name: 'Mountain Sunrises & Treks',
-    slug: 'mountain-sunrises',
-    category: 'Travel & Adventure',
-  },
-  {
-    id: 'int_101',
-    name: 'Beach Getaways & Sunsets',
-    slug: 'beach-getaways',
+    id: 'int_137',
+    name: 'Wild Camping & Stargazing',
+    slug: 'camping-stargazing-travel',
     category: 'Travel & Adventure',
   },
   {
@@ -651,27 +771,15 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Travel & Adventure',
   },
   {
+    id: 'int_130',
+    name: 'Heritage Forts & Palaces',
+    slug: 'heritage-forts-palaces',
+    category: 'Travel & Adventure',
+  },
+  {
     id: 'int_103',
-    name: 'Island Hopping & Hidden Coves',
+    name: 'Island Hopping & Scuba',
     slug: 'island-hopping',
-    category: 'Travel & Adventure',
-  },
-  {
-    id: 'int_104',
-    name: 'Van Life & Starry Nights',
-    slug: 'van-life',
-    category: 'Travel & Adventure',
-  },
-  {
-    id: 'int_105',
-    name: 'Street Exploration & Alleys',
-    slug: 'street-exploration',
-    category: 'Travel & Adventure',
-  },
-  {
-    id: 'int_106',
-    name: 'Train Journeys & Slow Travel',
-    slug: 'train-journeys',
     category: 'Travel & Adventure',
   },
   {
@@ -685,8 +793,14 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   // 10. Lifestyle & Social
   // --------------------------------------------------------------------------
   {
+    id: 'int_134',
+    name: 'Late Night Drives & Chai Stops',
+    slug: 'late-night-drives-chai',
+    category: 'Lifestyle & Social',
+  },
+  {
     id: 'int_31',
-    name: 'Dog & Puppy Parent',
+    name: 'Dog & Puppy Parent (Indie Rescues)',
     slug: 'pet-lover',
     category: 'Lifestyle & Social',
   },
@@ -698,14 +812,20 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   },
   {
     id: 'int_94',
-    name: 'Late Night Deep Talks',
+    name: 'Chai Pe Charcha & Deep Talks',
     slug: 'late-night-talks',
     category: 'Lifestyle & Social',
   },
   {
     id: 'int_95',
-    name: 'Plant Parent & Urban Jungles',
+    name: 'Plant Parent & Balcony Jungles',
     slug: 'plant-parent',
+    category: 'Lifestyle & Social',
+  },
+  {
+    id: 'int_135',
+    name: 'Festival Celebrations & Lights',
+    slug: 'festivals-celebrations',
     category: 'Lifestyle & Social',
   },
   {
@@ -788,12 +908,44 @@ const getInterestIcon = (item: {
     key.includes('dining') ||
     key.includes('vegan') ||
     key.includes('plant-based') ||
-    key.includes('spice')
+    key.includes('spice') ||
+    key.includes('biryani') ||
+    key.includes('maggi') ||
+    key.includes('momo') ||
+    key.includes('dessert') ||
+    key.includes('dosa')
   )
     return UtensilsCrossed;
 
+  // Music & Audio - Bollywood / Punjabi / Coke Studio
+  if (
+    key.includes('bollywood') &&
+    (key.includes('music') || key.includes('classic') || key.includes('arijit'))
+  )
+    return Music;
+  if (
+    key.includes('punjabi') ||
+    key.includes('dhillon') ||
+    key.includes('coke studio') ||
+    key.includes('sufi') ||
+    key.includes('ghazal') ||
+    key.includes('qawwali') ||
+    key.includes('classical') ||
+    key.includes('vinyl') ||
+    key.includes('techno') ||
+    key.includes('jazz') ||
+    key.includes('hip-hop') ||
+    key.includes('rock') ||
+    key.includes('music') ||
+    key.includes('acoustic') ||
+    key.includes('nostalgia')
+  )
+    return Music;
+
   // Movies & Cinema
   if (
+    key.includes('bollywood') ||
+    key.includes('hollywood') ||
     key.includes('cinema') ||
     key.includes('film') ||
     key.includes('movie') ||
@@ -806,11 +958,20 @@ const getInterestIcon = (item: {
     key.includes('docuseries') ||
     key.includes('documentary') ||
     key.includes('series') ||
-    key.includes('rewatch')
+    key.includes('rewatch') ||
+    key.includes('ott')
   )
     return Tv;
-  if (key.includes('anime') || key.includes('ghibli')) return Sparkles;
-  if (key.includes('comedy') || key.includes('stand-up')) return Mic;
+  if (
+    key.includes('anime') ||
+    key.includes('ghibli') ||
+    key.includes('potter') ||
+    key.includes('hogwarts') ||
+    key.includes('marvel') ||
+    key.includes('dc')
+  )
+    return Sparkles;
+  if (key.includes('comedy') || key.includes('stand-up') || key.includes('roast')) return Mic;
   if (key.includes('horror') || key.includes('suspense') || key.includes('thriller'))
     return Clapperboard;
 
@@ -824,7 +985,10 @@ const getInterestIcon = (item: {
     key.includes('biograph') ||
     key.includes('memoir') ||
     key.includes('manga') ||
-    key.includes('dystopia')
+    key.includes('dystopia') ||
+    key.includes('mythology') ||
+    key.includes('author') ||
+    key.includes('christie')
   )
     return BookOpen;
   if (
@@ -837,30 +1001,6 @@ const getInterestIcon = (item: {
   )
     return PenTool;
   if (key.includes('audiobook')) return Headphones;
-
-  // Music & Audio
-  if (
-    key.includes('classical') ||
-    key.includes('sufi') ||
-    key.includes('ghazal') ||
-    key.includes('vinyl') ||
-    key.includes('techno') ||
-    key.includes('jazz') ||
-    key.includes('hip-hop') ||
-    key.includes('rock') ||
-    key.includes('music') ||
-    key.includes('acoustic')
-  )
-    return Music;
-  if (
-    key.includes('gig') ||
-    key.includes('live') ||
-    key.includes('concert') ||
-    key.includes('podcast') ||
-    key.includes('lo-fi') ||
-    key.includes('rave')
-  )
-    return Headphones;
 
   // Arts & Culture
   if (key.includes('photo') || key.includes('camera') || key.includes('35mm')) return Camera;
@@ -878,10 +1018,19 @@ const getInterestIcon = (item: {
     key.includes('heritage') ||
     key.includes('museum') ||
     key.includes('theater') ||
-    key.includes('performing')
+    key.includes('prithvi') ||
+    key.includes('monument') ||
+    key.includes('fort') ||
+    key.includes('palace')
   )
     return Landmark;
-  if (key.includes('thrift') || key.includes('vintage') || key.includes('fashion')) return Sparkles;
+  if (
+    key.includes('thrift') ||
+    key.includes('vintage') ||
+    key.includes('fashion') ||
+    key.includes('handloom')
+  )
+    return Sparkles;
 
   // Active & Outdoors
   if (
@@ -890,7 +1039,11 @@ const getInterestIcon = (item: {
     key.includes('mountain') ||
     key.includes('climbing') ||
     key.includes('boulder') ||
-    key.includes('camp')
+    key.includes('camp') ||
+    key.includes('summit') ||
+    key.includes('spiti') ||
+    key.includes('ladakh') ||
+    key.includes('himachal')
   )
     return Mountain;
   if (
@@ -899,7 +1052,8 @@ const getInterestIcon = (item: {
     key.includes('cycling') ||
     key.includes('scuba') ||
     key.includes('surfing') ||
-    key.includes('swim')
+    key.includes('swim') ||
+    key.includes('dance')
   )
     return Activity;
   if (key.includes('walk') || key.includes('stroll') || key.includes('trail')) return Footprints;
@@ -908,7 +1062,8 @@ const getInterestIcon = (item: {
     key.includes('mindful') ||
     key.includes('meditation') ||
     key.includes('breathwork') ||
-    key.includes('pilates')
+    key.includes('pilates') ||
+    key.includes('pranayama')
   )
     return Sun;
 
@@ -945,7 +1100,8 @@ const getInterestIcon = (item: {
     key.includes('catan') ||
     key.includes('dnd') ||
     key.includes('tabletop') ||
-    key.includes('arcade')
+    key.includes('arcade') ||
+    key.includes('bgmi')
   )
     return Gamepad2;
   if (
@@ -971,14 +1127,18 @@ const getInterestIcon = (item: {
     key.includes('safari') ||
     key.includes('train') ||
     key.includes('journey') ||
-    key.includes('flight')
+    key.includes('flight') ||
+    key.includes('hostel') ||
+    key.includes('goa') ||
+    key.includes('pondicherry')
   )
     return Plane;
   if (
     key.includes('road trip') ||
     key.includes('detour') ||
     key.includes('explore') ||
-    key.includes('exploration')
+    key.includes('exploration') ||
+    key.includes('drive')
   )
     return Compass;
 
@@ -992,7 +1152,9 @@ const getInterestIcon = (item: {
     key.includes('astrology') ||
     key.includes('talk') ||
     key.includes('slow living') ||
-    key.includes('plant')
+    key.includes('plant') ||
+    key.includes('festiv') ||
+    key.includes('light')
   )
     return Sparkles;
 
