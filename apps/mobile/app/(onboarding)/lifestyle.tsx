@@ -109,6 +109,7 @@ export default function OnboardingLifestyleScreen(): React.JSX.Element {
   const { maxContentWidth } = useResponsiveLayout();
 
   const [fontsLoaded] = useFonts({
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     Folkra: require('../../assets/fonts/folkra.ttf'),
   });
   const folkraFont = fontsLoaded ? 'Folkra' : undefined;
