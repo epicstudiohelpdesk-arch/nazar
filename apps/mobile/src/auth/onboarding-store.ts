@@ -101,6 +101,8 @@ export interface DraftProfile {
   dateOfBirth: string; // YYYY-MM-DD
   gender: Gender;
   genderIdentity?: string; // Specific modern gender identity (e.g. Transgender Woman, Genderfluid, Non-binary)
+  interestedIn?: Gender[]; // Genders user is interested in discovering (e.g. ['WOMAN'], ['MAN', 'NON_BINARY'], ['OTHER'])
+  interestedInIdentities?: string[]; // Specific identities selected for discovery (e.g. ['woman', 'transgender_woman'])
   intent: RelationshipIntent;
   city: string;
   coordinates?: { latitude: number; longitude: number };
@@ -155,6 +157,8 @@ const initialDraftProfile: DraftProfile = {
   dateOfBirth: '',
   gender: 'WOMAN',
   genderIdentity: 'Woman',
+  interestedIn: ['OTHER'],
+  interestedInIdentities: ['everyone'],
   intent: 'LONG_TERM',
   city: '',
   bio: '',
@@ -263,6 +267,9 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         displayName: profile.displayName || state.draftProfile.displayName,
         dateOfBirth: profile.dateOfBirth || state.draftProfile.dateOfBirth,
         gender: profile.gender || state.draftProfile.gender,
+        interestedIn: profile.preferences
+          ? [...profile.preferences.genderPreferences]
+          : state.draftProfile.interestedIn,
         intent: profile.preferences?.relationshipIntent || state.draftProfile.intent,
         city: profile.city || state.draftProfile.city,
         bio: profile.bio || state.draftProfile.bio,

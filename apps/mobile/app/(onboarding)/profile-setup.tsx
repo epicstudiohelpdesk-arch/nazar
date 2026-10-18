@@ -43,6 +43,11 @@ import {
   Crosshair,
   Plus,
   Minus,
+  Moon,
+  Map as MapIcon,
+  Satellite,
+  Layers,
+  Compass,
 } from 'lucide-react-native';
 import type { Gender, RelationshipIntent } from '@platform/api-contracts';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
@@ -185,6 +190,134 @@ export const MODERN_GENDER_OPTIONS: ModernGenderOption[] = [
 ];
 
 // ============================================================================
+// Modern Inclusive Interested In (Looking For) Definitions
+// ============================================================================
+
+export interface InterestedInOption {
+  id: string;
+  label: string;
+  desc: string;
+  coreGender: Gender;
+}
+
+export const INTERESTED_IN_OPTIONS: InterestedInOption[] = [
+  {
+    id: 'everyone',
+    label: 'Everyone (Open to All)',
+    coreGender: 'OTHER',
+    desc: 'Open to people of all genders and identities',
+  },
+  {
+    id: 'woman',
+    label: 'Women',
+    coreGender: 'WOMAN',
+    desc: 'Show me women (cis & trans)',
+  },
+  {
+    id: 'man',
+    label: 'Men',
+    coreGender: 'MAN',
+    desc: 'Show me men (cis & trans)',
+  },
+  {
+    id: 'non_binary',
+    label: 'Non-binary',
+    coreGender: 'NON_BINARY',
+    desc: 'Identity that expands beyond binary male or female',
+  },
+  {
+    id: 'cisgender_woman',
+    label: 'Cisgender Women',
+    coreGender: 'WOMAN',
+    desc: 'Assigned female at birth, identifies as woman',
+  },
+  {
+    id: 'cisgender_man',
+    label: 'Cisgender Men',
+    coreGender: 'MAN',
+    desc: 'Assigned male at birth, identifies as man',
+  },
+  {
+    id: 'transgender_woman',
+    label: 'Transgender Women',
+    coreGender: 'WOMAN',
+    desc: 'Women with transgender journey and lived experience',
+  },
+  {
+    id: 'transgender_man',
+    label: 'Transgender Men',
+    coreGender: 'MAN',
+    desc: 'Men with transgender journey and lived experience',
+  },
+  {
+    id: 'genderfluid',
+    label: 'Genderfluid People',
+    coreGender: 'NON_BINARY',
+    desc: 'Gender identity shifts or fluctuates dynamically',
+  },
+  {
+    id: 'genderqueer',
+    label: 'Genderqueer People',
+    coreGender: 'NON_BINARY',
+    desc: 'Queer expression defying normative social roles',
+  },
+  {
+    id: 'agender',
+    label: 'Agender People',
+    coreGender: 'NON_BINARY',
+    desc: 'Experiences absence of gender or neutral identity',
+  },
+  {
+    id: 'bigender',
+    label: 'Bigender People',
+    coreGender: 'NON_BINARY',
+    desc: 'Identifies with two distinct genders concurrently or alternately',
+  },
+  {
+    id: 'demigirl',
+    label: 'Demigirls',
+    coreGender: 'NON_BINARY',
+    desc: 'Partially identifies with womanhood or feminine traits',
+  },
+  {
+    id: 'demiboy',
+    label: 'Demiboys',
+    coreGender: 'NON_BINARY',
+    desc: 'Partially identifies with manhood or masculine traits',
+  },
+  {
+    id: 'two_spirit',
+    label: 'Two-Spirit Individuals',
+    coreGender: 'NON_BINARY',
+    desc: 'Sacred Indigenous cultural and spiritual gender identity',
+  },
+  {
+    id: 'pangender',
+    label: 'Pangender People',
+    coreGender: 'NON_BINARY',
+    desc: 'Experiences all or multiple genders holistically',
+  },
+  {
+    id: 'androgynous',
+    label: 'Androgynous People',
+    coreGender: 'NON_BINARY',
+    desc: 'Blends masculine and feminine expressions harmoniously',
+  },
+  {
+    id: 'intersex',
+    label: 'Intersex Individuals',
+    coreGender: 'OTHER',
+    desc: 'Inborn reproductive or chromosomal variations outside the binary',
+  },
+  {
+    id: 'questioning',
+    label: 'Questioning Individuals',
+    coreGender: 'OTHER',
+    desc: 'Currently exploring and discovering gender expression',
+  },
+];
+
+// ============================================================================
 // Relationship Intent Definitions (Monochromatic)
 // ============================================================================
 
@@ -282,6 +415,13 @@ const EDUCATION_ABBREVIATIONS: Record<string, string> = {
   stanford: 'Stanford University',
 };
 
+const MAP_LAYERS = [
+  { id: 'default' as const, label: 'Default', Icon: Moon },
+  { id: 'street' as const, label: 'Street', Icon: MapIcon },
+  { id: 'satellite' as const, label: 'Satellite', Icon: Satellite },
+  { id: 'hybrid' as const, label: 'Hybrid', Icon: Layers },
+];
+
 export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -314,7 +454,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   });
   const folkraFont = fontsLoaded ? 'Folkra' : undefined;
 
-  const { draftProfile, updateDraftProfile } = useOnboardingStore();
+  const { draftProfile, draftPreferences, updateDraftProfile, updateDraftPreferences } =
+    useOnboardingStore();
 
   // Core Form State
   const [displayName, setDisplayName] = useState(draftProfile.displayName || '');
@@ -345,6 +486,22 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   );
   const [showGenderOnProfile, setShowGenderOnProfile] = useState<boolean>(true);
 
+  // Interested In (Looking For) State
+  const [selectedInterestedInIds, setSelectedInterestedInIds] = useState<string[]>(() => {
+    if (draftProfile.interestedInIdentities && draftProfile.interestedInIdentities.length > 0) {
+      return draftProfile.interestedInIdentities;
+    }
+    if (draftPreferences.genderPreferences && draftPreferences.genderPreferences.length > 0) {
+      if (draftPreferences.genderPreferences.includes('OTHER')) return ['everyone'];
+      const ids: string[] = [];
+      if (draftPreferences.genderPreferences.includes('WOMAN')) ids.push('woman');
+      if (draftPreferences.genderPreferences.includes('MAN')) ids.push('man');
+      if (draftPreferences.genderPreferences.includes('NON_BINARY')) ids.push('non_binary');
+      return ids.length > 0 ? ids : ['everyone'];
+    }
+    return ['everyone'];
+  });
+
   // Relationship Intent State
   const [intent, setIntent] = useState<RelationshipIntent>(draftProfile.intent || 'LONG_TERM');
 
@@ -360,12 +517,15 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
   // Map Picker Modal State
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
+  const [selectedMapType, setSelectedMapType] = useState<
+    'default' | 'satellite' | 'street' | 'hybrid'
+  >('default');
   const [mapCenterCoords, setMapCenterCoords] = useState<{ latitude: number; longitude: number }>({
-    latitude: draftProfile.coordinates?.latitude || 19.076,
-    longitude: draftProfile.coordinates?.longitude || 72.8777,
+    latitude: draftProfile.coordinates?.latitude || 22.5726,
+    longitude: draftProfile.coordinates?.longitude || 88.3639,
   });
   const [mapReverseGeocodedName, setMapReverseGeocodedName] = useState<string>(
-    draftProfile.city || 'Mumbai, Maharashtra'
+    draftProfile.city || 'Kolkata, West Bengal'
   );
   const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
   const [mapSearchText, setMapSearchText] = useState('');
@@ -388,6 +548,9 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
   const [isGenderModalVisible, setIsGenderModalVisible] = useState(false);
   const [genderSearchText, setGenderSearchText] = useState('');
+  const [isInterestedInModalVisible, setIsInterestedInModalVisible] = useState(false);
+  const [interestedInSearchText, setInterestedInSearchText] = useState('');
+  const interestedInSearchInputRef = useRef<RNTextInput>(null);
   const [isIntentModalVisible, setIsIntentModalVisible] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -487,8 +650,81 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       dateOfBirth && currentAge !== null && currentAge >= 18 && currentAge <= 100
     );
     const hasCity = Boolean(city.trim());
-    return hasName && hasDob && hasCity;
-  }, [displayName, dateOfBirth, currentAge, city]);
+    const hasInterestedIn = selectedInterestedInIds.length > 0;
+    return hasName && hasDob && hasCity && hasInterestedIn;
+  }, [displayName, dateOfBirth, currentAge, city, selectedInterestedInIds]);
+
+  const selectedCoreGenders = useMemo<Gender[]>(() => {
+    if (selectedInterestedInIds.includes('everyone')) {
+      return ['OTHER'];
+    }
+    const coreSet = new Set<Gender>();
+    selectedInterestedInIds.forEach((id) => {
+      const found = INTERESTED_IN_OPTIONS.find((opt) => opt.id === id);
+      if (found) {
+        coreSet.add(found.coreGender);
+      }
+    });
+    return coreSet.size > 0 ? Array.from(coreSet) : ['OTHER'];
+  }, [selectedInterestedInIds]);
+
+  const filteredInterestedInOptions = useMemo(() => {
+    const q = interestedInSearchText.trim().toLowerCase();
+    if (!q) return INTERESTED_IN_OPTIONS;
+    return INTERESTED_IN_OPTIONS.filter(
+      (item) => item.label.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q)
+    );
+  }, [interestedInSearchText]);
+
+  const toggleInterestedInId = (id: string) => {
+    haptics.selection();
+    if (id === 'everyone') {
+      setSelectedInterestedInIds(['everyone']);
+      return;
+    }
+
+    let updated: string[];
+    if (selectedInterestedInIds.includes('everyone')) {
+      updated = [id];
+    } else if (selectedInterestedInIds.includes(id)) {
+      if (selectedInterestedInIds.length <= 1) return; // Keep at least one selected
+      updated = selectedInterestedInIds.filter((item) => item !== id);
+    } else {
+      updated = [...selectedInterestedInIds, id];
+    }
+    setSelectedInterestedInIds(updated);
+  };
+
+  const activeInterestedInLabel = useMemo(() => {
+    if (selectedInterestedInIds.includes('everyone')) {
+      return 'Everyone (Open to All)';
+    }
+    if (selectedInterestedInIds.length === 1) {
+      const match = INTERESTED_IN_OPTIONS.find((o) => o.id === selectedInterestedInIds[0]);
+      return match ? match.label : 'Everyone (Open to All)';
+    }
+    if (selectedInterestedInIds.length === 2) {
+      const m1 = INTERESTED_IN_OPTIONS.find((o) => o.id === selectedInterestedInIds[0]);
+      const m2 = INTERESTED_IN_OPTIONS.find((o) => o.id === selectedInterestedInIds[1]);
+      if (m1 && m2) return `${m1.label} & ${m2.label}`;
+    }
+    const m1 = INTERESTED_IN_OPTIONS.find((o) => o.id === selectedInterestedInIds[0]);
+    if (m1) {
+      return `${m1.label} +${selectedInterestedInIds.length - 1} more`;
+    }
+    return 'Everyone (Open to All)';
+  }, [selectedInterestedInIds]);
+
+  const activeInterestedInDesc = useMemo(() => {
+    if (selectedInterestedInIds.includes('everyone')) {
+      return 'Open to people of all genders and identities';
+    }
+    if (selectedInterestedInIds.length === 1) {
+      const match = INTERESTED_IN_OPTIONS.find((o) => o.id === selectedInterestedInIds[0]);
+      return match ? match.desc : 'Open to people of all genders and identities';
+    }
+    return `${selectedInterestedInIds.length} categories selected for discovery`;
+  }, [selectedInterestedInIds]);
 
   const maxDaysInTempMonth = useMemo(() => {
     return new Date(tempYear, tempMonth + 1, 0).getDate();
@@ -797,6 +1033,18 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     if (errorMessage) setErrorMessage(undefined);
   };
 
+  const handleMapTypeChange = (type: 'default' | 'satellite' | 'street' | 'hybrid') => {
+    if (type === selectedMapType) return;
+    haptics.selection();
+    setSelectedMapType(type);
+    mapWebViewRef.current?.injectJavaScript(`
+      if (window.setMapLayer) {
+        window.setMapLayer('${type}');
+      }
+      true;
+    `);
+  };
+
   // In-Map Search Autocomplete
   const fetchMapSearchSuggestions = useCallback(async (query: string) => {
     const trimmed = query.trim();
@@ -983,12 +1231,18 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       dateOfBirth: formattedDob,
       gender: coreGender,
       genderIdentity: finalGenderIdentity,
+      interestedIn: selectedCoreGenders,
+      interestedInIdentities: selectedInterestedInIds,
       intent,
       city: city.trim(),
       coordinates: selectedCoords || undefined,
       bio: bio.trim(),
       occupation: occupation.trim(),
       education: education.trim(),
+    });
+
+    updateDraftPreferences({
+      genderPreferences: selectedCoreGenders,
     });
 
     setIsLoading(true);
@@ -1005,6 +1259,14 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
         occupation: occupation.trim() || undefined,
         education: education.trim() || undefined,
       });
+
+      try {
+        await profileApi.updatePreferences({
+          genderPreferences: selectedCoreGenders,
+        });
+      } catch {
+        // Will be reaffirmed on preferences step
+      }
 
       trackOnboardingEvent('profile_details_completed', {
         age,
@@ -1039,7 +1301,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     return `${day} ${month} ${year}`;
   }, [dateOfBirth]);
 
-  // Leaflet Map HTML (OpenStreetMap with high-contrast luxury dark filter, no API key required)
+  // Leaflet Map HTML (Professional multi-layer map: Street, Satellite, Hybrid, Dark)
   const mapHtml = useMemo(() => {
     const initialLat = mapCenterCoords.latitude;
     const initialLng = mapCenterCoords.longitude;
@@ -1053,7 +1315,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   <style>
     * { box-sizing: border-box; }
     body, html, #map { margin: 0; padding: 0; height: 100%; width: 100%; background: #0b0b0e; overflow: hidden; }
-    .leaflet-tile {
+    .original-map-tile {
       filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
     }
     .center-pin {
@@ -1070,7 +1332,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     .pin-shadow {
       width: 14px;
       height: 6px;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.45);
       border-radius: 50%;
       margin-top: -3px;
     }
@@ -1093,10 +1355,50 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       dragging: true 
     }).setView([${initialLat}, ${initialLng}], 13);
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      subdomains: ['a', 'b', 'c']
-    }).addTo(window.map);
+    var layers = {
+      default: [
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          subdomains: ['a', 'b', 'c'],
+          className: 'original-map-tile'
+        })
+      ],
+      street: [
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          subdomains: ['a', 'b', 'c']
+        })
+      ],
+      satellite: [
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19
+        })
+      ],
+      hybrid: [
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19
+        }),
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19
+        })
+      ]
+    };
+
+    var currentActiveLayers = [];
+
+    function setMapLayer(type) {
+      for (var i = 0; i < currentActiveLayers.length; i++) {
+        window.map.removeLayer(currentActiveLayers[i]);
+      }
+      var target = layers[type] || layers.default;
+      for (var j = 0; j < target.length; j++) {
+        target[j].addTo(window.map);
+      }
+      currentActiveLayers = target;
+    }
+
+    setMapLayer('default');
+    window.setMapLayer = setMapLayer;
 
     function notifyPosition() {
       var center = window.map.getCenter();
@@ -1116,6 +1418,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
         var data = JSON.parse(e.data);
         if (data.type === 'set_view') {
           window.map.setView([data.lat, data.lng], data.zoom || 14, { animate: true });
+        } else if (data.type === 'set_layer') {
+          setMapLayer(data.layer);
         }
       } catch (err) {}
     });
@@ -1317,7 +1621,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     </Text>
                   </View>
 
-                  {/* First Name Card */}
+                  {/* Full Name Card */}
                   <Animated.View
                     onLayout={(e) => {
                       nameCardRelY.current = e.nativeEvent.layout.y;
@@ -1348,7 +1652,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                           <User size={15} color={theme.colors.textPrimary} />
                         </View>
                         <Text level="bodySmall" style={styles.cardTitleText}>
-                          First Name
+                          Full Name
                         </Text>
                       </View>
                       <Text level="caption" color="tertiary">
@@ -1507,6 +1811,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       {
                         backgroundColor: isDark ? '#121216' : '#FFFFFF',
                         borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
+                        marginBottom: 14,
                       },
                     ]}
                   >
@@ -1524,9 +1829,6 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                           Gender Identity
                         </Text>
                       </View>
-                      <Text level="caption" color="tertiary">
-                        All identities welcomed
-                      </Text>
                     </View>
 
                     <TouchableOpacity
@@ -1560,6 +1862,79 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                           ellipsizeMode="tail"
                         >
                           {activeGenderOption.desc}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.intentChevronBadge,
+                          {
+                            backgroundColor: isDark
+                              ? 'rgba(255, 255, 255, 0.06)'
+                              : 'rgba(0, 0, 0, 0.04)',
+                          },
+                        ]}
+                      >
+                        <ChevronDown size={15} color={theme.colors.textSecondary} />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Interested In (Looking For) Trigger Card */}
+                  <View
+                    style={[
+                      styles.cardBox,
+                      {
+                        backgroundColor: isDark ? '#121216' : '#FFFFFF',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
+                      },
+                    ]}
+                  >
+                    <View style={styles.cardHeader}>
+                      <View style={styles.cardTitleCluster}>
+                        <View
+                          style={[
+                            styles.monochromeIconBadge,
+                            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
+                          ]}
+                        >
+                          <Compass size={15} color={theme.colors.textPrimary} />
+                        </View>
+                        <Text level="bodySmall" style={styles.cardTitleText}>
+                          Interested In
+                        </Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.intentDropdownBox,
+                        {
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
+                        },
+                      ]}
+                      onPress={() => {
+                        haptics.selection();
+                        setIsInterestedInModalVisible(true);
+                      }}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel="Select who you are interested in"
+                    >
+                      <View style={styles.intentContentContainer}>
+                        <Text
+                          style={[styles.intentLabelText, { color: theme.colors.textPrimary }]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {activeInterestedInLabel}
+                        </Text>
+                        <Text
+                          style={[styles.intentDescText, { color: theme.colors.textTertiary }]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {activeInterestedInDesc}
                         </Text>
                       </View>
                       <View
@@ -1791,7 +2166,21 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                             haptics.selection();
                             Keyboard.dismiss();
                             setShowSuggestionsDropdown(false);
+                            const targetCoords = selectedCoords || {
+                              latitude: 22.5726,
+                              longitude: 88.3639,
+                            };
+                            setMapCenterCoords(targetCoords);
+                            setMapReverseGeocodedName(city.trim() || 'Kolkata, West Bengal');
                             setIsMapModalVisible(true);
+                            setTimeout(() => {
+                              mapWebViewRef.current?.injectJavaScript(`
+                                if (window.map) {
+                                  window.map.setView([${targetCoords.latitude}, ${targetCoords.longitude}], 13);
+                                }
+                                true;
+                              `);
+                            }, 300);
                           }}
                           style={[
                             styles.inlineMapButton,
@@ -2345,22 +2734,19 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             },
           ]}
         >
-          {/* Professional CTA Button (Monochromatic High-Contrast matching The Basics) */}
+          {/* Professional CTA Button (Matching Sign In / Sign Up white button) */}
           <TouchableOpacity
             onPress={handleNext}
             disabled={isLoading}
             style={[
               styles.professionalCtaButton,
               {
-                backgroundColor: isFormValid
-                  ? isDark
-                    ? '#FFFFFF'
-                    : '#111114'
-                  : isDark
-                    ? '#1C1C22'
-                    : '#E4E4E7',
-                shadowColor: isFormValid ? '#FFFFFF' : 'transparent',
-                opacity: isLoading ? 0.75 : 1,
+                backgroundColor: '#FFFFFF',
+                borderColor: isDark ? 'transparent' : 'rgba(0, 0, 0, 0.12)',
+                borderWidth: isDark ? 0 : 1,
+                shadowColor: '#000000',
+                shadowOpacity: isDark ? 0.28 : 0.12,
+                opacity: isLoading ? 0.75 : isFormValid ? 1 : 0.6,
               },
             ]}
             activeOpacity={0.88}
@@ -2369,39 +2755,21 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             testID="submit-button"
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color={isDark ? '#000000' : '#FFFFFF'} />
+              <ActivityIndicator size="small" color="#000000" />
             ) : (
               <View style={styles.buttonInnerRow}>
                 <Text
                   style={[
                     styles.professionalCtaText,
                     {
-                      color: isFormValid
-                        ? isDark
-                          ? '#000000'
-                          : '#FFFFFF'
-                        : isDark
-                          ? 'rgba(255, 255, 255, 0.40)'
-                          : '#8E8E93',
+                      color: '#000000',
                       fontFamily: folkraFont,
                     },
                   ]}
                 >
                   Continue to Photos
                 </Text>
-                <ArrowRight
-                  size={17}
-                  color={
-                    isFormValid
-                      ? isDark
-                        ? '#000000'
-                        : '#FFFFFF'
-                      : isDark
-                        ? 'rgba(255, 255, 255, 0.40)'
-                        : '#8E8E93'
-                  }
-                  style={{ marginLeft: 8 }}
-                />
+                <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />
               </View>
             )}
           </TouchableOpacity>
@@ -2774,6 +3142,42 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
               scrollEnabled={false}
               testID="location-picker-webview"
             />
+
+            {/* Floating Dynamic Icon Capsule Dock */}
+            <View style={styles.mapLayerSelectorContainer}>
+              {MAP_LAYERS.map((layer) => {
+                const isActive = selectedMapType === layer.id;
+                const LayerIcon = layer.Icon;
+                return (
+                  <TouchableOpacity
+                    key={layer.id}
+                    onPress={() => handleMapTypeChange(layer.id)}
+                    style={[
+                      styles.mapLayerTab,
+                      isActive ? styles.mapLayerTabActive : styles.mapLayerTabInactive,
+                    ]}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isActive }}
+                    accessibilityLabel={`${layer.label} map view`}
+                  >
+                    <LayerIcon
+                      size={17}
+                      color={isActive ? '#000000' : '#A1A1AA'}
+                      strokeWidth={isActive ? 2.2 : 1.8}
+                    />
+                    {isActive && (
+                      <Text
+                        style={[styles.mapLayerTabTextActive, { fontFamily: folkraFont }]}
+                        numberOfLines={1}
+                      >
+                        {layer.label}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
             {/* Floating Zoom Controls (+ / -) */}
             <View style={styles.mapFloatingControls}>
@@ -3164,6 +3568,185 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           })}
         </ScrollView>
       </SmoothBottomSheetModal>
+
+      {/* ======================================================== */}
+      {/* 5. Interested In (Looking For) Modal with Search Facility */}
+      {/* ======================================================== */}
+      <SmoothBottomSheetModal
+        visible={isInterestedInModalVisible}
+        onClose={() => {
+          setIsInterestedInModalVisible(false);
+          setInterestedInSearchText('');
+        }}
+        sheetStyle={{ maxHeight: '86%' }}
+        showHandle={true}
+      >
+        {/* Header */}
+        <View style={styles.modalHeader}>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.modalTitle,
+                { color: theme.colors.textPrimary, fontFamily: folkraFont },
+              ]}
+            >
+              Interested In
+            </Text>
+            <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
+              Select all categories and identities you would like to meet.
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              haptics.selection();
+              setIsInterestedInModalVisible(false);
+              setInterestedInSearchText('');
+            }}
+            style={[
+              styles.modalCloseBtn,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Close interested in modal"
+          >
+            <X size={16} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Bar Facility */}
+        <View
+          style={[
+            styles.modalSearchContainer,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F4F4F6',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
+            },
+          ]}
+        >
+          <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          <RNTextInput
+            ref={interestedInSearchInputRef}
+            style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
+            placeholder="Search gender categories..."
+            placeholderTextColor={theme.colors.textTertiary}
+            value={interestedInSearchText}
+            onChangeText={setInterestedInSearchText}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {interestedInSearchText.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setInterestedInSearchText('')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={15} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Scrollable Categories List */}
+        <ScrollView
+          style={{ maxHeight: 420 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {filteredInterestedInOptions.map((item) => {
+            const isSelected = selectedInterestedInIds.includes(item.id);
+
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.selectionOptionRow,
+                  {
+                    backgroundColor: isSelected
+                      ? isDark
+                        ? 'rgba(255, 255, 255, 0.09)'
+                        : '#F4F4F6'
+                      : 'transparent',
+                    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
+                  },
+                ]}
+                onPress={() => toggleInterestedInId(item.id)}
+                activeOpacity={0.7}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isSelected }}
+                accessibilityLabel={`${item.label}, ${isSelected ? 'selected' : 'not selected'}`}
+              >
+                <View style={{ flex: 1, paddingRight: 10, minWidth: 0 }}>
+                  <Text
+                    style={{
+                      color: theme.colors.textPrimary,
+                      fontWeight: isSelected ? '700' : '600',
+                      fontSize: 15,
+                    }}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {item.label}
+                  </Text>
+                  <Text
+                    level="caption"
+                    color="tertiary"
+                    style={{ marginTop: 2, lineHeight: 16 }}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {item.desc}
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.radioIndicator,
+                    {
+                      borderColor: isSelected
+                        ? theme.colors.textPrimary
+                        : isDark
+                          ? 'rgba(255, 255, 255, 0.25)'
+                          : '#D4D4D8',
+                      backgroundColor: isSelected ? theme.colors.textPrimary : 'transparent',
+                    },
+                  ]}
+                >
+                  {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Confirm / Done Button */}
+        <TouchableOpacity
+          style={[
+            styles.confirmCustomButton,
+            {
+              backgroundColor: theme.colors.textPrimary,
+              marginTop: 16,
+              marginBottom: 8,
+            },
+          ]}
+          onPress={() => {
+            haptics.notificationSuccess();
+            setIsInterestedInModalVisible(false);
+            setInterestedInSearchText('');
+          }}
+          activeOpacity={0.88}
+        >
+          <Text
+            style={{
+              color: isDark ? '#000000' : '#FFFFFF',
+              fontWeight: '700',
+              fontSize: 14,
+              fontFamily: folkraFont,
+            }}
+          >
+            Done
+          </Text>
+        </TouchableOpacity>
+      </SmoothBottomSheetModal>
     </View>
   );
 }
@@ -3473,7 +4056,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#FFFFFF',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
@@ -3743,10 +4326,61 @@ const styles = StyleSheet.create({
     backgroundColor: '#0B0B0E',
     position: 'relative',
   },
+  mapLayerSelectorContainer: {
+    position: 'absolute',
+    top: 14,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(18, 18, 22, 0.94)',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    padding: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+    zIndex: 90,
+  },
+  mapLayerTab: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapLayerTabActive: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 15,
+    height: 40,
+    borderRadius: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+    marginHorizontal: 3,
+  },
+  mapLayerTabInactive: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 3,
+  },
+  mapLayerTabTextActive: {
+    color: '#000000',
+    fontSize: 13,
+    fontWeight: '700',
+    marginLeft: 7,
+    letterSpacing: -0.2,
+  },
   mapFloatingControls: {
     position: 'absolute',
-    right: 16,
-    top: 16,
+    right: 14,
+    top: 72,
     backgroundColor: 'rgba(18, 18, 22, 0.88)',
     borderRadius: 10,
     borderWidth: 1,

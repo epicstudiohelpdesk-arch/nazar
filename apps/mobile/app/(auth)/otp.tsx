@@ -528,14 +528,14 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                     backgroundColor: '#FFFFFF',
                     borderColor: isDark ? 'transparent' : 'rgba(0, 0, 0, 0.12)',
                     borderWidth: isDark ? 0 : 1,
-                    opacity: isLoading ? 0.75 : 1,
+                    opacity: isLoading ? 0.75 : code.length === 6 ? 1 : 0.6,
                     shadowColor: '#000000',
                     shadowOpacity: isDark ? 0.28 : 0.12,
                   },
                 ]}
                 onPress={() => handleVerify()}
                 disabled={isLoading}
-                activeOpacity={0.85}
+                activeOpacity={0.88}
                 accessibilityRole="button"
                 accessibilityLabel="Verify code and continue"
               >

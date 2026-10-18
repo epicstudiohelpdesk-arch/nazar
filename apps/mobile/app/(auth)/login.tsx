@@ -474,6 +474,16 @@ export default function LoginScreen(): React.JSX.Element {
     return num;
   };
 
+  const isInputValid = useMemo(() => {
+    if (activeTab === 'phone') {
+      const minLength = Math.max(6, selectedCountry.maxLength - 3);
+      return phoneNumber.trim().length >= minLength;
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email.trim());
+    }
+  }, [activeTab, phoneNumber, selectedCountry.maxLength, email]);
+
   const handleContinue = async () => {
     if (rateLimitSeconds > 0 || isLoading) return;
     Keyboard.dismiss();
@@ -1226,7 +1236,7 @@ export default function LoginScreen(): React.JSX.Element {
                     backgroundColor: '#FFFFFF',
                     borderColor: isDark ? 'transparent' : 'rgba(0, 0, 0, 0.12)',
                     borderWidth: isDark ? 0 : 1,
-                    opacity: rateLimitSeconds > 0 || isLoading ? 0.7 : 1,
+                    opacity: rateLimitSeconds > 0 || isLoading ? 0.7 : isInputValid ? 1 : 0.6,
                     shadowColor: '#000000',
                     shadowOpacity: isDark ? 0.28 : 0.12,
                   },
