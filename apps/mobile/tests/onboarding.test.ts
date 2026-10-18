@@ -331,11 +331,7 @@ describe('Onboarding & First-Run Suite', () => {
         ok: true,
         json: async () => [
           'attack on titan',
-          [
-            'Attack on Titan',
-            'Attack on Titan (TV series)',
-            'Attack on Titan: Junior High',
-          ],
+          ['Attack on Titan', 'Attack on Titan (TV series)', 'Attack on Titan: Junior High'],
         ],
       }) as unknown as typeof fetch;
 
@@ -384,4 +380,3 @@ describe('Onboarding & First-Run Suite', () => {
     });
   });
 });
-
