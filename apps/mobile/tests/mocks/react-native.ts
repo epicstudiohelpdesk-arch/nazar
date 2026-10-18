@@ -102,6 +102,13 @@ export const Animated = {
   }),
   View: (props: React.PropsWithChildren<Record<string, unknown>>) =>
     React.createElement('div', props, props.children),
+  Image: (props: Record<string, unknown>) => React.createElement('img', props),
+};
+
+export const PanResponder = {
+  create: (_config: any) => ({
+    panHandlers: {},
+  }),
 };
 
 export const Keyboard = {

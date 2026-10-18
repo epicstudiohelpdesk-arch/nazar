@@ -80,6 +80,7 @@ export interface DraftPhotoItem {
   url: string;
   isPrimary: boolean;
   status: MediaStatus;
+  filterId?: string;
 }
 
 export interface DraftPromptItem {
@@ -139,6 +140,7 @@ export interface OnboardingState {
   addDraftPhoto: (photo: DraftPhotoItem) => void;
   removeDraftPhoto: (id: string) => void;
   setPrimaryDraftPhoto: (id: string) => void;
+  updateDraftPhotoFilter: (id: string, filterId: string) => void;
   setDraftInterests: (interestIds: string[]) => void;
   toggleDraftInterest: (interestId: string) => void;
   setDraftPrompts: (prompts: DraftPromptItem[]) => void;
@@ -222,6 +224,13 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         ...p,
         isPrimary: p.id === id,
       })),
+    })),
+
+  updateDraftPhotoFilter: (id, filterId) =>
+    set((state) => ({
+      draftPhotos: state.draftPhotos.map((p) =>
+        p.id === id ? { ...p, filterId } : p
+      ),
     })),
 
   setDraftInterests: (interestIds) => set({ draftInterests: interestIds }),

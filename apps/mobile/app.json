@@ -152,7 +152,17 @@
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-router", "expo-web-browser"],
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Nazar needs photo library access so you can select and upload photos for your dating profile.",
+          "cameraPermission": "Nazar needs camera access to let you capture and upload photos for your dating profile."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "nazar-release-candidate"

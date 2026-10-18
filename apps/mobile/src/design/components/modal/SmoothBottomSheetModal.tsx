@@ -19,6 +19,7 @@ import { useTheme } from '../../theme/index.js';
 export interface SmoothBottomSheetModalProps {
   readonly visible: boolean;
   readonly onClose: () => void;
+  readonly onDismiss?: () => void;
   readonly children: React.ReactNode;
   readonly sheetStyle?: StyleProp<ViewStyle>;
   readonly testID?: string;
@@ -31,6 +32,7 @@ export interface SmoothBottomSheetModalProps {
 export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
   visible,
   onClose,
+  onDismiss,
   children,
   sheetStyle,
   testID,
@@ -49,6 +51,8 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
   const sheetTranslateY = useRef(new Animated.Value(visible ? 0 : initialOffset)).current;
 
   useEffect(() => {
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
     if (visible) {
       setIsRendered(true);
       Animated.parallel([
@@ -79,12 +83,20 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
           easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
-      ]).start(({ finished }) => {
-        if (finished) {
-          setIsRendered(false);
-        }
+      ]).start(() => {
+        setIsRendered(false);
       });
+
+      fallbackTimer = setTimeout(() => {
+        setIsRendered(false);
+      }, 350);
     }
+
+    return () => {
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+      }
+    };
   }, [visible, isRendered, initialOffset, backdropAnim, sheetTranslateY]);
 
   if (!isRendered) {
@@ -97,6 +109,7 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
       transparent={true}
       animationType="none"
       onRequestClose={onClose}
+      onDismiss={onDismiss}
       statusBarTranslucent={true}
       testID={testID}
     >

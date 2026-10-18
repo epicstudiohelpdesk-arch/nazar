@@ -70,5 +70,11 @@ export const Crosshair = createMockIcon('Crosshair');
 export const Globe = createMockIcon('Globe');
 export const Locate = createMockIcon('Locate');
 export const Minus = createMockIcon('Minus');
+export const Sun = createMockIcon('Sun');
+export const UserCheck = createMockIcon('UserCheck');
+export const ImagePlus = createMockIcon('ImagePlus');
+export const RotateCw = createMockIcon('RotateCw');
+export const Crop = createMockIcon('Crop');
+export const Grid3X3 = createMockIcon('Grid3X3');
 
 export type LucideIcon = React.FC<any>;

@@ -584,6 +584,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const scrollViewRef = useRef<ScrollView>(null);
   const nameInputRef = useRef<RNTextInput>(null);
   const cityInputRef = useRef<RNTextInput>(null);
+  const bioInputRef = useRef<RNTextInput>(null);
+  const occupationInputRef = useRef<RNTextInput>(null);
   const genderSearchInputRef = useRef<RNTextInput>(null);
 
   // Field shake animations & smooth scroll tracking
@@ -607,6 +609,19 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const occupationCardRelY = useRef(40);
   const educationCardRelY = useRef(120);
   const lastScrollRedirectTime = useRef(0);
+
+  // Instantly deselects any active text field and clears its focused highlight state
+  const dismissActiveField = useCallback(() => {
+    setFocusedField(null);
+    nameInputRef.current?.blur();
+    cityInputRef.current?.blur();
+    bioInputRef.current?.blur();
+    occupationInputRef.current?.blur();
+    educationInputRef.current?.blur();
+    Keyboard.dismiss();
+    setShowSuggestionsDropdown(false);
+    setShowEducationDropdown(false);
+  }, []);
 
   const ensureFieldInView = useCallback((targetY: number) => {
     const clampedTarget = Math.max(0, targetY);
@@ -859,7 +874,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     setSelectedCoords({ latitude: item.latitude, longitude: item.longitude });
     setShowSuggestionsDropdown(false);
     setLocationSuggestions([]);
-    Keyboard.dismiss();
+    dismissActiveField();
   };
 
   // ============================================================================
@@ -969,7 +984,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     setEducation(item.name);
     setShowEducationDropdown(false);
     setEducationSuggestions([]);
-    Keyboard.dismiss();
+    dismissActiveField();
   };
 
   // Reverse Geocoding for Map Center
@@ -1128,6 +1143,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   // ============================================================================
 
   const handleBack = () => {
+    dismissActiveField();
     haptics.impactLight();
     if (router.canGoBack()) {
       router.back();
@@ -1137,6 +1153,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   };
 
   const handleOpenDatePicker = () => {
+    dismissActiveField();
     haptics.selection();
     const baseDate = dateOfBirth || new Date(2000, 0, 15);
     setTempMonth(baseDate.getMonth());
@@ -1222,6 +1239,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     }
 
     haptics.impactMedium();
+    dismissActiveField();
     const formattedDob = dateOfBirth.toISOString().split('T')[0];
     const coreGender = activeGenderOption.coreGender;
     const finalGenderIdentity = activeGenderLabel;
@@ -1503,7 +1521,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
         <ArrowLeft size={20} color={theme.colors.textPrimary} />
       </TouchableOpacity>
 
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <TouchableWithoutFeedback onPress={dismissActiveField} accessible={false}>
         <KeyboardAvoidingView
           style={styles.keyboardContainer}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -1521,12 +1539,12 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
               },
             ]}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="none"
+            keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
           >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <TouchableWithoutFeedback onPress={dismissActiveField} accessible={false}>
               <View style={{ flex: 1 }}>
                 {/* Redesigned Monochromatic Hero Section with Inline 01/06 */}
                 <View style={styles.heroSection}>
@@ -1673,16 +1691,26 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       placeholder="What should we call you?"
                       placeholderTextColor={theme.colors.textTertiary}
                       value={displayName}
-                      onFocus={() => setFocusedField('displayName')}
-                      onBlur={() => setFocusedField(null)}
+                      onFocus={() => {
+                        cityInputRef.current?.blur();
+                        bioInputRef.current?.blur();
+                        occupationInputRef.current?.blur();
+                        educationInputRef.current?.blur();
+                        setFocusedField('displayName');
+                        ensureFieldInView(section1Y.current + nameCardRelY.current - 95);
+                      }}
+                      onBlur={() => {
+                        setFocusedField((prev) => (prev === 'displayName' ? null : prev));
+                      }}
                       onChangeText={(t) => {
                         setDisplayName(t);
                         if (errorMessage) setErrorMessage(undefined);
                         ensureFieldInView(section1Y.current + nameCardRelY.current - 95);
                       }}
+                      onSubmitEditing={dismissActiveField}
                       maxLength={30}
                       autoCapitalize="words"
-                      returnKeyType="next"
+                      returnKeyType="done"
                       testID="name-input"
                     />
                     <Text level="caption" color="tertiary" style={styles.microNotice}>
@@ -1840,6 +1868,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         },
                       ]}
                       onPress={() => {
+                        dismissActiveField();
                         haptics.selection();
                         setGenderSearchText('');
                         setIsGenderModalVisible(true);
@@ -1914,6 +1943,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         },
                       ]}
                       onPress={() => {
+                        dismissActiveField();
                         haptics.selection();
                         setIsInterestedInModalVisible(true);
                       }}
@@ -2002,6 +2032,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         },
                       ]}
                       onPress={() => {
+                        dismissActiveField();
                         haptics.selection();
                         setIsIntentModalVisible(true);
                       }}
@@ -2120,15 +2151,21 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         placeholderTextColor={theme.colors.textTertiary}
                         value={city}
                         onFocus={() => {
+                          nameInputRef.current?.blur();
+                          bioInputRef.current?.blur();
+                          occupationInputRef.current?.blur();
+                          educationInputRef.current?.blur();
                           setFocusedField('city');
+                          ensureFieldInView(section3Y.current + cityCardRelY.current - 95);
                           if (locationSuggestions.length > 0) setShowSuggestionsDropdown(true);
                         }}
                         onBlur={() => {
-                          setFocusedField(null);
+                          setFocusedField((prev) => (prev === 'city' ? null : prev));
                           // allow tap on suggestions before hiding
                           setTimeout(() => setShowSuggestionsDropdown(false), 250);
                         }}
                         onChangeText={handleCityTextChange}
+                        onSubmitEditing={dismissActiveField}
                         autoCapitalize="words"
                         returnKeyType="done"
                         testID="city-input"
@@ -2163,9 +2200,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         {/* Compact Button-Style Choose on Map */}
                         <TouchableOpacity
                           onPress={() => {
+                            dismissActiveField();
                             haptics.selection();
-                            Keyboard.dismiss();
-                            setShowSuggestionsDropdown(false);
                             const targetCoords = selectedCoords || {
                               latitude: 22.5726,
                               longitude: 88.3639,
@@ -2332,6 +2368,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     </View>
 
                     <RNTextInput
+                      ref={bioInputRef}
                       style={[
                         styles.multilineInput,
                         {
@@ -2343,8 +2380,17 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       placeholder="A little about your rhythm, weekend rituals, and what brings you genuine joy..."
                       placeholderTextColor={theme.colors.textTertiary}
                       value={bio}
-                      onFocus={() => setFocusedField('bio')}
-                      onBlur={() => setFocusedField(null)}
+                      onFocus={() => {
+                        nameInputRef.current?.blur();
+                        cityInputRef.current?.blur();
+                        occupationInputRef.current?.blur();
+                        educationInputRef.current?.blur();
+                        setFocusedField('bio');
+                        ensureFieldInView(section4Y.current + bioCardRelY.current - 95);
+                      }}
+                      onBlur={() => {
+                        setFocusedField((prev) => (prev === 'bio' ? null : prev));
+                      }}
                       onChangeText={(t) => {
                         setBio(t.slice(0, 300));
                         ensureFieldInView(section4Y.current + bioCardRelY.current - 95);
@@ -2374,6 +2420,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                               haptics.selection();
                               const prompt = 'Sunday morning coffee ritual: ';
                               setBio((prev) => (prev ? `${prev.trim()}\n${prompt}` : prompt));
+                              bioInputRef.current?.focus();
                             }}
                           >
                             <Coffee
@@ -2398,6 +2445,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                               haptics.selection();
                               const prompt = 'Currently reading / obsessed with: ';
                               setBio((prev) => (prev ? `${prev.trim()}\n${prompt}` : prompt));
+                              bioInputRef.current?.focus();
                             }}
                           >
                             <BookOpen
@@ -2422,6 +2470,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                               haptics.selection();
                               const prompt = 'Next destination on my bucket list: ';
                               setBio((prev) => (prev ? `${prev.trim()}\n${prompt}` : prompt));
+                              bioInputRef.current?.focus();
                             }}
                           >
                             <Plane
@@ -2446,6 +2495,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                               haptics.selection();
                               const prompt = 'The song I play on repeat: ';
                               setBio((prev) => (prev ? `${prev.trim()}\n${prompt}` : prompt));
+                              bioInputRef.current?.focus();
                             }}
                           >
                             <Music
@@ -2515,6 +2565,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         </View>
                       </View>
                       <RNTextInput
+                        ref={occupationInputRef}
                         style={[
                           styles.textInput,
                           {
@@ -2531,13 +2582,24 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         placeholder="e.g. Architect, Founder, Designer"
                         placeholderTextColor={theme.colors.textTertiary}
                         value={occupation}
-                        onFocus={() => setFocusedField('occupation')}
-                        onBlur={() => setFocusedField(null)}
+                        onFocus={() => {
+                          nameInputRef.current?.blur();
+                          cityInputRef.current?.blur();
+                          bioInputRef.current?.blur();
+                          educationInputRef.current?.blur();
+                          setFocusedField('occupation');
+                          ensureFieldInView(section5Y.current + occupationCardRelY.current - 95);
+                        }}
+                        onBlur={() => {
+                          setFocusedField((prev) => (prev === 'occupation' ? null : prev));
+                        }}
                         onChangeText={(t) => {
                           setOccupation(t);
                           ensureFieldInView(section5Y.current + occupationCardRelY.current - 95);
                         }}
+                        onSubmitEditing={dismissActiveField}
                         autoCapitalize="words"
+                        returnKeyType="done"
                       />
                     </View>
 
@@ -2589,14 +2651,20 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                           placeholderTextColor={theme.colors.textTertiary}
                           value={education}
                           onFocus={() => {
+                            nameInputRef.current?.blur();
+                            cityInputRef.current?.blur();
+                            bioInputRef.current?.blur();
+                            occupationInputRef.current?.blur();
                             setFocusedField('education');
                             if (educationSuggestions.length > 0) setShowEducationDropdown(true);
+                            ensureFieldInView(section5Y.current + educationCardRelY.current - 95);
                           }}
                           onBlur={() => {
-                            setFocusedField(null);
+                            setFocusedField((prev) => (prev === 'education' ? null : prev));
                             setTimeout(() => setShowEducationDropdown(false), 250);
                           }}
                           onChangeText={handleEducationTextChange}
+                          onSubmitEditing={dismissActiveField}
                           autoCapitalize="words"
                           returnKeyType="done"
                           testID="education-input"
