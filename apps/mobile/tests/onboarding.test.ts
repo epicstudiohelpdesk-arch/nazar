@@ -308,4 +308,80 @@ describe('Onboarding & First-Run Suite', () => {
       expect(await mockStorage.getAccessToken()).toBeNull();
     });
   });
+
+  describe('Internet Passion Suggestions & Crowdsourcing Taxonomy', () => {
+    it('cleanInterestName strips emojis and trims whitespace cleanly', async () => {
+      const { cleanInterestName } = await import('../app/(onboarding)/interests.js');
+      expect(cleanInterestName('🍕 Masala Chai ☕')).toBe('Masala Chai');
+      expect(cleanInterestName('✨ Death Note & Shinigami 🍎')).toBe('Death Note & Shinigami');
+      expect(cleanInterestName('   Anime Soundtracks   ')).toBe('Anime Soundtracks');
+    });
+
+    it('fetchInternetPassionSuggestions returns empty for short queries', async () => {
+      const { fetchInternetPassionSuggestions } = await import('../app/(onboarding)/interests.js');
+      const results = await fetchInternetPassionSuggestions('a');
+      expect(results).toEqual([]);
+    });
+
+    it('fetchInternetPassionSuggestions resolves real entities from Wikipedia API mock', async () => {
+      const { fetchInternetPassionSuggestions } = await import('../app/(onboarding)/interests.js');
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          'attack on titan',
+          [
+            'Attack on Titan',
+            'Attack on Titan (TV series)',
+            'Attack on Titan: Junior High',
+          ],
+        ],
+      }) as unknown as typeof fetch;
+
+      try {
+        const results = await fetchInternetPassionSuggestions('attack on titan');
+        expect(results).toContain('Attack on Titan');
+        expect(results).toContain('Attack on Titan: Junior High');
+        // Parenthetical disambiguation should be stripped
+        expect(results).not.toContain('Attack on Titan (TV series)');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('createProfileApi.createInterest submits POST /v1/interests', async () => {
+      const { createProfileApi } = await import('../src/profile/profile-api.js');
+      const mockRequest = vi.fn().mockResolvedValue({
+        success: true,
+        data: {
+          id: '0192e123-4567-789a-bcde-f0123456789a',
+          name: 'Cyberpunk Edgerunners',
+          slug: 'cyberpunk-edgerunners',
+          category: 'Anime',
+        },
+      });
+
+      const mockAuthClient = {
+        request: mockRequest,
+      } as unknown as AuthClient;
+
+      const profileApi = createProfileApi(mockAuthClient);
+      const res = await profileApi.createInterest({
+        name: 'Cyberpunk Edgerunners',
+        category: 'Anime',
+      });
+
+      expect(mockRequest).toHaveBeenCalledWith('/v1/interests', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Cyberpunk Edgerunners',
+          category: 'Anime',
+        }),
+      });
+      expect(res.id).toBe('0192e123-4567-789a-bcde-f0123456789a');
+      expect(res.name).toBe('Cyberpunk Edgerunners');
+    });
+  });
 });
+

@@ -49,8 +49,10 @@ import {
   Compass,
   Mic,
   Flame,
+  Globe,
 } from 'lucide-react-native';
 import type { InterestItem } from '@platform/api-contracts';
+import { generateUuidV7 } from '@platform/domain';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
@@ -73,6 +75,80 @@ export const cleanInterestName = (name: string): string => {
     )
     .replace(/[\uFE00-\uFE0F\u200D]/g, '')
     .trim();
+};
+
+// ============================================================================
+// Internet / Web Passion Suggestions Resolver
+// Leverages Wikipedia OpenSearch & DuckDuckGo APIs to discover real entities
+// across movies, anime, music, books, cuisine, sports, and culture.
+// ============================================================================
+
+export const fetchInternetPassionSuggestions = async (
+  query: string,
+  _categoryHint?: string,
+  signal?: AbortSignal
+): Promise<string[]> => {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+
+  // 1. Try Wikipedia OpenSearch first (accurate, structured real-world pop culture entities)
+  try {
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(
+      trimmed
+    )}&limit=6&namespace=0&format=json`;
+
+    const res = await fetch(searchUrl, {
+      signal,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && Array.isArray(data[1])) {
+        const rawTitles: string[] = data[1];
+        const cleanedTitles = rawTitles
+          .map((t) =>
+            cleanInterestName(
+              t
+                .replace(/\s*\([^)]*\)$/, '') // Strip trailing parenthetical disambiguations like (film), (TV series)
+                .trim()
+            )
+          )
+          .filter((t) => t.length >= 2 && t.length <= 60);
+
+        // Deduplicate while preserving order
+        const unique = Array.from(new Set(cleanedTitles));
+        if (unique.length > 0) {
+          return unique.slice(0, 5);
+        }
+      }
+    }
+  } catch (_err: unknown) {
+    if (signal?.aborted) return [];
+  }
+
+  // 2. Fallback to DuckDuckGo autocomplete if Wikipedia yielded no results
+  try {
+    const ddgUrl = `https://duckduckgo.com/ac/?q=${encodeURIComponent(trimmed)}&type=list`;
+    const res = await fetch(ddgUrl, { signal });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && Array.isArray(data[1])) {
+        const rawItems: string[] = data[1];
+        const cleaned = rawItems
+          .map((t) => cleanInterestName(t.trim()))
+          .filter((t) => t.length >= 2 && t.length <= 60);
+        const unique = Array.from(new Set(cleaned));
+        return unique.slice(0, 5);
+      }
+    }
+  } catch {
+    // If offline or aborted, return empty list gracefully
+  }
+
+  return [];
 };
 
 // ============================================================================
@@ -1342,6 +1418,9 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryModal, setSelectedCategoryModal] = useState<string | null>(null);
   const [categorySearchText, setCategorySearchText] = useState('');
+  const [internetSuggestions, setInternetSuggestions] = useState<string[]>([]);
+  const [isSearchingInternet, setIsSearchingInternet] = useState(false);
+  const [isSavingInterest, setIsSavingInterest] = useState(false);
 
   // Ensure no passions are selected by default on initial entry
   useEffect(() => {
@@ -1378,6 +1457,51 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     }));
   }, [availableInterests]);
 
+  // Debounced internet suggestions query when searching inside the category modal
+  useEffect(() => {
+    const trimmed = categorySearchText.trim();
+    if (trimmed.length < 2) {
+      setInternetSuggestions([]);
+      setIsSearchingInternet(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setIsSearchingInternet(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const results = await fetchInternetPassionSuggestions(
+          trimmed,
+          selectedCategoryModal || undefined,
+          controller.signal
+        );
+
+        if (!controller.signal.aborted) {
+          // Filter out results that are already in the taxonomy
+          const filtered = results.filter((title) => {
+            const titleLower = title.toLowerCase();
+            return !sanitizedTaxonomy.some((item) => item.name.toLowerCase() === titleLower);
+          });
+          setInternetSuggestions(filtered);
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setInternetSuggestions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSearchingInternet(false);
+        }
+      }
+    }, 280);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [categorySearchText, selectedCategoryModal, sanitizedTaxonomy]);
+
   // Distinct category list for cards
   const categoryCards = useMemo(() => {
     return Array.from(new Set(sanitizedTaxonomy.map((item) => item.category || 'General')));
@@ -1400,6 +1524,13 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     const trimmed = categorySearchText.trim().toLowerCase();
     if (!trimmed) return modalCategoryItems;
     return modalCategoryItems.filter((item) => item.name.toLowerCase().includes(trimmed));
+  }, [modalCategoryItems, categorySearchText]);
+
+  // Check if current category search query exactly matches an existing passion in this category
+  const hasCategoryExactMatch = useMemo(() => {
+    const trimmed = categorySearchText.trim().toLowerCase();
+    if (!trimmed) return false;
+    return modalCategoryItems.some((item) => item.name.toLowerCase() === trimmed);
   }, [modalCategoryItems, categorySearchText]);
 
   // Filtered interests when actively typing in the search bar
@@ -1453,8 +1584,8 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     }
   };
 
-  // Add custom passion searched by user (No restrictions, fully flexible)
-  const handleAddCustomPassion = (rawName: string) => {
+  // Add custom or community-sourced passion: saves permanently in the DB and selects it
+  const handleCreateAndSelectInterest = async (rawName: string, category: string) => {
     const cleaned = cleanInterestName(rawName).trim();
     if (!cleaned) return;
 
@@ -1472,25 +1603,57 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
         haptics.selection();
         toggleDraftInterest(existing.id);
       }
-    } else {
-      const customId = `custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const customSlug = cleaned
+      setCategorySearchText('');
+      setInternetSuggestions([]);
+      if (errorMessage) setErrorMessage(undefined);
+      return;
+    }
+
+    setIsSavingInterest(true);
+    haptics.impactMedium();
+
+    try {
+      // 1. Permanently persist in the database
+      const created = await profileApi.createInterest({
+        name: cleaned,
+        category,
+      });
+
+      // 2. Add to available interests & select
+      setAvailableInterests((prev) => [created, ...prev.filter((i) => i.id !== created.id)]);
+      toggleDraftInterest(created.id);
+      haptics.notificationSuccess();
+      trackOnboardingEvent('interest_selected', {
+        interestId: created.id,
+      });
+    } catch {
+      // Offline fallback: create local with valid UUIDv7 so app flow continues smoothly
+      const fallbackId = generateUuidV7();
+      const fallbackSlug = cleaned
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
-      const customItem: InterestItem = {
-        id: customId,
+      const fallbackItem: InterestItem = {
+        id: fallbackId,
         name: cleaned,
-        slug: customSlug,
-        category: 'Custom & Personal',
+        slug: fallbackSlug || 'custom-passion',
+        category,
       };
-      setAvailableInterests((prev) => [customItem, ...prev]);
-      toggleDraftInterest(customId);
+      setAvailableInterests((prev) => [fallbackItem, ...prev]);
+      toggleDraftInterest(fallbackId);
       haptics.notificationSuccess();
+    } finally {
+      setIsSavingInterest(false);
+      setCategorySearchText('');
+      setInternetSuggestions([]);
+      if (errorMessage) setErrorMessage(undefined);
     }
+  };
 
+  // Add custom passion searched from the main search bar
+  const handleAddCustomPassion = (rawName: string) => {
+    handleCreateAndSelectInterest(rawName, 'Custom & Personal');
     setSearchQuery('');
-    if (errorMessage) setErrorMessage(undefined);
   };
 
   const handleBack = () => {
@@ -2302,21 +2465,40 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
           <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
           <TextInput
             style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
-            placeholder={`Search in ${selectedCategoryModal || 'category'}...`}
+            placeholder={`Search in ${selectedCategoryModal || 'category'} or web...`}
             placeholderTextColor={theme.colors.textTertiary}
             value={categorySearchText}
             onChangeText={setCategorySearchText}
-            autoCapitalize="none"
+            autoCapitalize="words"
             autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              if (
+                categorySearchText.trim().length >= 2 &&
+                selectedCategoryModal &&
+                !hasCategoryExactMatch
+              ) {
+                handleCreateAndSelectInterest(categorySearchText.trim(), selectedCategoryModal);
+              }
+            }}
           />
-          {categorySearchText.length > 0 && (
+          {isSearchingInternet ? (
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.textTertiary}
+              style={{ marginRight: 4 }}
+            />
+          ) : categorySearchText.length > 0 ? (
             <TouchableOpacity
-              onPress={() => setCategorySearchText('')}
+              onPress={() => {
+                setCategorySearchText('');
+                setInternetSuggestions([]);
+              }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <X size={15} color={theme.colors.textTertiary} />
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
 
         {/* Passions Scroll Area */}
@@ -2326,79 +2508,355 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.modalChipsGrid}>
-            {filteredModalCategoryItems.map((item) => {
-              const isSelected = draftInterests.includes(item.id);
-              const PassionIcon = getInterestIcon(item);
+          {categorySearchText.trim().length > 0 ? (
+            /* Search / Suggestion Mode inside category modal */
+            <View>
+              {/* 1. In-Category Curated Matches */}
+              {filteredModalCategoryItems.length > 0 && (
+                <View style={{ marginBottom: 14 }}>
+                  <View style={styles.modalSubSectionHeader}>
+                    <Text
+                      style={[
+                        styles.modalSubSectionTitle,
+                        { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                      ]}
+                    >
+                      {`IN ${selectedCategoryModal?.toUpperCase() || 'CATEGORY'}`}
+                    </Text>
+                    <Text
+                      style={[styles.modalSubSectionCount, { color: theme.colors.textTertiary }]}
+                    >
+                      {`${filteredModalCategoryItems.length} found`}
+                    </Text>
+                  </View>
+                  <View style={styles.modalChipsGrid}>
+                    {filteredModalCategoryItems.map((item) => {
+                      const isSelected = draftInterests.includes(item.id);
+                      const PassionIcon = getInterestIcon(item);
 
-              return (
-                <TouchableOpacity
-                  key={`modal-${item.id}`}
-                  onPress={() => handleToggle(item.id)}
-                  style={[
-                    styles.passionCard,
-                    {
-                      backgroundColor: isSelected
-                        ? isDark
-                          ? '#FFFFFF'
-                          : '#121216'
-                        : isDark
-                          ? 'rgba(255, 255, 255, 0.06)'
-                          : '#F4F4F6',
-                      borderColor: isSelected
-                        ? isDark
-                          ? '#FFFFFF'
-                          : '#121216'
-                        : isDark
-                          ? 'rgba(255, 255, 255, 0.09)'
-                          : '#E4E4E7',
-                    },
-                  ]}
-                  activeOpacity={0.82}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isSelected }}
-                  accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
-                >
-                  <View
+                      return (
+                        <TouchableOpacity
+                          key={`modal-${item.id}`}
+                          onPress={() => handleToggle(item.id)}
+                          style={[
+                            styles.passionCard,
+                            {
+                              backgroundColor: isSelected
+                                ? isDark
+                                  ? '#FFFFFF'
+                                  : '#121216'
+                                : isDark
+                                  ? 'rgba(255, 255, 255, 0.06)'
+                                  : '#F4F4F6',
+                              borderColor: isSelected
+                                ? isDark
+                                  ? '#FFFFFF'
+                                  : '#121216'
+                                : isDark
+                                  ? 'rgba(255, 255, 255, 0.09)'
+                                  : '#E4E4E7',
+                            },
+                          ]}
+                          activeOpacity={0.82}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: isSelected }}
+                          accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
+                        >
+                          <View
+                            style={[
+                              styles.passionIconCircle,
+                              {
+                                backgroundColor: isSelected
+                                  ? isDark
+                                    ? '#0B0B0E'
+                                    : '#FFFFFF'
+                                  : isDark
+                                    ? 'rgba(255, 255, 255, 0.06)'
+                                    : '#FFFFFF',
+                              },
+                            ]}
+                          >
+                            {isSelected ? (
+                              <Check
+                                size={12}
+                                color={isDark ? '#FFFFFF' : '#0B0B0E'}
+                                strokeWidth={2.8}
+                              />
+                            ) : (
+                              <PassionIcon size={12.5} color={theme.colors.textSecondary} />
+                            )}
+                          </View>
+
+                          <Text
+                            style={[
+                              styles.passionCardTitle,
+                              {
+                                color: isSelected
+                                  ? isDark
+                                    ? '#0B0B0E'
+                                    : '#FFFFFF'
+                                  : theme.colors.textPrimary,
+                              },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {item.name}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+
+              {/* 2. Web Suggestions from the Internet */}
+              {internetSuggestions.length > 0 && (
+                <View style={{ marginBottom: 14 }}>
+                  <View style={styles.modalSubSectionHeader}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Globe
+                        size={12.5}
+                        color={theme.colors.textSecondary}
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text
+                        style={[
+                          styles.modalSubSectionTitle,
+                          { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                        ]}
+                      >
+                        SUGGESTIONS FROM WEB
+                      </Text>
+                    </View>
+                    <Text
+                      style={[styles.modalSubSectionCount, { color: theme.colors.textTertiary }]}
+                    >
+                      Tap to add & select
+                    </Text>
+                  </View>
+
+                  <View style={styles.modalChipsGrid}>
+                    {internetSuggestions.map((suggestion) => (
+                      <TouchableOpacity
+                        key={`web-sugg-${suggestion}`}
+                        onPress={() => {
+                          if (selectedCategoryModal) {
+                            handleCreateAndSelectInterest(suggestion, selectedCategoryModal);
+                          }
+                        }}
+                        disabled={isSavingInterest}
+                        style={[
+                          styles.webSuggestionCard,
+                          {
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E4E4E7',
+                          },
+                        ]}
+                        activeOpacity={0.78}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Add ${suggestion} from web to ${selectedCategoryModal}`}
+                      >
+                        <View
+                          style={[
+                            styles.webSuggestionIconWrap,
+                            {
+                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#F4F4F6',
+                            },
+                          ]}
+                        >
+                          <Sparkles size={12} color={theme.colors.textPrimary} />
+                        </View>
+                        <Text
+                          style={[styles.webSuggestionText, { color: theme.colors.textPrimary }]}
+                          numberOfLines={1}
+                        >
+                          {suggestion}
+                        </Text>
+                        <View
+                          style={[
+                            styles.webSuggestionPill,
+                            {
+                              backgroundColor: isDark
+                                ? 'rgba(255, 255, 255, 0.12)'
+                                : 'rgba(0, 0, 0, 0.06)',
+                            },
+                          ]}
+                        >
+                          <Plus
+                            size={11}
+                            color={theme.colors.textPrimary}
+                            strokeWidth={2.5}
+                            style={{ marginRight: 3 }}
+                          />
+                          <Text
+                            style={[
+                              styles.webSuggestionPillText,
+                              { color: theme.colors.textPrimary },
+                            ]}
+                          >
+                            Add
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {/* 3. Ask user to add if not in catalog / internet */}
+              {!hasCategoryExactMatch &&
+                categorySearchText.trim().length >= 2 &&
+                selectedCategoryModal && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleCreateAndSelectInterest(
+                        categorySearchText.trim(),
+                        selectedCategoryModal
+                      )
+                    }
+                    disabled={isSavingInterest}
                     style={[
-                      styles.passionIconCircle,
+                      styles.modalAddCustomCard,
+                      {
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F4F4F6',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7',
+                      },
+                    ]}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add ${categorySearchText.trim()} to ${selectedCategoryModal}`}
+                  >
+                    <View
+                      style={[
+                        styles.modalAddCustomIconBadge,
+                        { backgroundColor: isDark ? '#FFFFFF' : '#121216' },
+                      ]}
+                    >
+                      <Plus size={14} color={isDark ? '#000000' : '#FFFFFF'} strokeWidth={3} />
+                    </View>
+                    <View style={{ flex: 1, marginRight: 10 }}>
+                      <Text
+                        style={[styles.modalAddCustomTitle, { color: theme.colors.textPrimary }]}
+                        numberOfLines={1}
+                      >
+                        {`Add "${cleanInterestName(categorySearchText.trim())}"`}
+                      </Text>
+                      <Text
+                        style={[styles.modalAddCustomSub, { color: theme.colors.textTertiary }]}
+                      >
+                        {internetSuggestions.length === 0 && !isSearchingInternet
+                          ? `Not found on web? Add permanently to ${selectedCategoryModal} database & select`
+                          : `Add permanently to ${selectedCategoryModal} database & select`}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.modalAddCustomPill,
+                        { backgroundColor: isDark ? '#FFFFFF' : '#121216' },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.modalAddCustomPillText,
+                          { color: isDark ? '#000000' : '#FFFFFF' },
+                        ]}
+                      >
+                        Add & Select
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+
+              {/* 4. Empty Fallback State when zero results anywhere */}
+              {filteredModalCategoryItems.length === 0 &&
+                internetSuggestions.length === 0 &&
+                !isSearchingInternet &&
+                categorySearchText.trim().length >= 2 && (
+                  <View style={styles.modalEmptyNotice}>
+                    <Text
+                      style={[styles.modalEmptyNoticeText, { color: theme.colors.textTertiary }]}
+                    >
+                      {`No pre-existing catalog or web matches found. Tap "Add & Select" above to save "${cleanInterestName(categorySearchText.trim())}" permanently to our ${selectedCategoryModal} database!`}
+                    </Text>
+                  </View>
+                )}
+            </View>
+          ) : (
+            /* Standard Curated Passions Grid */
+            <View style={styles.modalChipsGrid}>
+              {modalCategoryItems.map((item) => {
+                const isSelected = draftInterests.includes(item.id);
+                const PassionIcon = getInterestIcon(item);
+
+                return (
+                  <TouchableOpacity
+                    key={`modal-${item.id}`}
+                    onPress={() => handleToggle(item.id)}
+                    style={[
+                      styles.passionCard,
                       {
                         backgroundColor: isSelected
                           ? isDark
-                            ? '#0B0B0E'
-                            : '#FFFFFF'
+                            ? '#FFFFFF'
+                            : '#121216'
                           : isDark
                             ? 'rgba(255, 255, 255, 0.06)'
-                            : '#FFFFFF',
-                      },
-                    ]}
-                  >
-                    {isSelected ? (
-                      <Check size={12} color={isDark ? '#FFFFFF' : '#0B0B0E'} strokeWidth={2.8} />
-                    ) : (
-                      <PassionIcon size={12.5} color={theme.colors.textSecondary} />
-                    )}
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.passionCardTitle,
-                      {
-                        color: isSelected
+                            : '#F4F4F6',
+                        borderColor: isSelected
                           ? isDark
-                            ? '#0B0B0E'
-                            : '#FFFFFF'
-                          : theme.colors.textPrimary,
+                            ? '#FFFFFF'
+                            : '#121216'
+                          : isDark
+                            ? 'rgba(255, 255, 255, 0.09)'
+                            : '#E4E4E7',
                       },
                     ]}
-                    numberOfLines={1}
+                    activeOpacity={0.82}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isSelected }}
+                    accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
                   >
-                    {item.name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                    <View
+                      style={[
+                        styles.passionIconCircle,
+                        {
+                          backgroundColor: isSelected
+                            ? isDark
+                              ? '#0B0B0E'
+                              : '#FFFFFF'
+                            : isDark
+                              ? 'rgba(255, 255, 255, 0.06)'
+                              : '#FFFFFF',
+                        },
+                      ]}
+                    >
+                      {isSelected ? (
+                        <Check size={12} color={isDark ? '#FFFFFF' : '#0B0B0E'} strokeWidth={2.8} />
+                      ) : (
+                        <PassionIcon size={12.5} color={theme.colors.textSecondary} />
+                      )}
+                    </View>
+
+                    <Text
+                      style={[
+                        styles.passionCardTitle,
+                        {
+                          color: isSelected
+                            ? isDark
+                              ? '#0B0B0E'
+                              : '#FFFFFF'
+                            : theme.colors.textPrimary,
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </ScrollView>
 
         {/* Confirm / Done Button */}
@@ -2791,6 +3249,112 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     alignItems: 'center',
+  },
+  modalSubSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    marginBottom: 8,
+  },
+  modalSubSectionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  modalSubSectionCount: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  webSuggestionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 8,
+    paddingRight: 10,
+    paddingVertical: 6,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  webSuggestionIconWrap: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  webSuggestionText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+    marginRight: 8,
+  },
+  webSuggestionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 10,
+  },
+  webSuggestionPillText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  modalAddCustomCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginVertical: 10,
+  },
+  modalAddCustomIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  modalAddCustomTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    letterSpacing: -0.1,
+    marginBottom: 2,
+  },
+  modalAddCustomSub: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  modalAddCustomPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalAddCustomPillText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  modalEmptyNotice: {
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+  },
+  modalEmptyNoticeText: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 17,
   },
   confirmCustomButton: {
     height: 46,

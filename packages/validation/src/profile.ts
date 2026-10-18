@@ -248,6 +248,20 @@ export const updateInterestsSchema = z.object({
     .max(10, 'Maximum 10 interests allowed'),
 });
 
+export const createInterestSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Passion name must be at least 2 characters')
+    .max(64, 'Passion name cannot exceed 64 characters'),
+  category: z
+    .string()
+    .trim()
+    .min(2, 'Category name must be at least 2 characters')
+    .max(64, 'Category name cannot exceed 64 characters'),
+});
+export type CreateInterestInput = z.infer<typeof createInterestSchema>;
+
 export const updatePromptsSchema = z.object({
   prompts: z
     .array(

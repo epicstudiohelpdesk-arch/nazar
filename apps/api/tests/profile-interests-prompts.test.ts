@@ -49,6 +49,25 @@ describe('Profile: Curated Interests & Prompts Taxonomy & User Selections', () =
     expect(res.body.data[0]).toHaveProperty('category');
   });
 
+  it('allows adding community-sourced custom passion publicly via POST /v1/interests', async () => {
+    const customName = `Neon Cyberpunk ${generateUuidV7().slice(0, 6)}`;
+    const postRes = await request(app.getHttpServer())
+      .post('/v1/interests')
+      .send({ name: customName, category: 'Anime' });
+
+    expect(postRes.status).toBe(201);
+    expect(postRes.body.success).toBe(true);
+    expect(postRes.body.data).toHaveProperty('id');
+    expect(postRes.body.data.name).toBe(customName);
+    expect(postRes.body.data.category).toBe('Anime');
+
+    // Confirm it appears in GET /v1/interests
+    const listRes = await request(app.getHttpServer()).get('/v1/interests');
+    const match = listRes.body.data.find((i: any) => i.id === postRes.body.data.id);
+    expect(match).toBeDefined();
+    expect(match.name).toBe(customName);
+  });
+
   it('lists curated dating prompt definitions publicly via GET /v1/prompts', async () => {
     const res = await request(app.getHttpServer()).get('/v1/prompts');
 

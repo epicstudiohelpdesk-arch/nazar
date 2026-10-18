@@ -104,6 +104,11 @@ export interface InterestItem {
   readonly category: string;
 }
 
+export interface CreateInterestPayload {
+  readonly name: string;
+  readonly category: string;
+}
+
 export interface UpdateInterestsPayload {
   readonly interestIds: readonly string[];
 }

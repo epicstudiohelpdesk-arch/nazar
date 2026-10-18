@@ -4,6 +4,7 @@ import type {
   PreferencesResponse,
   UpdatePreferencesPayload,
   InterestItem,
+  CreateInterestPayload,
   UpdateInterestsPayload,
   PromptDefinitionItem,
   ProfilePromptItem,
@@ -127,6 +128,15 @@ export function createProfileApi(authClient: AuthClient, customFetch?: typeof fe
     // ----------------------------------------------------
     async getInterestsTaxonomy(): Promise<InterestItem[]> {
       const res = await authClient.request<InterestItem[]>('/v1/interests');
+      if (!res.success) throw new Error(res.error.message);
+      return res.data;
+    },
+
+    async createInterest(payload: CreateInterestPayload): Promise<InterestItem> {
+      const res = await authClient.request<InterestItem>('/v1/interests', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
       if (!res.success) throw new Error(res.error.message);
       return res.data;
     },
