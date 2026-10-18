@@ -2131,9 +2131,9 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                 >
                   {count < 3
                     ? count === 0
-                      ? 'SELECT AT LEAST 3 PASSIONS (0/3)'
-                      : `SELECT ${3 - count} MORE PASSION${3 - count > 1 ? 'S' : ''} (${count}/3)`
-                    : `CONTINUE (${count} SELECTED)`}
+                      ? 'Select at least 3 passions (0/3)'
+                      : `Select ${3 - count} more passion${3 - count > 1 ? 's' : ''} (${count}/3)`
+                    : `Continue to Prompts (${count} selected)`}
                 </Text>
                 {isMinimumMet && (
                   <ArrowRight
