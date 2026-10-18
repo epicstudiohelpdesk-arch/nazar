@@ -7,12 +7,12 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
-  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SmoothBottomSheetModal } from '../../src/design/components/modal/SmoothBottomSheetModal.js';
 import {
   ArrowLeft,
   ArrowRight,
@@ -422,6 +422,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryModal, setSelectedCategoryModal] = useState<string | null>(null);
+  const [categorySearchText, setCategorySearchText] = useState('');
 
   // Ensure no passions are selected by default on initial entry
   useEffect(() => {
@@ -474,6 +475,13 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
   const modalCategorySelectedCount = useMemo(() => {
     return modalCategoryItems.filter((item) => draftInterests.includes(item.id)).length;
   }, [modalCategoryItems, draftInterests]);
+
+  // Filtered passions inside the modal when searching in-category
+  const filteredModalCategoryItems = useMemo(() => {
+    const trimmed = categorySearchText.trim().toLowerCase();
+    if (!trimmed) return modalCategoryItems;
+    return modalCategoryItems.filter((item) => item.name.toLowerCase().includes(trimmed));
+  }, [modalCategoryItems, categorySearchText]);
 
   // Filtered interests when actively typing in the search bar
   const searchResults = useMemo(() => {
@@ -1318,218 +1326,198 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
       </View>
 
       {/* ======================================================== */}
-      {/* Category Passions Modal Sheet                            */}
+      {/* Category Passions Bottom Sheet Modal (Basics Page Style)  */}
       {/* ======================================================== */}
-      <Modal
+      <SmoothBottomSheetModal
         visible={!!selectedCategoryModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setSelectedCategoryModal(null)}
-        statusBarTranslucent
+        onClose={() => {
+          setSelectedCategoryModal(null);
+          setCategorySearchText('');
+        }}
+        sheetStyle={{ maxHeight: '86%' }}
+        showHandle={true}
       >
-        <View style={styles.modalBackdrop}>
+        {/* Modal Header */}
+        <View style={styles.modalHeader}>
+          <View style={{ flex: 1, paddingRight: 8 }}>
+            <Text
+              style={[
+                styles.modalTitle,
+                { color: theme.colors.textPrimary, fontFamily: folkraFont },
+              ]}
+            >
+              {selectedCategoryModal || ''}
+            </Text>
+            <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
+              {modalCategorySelectedCount > 0
+                ? `${modalCategorySelectedCount} selected • ${modalCategoryItems.length} curated passions`
+                : `${modalCategoryItems.length} curated passions • select what resonates with you`}
+            </Text>
+          </View>
           <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={() => setSelectedCategoryModal(null)}
-            accessibilityRole="button"
-            accessibilityLabel="Dismiss category modal"
-          />
-          <View
+            onPress={() => {
+              haptics.selection();
+              setSelectedCategoryModal(null);
+              setCategorySearchText('');
+            }}
             style={[
-              styles.modalSheetContainer,
+              styles.modalCloseBtn,
               {
-                backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                paddingBottom: Math.max(insets.bottom + 16, 24),
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
               },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel="Close category modal"
           >
-            {/* Top Drag Handle */}
-            <View
-              style={[
-                styles.modalDragHandle,
-                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)' },
-              ]}
-            />
+            <X size={16} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
 
-            {/* Modal Header */}
-            <View style={styles.modalHeaderRow}>
-              <View style={styles.modalHeaderInfo}>
-                <View
+        {/* Search Bar Facility */}
+        <View
+          style={[
+            styles.modalSearchContainer,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F4F4F6',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
+            },
+          ]}
+        >
+          <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          <TextInput
+            style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
+            placeholder={`Search in ${selectedCategoryModal || 'category'}...`}
+            placeholderTextColor={theme.colors.textTertiary}
+            value={categorySearchText}
+            onChangeText={setCategorySearchText}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {categorySearchText.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setCategorySearchText('')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={15} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Passions Scroll Area */}
+        <ScrollView
+          style={{ maxHeight: 380 }}
+          contentContainerStyle={styles.modalScrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.modalChipsGrid}>
+            {filteredModalCategoryItems.map((item) => {
+              const isSelected = draftInterests.includes(item.id);
+              const PassionIcon = getInterestIcon(item);
+
+              return (
+                <TouchableOpacity
+                  key={`modal-${item.id}`}
+                  onPress={() => handleToggle(item.id)}
                   style={[
-                    styles.modalCategoryIconBadge,
+                    styles.passionCard,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F4F4F6',
+                      backgroundColor: isSelected
+                        ? isDark
+                          ? '#FFFFFF'
+                          : '#121216'
+                        : isDark
+                          ? 'rgba(255, 255, 255, 0.06)'
+                          : '#F4F4F6',
+                      borderColor: isSelected
+                        ? isDark
+                          ? '#FFFFFF'
+                          : '#121216'
+                        : isDark
+                          ? 'rgba(255, 255, 255, 0.09)'
+                          : '#E4E4E7',
                     },
                   ]}
+                  activeOpacity={0.82}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isSelected }}
+                  accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
                 >
-                  {selectedCategoryModal &&
-                    React.createElement(getCategoryIcon(selectedCategoryModal), {
-                      size: 20,
-                      color: theme.colors.textPrimary,
-                      strokeWidth: 2,
-                    })}
-                </View>
-                <View style={styles.modalHeaderTitles}>
-                  <Heading
-                    level="h3"
+                  <View
                     style={[
-                      styles.modalHeaderHeading,
-                      { fontFamily: folkraFont, color: theme.colors.textPrimary },
+                      styles.passionIconCircle,
+                      {
+                        backgroundColor: isSelected
+                          ? isDark
+                            ? '#0B0B0E'
+                            : '#FFFFFF'
+                          : isDark
+                            ? 'rgba(255, 255, 255, 0.06)'
+                            : '#FFFFFF',
+                      },
                     ]}
                   >
-                    {selectedCategoryModal?.toUpperCase() || ''}
-                  </Heading>
-                  <Text style={[styles.modalHeaderSubtext, { color: theme.colors.textSecondary }]}>
-                    {modalCategorySelectedCount > 0
-                      ? `${modalCategorySelectedCount} selected • ${modalCategoryItems.length} curated passions`
-                      : `${modalCategoryItems.length} curated passions • tap to select`}
+                    {isSelected ? (
+                      <Check size={12} color={isDark ? '#FFFFFF' : '#0B0B0E'} strokeWidth={2.8} />
+                    ) : (
+                      <PassionIcon size={12.5} color={theme.colors.textSecondary} />
+                    )}
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.passionCardTitle,
+                      {
+                        color: isSelected
+                          ? isDark
+                            ? '#0B0B0E'
+                            : '#FFFFFF'
+                          : theme.colors.textPrimary,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {item.name}
                   </Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                onPress={() => {
-                  haptics.impactLight();
-                  setSelectedCategoryModal(null);
-                }}
-                style={[
-                  styles.modalCloseCircle,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F4F4F6',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E4E4E7',
-                  },
-                ]}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                accessibilityLabel="Close category modal"
-              >
-                <X size={16} color={theme.colors.textPrimary} strokeWidth={2.4} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Passions in this Category */}
-            <ScrollView
-              style={styles.modalScrollView}
-              contentContainerStyle={styles.modalScrollContent}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
-              <View style={styles.modalChipsGrid}>
-                {modalCategoryItems.map((item) => {
-                  const isSelected = draftInterests.includes(item.id);
-                  const PassionIcon = getInterestIcon(item);
-
-                  return (
-                    <TouchableOpacity
-                      key={`modal-${item.id}`}
-                      onPress={() => handleToggle(item.id)}
-                      style={[
-                        styles.passionCard,
-                        {
-                          backgroundColor: isSelected
-                            ? isDark
-                              ? '#FFFFFF'
-                              : '#121216'
-                            : isDark
-                              ? '#18181E'
-                              : '#FFFFFF',
-                          borderColor: isSelected
-                            ? isDark
-                              ? '#FFFFFF'
-                              : '#121216'
-                            : isDark
-                              ? 'rgba(255, 255, 255, 0.09)'
-                              : '#E4E4E7',
-                        },
-                      ]}
-                      activeOpacity={0.82}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: isSelected }}
-                      accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
-                    >
-                      <View
-                        style={[
-                          styles.passionIconCircle,
-                          {
-                            backgroundColor: isSelected
-                              ? isDark
-                                ? '#0B0B0E'
-                                : '#FFFFFF'
-                              : isDark
-                                ? 'rgba(255, 255, 255, 0.06)'
-                                : '#F4F4F6',
-                          },
-                        ]}
-                      >
-                        {isSelected ? (
-                          <Check
-                            size={12}
-                            color={isDark ? '#FFFFFF' : '#0B0B0E'}
-                            strokeWidth={2.8}
-                          />
-                        ) : (
-                          <PassionIcon size={12.5} color={theme.colors.textSecondary} />
-                        )}
-                      </View>
-
-                      <Text
-                        style={[
-                          styles.passionCardTitle,
-                          {
-                            color: isSelected
-                              ? isDark
-                                ? '#0B0B0E'
-                                : '#FFFFFF'
-                              : theme.colors.textPrimary,
-                          },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {item.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </ScrollView>
-
-            {/* Modal Bottom Done CTA */}
-            <View style={styles.modalFooterBar}>
-              <TouchableOpacity
-                onPress={() => {
-                  haptics.impactLight();
-                  setSelectedCategoryModal(null);
-                }}
-                style={[
-                  styles.modalDoneButton,
-                  {
-                    backgroundColor: isDark ? '#FFFFFF' : '#121216',
-                  },
-                ]}
-                activeOpacity={0.88}
-                accessibilityRole="button"
-                accessibilityLabel="Done selecting passions in this category"
-              >
-                <Text
-                  style={[
-                    styles.modalDoneButtonText,
-                    {
-                      color: isDark ? '#000000' : '#FFFFFF',
-                      fontFamily: folkraFont,
-                    },
-                  ]}
-                >
-                  {modalCategorySelectedCount > 0
-                    ? `DONE (${modalCategorySelectedCount} SELECTED)`
-                    : 'DONE'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        </View>
-      </Modal>
+        </ScrollView>
+
+        {/* Confirm / Done Button */}
+        <TouchableOpacity
+          style={[
+            styles.confirmCustomButton,
+            {
+              backgroundColor: theme.colors.textPrimary,
+              marginTop: 14,
+              marginBottom: 4,
+            },
+          ]}
+          onPress={() => {
+            haptics.notificationSuccess();
+            setSelectedCategoryModal(null);
+            setCategorySearchText('');
+          }}
+          activeOpacity={0.88}
+          accessibilityRole="button"
+          accessibilityLabel="Done selecting passions in this category"
+        >
+          <Text
+            style={{
+              color: isDark ? '#000000' : '#FFFFFF',
+              fontWeight: '700',
+              fontSize: 14.5,
+              fontFamily: folkraFont,
+            }}
+          >
+            {modalCategorySelectedCount > 0
+              ? `Done (${modalCategorySelectedCount} Selected)`
+              : 'Done'}
+          </Text>
+        </TouchableOpacity>
+      </SmoothBottomSheetModal>
     </View>
   );
 }
@@ -1843,78 +1831,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
   },
-  // Modal Sheet Styles
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
-    justifyContent: 'flex-end',
-  },
-  modalSheetContainer: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderTopWidth: 1.5,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    maxHeight: '82%',
-    minHeight: 380,
-    paddingTop: 12,
-    paddingHorizontal: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 20,
-  },
-  modalDragHandle: {
-    width: 38,
-    height: 4.5,
-    borderRadius: 2.5,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  modalHeaderRow: {
+  // Modal Sheet Styles (Matching Basics Page)
+  modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  modalHeaderInfo: {
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  modalCloseBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalSearchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    marginRight: 12,
-  },
-  modalCategoryIconBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  modalHeaderTitles: {
-    flex: 1,
-  },
-  modalHeaderHeading: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
-  modalHeaderSubtext: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  modalCloseCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    height: 44,
+    borderRadius: 11,
     borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 12,
+    marginBottom: 12,
   },
-  modalScrollView: {
-    flexGrow: 0,
-    marginBottom: 14,
+  modalSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 0,
   },
   modalScrollContent: {
     paddingVertical: 4,
@@ -1925,19 +1873,11 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: 'center',
   },
-  modalFooterBar: {
-    paddingTop: 8,
-  },
-  modalDoneButton: {
-    height: 52,
-    borderRadius: 14,
+  confirmCustomButton: {
+    height: 46,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  modalDoneButtonText: {
-    fontSize: 14.5,
-    fontWeight: '700',
-    letterSpacing: 0.5,
   },
   // Multi-option fluid side-by-side chip grid
   chipGrid: {
