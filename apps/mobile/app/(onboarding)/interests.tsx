@@ -48,6 +48,7 @@ import {
   Tv,
   Compass,
   Mic,
+  Flame,
 } from 'lucide-react-native';
 import type { InterestItem } from '@platform/api-contracts';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
@@ -215,9 +216,9 @@ const FALLBACK_INTERESTS: InterestItem[] = [
     category: 'Movies & Cinema',
   },
   {
-    id: 'int_53',
-    name: 'Anime & Studio Ghibli',
-    slug: 'anime-ghibli',
+    id: 'int_60',
+    name: 'Rom-Coms & Cozy Rewatches',
+    slug: 'rom-coms',
     category: 'Movies & Cinema',
   },
   {
@@ -364,7 +365,83 @@ const FALLBACK_INTERESTS: InterestItem[] = [
   },
 
   // --------------------------------------------------------------------------
-  // 4. Music & Audio
+  // 4. Anime
+  // --------------------------------------------------------------------------
+  {
+    id: 'int_53',
+    name: 'Studio Ghibli & Miyazaki',
+    slug: 'anime-ghibli',
+    category: 'Anime',
+  },
+  {
+    id: 'int_138',
+    name: 'Shonen & Action Anime',
+    slug: 'shonen-action-anime',
+    category: 'Anime',
+  },
+  {
+    id: 'int_139',
+    name: 'Attack on Titan & Dark Fantasy',
+    slug: 'aot-dark-fantasy',
+    category: 'Anime',
+  },
+  {
+    id: 'int_140',
+    name: 'Jujutsu Kaisen & Demon Slayer',
+    slug: 'jjk-demon-slayer',
+    category: 'Anime',
+  },
+  {
+    id: 'int_141',
+    name: 'Death Note & Mind Games',
+    slug: 'death-note-psychological',
+    category: 'Anime',
+  },
+  {
+    id: 'int_142',
+    name: 'Manga & Manhwa Readers',
+    slug: 'manga-manhwa-reading',
+    category: 'Anime',
+  },
+  {
+    id: 'int_143',
+    name: 'Slice of Life & Cozy Anime',
+    slug: 'slice-of-life-anime',
+    category: 'Anime',
+  },
+  {
+    id: 'int_144',
+    name: 'Makoto Shinkai & Coziness',
+    slug: 'makoto-shinkai-films',
+    category: 'Anime',
+  },
+  {
+    id: 'int_145',
+    name: 'Cyberpunk & Mecha Classics',
+    slug: 'cyberpunk-mecha-anime',
+    category: 'Anime',
+  },
+  {
+    id: 'int_146',
+    name: 'Anime Movie Nights & Marathons',
+    slug: 'anime-movie-nights',
+    category: 'Anime',
+  },
+  {
+    id: 'int_147',
+    name: 'Cosplay & Comic Con Vibes',
+    slug: 'cosplay-comic-con',
+    category: 'Anime',
+  },
+  {
+    id: 'int_148',
+    name: 'Anime Soundtracks & Openings',
+    slug: 'anime-ost-openings',
+    category: 'Anime',
+  },
+
+  // --------------------------------------------------------------------------
+  // 5. Music & Audio
   // --------------------------------------------------------------------------
   {
     id: 'int_123',
@@ -963,14 +1040,24 @@ const getInterestIcon = (item: {
   )
     return Tv;
   if (
-    key.includes('anime') ||
+    key.includes('shonen') ||
+    key.includes('titan') ||
+    key.includes('jujutsu') ||
+    key.includes('slayer')
+  )
+    return Flame;
+  if (
     key.includes('ghibli') ||
+    key.includes('miyazaki') ||
+    key.includes('cosplay') ||
+    key.includes('comic con') ||
     key.includes('potter') ||
     key.includes('hogwarts') ||
     key.includes('marvel') ||
     key.includes('dc')
   )
     return Sparkles;
+  if (key.includes('anime')) return Flame;
   if (key.includes('comedy') || key.includes('stand-up') || key.includes('roast')) return Mic;
   if (key.includes('horror') || key.includes('suspense') || key.includes('thriller'))
     return Clapperboard;
@@ -1160,6 +1247,7 @@ const getInterestIcon = (item: {
 
   // Fallbacks by category
   if (item.category?.toLowerCase().includes('food')) return UtensilsCrossed;
+  if (item.category?.toLowerCase().includes('anime')) return Flame;
   if (
     item.category?.toLowerCase().includes('movie') ||
     item.category?.toLowerCase().includes('cinema')
@@ -1201,6 +1289,7 @@ const getInterestIcon = (item: {
 const getCategoryIcon = (category: string): React.FC<any> => {
   const cat = category.toLowerCase();
   if (cat.includes('food') || cat.includes('drink')) return UtensilsCrossed;
+  if (cat.includes('anime')) return Flame;
   if (cat.includes('movie') || cat.includes('cinema') || cat.includes('film') || cat.includes('tv'))
     return Film;
   if (cat.includes('book') || cat.includes('read') || cat.includes('literature')) return BookOpen;
