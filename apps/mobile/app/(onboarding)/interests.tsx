@@ -1175,18 +1175,12 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                         style={[
                           styles.categoryCardSubtitle,
                           {
-                            color: hasSelections
-                              ? isDark
-                                ? '#FFFFFF'
-                                : '#121216'
-                              : theme.colors.textTertiary,
-                            fontWeight: hasSelections ? '700' : '500',
+                            color: theme.colors.textTertiary,
+                            fontWeight: '500',
                           },
                         ]}
                       >
-                        {hasSelections
-                          ? `${selectedCount} selected`
-                          : `${categoryItems.length} passions`}
+                        {`${categoryItems.length} passions`}
                       </Text>
                     </View>
                   </TouchableOpacity>
