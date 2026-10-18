@@ -7,6 +7,7 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,7 +44,6 @@ import {
   Dumbbell,
   Wine,
   Headphones,
-  Layers,
   AlertCircle,
 } from 'lucide-react-native';
 import type { InterestItem } from '@platform/api-contracts';
@@ -372,13 +372,12 @@ const getInterestIcon = (item: {
   return Sparkles;
 };
 
-// Category Icon Mapping for Filter Tabs
+// Category Icon Mapping for Cards and Modal
 const getCategoryIcon = (category: string): React.FC<any> => {
   const cat = category.toLowerCase();
-  if (cat === 'all') return Layers;
-  if (cat.includes('food')) return Coffee;
-  if (cat.includes('music')) return Music;
-  if (cat.includes('art')) return Palette;
+  if (cat.includes('food') || cat.includes('drink')) return UtensilsCrossed;
+  if (cat.includes('music') || cat.includes('sound')) return Headphones;
+  if (cat.includes('art') || cat.includes('culture')) return Palette;
   if (cat.includes('outdoor') || cat.includes('active')) return Mountain;
   if (cat.includes('lifestyle') || cat.includes('leisure')) return BookOpen;
   if (cat.includes('sport') || cat.includes('fitness')) return Trophy;
@@ -422,7 +421,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [selectedCategoryModal, setSelectedCategoryModal] = useState<string | null>(null);
 
   // Ensure no passions are selected by default on initial entry
   useEffect(() => {
@@ -459,28 +458,35 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     }));
   }, [availableInterests]);
 
-  // Distinct category list
-  const categories = useMemo(() => {
-    const cats = Array.from(new Set(sanitizedTaxonomy.map((item) => item.category || 'General')));
-    return ['All', ...cats];
+  // Distinct category list for cards
+  const categoryCards = useMemo(() => {
+    return Array.from(new Set(sanitizedTaxonomy.map((item) => item.category || 'General')));
   }, [sanitizedTaxonomy]);
 
-  // Filtered interests based on active tab and search query
-  const filteredInterests = useMemo(() => {
+  // Passions for the actively opened category modal
+  const modalCategoryItems = useMemo(() => {
+    if (!selectedCategoryModal) return [];
+    return sanitizedTaxonomy.filter(
+      (item) => (item.category || 'General') === selectedCategoryModal
+    );
+  }, [sanitizedTaxonomy, selectedCategoryModal]);
+
+  const modalCategorySelectedCount = useMemo(() => {
+    return modalCategoryItems.filter((item) => draftInterests.includes(item.id)).length;
+  }, [modalCategoryItems, draftInterests]);
+
+  // Filtered interests when actively typing in the search bar
+  const searchResults = useMemo(() => {
     const trimmed = searchQuery.trim().toLowerCase();
+    if (!trimmed) return [];
     return sanitizedTaxonomy.filter((item) => {
-      const matchesSearch =
-        trimmed === '' ||
+      return (
         item.name.toLowerCase().includes(trimmed) ||
         (item.slug && item.slug.toLowerCase().includes(trimmed)) ||
-        (item.category && item.category.toLowerCase().includes(trimmed));
-
-      const matchesCategory =
-        activeCategory === 'All' || (item.category || 'General') === activeCategory;
-
-      return matchesSearch && matchesCategory;
+        (item.category && item.category.toLowerCase().includes(trimmed))
+      );
     });
-  }, [sanitizedTaxonomy, searchQuery, activeCategory]);
+  }, [sanitizedTaxonomy, searchQuery]);
 
   // Check if current search query exactly matches an existing passion
   const hasExactSearchMatch = useMemo(() => {
@@ -914,427 +920,271 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
         )}
 
         {/* ======================================================== */}
-        {/* Horizontal Category Filter Pills (When not actively searching) */}
+        {/* Category Cards Grid (Rounded Squared Cards) OR Search Results */}
         {/* ======================================================== */}
-        {searchQuery.trim() === '' && (
-          <View style={styles.expandedCategoryPillsWrapper}>
-            {/* Left Soft Fade Mask */}
-            <LinearGradient
-              colors={
-                isDark
-                  ? ['#0B0B0E', 'rgba(11, 11, 14, 0.85)', 'rgba(11, 11, 14, 0.0)']
-                  : ['#FAFAFA', 'rgba(250, 250, 250, 0.85)', 'rgba(250, 250, 250, 0.0)']
-              }
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.fadeMaskLeft}
-              pointerEvents="none"
-            />
+        {searchQuery.trim() !== '' ? (
+          /* Active Search View */
+          searchResults.length === 0 ? (
+            <View style={styles.emptyStateContainer}>
+              <View
+                style={[
+                  styles.emptyStateIconCircle,
+                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
+                ]}
+              >
+                <Search size={20} color={theme.colors.textTertiary} />
+              </View>
+              <Text
+                style={[
+                  styles.emptyStateTitle,
+                  { color: theme.colors.textPrimary, fontFamily: folkraFont },
+                ]}
+              >
+                NO CATALOG RESULTS
+              </Text>
+              <Text style={[styles.emptyStateSubtitle, { color: theme.colors.textSecondary }]}>
+                {`No existing passion in our catalog matches "${searchQuery.trim()}". You can tap "Add" above to make it your own custom passion!`}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.searchSectionWrap}>
+              <View style={styles.sectionHeaderRow}>
+                <Text
+                  style={[
+                    styles.sectionHeading,
+                    { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                  ]}
+                >
+                  SEARCH RESULTS
+                </Text>
+                <Text style={[styles.sectionCountHint, { color: theme.colors.textTertiary }]}>
+                  {searchResults.length} matches
+                </Text>
+              </View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryPillsScroll}
-              style={styles.expandedHorizontalScroll}
-            >
-              {categories.map((category) => {
-                const isActive = activeCategory === category;
+              <View style={styles.chipGrid}>
+                {searchResults.map((item) => {
+                  const isSelected = draftInterests.includes(item.id);
+                  const PassionIcon = getInterestIcon(item);
+
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      onPress={() => handleToggle(item.id)}
+                      style={[
+                        styles.passionCard,
+                        {
+                          backgroundColor: isSelected
+                            ? isDark
+                              ? '#FFFFFF'
+                              : '#121216'
+                            : isDark
+                              ? '#121216'
+                              : '#FFFFFF',
+                          borderColor: isSelected
+                            ? isDark
+                              ? '#FFFFFF'
+                              : '#121216'
+                            : isDark
+                              ? 'rgba(255, 255, 255, 0.08)'
+                              : '#E4E4E7',
+                        },
+                      ]}
+                      activeOpacity={0.82}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isSelected }}
+                      accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
+                    >
+                      <View
+                        style={[
+                          styles.passionIconCircle,
+                          {
+                            backgroundColor: isSelected
+                              ? isDark
+                                ? '#0B0B0E'
+                                : '#FFFFFF'
+                              : isDark
+                                ? 'rgba(255, 255, 255, 0.06)'
+                                : '#F4F4F6',
+                          },
+                        ]}
+                      >
+                        {isSelected ? (
+                          <Check
+                            size={12}
+                            color={isDark ? '#FFFFFF' : '#0B0B0E'}
+                            strokeWidth={2.8}
+                          />
+                        ) : (
+                          <PassionIcon size={12.5} color={theme.colors.textSecondary} />
+                        )}
+                      </View>
+
+                      <Text
+                        style={[
+                          styles.passionCardTitle,
+                          {
+                            color: isSelected
+                              ? isDark
+                                ? '#0B0B0E'
+                                : '#FFFFFF'
+                              : theme.colors.textPrimary,
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )
+        ) : (
+          /* Default Category Cards View (Rounded Squared Cards with Icon in Middle & Text in Bottom) */
+          <View style={styles.categorySectionContainer}>
+            <View style={styles.sectionHeaderRow}>
+              <Text
+                style={[
+                  styles.sectionHeading,
+                  { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                ]}
+              >
+                CATEGORIES
+              </Text>
+              <Text style={[styles.sectionCountHint, { color: theme.colors.textTertiary }]}>
+                Tap to explore & select
+              </Text>
+            </View>
+
+            <View style={styles.categoryGrid}>
+              {categoryCards.map((category) => {
                 const CatIcon = getCategoryIcon(category);
-                const selectedCount =
-                  category === 'All' ? count : categorySelectedCounts[category] || 0;
+                const categoryItems = sanitizedTaxonomy.filter(
+                  (i) => (i.category || 'General') === category
+                );
+                const selectedCount = categorySelectedCounts[category] || 0;
+                const hasSelections = selectedCount > 0;
 
                 return (
                   <TouchableOpacity
-                    key={`cat-tab-${category}`}
+                    key={`cat-card-${category}`}
                     onPress={() => {
-                      haptics.selection();
-                      setActiveCategory(category);
+                      haptics.impactLight();
+                      setSelectedCategoryModal(category);
                     }}
                     style={[
-                      styles.categoryPill,
+                      styles.categoryCard,
                       {
-                        backgroundColor: isActive
-                          ? isDark
+                        backgroundColor: isDark
+                          ? hasSelections
+                            ? 'rgba(255, 255, 255, 0.06)'
+                            : 'rgba(255, 255, 255, 0.035)'
+                          : hasSelections
                             ? '#FFFFFF'
-                            : '#121216'
-                          : isDark
-                            ? 'rgba(255, 255, 255, 0.04)'
                             : '#FFFFFF',
-                        borderColor: isActive
+                        borderColor: hasSelections
                           ? isDark
-                            ? '#FFFFFF'
+                            ? 'rgba(255, 255, 255, 0.35)'
                             : '#121216'
                           : isDark
                             ? 'rgba(255, 255, 255, 0.08)'
                             : '#E4E4E7',
                       },
                     ]}
-                    activeOpacity={0.8}
-                    accessibilityRole="tab"
-                    accessibilityState={{ selected: isActive }}
+                    activeOpacity={0.78}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${category}, ${hasSelections ? `${selectedCount} selected` : `${categoryItems.length} passions`}`}
                   >
-                    <CatIcon
-                      size={12.5}
-                      color={
-                        isActive ? (isDark ? '#0B0B0E' : '#FFFFFF') : theme.colors.textSecondary
-                      }
-                      style={{ marginRight: 5 }}
-                    />
-                    <Text
-                      style={[
-                        styles.categoryPillText,
-                        {
-                          color: isActive
-                            ? isDark
-                              ? '#0B0B0E'
-                              : '#FFFFFF'
-                            : theme.colors.textPrimary,
-                          fontWeight: isActive ? '700' : '500',
-                        },
-                      ]}
-                    >
-                      {category}
-                    </Text>
-                    {selectedCount > 0 && (
+                    {/* Top-Right Badge showing count selected */}
+                    {hasSelections && (
                       <View
                         style={[
-                          styles.categoryPillBadge,
+                          styles.categoryCardTopBadge,
                           {
-                            backgroundColor: isActive
-                              ? isDark
-                                ? '#0B0B0E'
-                                : '#FFFFFF'
-                              : isDark
-                                ? 'rgba(255, 255, 255, 0.15)'
-                                : '#E4E4E7',
+                            backgroundColor: isDark ? '#FFFFFF' : '#121216',
                           },
                         ]}
                       >
+                        <Check size={9.5} color={isDark ? '#000000' : '#FFFFFF'} strokeWidth={3} />
                         <Text
                           style={[
-                            styles.categoryPillBadgeText,
-                            {
-                              color: isActive
-                                ? isDark
-                                  ? '#FFFFFF'
-                                  : '#121216'
-                                : theme.colors.textPrimary,
-                            },
+                            styles.categoryCardTopBadgeText,
+                            { color: isDark ? '#000000' : '#FFFFFF' },
                           ]}
                         >
                           {selectedCount}
                         </Text>
                       </View>
                     )}
+
+                    {/* Icon in the Middle */}
+                    <View
+                      style={[
+                        styles.categoryCardIconCircle,
+                        {
+                          backgroundColor: isDark
+                            ? hasSelections
+                              ? 'rgba(255, 255, 255, 0.12)'
+                              : 'rgba(255, 255, 255, 0.06)'
+                            : hasSelections
+                              ? 'rgba(0, 0, 0, 0.06)'
+                              : '#F4F4F6',
+                        },
+                      ]}
+                    >
+                      <CatIcon
+                        size={28}
+                        color={
+                          hasSelections
+                            ? isDark
+                              ? '#FFFFFF'
+                              : '#000000'
+                            : isDark
+                              ? '#E4E4E7'
+                              : '#27272A'
+                        }
+                        strokeWidth={1.9}
+                      />
+                    </View>
+
+                    {/* Text in the Bottom */}
+                    <View style={styles.categoryCardBottomWrap}>
+                      <Text
+                        style={[
+                          styles.categoryCardTitle,
+                          {
+                            color: theme.colors.textPrimary,
+                            fontFamily: folkraFont,
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {category}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.categoryCardSubtitle,
+                          {
+                            color: hasSelections
+                              ? isDark
+                                ? '#FFFFFF'
+                                : '#121216'
+                              : theme.colors.textTertiary,
+                            fontWeight: hasSelections ? '700' : '500',
+                          },
+                        ]}
+                      >
+                        {hasSelections
+                          ? `${selectedCount} selected`
+                          : `${categoryItems.length} passions`}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
-
-            {/* Right Soft Fade Mask */}
-            <LinearGradient
-              colors={
-                isDark
-                  ? ['rgba(11, 11, 14, 0.0)', 'rgba(11, 11, 14, 0.85)', '#0B0B0E']
-                  : ['rgba(250, 250, 250, 0.0)', 'rgba(250, 250, 250, 0.85)', '#FAFAFA']
-              }
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.fadeMaskRight}
-              pointerEvents="none"
-            />
-          </View>
-        )}
-
-        {/* ======================================================== */}
-        {/* Passions Grid (Compact, High-Density Side-by-Side Arrangement) */}
-        {/* ======================================================== */}
-        {filteredInterests.length === 0 && searchQuery.trim() !== '' ? (
-          <View style={styles.emptyStateContainer}>
-            <View
-              style={[
-                styles.emptyStateIconCircle,
-                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
-              ]}
-            >
-              <Search size={20} color={theme.colors.textTertiary} />
             </View>
-            <Text
-              style={[
-                styles.emptyStateTitle,
-                { color: theme.colors.textPrimary, fontFamily: folkraFont },
-              ]}
-            >
-              NO CATALOG RESULTS
-            </Text>
-            <Text style={[styles.emptyStateSubtitle, { color: theme.colors.textSecondary }]}>
-              {`No existing passion in our catalog matches "${searchQuery.trim()}". You can tap "Add" above to make it your own custom passion!`}
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.passionsContainer}>
-            {/* If searching or a single category selected, render flat fluid grid */}
-            {searchQuery.trim() !== '' || activeCategory !== 'All' ? (
-              <View>
-                {activeCategory !== 'All' && searchQuery.trim() === '' && (
-                  <View style={styles.categoryGroupHeader}>
-                    <View
-                      style={[
-                        styles.categoryGroupIconCircle,
-                        {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7',
-                        },
-                      ]}
-                    >
-                      {React.createElement(getCategoryIcon(activeCategory), {
-                        size: 16,
-                        color: theme.colors.textPrimary,
-                      })}
-                    </View>
-                    <Text
-                      style={[
-                        styles.categoryGroupTitle,
-                        { color: theme.colors.textPrimary, fontFamily: folkraFont },
-                      ]}
-                    >
-                      {activeCategory.toUpperCase()}
-                    </Text>
-                    <View
-                      style={[
-                        styles.categoryCountBadge,
-                        {
-                          backgroundColor: isDark
-                            ? 'rgba(255, 255, 255, 0.08)'
-                            : 'rgba(0, 0, 0, 0.05)',
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.categoryCountBadgeText,
-                          { color: theme.colors.textSecondary },
-                        ]}
-                      >
-                        {filteredInterests.length}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-
-                <View style={styles.chipGrid}>
-                  {filteredInterests.map((item) => {
-                    const isSelected = draftInterests.includes(item.id);
-                    const PassionIcon = getInterestIcon(item);
-
-                    return (
-                      <TouchableOpacity
-                        key={item.id}
-                        onPress={() => handleToggle(item.id)}
-                        style={[
-                          styles.passionCard,
-                          {
-                            backgroundColor: isSelected
-                              ? isDark
-                                ? '#FFFFFF'
-                                : '#121216'
-                              : isDark
-                                ? '#121216'
-                                : '#FFFFFF',
-                            borderColor: isSelected
-                              ? isDark
-                                ? '#FFFFFF'
-                                : '#121216'
-                              : isDark
-                                ? 'rgba(255, 255, 255, 0.08)'
-                                : '#E4E4E7',
-                          },
-                        ]}
-                        activeOpacity={0.82}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: isSelected }}
-                        accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
-                      >
-                        <View
-                          style={[
-                            styles.passionIconCircle,
-                            {
-                              backgroundColor: isSelected
-                                ? isDark
-                                  ? '#0B0B0E'
-                                  : '#FFFFFF'
-                                : isDark
-                                  ? 'rgba(255, 255, 255, 0.06)'
-                                  : '#F4F4F6',
-                            },
-                          ]}
-                        >
-                          {isSelected ? (
-                            <Check
-                              size={12}
-                              color={isDark ? '#FFFFFF' : '#0B0B0E'}
-                              strokeWidth={2.8}
-                            />
-                          ) : (
-                            <PassionIcon size={12.5} color={theme.colors.textSecondary} />
-                          )}
-                        </View>
-
-                        <Text
-                          style={[
-                            styles.passionCardTitle,
-                            {
-                              color: isSelected
-                                ? isDark
-                                  ? '#0B0B0E'
-                                  : '#FFFFFF'
-                                : theme.colors.textPrimary,
-                            },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {item.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            ) : (
-              // Browsing All: Grouped by category with tight side-by-side chips
-              categories
-                .filter((cat) => cat !== 'All')
-                .map((category) => {
-                  const categoryItems = sanitizedTaxonomy.filter(
-                    (i) => (i.category || 'General') === category
-                  );
-                  if (categoryItems.length === 0) return null;
-                  const CatGroupIcon = getCategoryIcon(category);
-
-                  return (
-                    <View key={`group-cat-${category}`} style={styles.categoryGroupSection}>
-                      <View style={styles.categoryGroupHeader}>
-                        <View
-                          style={[
-                            styles.categoryGroupIconCircle,
-                            {
-                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
-                              borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7',
-                            },
-                          ]}
-                        >
-                          <CatGroupIcon size={16} color={theme.colors.textPrimary} />
-                        </View>
-                        <Text
-                          style={[
-                            styles.categoryGroupTitle,
-                            { color: theme.colors.textPrimary, fontFamily: folkraFont },
-                          ]}
-                        >
-                          {category.toUpperCase()}
-                        </Text>
-                        <View
-                          style={[
-                            styles.categoryCountBadge,
-                            {
-                              backgroundColor: isDark
-                                ? 'rgba(255, 255, 255, 0.08)'
-                                : 'rgba(0, 0, 0, 0.05)',
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.categoryCountBadgeText,
-                              { color: theme.colors.textSecondary },
-                            ]}
-                          >
-                            {categoryItems.length}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.chipGrid}>
-                        {categoryItems.map((item) => {
-                          const isSelected = draftInterests.includes(item.id);
-                          const PassionIcon = getInterestIcon(item);
-
-                          return (
-                            <TouchableOpacity
-                              key={item.id}
-                              onPress={() => handleToggle(item.id)}
-                              style={[
-                                styles.passionCard,
-                                {
-                                  backgroundColor: isSelected
-                                    ? isDark
-                                      ? '#FFFFFF'
-                                      : '#121216'
-                                    : isDark
-                                      ? '#121216'
-                                      : '#FFFFFF',
-                                  borderColor: isSelected
-                                    ? isDark
-                                      ? '#FFFFFF'
-                                      : '#121216'
-                                    : isDark
-                                      ? 'rgba(255, 255, 255, 0.08)'
-                                      : '#E4E4E7',
-                                },
-                              ]}
-                              activeOpacity={0.82}
-                              accessibilityRole="checkbox"
-                              accessibilityState={{ checked: isSelected }}
-                              accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
-                            >
-                              <View
-                                style={[
-                                  styles.passionIconCircle,
-                                  {
-                                    backgroundColor: isSelected
-                                      ? isDark
-                                        ? '#0B0B0E'
-                                        : '#FFFFFF'
-                                      : isDark
-                                        ? 'rgba(255, 255, 255, 0.06)'
-                                        : '#F4F4F6',
-                                  },
-                                ]}
-                              >
-                                {isSelected ? (
-                                  <Check
-                                    size={12}
-                                    color={isDark ? '#FFFFFF' : '#0B0B0E'}
-                                    strokeWidth={2.8}
-                                  />
-                                ) : (
-                                  <PassionIcon size={12.5} color={theme.colors.textSecondary} />
-                                )}
-                              </View>
-
-                              <Text
-                                style={[
-                                  styles.passionCardTitle,
-                                  {
-                                    color: isSelected
-                                      ? isDark
-                                        ? '#0B0B0E'
-                                        : '#FFFFFF'
-                                      : theme.colors.textPrimary,
-                                  },
-                                ]}
-                                numberOfLines={1}
-                              >
-                                {item.name}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  );
-                })
-            )}
           </View>
         )}
       </Animated.ScrollView>
@@ -1466,6 +1316,220 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
           </Text>
         </View>
       </View>
+
+      {/* ======================================================== */}
+      {/* Category Passions Modal Sheet                            */}
+      {/* ======================================================== */}
+      <Modal
+        visible={!!selectedCategoryModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setSelectedCategoryModal(null)}
+        statusBarTranslucent
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setSelectedCategoryModal(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss category modal"
+          />
+          <View
+            style={[
+              styles.modalSheetContainer,
+              {
+                backgroundColor: isDark ? '#121216' : '#FFFFFF',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                paddingBottom: Math.max(insets.bottom + 16, 24),
+              },
+            ]}
+          >
+            {/* Top Drag Handle */}
+            <View
+              style={[
+                styles.modalDragHandle,
+                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)' },
+              ]}
+            />
+
+            {/* Modal Header */}
+            <View style={styles.modalHeaderRow}>
+              <View style={styles.modalHeaderInfo}>
+                <View
+                  style={[
+                    styles.modalCategoryIconBadge,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F4F4F6',
+                    },
+                  ]}
+                >
+                  {selectedCategoryModal &&
+                    React.createElement(getCategoryIcon(selectedCategoryModal), {
+                      size: 20,
+                      color: theme.colors.textPrimary,
+                      strokeWidth: 2,
+                    })}
+                </View>
+                <View style={styles.modalHeaderTitles}>
+                  <Heading
+                    level="h3"
+                    style={[
+                      styles.modalHeaderHeading,
+                      { fontFamily: folkraFont, color: theme.colors.textPrimary },
+                    ]}
+                  >
+                    {selectedCategoryModal?.toUpperCase() || ''}
+                  </Heading>
+                  <Text style={[styles.modalHeaderSubtext, { color: theme.colors.textSecondary }]}>
+                    {modalCategorySelectedCount > 0
+                      ? `${modalCategorySelectedCount} selected • ${modalCategoryItems.length} curated passions`
+                      : `${modalCategoryItems.length} curated passions • tap to select`}
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => {
+                  haptics.impactLight();
+                  setSelectedCategoryModal(null);
+                }}
+                style={[
+                  styles.modalCloseCircle,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F4F4F6',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E4E4E7',
+                  },
+                ]}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Close category modal"
+              >
+                <X size={16} color={theme.colors.textPrimary} strokeWidth={2.4} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Passions in this Category */}
+            <ScrollView
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.modalChipsGrid}>
+                {modalCategoryItems.map((item) => {
+                  const isSelected = draftInterests.includes(item.id);
+                  const PassionIcon = getInterestIcon(item);
+
+                  return (
+                    <TouchableOpacity
+                      key={`modal-${item.id}`}
+                      onPress={() => handleToggle(item.id)}
+                      style={[
+                        styles.passionCard,
+                        {
+                          backgroundColor: isSelected
+                            ? isDark
+                              ? '#FFFFFF'
+                              : '#121216'
+                            : isDark
+                              ? '#18181E'
+                              : '#FFFFFF',
+                          borderColor: isSelected
+                            ? isDark
+                              ? '#FFFFFF'
+                              : '#121216'
+                            : isDark
+                              ? 'rgba(255, 255, 255, 0.09)'
+                              : '#E4E4E7',
+                        },
+                      ]}
+                      activeOpacity={0.82}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isSelected }}
+                      accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
+                    >
+                      <View
+                        style={[
+                          styles.passionIconCircle,
+                          {
+                            backgroundColor: isSelected
+                              ? isDark
+                                ? '#0B0B0E'
+                                : '#FFFFFF'
+                              : isDark
+                                ? 'rgba(255, 255, 255, 0.06)'
+                                : '#F4F4F6',
+                          },
+                        ]}
+                      >
+                        {isSelected ? (
+                          <Check
+                            size={12}
+                            color={isDark ? '#FFFFFF' : '#0B0B0E'}
+                            strokeWidth={2.8}
+                          />
+                        ) : (
+                          <PassionIcon size={12.5} color={theme.colors.textSecondary} />
+                        )}
+                      </View>
+
+                      <Text
+                        style={[
+                          styles.passionCardTitle,
+                          {
+                            color: isSelected
+                              ? isDark
+                                ? '#0B0B0E'
+                                : '#FFFFFF'
+                              : theme.colors.textPrimary,
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            {/* Modal Bottom Done CTA */}
+            <View style={styles.modalFooterBar}>
+              <TouchableOpacity
+                onPress={() => {
+                  haptics.impactLight();
+                  setSelectedCategoryModal(null);
+                }}
+                style={[
+                  styles.modalDoneButton,
+                  {
+                    backgroundColor: isDark ? '#FFFFFF' : '#121216',
+                  },
+                ]}
+                activeOpacity={0.88}
+                accessibilityRole="button"
+                accessibilityLabel="Done selecting passions in this category"
+              >
+                <Text
+                  style={[
+                    styles.modalDoneButtonText,
+                    {
+                      color: isDark ? '#000000' : '#FFFFFF',
+                      fontFamily: folkraFont,
+                    },
+                  ]}
+                >
+                  {modalCategorySelectedCount > 0
+                    ? `DONE (${modalCategorySelectedCount} SELECTED)`
+                    : 'DONE'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1607,35 +1671,26 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 2,
   },
-  // Expanded Horizontal Scroll Wrappers & Soft Gradient Fade Masks
-  expandedScrollWrapper: {
-    position: 'relative',
-    marginHorizontal: -20,
-    marginTop: 10,
+  // Search Results Wrap & Section Header
+  searchSectionWrap: {
+    gap: 12,
   },
-  expandedCategoryPillsWrapper: {
-    position: 'relative',
-    marginHorizontal: -20,
-    marginBottom: 14,
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    marginTop: 4,
+    paddingHorizontal: 2,
   },
-  expandedHorizontalScroll: {
-    width: '100%',
+  sectionHeading: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
-  fadeMaskLeft: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 26,
-    zIndex: 10,
-  },
-  fadeMaskRight: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 26,
-    zIndex: 10,
+  sectionCountHint: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   // Search Bar Styles
   searchBarContainer: {
@@ -1694,37 +1749,73 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: '700',
   },
-  // Category Pills
-  categoryPillsScroll: {
-    flexDirection: 'row',
-    gap: 7,
-    paddingHorizontal: 20,
-    paddingVertical: 2,
+  // Category Cards Section & Grid (Rounded Squared Cards)
+  categorySectionContainer: {
+    marginBottom: 8,
   },
-  categoryPill: {
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
+  },
+  categoryCard: {
+    width: '48%',
+    aspectRatio: 1.05,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    paddingTop: 16,
+    paddingBottom: 14,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'relative',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  categoryCardTopBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 11,
-    paddingVertical: 6.5,
-    borderRadius: 14,
-    borderWidth: 1,
+    gap: 3.5,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 10,
+    zIndex: 2,
   },
-  categoryPillText: {
-    fontSize: 12,
-    letterSpacing: -0.1,
+  categoryCardTopBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
-  categoryPillBadge: {
-    marginLeft: 5,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 9,
-    minWidth: 16,
+  categoryCardIconCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 8,
   },
-  categoryPillBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
+  categoryCardBottomWrap: {
+    alignItems: 'center',
+    width: '100%',
+    paddingBottom: 2,
+  },
+  categoryCardTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 0.2,
+    marginBottom: 2.5,
+  },
+  categoryCardSubtitle: {
+    fontSize: 11.5,
+    textAlign: 'center',
   },
   // Empty State
   emptyStateContainer: {
@@ -1752,46 +1843,101 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
   },
-  // Passions Container & Fluid Side-by-Side Grid
-  passionsContainer: {
-    gap: 22,
+  // Modal Sheet Styles
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+    justifyContent: 'flex-end',
   },
-  categoryGroupSection: {
-    gap: 12,
+  modalSheetContainer: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1.5,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    maxHeight: '82%',
+    minHeight: 380,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 20,
   },
-  categoryGroupHeader: {
+  modalDragHandle: {
+    width: 38,
+    height: 4.5,
+    borderRadius: 2.5,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  modalHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  categoryGroupIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+  modalHeaderInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  modalCategoryIconBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  modalHeaderTitles: {
+    flex: 1,
+  },
+  modalHeaderHeading: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  modalHeaderSubtext: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  modalCloseCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 9,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  categoryGroupTitle: {
-    fontSize: 16.5,
-    fontWeight: '800',
-    letterSpacing: 0.6,
+  modalScrollView: {
+    flexGrow: 0,
+    marginBottom: 14,
   },
-  categoryCountBadge: {
-    marginLeft: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 8,
+  modalScrollContent: {
+    paddingVertical: 4,
   },
-  categoryCountBadgeText: {
-    fontSize: 11.5,
+  modalChipsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignItems: 'center',
+  },
+  modalFooterBar: {
+    paddingTop: 8,
+  },
+  modalDoneButton: {
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalDoneButtonText: {
+    fontSize: 14.5,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
   // Multi-option fluid side-by-side chip grid
   chipGrid: {
