@@ -472,5 +472,83 @@ describe('Onboarding & First-Run Suite', () => {
         globalThis.fetch = originalFetch;
       }
     });
+
+    describe('Smart Context-Aware Default Prompt Selection', () => {
+      it('selects food and cooking prompts based on culinary interests', async () => {
+        const { selectSmartDefaultPrompt } = await import('../app/(onboarding)/prompts.js');
+
+        // General cafe/coffee/chai
+        const coffeePrompt = selectSmartDefaultPrompt(['Specialty Coffee', 'Chai Addict']);
+        expect(coffeePrompt.id).toBe('p_def_9');
+        expect(coffeePrompt.prompt).toContain('chai / coffee');
+
+        // Cooking / Baking
+        const cookingPrompt = selectSmartDefaultPrompt(['Sourdough Baking', 'Italian Cooking']);
+        expect(cookingPrompt.id).toBe('p_def_10');
+        expect(cookingPrompt.prompt).toContain('signature dish');
+      });
+
+      it('selects tech/geek prompt for engineering occupation or tech interests', async () => {
+        const { selectSmartDefaultPrompt } = await import('../app/(onboarding)/prompts.js');
+
+        // Interests in Anime and Coding
+        const animePrompt = selectSmartDefaultPrompt(['Anime', 'Open Source']);
+        expect(animePrompt.id).toBe('p_def_15');
+        expect(animePrompt.prompt).toContain('geek out endlessly');
+
+        // Occupation as Software Engineer without specific interests
+        const engineerPrompt = selectSmartDefaultPrompt([], {
+          occupation: 'Senior Software Engineer',
+        } as any);
+        expect(engineerPrompt.id).toBe('p_def_15');
+      });
+
+      it('selects music prompt for musical interests', async () => {
+        const { selectSmartDefaultPrompt } = await import('../app/(onboarding)/prompts.js');
+
+        const musicPrompt = selectSmartDefaultPrompt(['Indie Rock', 'Vinyl Collecting']);
+        expect(musicPrompt.id).toBe('p_def_2');
+        expect(musicPrompt.prompt).toContain('soundtrack');
+      });
+
+      it('selects humor prompt for comedy interests', async () => {
+        const { selectSmartDefaultPrompt } = await import('../app/(onboarding)/prompts.js');
+
+        const humorPrompt = selectSmartDefaultPrompt(['Standup Comedy', 'Memes']);
+        expect(humorPrompt.id).toBe('p_def_12');
+        expect(humorPrompt.prompt).toContain('make me laugh');
+      });
+
+      it('selects adventure prompt for outdoors and travel interests', async () => {
+        const { selectSmartDefaultPrompt } = await import('../app/(onboarding)/prompts.js');
+
+        const travelPrompt = selectSmartDefaultPrompt(['Hiking', 'Mountain Trekking']);
+        expect(travelPrompt.id).toBe('p_def_5');
+        expect(travelPrompt.prompt).toContain('Together, we could finally');
+      });
+
+      it('selects intent-aligned prompts when no overriding interest is present', async () => {
+        const { selectSmartDefaultPrompt } = await import('../app/(onboarding)/prompts.js');
+
+        const longTermPrompt = selectSmartDefaultPrompt([], { intent: 'LONG_TERM' } as any);
+        expect(longTermPrompt.id).toBe('p_def_18');
+        expect(longTermPrompt.prompt).toContain('non-negotiable');
+
+        const shortTermPrompt = selectSmartDefaultPrompt([], { intent: 'SHORT_TERM' } as any);
+        expect(shortTermPrompt.id).toBe('p_def_7');
+        expect(shortTermPrompt.prompt).toContain('green flag');
+
+        const friendshipPrompt = selectSmartDefaultPrompt([], { intent: 'FRIENDSHIP' } as any);
+        expect(friendshipPrompt.id).toBe('p_def_5');
+      });
+
+      it('falls back to ideal Sunday morning prompt when profile is neutral', async () => {
+        const { selectSmartDefaultPrompt } = await import('../app/(onboarding)/prompts.js');
+
+        const fallbackPrompt = selectSmartDefaultPrompt([]);
+        expect(fallbackPrompt.id).toBe('p_def_1');
+        expect(fallbackPrompt.prompt).toContain('Sunday morning');
+      });
+    });
   });
 });

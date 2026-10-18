@@ -1536,10 +1536,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                 alignSelf: 'center',
                 paddingTop: Math.max(insets.top + 64, 76),
                 paddingBottom: isKeyboardVisible ? 16 : Math.max(insets.bottom + 115, 135),
+                flexGrow: 1,
               },
             ]}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
+            keyboardDismissMode="none"
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
