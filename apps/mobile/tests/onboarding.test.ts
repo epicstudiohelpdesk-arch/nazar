@@ -378,5 +378,99 @@ describe('Onboarding & First-Run Suite', () => {
       expect(res.id).toBe('0192e123-4567-789a-bcde-f0123456789a');
       expect(res.name).toBe('Cyberpunk Edgerunners');
     });
+
+    it('resolveCategoryForPassion accurately classifies cultural entities into correct categories', async () => {
+      const { resolveCategoryForPassion } = await import('../app/(onboarding)/interests.js');
+
+      // Anime & Manga
+      expect(resolveCategoryForPassion('Attack on Titan')).toBe('Anime');
+      expect(resolveCategoryForPassion('Demon Slayer')).toBe('Anime');
+      expect(resolveCategoryForPassion('Studio Ghibli')).toBe('Anime');
+      expect(resolveCategoryForPassion('Jujutsu Kaisen')).toBe('Anime');
+
+      // Gaming & Tech
+      expect(resolveCategoryForPassion('Cyberpunk 2077')).toBe('Gaming & Tech');
+      expect(resolveCategoryForPassion('Robotics & AI')).toBe('Gaming & Tech');
+      expect(resolveCategoryForPassion('Nintendo Switch')).toBe('Gaming & Tech');
+      expect(resolveCategoryForPassion('Minecraft')).toBe('Gaming & Tech');
+
+      // Movies & Cinema
+      expect(resolveCategoryForPassion('Christopher Nolan Films')).toBe('Movies & Cinema');
+      expect(resolveCategoryForPassion('Marvel Cinematic Universe')).toBe('Movies & Cinema');
+      expect(resolveCategoryForPassion('Quentin Tarantino')).toBe('Movies & Cinema');
+
+      // Music & Audio
+      expect(resolveCategoryForPassion('Taylor Swift Albums')).toBe('Music & Audio');
+      expect(resolveCategoryForPassion('Indie Rock Band')).toBe('Music & Audio');
+      expect(resolveCategoryForPassion('Electronic Synthesizer')).toBe('Music & Audio');
+
+      // Food & Drink
+      expect(resolveCategoryForPassion('Sourdough Baking')).toBe('Food & Drink');
+      expect(resolveCategoryForPassion('Artisanal Coffee & Espresso')).toBe('Food & Drink');
+      expect(resolveCategoryForPassion('Hyderabadi Biryani')).toBe('Food & Drink');
+
+      // Books & Literature
+      expect(resolveCategoryForPassion('Haruki Murakami Novels')).toBe('Books & Literature');
+      expect(resolveCategoryForPassion('Sci-Fi Fantasy Fiction')).toBe('Books & Literature');
+      expect(resolveCategoryForPassion('Classic Poetry')).toBe('Books & Literature');
+
+      // Sports & Fitness
+      expect(resolveCategoryForPassion('Formula 1 Racing')).toBe('Sports & Fitness');
+      expect(resolveCategoryForPassion('Padel Tennis')).toBe('Sports & Fitness');
+      expect(resolveCategoryForPassion('Marathon Running')).toBe('Sports & Fitness');
+
+      // Outdoor & Nature
+      expect(resolveCategoryForPassion('Himalayan Trekking')).toBe('Outdoor & Nature');
+      expect(resolveCategoryForPassion('Stargazing & Astronomy')).toBe('Outdoor & Nature');
+      expect(resolveCategoryForPassion('Scuba Diving')).toBe('Outdoor & Nature');
+
+      // Travel & Adventure
+      expect(resolveCategoryForPassion('Solo Backpacking in Bali')).toBe('Travel & Adventure');
+      expect(resolveCategoryForPassion('Road Trips & Wanderlust')).toBe('Travel & Adventure');
+
+      // Arts & Culture
+      expect(resolveCategoryForPassion('Pottery & Ceramics')).toBe('Arts & Culture');
+      expect(resolveCategoryForPassion('Classical Ballet & Theater')).toBe('Arts & Culture');
+      expect(resolveCategoryForPassion('Modern Architecture')).toBe('Arts & Culture');
+
+      // Science & Knowledge
+      expect(resolveCategoryForPassion('Astrophysics & Quantum Space')).toBe('Science & Knowledge');
+
+      // Automotive & Speed
+      expect(resolveCategoryForPassion('Supercars & Drifting')).toBe('Automotive & Speed');
+
+      // Business & Startups
+      expect(resolveCategoryForPassion('Startup Founders & Venture Capital')).toBe(
+        'Business & Startups'
+      );
+
+      // Lifestyle & Social
+      expect(resolveCategoryForPassion('Golden Retriever Puppies')).toBe('Lifestyle & Social');
+      expect(resolveCategoryForPassion('Mindfulness Meditation')).toBe('Lifestyle & Social');
+      expect(resolveCategoryForPassion('Stand-up Comedy')).toBe('Lifestyle & Social');
+    });
+
+    it('fetchInternetPassionSuggestionsWithDetails resolves web suggestions with resolved categories', async () => {
+      const { fetchInternetPassionSuggestionsWithDetails } =
+        await import('../app/(onboarding)/interests.js');
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          'naruto',
+          ['Naruto Shippuden', 'Naruto: Ninja Destiny', 'Naruto: Ultimate Ninja Storm'],
+        ],
+      }) as unknown as typeof fetch;
+
+      try {
+        const results = await fetchInternetPassionSuggestionsWithDetails('naruto');
+        expect(results.length).toBeGreaterThan(0);
+        expect(results[0]?.name).toBe('Naruto Shippuden');
+        expect(results[0]?.category).toBe('Anime');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
   });
 });
