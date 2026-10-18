@@ -15,6 +15,7 @@ export default function OnboardingLayout(): React.JSX.Element {
       <Stack.Screen name="profile-setup" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="photos" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="interests" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="lifestyle" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="prompts" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="preferences" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="permissions" options={{ headerShown: false, gestureEnabled: false }} />

@@ -207,7 +207,7 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                   { color: theme.colors.textPrimary, fontFamily: folkraFont },
                 ]}
               >
-                06
+                07
               </Text>
               <Text
                 style={[
@@ -223,7 +223,7 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                   { color: theme.colors.textTertiary, fontFamily: folkraFont },
                 ]}
               >
-                06
+                07
               </Text>
             </View>
           </View>

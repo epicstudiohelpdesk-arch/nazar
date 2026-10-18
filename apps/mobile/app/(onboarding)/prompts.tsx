@@ -773,7 +773,7 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/(onboarding)/interests');
+      router.replace('/(onboarding)/lifestyle');
     }
   };
 
@@ -883,7 +883,7 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                   { color: theme.colors.textPrimary, fontFamily: folkraFont },
                 ]}
               >
-                04
+                05
               </Text>
               <Text
                 style={[
@@ -899,7 +899,7 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                   { color: theme.colors.textTertiary, fontFamily: folkraFont },
                 ]}
               >
-                06
+                07
               </Text>
             </View>
           </View>
@@ -1322,24 +1322,12 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
             style={[
               styles.professionalCtaButton,
               {
-                backgroundColor: isMinimumMet
-                  ? isDark
-                    ? '#FFFFFF'
-                    : '#121216'
-                  : isDark
-                    ? '#222228'
-                    : '#E4E4E7',
-                borderColor: isMinimumMet
-                  ? isDark
-                    ? 'transparent'
-                    : 'rgba(0, 0, 0, 0.12)'
-                  : isDark
-                    ? 'rgba(255, 255, 255, 0.08)'
-                    : 'rgba(0, 0, 0, 0.08)',
-                borderWidth: isMinimumMet ? (isDark ? 0 : 1) : 1,
+                backgroundColor: '#FFFFFF',
+                borderColor: isDark ? 'transparent' : 'rgba(0, 0, 0, 0.12)',
+                borderWidth: isDark ? 0 : 1,
                 shadowColor: '#000000',
-                shadowOpacity: isMinimumMet ? (isDark ? 0.28 : 0.12) : 0.06,
-                opacity: isLoading ? 0.75 : 1,
+                shadowOpacity: isDark ? 0.28 : 0.12,
+                opacity: isLoading ? 0.75 : isMinimumMet ? 1 : 0.6,
               },
             ]}
             activeOpacity={0.88}
@@ -1352,25 +1340,14 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
             testID="prompts-continue-button"
           >
             {isLoading ? (
-              <ActivityIndicator
-                size="small"
-                color={
-                  isMinimumMet ? (isDark ? '#000000' : '#FFFFFF') : isDark ? '#A1A1AA' : '#71717A'
-                }
-              />
+              <ActivityIndicator size="small" color="#000000" />
             ) : (
               <View style={styles.buttonInnerRow}>
                 <Text
                   style={[
                     styles.professionalCtaText,
                     {
-                      color: isMinimumMet
-                        ? isDark
-                          ? '#000000'
-                          : '#FFFFFF'
-                        : isDark
-                          ? '#8E8E93'
-                          : '#71717A',
+                      color: '#000000',
                       fontFamily: folkraFont,
                     },
                   ]}
@@ -1378,9 +1355,7 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                 >
                   {isMinimumMet ? 'Continue to Preferences' : 'Answer at least 1 prompt (0/1)'}
                 </Text>
-                {isMinimumMet && (
-                  <ArrowRight size={16} strokeWidth={2.4} color={isDark ? '#000000' : '#FFFFFF'} />
-                )}
+                {isMinimumMet && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
               </View>
             )}
           </TouchableOpacity>

@@ -1432,7 +1432,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                   { color: theme.colors.textTertiary, fontFamily: folkraFont },
                 ]}
               >
-                06
+                07
               </Text>
             </View>
           </View>

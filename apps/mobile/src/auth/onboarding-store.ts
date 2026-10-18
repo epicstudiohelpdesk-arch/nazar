@@ -11,6 +11,7 @@ export type OnboardingStep =
   | 'profile-setup'
   | 'photos'
   | 'interests'
+  | 'lifestyle'
   | 'prompts'
   | 'preferences'
   | 'permissions'
@@ -21,6 +22,7 @@ export const ONBOARDING_STEPS_ORDER: readonly OnboardingStep[] = [
   'profile-setup',
   'photos',
   'interests',
+  'lifestyle',
   'prompts',
   'preferences',
   'permissions',
@@ -110,6 +112,18 @@ export interface DraftProfile {
   bio: string;
   occupation: string;
   education: string;
+  // Lifestyle habits
+  drinking?: string;
+  smoking?: string;
+  workout?: string;
+  dietary?: string;
+}
+
+export interface DraftLifestyle {
+  drinking?: string;
+  smoking?: string;
+  workout?: string;
+  dietary?: string;
 }
 
 export interface OnboardingState {
@@ -124,6 +138,7 @@ export interface OnboardingState {
   draftProfile: DraftProfile;
   draftPhotos: DraftPhotoItem[];
   draftInterests: string[]; // List of interest IDs
+  draftLifestyle: DraftLifestyle;
   draftPrompts: DraftPromptItem[];
   draftPreferences: DraftPreferences;
   permissionsStatus: {
@@ -143,6 +158,7 @@ export interface OnboardingState {
   updateDraftPhotoFilter: (id: string, filterId: string) => void;
   setDraftInterests: (interestIds: string[]) => void;
   toggleDraftInterest: (interestId: string) => void;
+  updateDraftLifestyle: (updates: Partial<DraftLifestyle>) => void;
   setDraftPrompts: (prompts: DraftPromptItem[]) => void;
   updateDraftPromptAnswer: (promptDefinitionId: string, answer: string) => void;
   updateDraftPreferences: (updates: Partial<DraftPreferences>) => void;
@@ -183,6 +199,7 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   draftProfile: initialDraftProfile,
   draftPhotos: [],
   draftInterests: [],
+  draftLifestyle: {},
   draftPrompts: [],
   draftPreferences: initialDraftPreferences,
   permissionsStatus: {
@@ -242,6 +259,12 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
       if (current.length >= 10) return state; // Cap at 10
       return { draftInterests: [...current, id] };
     }),
+
+  updateDraftLifestyle: (updates) =>
+    set((state) => ({
+      draftLifestyle: { ...state.draftLifestyle, ...updates },
+      draftProfile: { ...state.draftProfile, ...updates },
+    })),
 
   setDraftPrompts: (prompts) => set({ draftPrompts: prompts }),
 
@@ -314,6 +337,7 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
       draftProfile: initialDraftProfile,
       draftPhotos: [],
       draftInterests: [],
+      draftLifestyle: {},
       draftPrompts: [],
       draftPreferences: initialDraftPreferences,
       permissionsStatus: {

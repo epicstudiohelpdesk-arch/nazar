@@ -2105,11 +2105,11 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     try {
       await profileApi.updateMyInterests({ interestIds: draftInterests });
       trackOnboardingEvent('interests_completed', { count: draftInterests.length });
-      router.push('/(onboarding)/prompts');
+      router.push('/(onboarding)/lifestyle');
     } catch {
       // Offline fallback: store holds draft and flow continues
       trackOnboardingEvent('interests_completed', { count: draftInterests.length });
-      router.push('/(onboarding)/prompts');
+      router.push('/(onboarding)/lifestyle');
     } finally {
       setIsLoading(false);
     }
@@ -2244,7 +2244,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                   { color: theme.colors.textTertiary, fontFamily: folkraFont },
                 ]}
               >
-                06
+                07
               </Text>
             </View>
           </View>
@@ -2775,31 +2775,19 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
             style={[
               styles.professionalCtaButton,
               {
-                backgroundColor: isMinimumMet
-                  ? isDark
-                    ? '#FFFFFF'
-                    : '#121216'
-                  : isDark
-                    ? '#222228'
-                    : '#E4E4E7',
-                borderColor: isMinimumMet
-                  ? isDark
-                    ? 'transparent'
-                    : 'rgba(0, 0, 0, 0.12)'
-                  : isDark
-                    ? 'rgba(255, 255, 255, 0.08)'
-                    : 'rgba(0, 0, 0, 0.08)',
-                borderWidth: isMinimumMet ? (isDark ? 0 : 1) : 1,
+                backgroundColor: '#FFFFFF',
+                borderColor: isDark ? 'transparent' : 'rgba(0, 0, 0, 0.12)',
+                borderWidth: isDark ? 0 : 1,
                 shadowColor: '#000000',
-                shadowOpacity: isMinimumMet ? (isDark ? 0.28 : 0.12) : 0.06,
-                opacity: isLoading ? 0.75 : 1,
+                shadowOpacity: isDark ? 0.28 : 0.12,
+                opacity: isLoading ? 0.75 : isMinimumMet ? 1 : 0.6,
               },
             ]}
             activeOpacity={0.88}
             accessibilityRole="button"
             accessibilityLabel={
               isMinimumMet
-                ? `Continue to prompts (${count} selected)`
+                ? `Continue to lifestyle (${count} selected)`
                 : count === 0
                   ? 'Select at least 3 passions to continue (0 of 3 selected)'
                   : `Select at least 3 passions (${count} of 3 required)`
@@ -2807,25 +2795,14 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
             testID="interests-continue-button"
           >
             {isLoading ? (
-              <ActivityIndicator
-                size="small"
-                color={
-                  isMinimumMet ? (isDark ? '#000000' : '#FFFFFF') : isDark ? '#A1A1AA' : '#71717A'
-                }
-              />
+              <ActivityIndicator size="small" color="#000000" />
             ) : (
               <View style={styles.buttonInnerRow}>
                 <Text
                   style={[
                     styles.professionalCtaText,
                     {
-                      color: isMinimumMet
-                        ? isDark
-                          ? '#000000'
-                          : '#FFFFFF'
-                        : isDark
-                          ? '#8E8E93'
-                          : '#71717A',
+                      color: '#000000',
                       fontFamily: folkraFont,
                     },
                   ]}
@@ -2834,15 +2811,9 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                     ? count === 0
                       ? 'Select at least 3 passions (0/3)'
                       : `Select ${3 - count} more passion${3 - count > 1 ? 's' : ''} (${count}/3)`
-                    : `Continue to Prompts (${count} selected)`}
+                    : `Continue to Lifestyle (${count} selected)`}
                 </Text>
-                {isMinimumMet && (
-                  <ArrowRight
-                    size={17}
-                    color={isDark ? '#000000' : '#FFFFFF'}
-                    style={{ marginLeft: 8 }}
-                  />
-                )}
+                {isMinimumMet && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
               </View>
             )}
           </TouchableOpacity>

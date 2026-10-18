@@ -86,6 +86,8 @@ export type OnboardingAnalyticsEvent =
   | 'interest_selected'
   | 'interest_deselected'
   | 'interests_completed'
+  | 'lifestyle_viewed'
+  | 'lifestyle_completed'
   | 'prompts_viewed'
   | 'prompt_answered'
   | 'prompts_completed'
