@@ -10,10 +10,12 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
+  Text as RNText,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFonts } from 'expo-font';
 import {
   ShieldCheck,
   RotateCcw,
@@ -43,6 +45,13 @@ export default function OtpVerificationScreen(): React.JSX.Element {
   const authService = getDefaultAuthService();
   const sessionService = getDefaultSessionService();
 
+  // Load Folkra brand font
+  const [fontsLoaded] = useFonts({
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Folkra: require('../../assets/fonts/folkra.ttf'),
+  });
+  const folkraFont = fontsLoaded ? 'Folkra' : undefined;
+
   const { authMethod, pendingIdentifier } = useOnboardingStore();
 
   const [code, setCode] = useState('');
@@ -50,7 +59,21 @@ export default function OtpVerificationScreen(): React.JSX.Element {
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [resendCooldown, setResendCooldown] = useState<number>(45);
 
-  const lastAttemptedCodeRef = useRef<string>('');
+  const otpShakeAnim = useRef(new Animated.Value(0)).current;
+  const triggerOtpShake = () => {
+    haptics.notificationError();
+    otpShakeAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(otpShakeAnim, { toValue: -8, duration: 40, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 8, duration: 40, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: -6, duration: 40, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 6, duration: 40, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: -3, duration: 35, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 3, duration: 35, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 0, duration: 30, useNativeDriver: true }),
+    ]).start();
+  };
+
   const isDark = theme.mode === 'dark';
 
   // Animated scroll listener for glossy top vignette
@@ -99,8 +122,8 @@ export default function OtpVerificationScreen(): React.JSX.Element {
     haptics.medium();
 
     if (codeToVerify.length < 6) {
+      triggerOtpShake();
       setErrorMessage('Please enter the full 6-digit verification code.');
-      haptics.selection();
       return;
     }
 
@@ -217,15 +240,13 @@ export default function OtpVerificationScreen(): React.JSX.Element {
     router.replace('/(tabs)/discovery');
   };
 
-  // Instant verification when 6 digits are reached or filled from SMS
+  // Automatically hide keyboard when 6 digits are entered so user can tap Verify & Proceed
   useEffect(() => {
-    if (code.length === 6 && !isLoading && lastAttemptedCodeRef.current !== code) {
-      lastAttemptedCodeRef.current = code;
-      handleVerify(code);
-    } else if (code.length < 6) {
-      lastAttemptedCodeRef.current = '';
+    if (code.length === 6) {
+      Keyboard.dismiss();
+      haptics.selection();
     }
-  }, [code, isLoading]);
+  }, [code]);
 
   const handleResend = async () => {
     if (resendCooldown > 0 || isLoading) return;
@@ -345,22 +366,30 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                 style={[
                   styles.badgeWrapper,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(255, 255, 255, 0.05)'
-                      : theme.colors.surfaceMuted,
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : theme.colors.border,
-                    shadowColor: theme.colors.accent,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                   },
                 ]}
               >
-                <ShieldCheck size={26} color={theme.colors.accent} />
+                <ShieldCheck size={24} color={isDark ? '#FFFFFF' : '#1C1917'} />
               </View>
 
-              <Text style={[styles.eyebrow, { color: theme.colors.accent }]}>
+              <Text
+                style={[
+                  styles.eyebrow,
+                  {
+                    color: isDark ? 'rgba(255, 255, 255, 0.55)' : 'rgba(0, 0, 0, 0.5)',
+                    fontFamily: folkraFont,
+                  },
+                ]}
+              >
                 V E R I F I C A T I O N
               </Text>
-              <Heading level="h1" style={styles.title}>
-                Enter 6-digit code
+              <Heading
+                level="h1"
+                style={[styles.title, { fontFamily: folkraFont, color: theme.colors.textPrimary }]}
+              >
+                Enter <RNText style={{ color: theme.colors.accent }}>6-digit</RNText> code
               </Heading>
               <Text level="body" color="secondary" style={styles.subtitle}>
                 We sent a secure one-time verification code to
@@ -371,10 +400,8 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                 style={[
                   styles.destinationCard,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(255, 255, 255, 0.06)'
-                      : theme.colors.surfaceMuted,
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : theme.colors.border,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                   },
                 ]}
               >
@@ -400,50 +427,38 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                   accessibilityLabel="Change destination"
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Edit3 size={12} color={theme.colors.accent} style={{ marginRight: 4 }} />
-                  <Text style={[styles.changeText, { color: theme.colors.accent }]}>Edit</Text>
+                  <Edit3
+                    size={12}
+                    color={isDark ? '#FFFFFF' : '#1C1917'}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text style={[styles.changeText, { color: isDark ? '#FFFFFF' : '#1C1917' }]}>
+                    Edit
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* OTP Input Section */}
             <View style={styles.inputContainer}>
-              <OtpInput
-                length={6}
-                value={code}
-                onChangeCode={(val) => {
-                  setCode(val);
-                  if (errorMessage) setErrorMessage(undefined);
-                }}
-                onComplete={(val) => {
-                  if (!isLoading && lastAttemptedCodeRef.current !== val) {
-                    lastAttemptedCodeRef.current = val;
-                    handleVerify(val);
-                  }
-                }}
-                autoFocus={true}
-                errorMessage={errorMessage}
-              />
-
-              {/* Dev Hint Banner */}
-              {__DEV__ && (
-                <TouchableOpacity
-                  onPress={() => {
-                    haptics.light();
-                    setCode('123456');
+              <Animated.View
+                style={[styles.otpShakeContainer, { transform: [{ translateX: otpShakeAnim }] }]}
+              >
+                <OtpInput
+                  length={6}
+                  value={code}
+                  onChangeCode={(val) => {
+                    setCode(val);
                     if (errorMessage) setErrorMessage(undefined);
                   }}
-                  style={styles.devHintPill}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Auto-fill dev verification code"
-                >
-                  <Text style={styles.devHintText}>
-                    ⚡ Dev Mode: Tap to auto-fill test code{' '}
-                    <Text style={styles.devHintBold}>123456</Text>
-                  </Text>
-                </TouchableOpacity>
-              )}
+                  onComplete={() => {
+                    Keyboard.dismiss();
+                    haptics.selection();
+                  }}
+                  autoFocus={true}
+                  errorMessage={errorMessage}
+                />
+              </Animated.View>
 
               {/* Resend Action Pill */}
               <View style={styles.resendWrapper}>
@@ -453,9 +468,9 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                       styles.resendBadge,
                       {
                         backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.05)'
-                          : theme.colors.surfaceMuted,
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : theme.colors.border,
+                          ? 'rgba(255, 255, 255, 0.04)'
+                          : 'rgba(0, 0, 0, 0.03)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(0, 0, 0, 0.06)',
                       },
                     ]}
                   >
@@ -463,7 +478,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                     <Text
                       level="bodySmall"
                       color="tertiary"
-                      style={{ fontWeight: '500', fontSize: 12.5 }}
+                      style={{ fontWeight: '500', fontSize: 13 }}
                     >
                       Resend code in {resendCooldown}s
                     </Text>
@@ -475,19 +490,27 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                       styles.resendActiveButton,
                       {
                         backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.05)'
-                          : theme.colors.surfaceMuted,
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : theme.colors.border,
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : 'rgba(0, 0, 0, 0.05)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.1)',
                       },
                     ]}
                     activeOpacity={0.75}
                     accessibilityRole="button"
                     accessibilityLabel="Resend verification code"
                   >
-                    <RotateCcw size={13} color={theme.colors.accent} style={{ marginRight: 6 }} />
+                    <RotateCcw
+                      size={13}
+                      color={isDark ? '#FFFFFF' : '#1C1917'}
+                      style={{ marginRight: 6 }}
+                    />
                     <Text
                       level="bodySmall"
-                      style={{ color: theme.colors.accent, fontWeight: '600', fontSize: 12.5 }}
+                      style={{
+                        color: isDark ? '#FFFFFF' : '#1C1917',
+                        fontWeight: '600',
+                        fontSize: 13,
+                      }}
                     >
                       Didn't receive code? Resend
                     </Text>
@@ -502,9 +525,12 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                 style={[
                   styles.verifyButton,
                   {
-                    backgroundColor: theme.colors.accent,
+                    backgroundColor: '#FFFFFF',
+                    borderColor: isDark ? 'transparent' : 'rgba(0, 0, 0, 0.12)',
+                    borderWidth: isDark ? 0 : 1,
                     opacity: isLoading ? 0.75 : 1,
-                    shadowColor: theme.colors.accent,
+                    shadowColor: '#000000',
+                    shadowOpacity: isDark ? 0.28 : 0.12,
                   },
                 ]}
                 onPress={() => handleVerify()}
@@ -514,11 +540,21 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                 accessibilityLabel="Verify code and continue"
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#000000" />
                 ) : (
                   <View style={styles.verifyButtonContent}>
-                    <Text style={styles.verifyButtonText}>Verify & Proceed</Text>
-                    <ArrowRight size={16} color="#FFFFFF" style={{ marginLeft: 6 }} />
+                    <Text
+                      style={[
+                        styles.verifyButtonText,
+                        {
+                          fontFamily: folkraFont,
+                          color: '#000000',
+                        },
+                      ]}
+                    >
+                      Verify & Proceed
+                    </Text>
+                    <ArrowRight size={16} color="#000000" style={{ marginLeft: 6 }} />
                   </View>
                 )}
               </TouchableOpacity>
@@ -526,7 +562,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
 
             {/* Privacy & Security note */}
             <View style={styles.securityFooter}>
-              <Lock size={12} color={theme.colors.textTertiary} style={{ marginRight: 5 }} />
+              <Lock size={12} color={theme.colors.textTertiary} style={{ marginRight: 6 }} />
               <Text level="caption" color="tertiary" style={styles.securityText}>
                 Encrypted & protected with zero-knowledge verification
               </Text>
@@ -579,93 +615,97 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 4,
+    marginBottom: 28,
+    marginTop: 8,
   },
   badgeWrapper: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 12,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 2,
   },
   eyebrow: {
-    fontFamily: 'Folkra',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 4.5,
+    letterSpacing: 3.5,
     marginBottom: 6,
   },
   title: {
-    fontFamily: 'Folkra',
     textAlign: 'center',
     marginBottom: 6,
-    fontSize: 25,
-    lineHeight: 32,
-    fontWeight: '800',
-    letterSpacing: -0.4,
+    fontSize: 27,
+    lineHeight: 34,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
   subtitle: {
     textAlign: 'center',
-    lineHeight: 19,
-    marginBottom: 10,
-    maxWidth: 290,
-    fontSize: 13.5,
+    lineHeight: 20,
+    marginBottom: 12,
+    maxWidth: 300,
+    fontSize: 14,
   },
   destinationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
+    paddingVertical: 7,
+    paddingHorizontal: 16,
     borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   destinationText: {
-    fontWeight: '700',
-    fontSize: 13.5,
-    marginRight: 8,
+    fontWeight: '600',
+    fontSize: 14,
+    marginRight: 10,
   },
   changeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 2,
-    paddingHorizontal: 4,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
   },
   changeText: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '600',
   },
   inputContainer: {
     alignItems: 'center',
-    marginBottom: 26,
+    marginBottom: 20,
+  },
+  otpShakeContainer: {
+    width: '100%',
+    alignItems: 'center',
   },
   resendWrapper: {
-    marginTop: 18,
+    marginTop: 22,
     alignItems: 'center',
   },
   resendBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   resendActiveButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   buttonWrapper: {
+    marginTop: 12,
     marginBottom: 16,
   },
   verifyButton: {
@@ -674,7 +714,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.28,
     shadowRadius: 10,
     elevation: 4,
   },
@@ -684,8 +724,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   verifyButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15.5,
+    color: '#000000',
+    fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
@@ -693,28 +733,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
+    marginTop: 8,
   },
   securityText: {
-    fontSize: 11.5,
-  },
-  devHintPill: {
-    marginTop: 14,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
-    alignSelf: 'center',
-  },
-  devHintText: {
-    color: '#10B981',
     fontSize: 12,
-    fontWeight: '500',
-  },
-  devHintBold: {
-    fontWeight: '800',
-    color: '#10B981',
   },
 });

@@ -1379,7 +1379,9 @@ export default function LoginScreen(): React.JSX.Element {
       >
         {/* Modal Header */}
         <View style={styles.modalHeader}>
-          <Text style={[styles.modalTitle, { color: theme.colors.textPrimary }]}>
+          <Text
+            style={[styles.modalTitle, { color: theme.colors.textPrimary, fontFamily: folkraFont }]}
+          >
             Select Country / Region
           </Text>
           <TouchableOpacity

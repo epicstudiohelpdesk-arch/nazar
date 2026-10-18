@@ -378,7 +378,7 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
               },
             ]}
           >
-            Build your story on Nazar
+            Build your story on <RNText style={{ color: theme.colors.accent }}>Nazar</RNText>
           </RNText>
 
           <RNText
@@ -590,10 +590,7 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
             accessibilityLabel="Begin Profile Creation"
             testID="begin-profile-creation-btn"
           >
-            <View style={styles.buttonLabelGroup}>
-              <RNText style={styles.primaryButtonLabel}>Begin Profile Creation</RNText>
-              <RNText style={styles.primaryButtonSubLabel}>Step 01 / 06</RNText>
-            </View>
+            <RNText style={styles.primaryButtonLabel}>Begin Profile Creation</RNText>
 
             <View style={styles.buttonArrowCircle}>
               <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.4} />

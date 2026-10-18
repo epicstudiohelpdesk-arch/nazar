@@ -39,7 +39,7 @@ export const OtpInput: React.FC<OtpInputProps> = ({
   style,
   testID,
 }) => {
-  const { colors, radii, spacing } = useTheme();
+  const { colors, spacing, isDark } = useTheme();
   const hiddenInputRef = useRef<RNTextInput>(null);
 
   const digits = Array.from({ length }, (_, i) => value.charAt(i) || '');
@@ -74,10 +74,11 @@ export const OtpInput: React.FC<OtpInputProps> = ({
               (index === activeIndex || (index === length - 1 && value.length === length));
             const isFilled = Boolean(digit);
 
-            let borderColor: string = colors.border;
+            let borderColor: string = isDark ? 'rgba(255, 255, 255, 0.16)' : colors.border;
             if (hasError) borderColor = colors.error;
-            else if (isFocused) borderColor = colors.accent;
-            else if (isFilled) borderColor = colors.borderStrong;
+            else if (isFocused) borderColor = isDark ? '#FFFFFF' : '#1C1917';
+            else if (isFilled)
+              borderColor = isDark ? 'rgba(255, 255, 255, 0.45)' : colors.borderStrong;
 
             return (
               <View
@@ -85,10 +86,16 @@ export const OtpInput: React.FC<OtpInputProps> = ({
                 style={[
                   styles.digitBox,
                   {
-                    borderRadius: radii.radiusMD,
+                    borderRadius: 14,
                     borderColor,
-                    borderWidth: isFocused || hasError ? 2 : 1,
-                    backgroundColor: disabled ? colors.surfaceMuted : colors.surface,
+                    borderWidth: isFocused || hasError ? 1.5 : 1,
+                    backgroundColor: disabled
+                      ? isDark
+                        ? 'rgba(255, 255, 255, 0.02)'
+                        : colors.surfaceMuted
+                      : isDark
+                        ? 'rgba(255, 255, 255, 0.05)'
+                        : colors.surface,
                   },
                 ]}
               >
@@ -97,6 +104,8 @@ export const OtpInput: React.FC<OtpInputProps> = ({
                   style={{
                     color: disabled ? colors.textTertiary : colors.textPrimary,
                     textAlign: 'center',
+                    fontSize: 22,
+                    fontWeight: '700',
                   }}
                 >
                   {digit}
