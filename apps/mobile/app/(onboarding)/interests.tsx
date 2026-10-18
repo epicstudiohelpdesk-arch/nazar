@@ -39,12 +39,15 @@ import {
   Heart,
   Code,
   Cpu,
-  Feather,
   Footprints,
   Dumbbell,
   Wine,
   Headphones,
   AlertCircle,
+  Clapperboard,
+  Tv,
+  Compass,
+  Mic,
 } from 'lucide-react-native';
 import type { InterestItem } from '@platform/api-contracts';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
@@ -73,137 +76,673 @@ export const cleanInterestName = (name: string): string => {
 
 // ============================================================================
 // Curated Authentic Fallback Taxonomy (100% Emoji-Free)
-// 45 rich, culturally resonant, modern passions spanning 7 distinct categories
+// 108 rich, culturally resonant passions spanning 10 distinct categories,
+// curated from contemporary dating app benchmarks (Tinder, Bumble, Hinge)
 // ============================================================================
 
 const FALLBACK_INTERESTS: InterestItem[] = [
-  // Food & Drink
-  { id: 'int_1', name: 'Filter Coffee', slug: 'filter-coffee', category: 'Food & Drink' },
-  { id: 'int_2', name: 'Artisan Cocktails', slug: 'artisan-cocktails', category: 'Food & Drink' },
-  { id: 'int_3', name: 'Street Food & Chaat', slug: 'street-food', category: 'Food & Drink' },
-  { id: 'int_4', name: 'Home Cooking & Spices', slug: 'home-cooking', category: 'Food & Drink' },
-  { id: 'int_5', name: 'Wine Tasting', slug: 'wine-tasting', category: 'Food & Drink' },
-  { id: 'int_6', name: 'Specialty Tea & Matcha', slug: 'specialty-tea', category: 'Food & Drink' },
-  { id: 'int_7', name: 'Baking & Sourdough', slug: 'baking', category: 'Food & Drink' },
+  // --------------------------------------------------------------------------
+  // 1. Food & Drink
+  // --------------------------------------------------------------------------
+  {
+    id: 'int_1',
+    name: 'Filter Coffee & Pour-Overs',
+    slug: 'filter-coffee',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_2',
+    name: 'Artisan Cocktails & Speakeasies',
+    slug: 'artisan-cocktails',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_3',
+    name: 'Street Food & Chaat Crawls',
+    slug: 'street-food',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_4',
+    name: 'Home Cooking & Rich Spices',
+    slug: 'home-cooking',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_5',
+    name: 'Wine Tasting & Natural Wines',
+    slug: 'wine-tasting',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_6',
+    name: 'Specialty Tea & Matcha',
+    slug: 'specialty-tea',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_7',
+    name: 'Sourdough & Artisan Baking',
+    slug: 'baking',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_46',
+    name: 'Ramen & Asian Street Eats',
+    slug: 'ramen-asian-food',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_47',
+    name: 'Sushi & Japanese Dining',
+    slug: 'sushi-dining',
+    category: 'Food & Drink',
+  },
+  {
+    id: 'int_48',
+    name: 'Plant-Based & Vegan Cooking',
+    slug: 'plant-based-vegan',
+    category: 'Food & Drink',
+  },
 
-  // Music & Sound
+  // --------------------------------------------------------------------------
+  // 2. Movies & Cinema
+  // --------------------------------------------------------------------------
+  {
+    id: 'int_15',
+    name: 'Indie Cinema & A24',
+    slug: 'indie-cinema',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_51',
+    name: 'Psychological Thrillers',
+    slug: 'psychological-thrillers',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_52',
+    name: 'Sci-Fi & Cyberpunk',
+    slug: 'sci-fi-cyberpunk',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_53',
+    name: 'Anime & Studio Ghibli',
+    slug: 'anime-ghibli',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_54',
+    name: 'Christopher Nolan Films',
+    slug: 'christopher-nolan',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_55',
+    name: 'True Crime & Docuseries',
+    slug: 'true-crime-docs',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_56',
+    name: 'Classic 90s & Cult Cinema',
+    slug: 'classic-cult-cinema',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_57',
+    name: 'Horror & Dark Suspense',
+    slug: 'horror-suspense',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_58',
+    name: 'Stand-Up Comedy Specials',
+    slug: 'standup-comedy',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_59',
+    name: 'Foreign & World Cinema',
+    slug: 'world-cinema',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_60',
+    name: 'Rom-Coms & Cozy Rewatches',
+    slug: 'rom-coms',
+    category: 'Movies & Cinema',
+  },
+  {
+    id: 'int_61',
+    name: 'Film Festivals & Curation',
+    slug: 'film-festivals',
+    category: 'Movies & Cinema',
+  },
+
+  // --------------------------------------------------------------------------
+  // 3. Books & Literature
+  // --------------------------------------------------------------------------
+  {
+    id: 'int_29',
+    name: 'Contemporary Fiction',
+    slug: 'contemporary-fiction',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_62',
+    name: 'Sci-Fi & Fantasy Epics',
+    slug: 'sci-fi-fantasy-books',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_63',
+    name: 'Mystery & Crime Thrillers',
+    slug: 'mystery-thrillers',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_18',
+    name: 'Poetry & Urdu Shayari',
+    slug: 'poetry-shayari',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_64',
+    name: 'Philosophy & Existentialism',
+    slug: 'philosophy-essays',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_65',
+    name: 'Book Clubs & Annotation',
+    slug: 'book-clubs-annotating',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_66',
+    name: 'Graphic Novels & Manga',
+    slug: 'graphic-novels-manga',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_67',
+    name: 'Biographies & Deep Dives',
+    slug: 'biographies-memoirs',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_68',
+    name: 'Audiobooks on Daily Walks',
+    slug: 'audiobooks-walks',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_69',
+    name: 'Classic World Literature',
+    slug: 'classic-literature',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_70',
+    name: 'Magical Realism & Dystopia',
+    slug: 'magical-realism',
+    category: 'Books & Literature',
+  },
+  {
+    id: 'int_71',
+    name: 'Cozy Bookstores & Cafes',
+    slug: 'bookstores-cafes',
+    category: 'Books & Literature',
+  },
+
+  // --------------------------------------------------------------------------
+  // 4. Music & Audio
+  // --------------------------------------------------------------------------
   {
     id: 'int_8',
     name: 'Hindustani Classical',
     slug: 'hindustani-classical',
-    category: 'Music & Sound',
+    category: 'Music & Audio',
   },
-  { id: 'int_9', name: 'Live Indie Gigs', slug: 'live-gigs', category: 'Music & Sound' },
-  { id: 'int_10', name: 'Sufi & Ghazals', slug: 'sufi-ghazals', category: 'Music & Sound' },
-  { id: 'int_11', name: 'Vinyl Records', slug: 'vinyl-records', category: 'Music & Sound' },
+  {
+    id: 'int_9',
+    name: 'Live Indie Gigs & Concerts',
+    slug: 'live-gigs',
+    category: 'Music & Audio',
+  },
+  {
+    id: 'int_10',
+    name: 'Sufi, Ghazals & Qawwalis',
+    slug: 'sufi-ghazals',
+    category: 'Music & Audio',
+  },
+  {
+    id: 'int_11',
+    name: 'Vinyl Records & Turntables',
+    slug: 'vinyl-records',
+    category: 'Music & Audio',
+  },
   {
     id: 'int_12',
-    name: 'Electronic & Techno',
+    name: 'Electronic & Techno Raves',
     slug: 'electronic-techno',
-    category: 'Music & Sound',
+    category: 'Music & Audio',
   },
-  { id: 'int_13', name: 'Jazz & Blues', slug: 'jazz-blues', category: 'Music & Sound' },
-  { id: 'int_14', name: 'Podcasts & Deep Dives', slug: 'podcasts', category: 'Music & Sound' },
+  {
+    id: 'int_13',
+    name: 'Jazz, Soul & Blues Lounges',
+    slug: 'jazz-blues',
+    category: 'Music & Audio',
+  },
+  {
+    id: 'int_14',
+    name: 'Deep Dive Podcasts',
+    slug: 'podcasts',
+    category: 'Music & Audio',
+  },
+  {
+    id: 'int_72',
+    name: 'Hip-Hop, R&B & Beats',
+    slug: 'hip-hop-rnb',
+    category: 'Music & Audio',
+  },
+  {
+    id: 'int_73',
+    name: 'Indie Rock & Bedroom Pop',
+    slug: 'indie-rock-pop',
+    category: 'Music & Audio',
+  },
+  {
+    id: 'int_75',
+    name: 'Lo-Fi & Late Night Sessions',
+    slug: 'lo-fi-sessions',
+    category: 'Music & Audio',
+  },
 
-  // Arts & Culture
-  { id: 'int_15', name: 'Indie Cinema', slug: 'indie-cinema', category: 'Arts & Culture' },
-  { id: 'int_16', name: 'Modern Indian Art', slug: 'modern-art', category: 'Arts & Culture' },
+  // --------------------------------------------------------------------------
+  // 5. Arts & Culture
+  // --------------------------------------------------------------------------
+  {
+    id: 'int_16',
+    name: 'Modern Art & Gallery Nights',
+    slug: 'modern-art',
+    category: 'Arts & Culture',
+  },
   {
     id: 'int_17',
-    name: 'Architecture & Heritage',
+    name: 'Architecture & Heritage Walks',
     slug: 'architecture',
     category: 'Arts & Culture',
   },
-  { id: 'int_18', name: 'Poetry & Shayari', slug: 'poetry-shayari', category: 'Arts & Culture' },
-  { id: 'int_19', name: 'Film Photography', slug: 'film-photography', category: 'Arts & Culture' },
+  {
+    id: 'int_19',
+    name: '35mm Film Photography',
+    slug: 'film-photography',
+    category: 'Arts & Culture',
+  },
   {
     id: 'int_20',
-    name: 'Museums & Galleries',
+    name: 'Museums & After-Hours',
     slug: 'museums-galleries',
     category: 'Arts & Culture',
   },
-  { id: 'int_21', name: 'Theater & Performing Arts', slug: 'theater', category: 'Arts & Culture' },
-
-  // Active & Outdoors
   {
-    id: 'int_22',
-    name: 'Weekend Trekking',
-    slug: 'weekend-trekking',
-    category: 'Active & Outdoors',
-  },
-  { id: 'int_23', name: 'Heritage Walks', slug: 'heritage-walks', category: 'Active & Outdoors' },
-  { id: 'int_24', name: 'Running & Marathons', slug: 'running', category: 'Active & Outdoors' },
-  {
-    id: 'int_25',
-    name: 'Yoga & Mindfulness',
-    slug: 'yoga-mindfulness',
-    category: 'Active & Outdoors',
-  },
-  { id: 'int_26', name: 'Cycling & Gravel', slug: 'cycling', category: 'Active & Outdoors' },
-  { id: 'int_27', name: 'Scuba & Surfing', slug: 'scuba-surfing', category: 'Active & Outdoors' },
-  { id: 'int_28', name: 'Rock Climbing', slug: 'rock-climbing', category: 'Active & Outdoors' },
-
-  // Lifestyle & Leisure
-  {
-    id: 'int_29',
-    name: 'Books & Literature',
-    slug: 'books-literature',
-    category: 'Lifestyle & Leisure',
+    id: 'int_21',
+    name: 'Theater & Performing Arts',
+    slug: 'theater',
+    category: 'Arts & Culture',
   },
   {
-    id: 'int_30',
-    name: 'Board Games & Catan',
-    slug: 'board-games',
-    category: 'Lifestyle & Leisure',
-  },
-  { id: 'int_31', name: 'Dog & Pet Lover', slug: 'pet-lover', category: 'Lifestyle & Leisure' },
-  { id: 'int_32', name: 'Solo Traveling', slug: 'solo-traveling', category: 'Lifestyle & Leisure' },
-  {
-    id: 'int_33',
-    name: 'Astronomy & Stargazing',
-    slug: 'astronomy',
-    category: 'Lifestyle & Leisure',
+    id: 'int_43',
+    name: 'Pottery & Ceramic Studios',
+    slug: 'pottery',
+    category: 'Arts & Culture',
   },
   {
     id: 'int_34',
-    name: 'Vintage Thrifting',
+    name: 'Vintage Thrifting & Fashion',
     slug: 'vintage-thrifting',
-    category: 'Lifestyle & Leisure',
+    category: 'Arts & Culture',
+  },
+  {
+    id: 'int_77',
+    name: 'Creative Writing & Journals',
+    slug: 'creative-writing',
+    category: 'Arts & Culture',
+  },
+  {
+    id: 'int_78',
+    name: 'Painting & Watercolor',
+    slug: 'painting-watercolor',
+    category: 'Arts & Culture',
+  },
+  {
+    id: 'int_79',
+    name: 'Art History & Heritage',
+    slug: 'art-history',
+    category: 'Arts & Culture',
   },
 
-  // Sports & Fitness
-  { id: 'int_35', name: 'Cricket & IPL', slug: 'cricket', category: 'Sports & Fitness' },
-  { id: 'int_36', name: 'Formula 1', slug: 'formula-1', category: 'Sports & Fitness' },
+  // --------------------------------------------------------------------------
+  // 6. Active & Outdoors
+  // --------------------------------------------------------------------------
+  {
+    id: 'int_22',
+    name: 'Weekend Trekking & Summits',
+    slug: 'weekend-trekking',
+    category: 'Active & Outdoors',
+  },
+  {
+    id: 'int_23',
+    name: 'Heritage Walking Tours',
+    slug: 'heritage-walks',
+    category: 'Active & Outdoors',
+  },
+  {
+    id: 'int_24',
+    name: 'Trail Running & Marathons',
+    slug: 'running',
+    category: 'Active & Outdoors',
+  },
+  {
+    id: 'int_25',
+    name: 'Yoga, Breathwork & Mind',
+    slug: 'yoga-mindfulness',
+    category: 'Active & Outdoors',
+  },
+  {
+    id: 'int_26',
+    name: 'Gravel Cycling & Road Rides',
+    slug: 'cycling',
+    category: 'Active & Outdoors',
+  },
+  {
+    id: 'int_27',
+    name: 'Surfing & Ocean Swims',
+    slug: 'scuba-surfing',
+    category: 'Active & Outdoors',
+  },
+  {
+    id: 'int_28',
+    name: 'Bouldering & Rock Climbing',
+    slug: 'rock-climbing',
+    category: 'Active & Outdoors',
+  },
+  {
+    id: 'int_80',
+    name: 'Wild Camping & Stargazing',
+    slug: 'camping-stargazing',
+    category: 'Active & Outdoors',
+  },
+  {
+    id: 'int_81',
+    name: 'Scuba Diving & Coral Reefs',
+    slug: 'scuba-diving',
+    category: 'Active & Outdoors',
+  },
+  {
+    id: 'int_82',
+    name: 'Pilates & Core Movement',
+    slug: 'pilates-movement',
+    category: 'Active & Outdoors',
+  },
+
+  // --------------------------------------------------------------------------
+  // 7. Sports & Fitness
+  // --------------------------------------------------------------------------
+  {
+    id: 'int_35',
+    name: 'Cricket & Stadium Matchdays',
+    slug: 'cricket',
+    category: 'Sports & Fitness',
+  },
+  {
+    id: 'int_36',
+    name: 'Formula 1 Race Weekends',
+    slug: 'formula-1',
+    category: 'Sports & Fitness',
+  },
   {
     id: 'int_37',
-    name: 'Football & Premier League',
+    name: 'Premier League Football',
     slug: 'football',
     category: 'Sports & Fitness',
   },
-  { id: 'int_38', name: 'Tennis & Padel', slug: 'tennis-padel', category: 'Sports & Fitness' },
-  { id: 'int_39', name: 'Chess & Strategy', slug: 'chess', category: 'Sports & Fitness' },
+  {
+    id: 'int_38',
+    name: 'Tennis, Padel & Pickleball',
+    slug: 'tennis-padel',
+    category: 'Sports & Fitness',
+  },
+  {
+    id: 'int_39',
+    name: 'Chess Tactics & Blitz Games',
+    slug: 'chess',
+    category: 'Sports & Fitness',
+  },
   {
     id: 'int_40',
-    name: 'Gym & Calisthenics',
+    name: 'Gym, Powerlifting & Calisthenics',
     slug: 'gym-calisthenics',
     category: 'Sports & Fitness',
   },
+  {
+    id: 'int_83',
+    name: 'Badminton & Fast Rallies',
+    slug: 'badminton',
+    category: 'Sports & Fitness',
+  },
+  {
+    id: 'int_84',
+    name: 'Boxing & Martial Arts',
+    slug: 'boxing-mma',
+    category: 'Sports & Fitness',
+  },
+  {
+    id: 'int_85',
+    name: 'Swimming & Lap Workouts',
+    slug: 'swimming-laps',
+    category: 'Sports & Fitness',
+  },
+  {
+    id: 'int_86',
+    name: 'Basketball & Street Courts',
+    slug: 'basketball',
+    category: 'Sports & Fitness',
+  },
 
-  // Tech & Creative
-  { id: 'int_41', name: 'Creative Coding', slug: 'creative-coding', category: 'Tech & Creative' },
+  // --------------------------------------------------------------------------
+  // 8. Gaming & Tech
+  // --------------------------------------------------------------------------
+  {
+    id: 'int_41',
+    name: 'Creative Coding & Open Source',
+    slug: 'creative-coding',
+    category: 'Gaming & Tech',
+  },
   {
     id: 'int_42',
     name: 'Design & Typography',
     slug: 'design-typography',
-    category: 'Tech & Creative',
+    category: 'Gaming & Tech',
   },
-  { id: 'int_43', name: 'Pottery & Ceramics', slug: 'pottery', category: 'Tech & Creative' },
-  { id: 'int_44', name: 'AI & Futurism', slug: 'ai-futurism', category: 'Tech & Creative' },
+  {
+    id: 'int_44',
+    name: 'AI, LLMs & Futurism',
+    slug: 'ai-futurism',
+    category: 'Gaming & Tech',
+  },
   {
     id: 'int_45',
-    name: 'Mechanical Keyboards',
+    name: 'Custom Mechanical Keyboards',
     slug: 'mechanical-keyboards',
-    category: 'Tech & Creative',
+    category: 'Gaming & Tech',
+  },
+  {
+    id: 'int_87',
+    name: 'PC & Console Gaming',
+    slug: 'pc-console-gaming',
+    category: 'Gaming & Tech',
+  },
+  {
+    id: 'int_30',
+    name: 'Board Games & Catan Nights',
+    slug: 'board-games',
+    category: 'Gaming & Tech',
+  },
+  {
+    id: 'int_88',
+    name: 'Dungeons & Dragons Tabletop',
+    slug: 'dnd-tabletop',
+    category: 'Gaming & Tech',
+  },
+  {
+    id: 'int_89',
+    name: 'Indie Game Development',
+    slug: 'indie-game-dev',
+    category: 'Gaming & Tech',
+  },
+  {
+    id: 'int_90',
+    name: 'Cybersecurity & Tech Culture',
+    slug: 'cybersecurity-tech',
+    category: 'Gaming & Tech',
+  },
+  {
+    id: 'int_91',
+    name: 'Retro Arcade & Emulation',
+    slug: 'retro-arcade',
+    category: 'Gaming & Tech',
+  },
+
+  // --------------------------------------------------------------------------
+  // 9. Travel & Adventure
+  // --------------------------------------------------------------------------
+  {
+    id: 'int_32',
+    name: 'Solo Backpacking Adventures',
+    slug: 'solo-traveling',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_93',
+    name: 'Scenic Road Trips & Detours',
+    slug: 'road-trips',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_100',
+    name: 'Mountain Sunrises & Treks',
+    slug: 'mountain-sunrises',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_101',
+    name: 'Beach Getaways & Sunsets',
+    slug: 'beach-getaways',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_102',
+    name: 'Passport Stamps & City Breaks',
+    slug: 'city-breaks',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_103',
+    name: 'Island Hopping & Hidden Coves',
+    slug: 'island-hopping',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_104',
+    name: 'Van Life & Starry Nights',
+    slug: 'van-life',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_105',
+    name: 'Street Exploration & Alleys',
+    slug: 'street-exploration',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_106',
+    name: 'Train Journeys & Slow Travel',
+    slug: 'train-journeys',
+    category: 'Travel & Adventure',
+  },
+  {
+    id: 'int_107',
+    name: 'Desert Safaris & Campfires',
+    slug: 'desert-safaris',
+    category: 'Travel & Adventure',
+  },
+
+  // --------------------------------------------------------------------------
+  // 10. Lifestyle & Social
+  // --------------------------------------------------------------------------
+  {
+    id: 'int_31',
+    name: 'Dog & Puppy Parent',
+    slug: 'pet-lover',
+    category: 'Lifestyle & Social',
+  },
+  {
+    id: 'int_92',
+    name: 'Cat Aficionado & Rescues',
+    slug: 'cat-aficionado',
+    category: 'Lifestyle & Social',
+  },
+  {
+    id: 'int_94',
+    name: 'Late Night Deep Talks',
+    slug: 'late-night-talks',
+    category: 'Lifestyle & Social',
+  },
+  {
+    id: 'int_95',
+    name: 'Plant Parent & Urban Jungles',
+    slug: 'plant-parent',
+    category: 'Lifestyle & Social',
+  },
+  {
+    id: 'int_96',
+    name: 'Weekend Flea & Farmers Markets',
+    slug: 'farmers-markets',
+    category: 'Lifestyle & Social',
+  },
+  {
+    id: 'int_97',
+    name: 'Volunteering & Social Causes',
+    slug: 'volunteering-causes',
+    category: 'Lifestyle & Social',
+  },
+  {
+    id: 'int_98',
+    name: 'Astrology & Birth Charts',
+    slug: 'astrology-charts',
+    category: 'Lifestyle & Social',
+  },
+  {
+    id: 'int_99',
+    name: 'Slow Living & Intentionality',
+    slug: 'slow-living',
+    category: 'Lifestyle & Social',
+  },
+  {
+    id: 'int_33',
+    name: 'Astronomy & Stargazing',
+    slug: 'astronomy',
+    category: 'Lifestyle & Social',
+  },
+  {
+    id: 'int_108',
+    name: 'Mindful Coffee Strolls',
+    slug: 'coffee-strolls',
+    category: 'Lifestyle & Social',
   },
 ];
 
@@ -219,99 +758,87 @@ const getInterestIcon = (item: {
 }): React.FC<any> => {
   const key = `${item.slug || ''} ${item.name.toLowerCase()} ${item.category?.toLowerCase() || ''}`;
 
+  // Food & Drink
   if (
     key.includes('coffee') ||
     key.includes('tea') ||
     key.includes('matcha') ||
-    key.includes('chai')
+    key.includes('chai') ||
+    key.includes('boba') ||
+    key.includes('pour-over')
   )
     return Coffee;
   if (
     key.includes('wine') ||
     key.includes('cocktail') ||
-    key.includes('bar') ||
-    key.includes('brew')
+    key.includes('speakeasy') ||
+    key.includes('brew') ||
+    key.includes('beer')
   )
     return Wine;
-  if (
-    key.includes('cinema') ||
-    key.includes('film') ||
-    key.includes('movie') ||
-    key.includes('theater')
-  )
-    return Film;
   if (
     key.includes('food') ||
     key.includes('cook') ||
     key.includes('chaat') ||
     key.includes('baking') ||
-    key.includes('bake')
+    key.includes('bake') ||
+    key.includes('sourdough') ||
+    key.includes('ramen') ||
+    key.includes('sushi') ||
+    key.includes('dining') ||
+    key.includes('vegan') ||
+    key.includes('plant-based') ||
+    key.includes('spice')
   )
     return UtensilsCrossed;
+
+  // Movies & Cinema
   if (
-    key.includes('trek') ||
-    key.includes('hike') ||
-    key.includes('mountain') ||
-    key.includes('climbing') ||
-    key.includes('camp')
+    key.includes('cinema') ||
+    key.includes('film') ||
+    key.includes('movie') ||
+    key.includes('a24') ||
+    key.includes('nolan') ||
+    key.includes('festival')
   )
-    return Mountain;
-  if (key.includes('photo') || key.includes('camera')) return Camera;
+    return Film;
   if (
-    key.includes('art') ||
-    key.includes('paint') ||
-    key.includes('pottery') ||
-    key.includes('ceramics') ||
-    key.includes('gallery')
+    key.includes('docuseries') ||
+    key.includes('documentary') ||
+    key.includes('series') ||
+    key.includes('rewatch')
   )
-    return Palette;
+    return Tv;
+  if (key.includes('anime') || key.includes('ghibli')) return Sparkles;
+  if (key.includes('comedy') || key.includes('stand-up')) return Mic;
+  if (key.includes('horror') || key.includes('suspense') || key.includes('thriller'))
+    return Clapperboard;
+
+  // Books & Literature
   if (
-    key.includes('architecture') ||
-    key.includes('heritage') ||
-    key.includes('museum') ||
-    key.includes('history')
+    key.includes('book') ||
+    key.includes('literature') ||
+    key.includes('fiction') ||
+    key.includes('reading') ||
+    key.includes('novel') ||
+    key.includes('biograph') ||
+    key.includes('memoir') ||
+    key.includes('manga') ||
+    key.includes('dystopia')
   )
-    return Landmark;
-  if (key.includes('book') || key.includes('literature') || key.includes('read')) return BookOpen;
+    return BookOpen;
   if (
-    key.includes('cricket') ||
-    key.includes('football') ||
-    key.includes('formula') ||
-    key.includes('tennis') ||
-    key.includes('chess') ||
-    key.includes('ipl')
+    key.includes('poetry') ||
+    key.includes('shayari') ||
+    key.includes('write') ||
+    key.includes('writing') ||
+    key.includes('journal') ||
+    key.includes('philosoph')
   )
-    return Trophy;
-  if (
-    key.includes('gym') ||
-    key.includes('calisthenics') ||
-    key.includes('fitness') ||
-    key.includes('workout')
-  )
-    return Dumbbell;
-  if (
-    key.includes('run') ||
-    key.includes('marathon') ||
-    key.includes('cycling') ||
-    key.includes('scuba') ||
-    key.includes('surfing')
-  )
-    return Activity;
-  if (
-    key.includes('board') ||
-    key.includes('catan') ||
-    key.includes('gaming') ||
-    key.includes('game')
-  )
-    return Gamepad2;
-  if (key.includes('walk') || key.includes('stroll')) return Footprints;
-  if (
-    key.includes('yoga') ||
-    key.includes('mindful') ||
-    key.includes('meditation') ||
-    key.includes('wellness')
-  )
-    return Sun;
+    return PenTool;
+  if (key.includes('audiobook')) return Headphones;
+
+  // Music & Audio
   if (
     key.includes('classical') ||
     key.includes('sufi') ||
@@ -319,20 +846,108 @@ const getInterestIcon = (item: {
     key.includes('vinyl') ||
     key.includes('techno') ||
     key.includes('jazz') ||
-    key.includes('music')
+    key.includes('hip-hop') ||
+    key.includes('rock') ||
+    key.includes('music') ||
+    key.includes('acoustic')
   )
     return Music;
   if (
     key.includes('gig') ||
     key.includes('live') ||
     key.includes('concert') ||
-    key.includes('podcast')
+    key.includes('podcast') ||
+    key.includes('lo-fi') ||
+    key.includes('rave')
   )
     return Headphones;
-  if (key.includes('poetry') || key.includes('shayari') || key.includes('write')) return PenTool;
-  if (key.includes('travel') || key.includes('solo') || key.includes('trip')) return Plane;
-  if (key.includes('pet') || key.includes('dog') || key.includes('cat') || key.includes('animal'))
-    return Heart;
+
+  // Arts & Culture
+  if (key.includes('photo') || key.includes('camera') || key.includes('35mm')) return Camera;
+  if (
+    key.includes('art') ||
+    key.includes('paint') ||
+    key.includes('pottery') ||
+    key.includes('ceramic') ||
+    key.includes('gallery') ||
+    key.includes('watercolor')
+  )
+    return Palette;
+  if (
+    key.includes('architecture') ||
+    key.includes('heritage') ||
+    key.includes('museum') ||
+    key.includes('theater') ||
+    key.includes('performing')
+  )
+    return Landmark;
+  if (key.includes('thrift') || key.includes('vintage') || key.includes('fashion')) return Sparkles;
+
+  // Active & Outdoors
+  if (
+    key.includes('trek') ||
+    key.includes('hike') ||
+    key.includes('mountain') ||
+    key.includes('climbing') ||
+    key.includes('boulder') ||
+    key.includes('camp')
+  )
+    return Mountain;
+  if (
+    key.includes('run') ||
+    key.includes('marathon') ||
+    key.includes('cycling') ||
+    key.includes('scuba') ||
+    key.includes('surfing') ||
+    key.includes('swim')
+  )
+    return Activity;
+  if (key.includes('walk') || key.includes('stroll') || key.includes('trail')) return Footprints;
+  if (
+    key.includes('yoga') ||
+    key.includes('mindful') ||
+    key.includes('meditation') ||
+    key.includes('breathwork') ||
+    key.includes('pilates')
+  )
+    return Sun;
+
+  // Sports & Fitness
+  if (
+    key.includes('gym') ||
+    key.includes('calisthenics') ||
+    key.includes('fitness') ||
+    key.includes('workout') ||
+    key.includes('powerlifting') ||
+    key.includes('boxing') ||
+    key.includes('martial')
+  )
+    return Dumbbell;
+  if (
+    key.includes('cricket') ||
+    key.includes('football') ||
+    key.includes('formula') ||
+    key.includes('tennis') ||
+    key.includes('padel') ||
+    key.includes('badminton') ||
+    key.includes('basketball') ||
+    key.includes('ipl')
+  )
+    return Trophy;
+  if (key.includes('chess') || key.includes('tactics')) return Trophy;
+
+  // Gaming & Tech
+  if (
+    key.includes('gaming') ||
+    key.includes('game') ||
+    key.includes('console') ||
+    key.includes('board') ||
+    key.includes('catan') ||
+    key.includes('dnd') ||
+    key.includes('tabletop') ||
+    key.includes('arcade')
+  )
+    return Gamepad2;
   if (
     key.includes('code') ||
     key.includes('coding') ||
@@ -340,12 +955,59 @@ const getInterestIcon = (item: {
     key.includes('dev')
   )
     return Code;
-  if (key.includes('ai') || key.includes('futurism') || key.includes('keyboard')) return Cpu;
-  if (key.includes('design') || key.includes('typography')) return Feather;
-  if (key.includes('star') || key.includes('astronomy') || key.includes('sky')) return Sparkles;
+  if (
+    key.includes('ai') ||
+    key.includes('futurism') ||
+    key.includes('keyboard') ||
+    key.includes('robot') ||
+    key.includes('cyber')
+  )
+    return Cpu;
+
+  // Travel & Adventure
+  if (
+    key.includes('backpack') ||
+    key.includes('island') ||
+    key.includes('safari') ||
+    key.includes('train') ||
+    key.includes('journey') ||
+    key.includes('flight')
+  )
+    return Plane;
+  if (
+    key.includes('road trip') ||
+    key.includes('detour') ||
+    key.includes('explore') ||
+    key.includes('exploration')
+  )
+    return Compass;
+
+  // Lifestyle & Social
+  if (key.includes('pet') || key.includes('dog') || key.includes('cat') || key.includes('puppy'))
+    return Heart;
+  if (key.includes('travel') || key.includes('solo') || key.includes('trip')) return Plane;
+  if (
+    key.includes('star') ||
+    key.includes('astronomy') ||
+    key.includes('astrology') ||
+    key.includes('talk') ||
+    key.includes('slow living') ||
+    key.includes('plant')
+  )
+    return Sparkles;
 
   // Fallbacks by category
   if (item.category?.toLowerCase().includes('food')) return UtensilsCrossed;
+  if (
+    item.category?.toLowerCase().includes('movie') ||
+    item.category?.toLowerCase().includes('cinema')
+  )
+    return Film;
+  if (
+    item.category?.toLowerCase().includes('book') ||
+    item.category?.toLowerCase().includes('read')
+  )
+    return BookOpen;
   if (item.category?.toLowerCase().includes('music')) return Music;
   if (item.category?.toLowerCase().includes('art')) return Palette;
   if (
@@ -360,14 +1022,15 @@ const getInterestIcon = (item: {
     return Trophy;
   if (
     item.category?.toLowerCase().includes('tech') ||
+    item.category?.toLowerCase().includes('game') ||
     item.category?.toLowerCase().includes('creative')
   )
-    return Code;
+    return Gamepad2;
   if (
-    item.category?.toLowerCase().includes('lifestyle') ||
-    item.category?.toLowerCase().includes('leisure')
+    item.category?.toLowerCase().includes('travel') ||
+    item.category?.toLowerCase().includes('adventure')
   )
-    return BookOpen;
+    return Plane;
 
   return Sparkles;
 };
@@ -376,12 +1039,17 @@ const getInterestIcon = (item: {
 const getCategoryIcon = (category: string): React.FC<any> => {
   const cat = category.toLowerCase();
   if (cat.includes('food') || cat.includes('drink')) return UtensilsCrossed;
-  if (cat.includes('music') || cat.includes('sound')) return Headphones;
+  if (cat.includes('movie') || cat.includes('cinema') || cat.includes('film') || cat.includes('tv'))
+    return Film;
+  if (cat.includes('book') || cat.includes('read') || cat.includes('literature')) return BookOpen;
+  if (cat.includes('music') || cat.includes('sound') || cat.includes('audio')) return Headphones;
   if (cat.includes('art') || cat.includes('culture')) return Palette;
   if (cat.includes('outdoor') || cat.includes('active')) return Mountain;
-  if (cat.includes('lifestyle') || cat.includes('leisure')) return BookOpen;
   if (cat.includes('sport') || cat.includes('fitness')) return Trophy;
-  if (cat.includes('tech') || cat.includes('creative')) return Code;
+  if (cat.includes('game') || cat.includes('gaming') || cat.includes('tech')) return Gamepad2;
+  if (cat.includes('travel') || cat.includes('adventure')) return Plane;
+  if (cat.includes('lifestyle') || cat.includes('social') || cat.includes('leisure'))
+    return Sparkles;
   return Sparkles;
 };
 
@@ -692,7 +1360,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
             width: '100%',
             alignSelf: 'center',
             paddingTop: Math.max(insets.top + 60, 72),
-            paddingBottom: Math.max(insets.bottom + 130, 150),
+            paddingBottom: Math.max(insets.bottom + 210, 240),
           },
         ]}
         showsVerticalScrollIndicator={false}
@@ -1187,6 +1855,9 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                 );
               })}
             </View>
+
+            {/* Bottom clearance spacer so bottom cards are never covered by floating action button */}
+            <View style={styles.categoryGridBottomSpacer} />
           </View>
         )}
       </Animated.ScrollView>
@@ -1733,7 +2404,10 @@ const styles = StyleSheet.create({
   },
   // Category Cards Section & Grid (Rounded Squared Cards)
   categorySectionContainer: {
-    marginBottom: 8,
+    marginBottom: 16,
+  },
+  categoryGridBottomSpacer: {
+    height: 36,
   },
   categoryGrid: {
     flexDirection: 'row',
