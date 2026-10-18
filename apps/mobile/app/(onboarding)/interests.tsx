@@ -7,6 +7,8 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -1417,10 +1419,40 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryModal, setSelectedCategoryModal] = useState<string | null>(null);
+  const [activeCategoryModal, setActiveCategoryModal] = useState<string | null>(null);
+
+  // Preserve modal category during exit animation so list contents never abruptly vanish or collapse
+  useEffect(() => {
+    if (selectedCategoryModal) {
+      setActiveCategoryModal(selectedCategoryModal);
+    }
+  }, [selectedCategoryModal]);
+
+  const currentCategory = selectedCategoryModal || activeCategoryModal;
   const [categorySearchText, setCategorySearchText] = useState('');
   const [internetSuggestions, setInternetSuggestions] = useState<string[]>([]);
   const [isSearchingInternet, setIsSearchingInternet] = useState(false);
   const [isSavingInterest, setIsSavingInterest] = useState(false);
+  // Track keyboard height to adjust scrollable content padding inside category modal
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates?.height || 300);
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Ensure no passions are selected by default on initial entry
   useEffect(() => {
@@ -1473,7 +1505,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
       try {
         const results = await fetchInternetPassionSuggestions(
           trimmed,
-          selectedCategoryModal || undefined,
+          currentCategory || undefined,
           controller.signal
         );
 
@@ -1500,20 +1532,18 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [categorySearchText, selectedCategoryModal, sanitizedTaxonomy]);
+  }, [categorySearchText, currentCategory, sanitizedTaxonomy]);
 
   // Distinct category list for cards
   const categoryCards = useMemo(() => {
     return Array.from(new Set(sanitizedTaxonomy.map((item) => item.category || 'General')));
   }, [sanitizedTaxonomy]);
 
-  // Passions for the actively opened category modal
+  // Passions for the actively opened category modal (retained during close animation to prevent shrinking)
   const modalCategoryItems = useMemo(() => {
-    if (!selectedCategoryModal) return [];
-    return sanitizedTaxonomy.filter(
-      (item) => (item.category || 'General') === selectedCategoryModal
-    );
-  }, [sanitizedTaxonomy, selectedCategoryModal]);
+    if (!currentCategory) return [];
+    return sanitizedTaxonomy.filter((item) => (item.category || 'General') === currentCategory);
+  }, [sanitizedTaxonomy, currentCategory]);
 
   const modalCategorySelectedCount = useMemo(() => {
     return modalCategoryItems.filter((item) => draftInterests.includes(item.id)).length;
@@ -2410,34 +2440,47 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
       <SmoothBottomSheetModal
         visible={!!selectedCategoryModal}
         onClose={() => {
+          Keyboard.dismiss();
           setSelectedCategoryModal(null);
-          setCategorySearchText('');
         }}
-        sheetStyle={{ maxHeight: '86%' }}
+        onDismiss={() => {
+          setActiveCategoryModal(null);
+          setCategorySearchText('');
+          setInternetSuggestions([]);
+        }}
+        height="86%"
+        disableKeyboardAvoiding={true}
+        sheetStyle={{
+          paddingBottom: Math.max(insets.bottom + 12, 28),
+        }}
         showHandle={true}
       >
         {/* Modal Header */}
         <View style={styles.modalHeader}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={Keyboard.dismiss}
+            style={{ flex: 1, paddingRight: 8 }}
+          >
             <Text
               style={[
                 styles.modalTitle,
                 { color: theme.colors.textPrimary, fontFamily: folkraFont },
               ]}
             >
-              {selectedCategoryModal || ''}
+              {currentCategory || ''}
             </Text>
             <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
               {modalCategorySelectedCount > 0
                 ? `${modalCategorySelectedCount} selected • ${modalCategoryItems.length} curated passions`
                 : `${modalCategoryItems.length} curated passions • select what resonates with you`}
             </Text>
-          </View>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
               haptics.selection();
+              Keyboard.dismiss();
               setSelectedCategoryModal(null);
-              setCategorySearchText('');
             }}
             style={[
               styles.modalCloseBtn,
@@ -2465,7 +2508,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
           <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
           <TextInput
             style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
-            placeholder={`Search in ${selectedCategoryModal || 'category'} or web...`}
+            placeholder={`Search in ${currentCategory || 'category'} or web...`}
             placeholderTextColor={theme.colors.textTertiary}
             value={categorySearchText}
             onChangeText={setCategorySearchText}
@@ -2475,10 +2518,10 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
             onSubmitEditing={() => {
               if (
                 categorySearchText.trim().length >= 2 &&
-                selectedCategoryModal &&
+                currentCategory &&
                 !hasCategoryExactMatch
               ) {
-                handleCreateAndSelectInterest(categorySearchText.trim(), selectedCategoryModal);
+                handleCreateAndSelectInterest(categorySearchText.trim(), currentCategory);
               }
             }}
           />
@@ -2503,9 +2546,13 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
 
         {/* Passions Scroll Area */}
         <ScrollView
-          style={{ maxHeight: 380 }}
-          contentContainerStyle={styles.modalScrollContent}
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.modalScrollContent,
+            { paddingBottom: keyboardHeight > 0 ? keyboardHeight : 16 },
+          ]}
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode="none"
           keyboardShouldPersistTaps="handled"
         >
           {categorySearchText.trim().length > 0 ? (
@@ -2521,7 +2568,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                         { color: theme.colors.textSecondary, fontFamily: folkraFont },
                       ]}
                     >
-                      {`IN ${selectedCategoryModal?.toUpperCase() || 'CATEGORY'}`}
+                      {`IN ${currentCategory?.toUpperCase() || 'CATEGORY'}`}
                     </Text>
                     <Text
                       style={[styles.modalSubSectionCount, { color: theme.colors.textTertiary }]}
@@ -2640,8 +2687,8 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                       <TouchableOpacity
                         key={`web-sugg-${suggestion}`}
                         onPress={() => {
-                          if (selectedCategoryModal) {
-                            handleCreateAndSelectInterest(suggestion, selectedCategoryModal);
+                          if (currentCategory) {
+                            handleCreateAndSelectInterest(suggestion, currentCategory);
                           }
                         }}
                         disabled={isSavingInterest}
@@ -2654,7 +2701,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                         ]}
                         activeOpacity={0.78}
                         accessibilityRole="button"
-                        accessibilityLabel={`Add ${suggestion} from web to ${selectedCategoryModal}`}
+                        accessibilityLabel={`Add ${suggestion} from web to ${currentCategory}`}
                       >
                         <View
                           style={[
@@ -2706,13 +2753,10 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
               {/* 3. Ask user to add if not in catalog / internet */}
               {!hasCategoryExactMatch &&
                 categorySearchText.trim().length >= 2 &&
-                selectedCategoryModal && (
+                currentCategory && (
                   <TouchableOpacity
                     onPress={() =>
-                      handleCreateAndSelectInterest(
-                        categorySearchText.trim(),
-                        selectedCategoryModal
-                      )
+                      handleCreateAndSelectInterest(categorySearchText.trim(), currentCategory)
                     }
                     disabled={isSavingInterest}
                     style={[
@@ -2724,7 +2768,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                     ]}
                     activeOpacity={0.8}
                     accessibilityRole="button"
-                    accessibilityLabel={`Add ${categorySearchText.trim()} to ${selectedCategoryModal}`}
+                    accessibilityLabel={`Add ${categorySearchText.trim()} to ${currentCategory}`}
                   >
                     <View
                       style={[
@@ -2745,8 +2789,8 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                         style={[styles.modalAddCustomSub, { color: theme.colors.textTertiary }]}
                       >
                         {internetSuggestions.length === 0 && !isSearchingInternet
-                          ? `Not found on web? Add permanently to ${selectedCategoryModal} database & select`
-                          : `Add permanently to ${selectedCategoryModal} database & select`}
+                          ? `Not found on web? Add permanently to ${currentCategory} database & select`
+                          : `Add permanently to ${currentCategory} database & select`}
                       </Text>
                     </View>
                     <View
@@ -2776,7 +2820,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                     <Text
                       style={[styles.modalEmptyNoticeText, { color: theme.colors.textTertiary }]}
                     >
-                      {`No pre-existing catalog or web matches found. Tap "Add & Select" above to save "${cleanInterestName(categorySearchText.trim())}" permanently to our ${selectedCategoryModal} database!`}
+                      {`No pre-existing catalog or web matches found. Tap "Add & Select" above to save "${cleanInterestName(categorySearchText.trim())}" permanently to our ${currentCategory} database!`}
                     </Text>
                   </View>
                 )}
@@ -2860,37 +2904,38 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
         </ScrollView>
 
         {/* Confirm / Done Button */}
-        <TouchableOpacity
-          style={[
-            styles.confirmCustomButton,
-            {
-              backgroundColor: theme.colors.textPrimary,
-              marginTop: 14,
-              marginBottom: 4,
-            },
-          ]}
-          onPress={() => {
-            haptics.notificationSuccess();
-            setSelectedCategoryModal(null);
-            setCategorySearchText('');
-          }}
-          activeOpacity={0.88}
-          accessibilityRole="button"
-          accessibilityLabel="Done selecting passions in this category"
-        >
-          <Text
-            style={{
-              color: isDark ? '#000000' : '#FFFFFF',
-              fontWeight: '700',
-              fontSize: 14.5,
-              fontFamily: folkraFont,
+        <View style={{ marginTop: 14, marginBottom: 4 }}>
+          <TouchableOpacity
+            style={[
+              styles.confirmCustomButton,
+              {
+                backgroundColor: theme.colors.textPrimary,
+                height: 48,
+              },
+            ]}
+            onPress={() => {
+              haptics.notificationSuccess();
+              Keyboard.dismiss();
+              setSelectedCategoryModal(null);
             }}
+            activeOpacity={0.88}
+            accessibilityRole="button"
+            accessibilityLabel="Done selecting passions in this category"
           >
-            {modalCategorySelectedCount > 0
-              ? `Done (${modalCategorySelectedCount} Selected)`
-              : 'Done'}
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={{
+                color: isDark ? '#000000' : '#FFFFFF',
+                fontWeight: '700',
+                fontSize: 14.5,
+                fontFamily: folkraFont,
+              }}
+            >
+              {modalCategorySelectedCount > 0
+                ? `Done (${modalCategorySelectedCount} Selected)`
+                : 'Done'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </SmoothBottomSheetModal>
     </View>
   );
@@ -3220,6 +3265,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.3,
   },
+
   modalCloseBtn: {
     width: 30,
     height: 30,

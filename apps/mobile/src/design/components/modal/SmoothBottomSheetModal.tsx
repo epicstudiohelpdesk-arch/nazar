@@ -27,6 +27,7 @@ export interface SmoothBottomSheetModalProps {
   readonly maxHeight?: number | `${number}%`;
   readonly blurIntensity?: number;
   readonly showHandle?: boolean;
+  readonly disableKeyboardAvoiding?: boolean;
 }
 
 export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
@@ -40,11 +41,12 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
   maxHeight,
   blurIntensity = Platform.OS === 'ios' ? 2 : 1,
   showHandle = true,
+  disableKeyboardAvoiding = false,
 }) => {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const windowHeight = Dimensions.get('window').height;
-  const initialOffset = Math.max(windowHeight * 0.7, 500);
+  const initialOffset = Math.max(windowHeight, 800);
 
   const [isRendered, setIsRendered] = useState(visible);
   const backdropAnim = useRef(new Animated.Value(visible ? 1 : 0)).current;
@@ -85,10 +87,12 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
         }),
       ]).start(() => {
         setIsRendered(false);
+        onDismiss?.();
       });
 
       fallbackTimer = setTimeout(() => {
         setIsRendered(false);
+        onDismiss?.();
       }, 350);
     }
 
@@ -147,7 +151,9 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
 
         {/* Bottom Sheet Container */}
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={
+            disableKeyboardAvoiding ? undefined : Platform.OS === 'ios' ? 'padding' : undefined
+          }
           style={styles.sheetWrapper}
           pointerEvents="box-none"
         >
