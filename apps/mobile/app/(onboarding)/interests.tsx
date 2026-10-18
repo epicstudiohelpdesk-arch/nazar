@@ -1,50 +1,394 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  TextInput,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Search,
+  X,
+  Check,
+  Plus,
+  Sparkles,
+  Coffee,
+  Music,
+  Film,
+  UtensilsCrossed,
+  Mountain,
+  Palette,
+  Camera,
+  BookOpen,
+  Trophy,
+  Activity,
+  Gamepad2,
+  Landmark,
+  Sun,
+  PenTool,
+  Plane,
+  Heart,
+  Code,
+  Cpu,
+  Feather,
+  Footprints,
+  Dumbbell,
+  Wine,
+  Headphones,
+  Layers,
+  AlertCircle,
+} from 'lucide-react-native';
 import type { InterestItem } from '@platform/api-contracts';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
-import { Button } from '../../src/design/components/button/Button.js';
 import { getDefaultProfileApi } from '../../src/profile/profile-api.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 import { useResponsiveLayout } from '../../src/design/responsive/index.js';
 import { haptics } from '../../src/design/haptics/index.js';
 
-// Canonical fallback taxonomy curated for authentic Indian nuances
+// ============================================================================
+// Robust Emoji Stripping Sanitizer
+// Ensures 100% professional textual integrity across server & user inputs
+// ============================================================================
+
+export const cleanInterestName = (name: string): string => {
+  return name
+    .replace(
+      /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}]/gu,
+      ''
+    )
+    .replace(/[\uFE00-\uFE0F\u200D]/g, '')
+    .trim();
+};
+
+// ============================================================================
+// Curated Authentic Fallback Taxonomy (100% Emoji-Free)
+// 45 rich, culturally resonant, modern passions spanning 7 distinct categories
+// ============================================================================
+
 const FALLBACK_INTERESTS: InterestItem[] = [
-  { id: 'int_1', name: 'Filter Coffee ☕', slug: 'filter-coffee', category: 'Food & Drink' },
-  { id: 'int_2', name: 'Hindustani Classical 🎵', slug: 'hindustani-classical', category: 'Music' },
-  { id: 'int_3', name: 'Indie Cinema 🎬', slug: 'indie-cinema', category: 'Arts & Culture' },
-  { id: 'int_4', name: 'Street Food & Chaat 🥟', slug: 'street-food', category: 'Food & Drink' },
-  { id: 'int_5', name: 'Weekend Trekking ⛰️', slug: 'weekend-trekking', category: 'Outdoors' },
-  { id: 'int_6', name: 'Modern Indian Art 🎨', slug: 'modern-art', category: 'Arts & Culture' },
-  { id: 'int_7', name: 'Books & Literature 📚', slug: 'books-literature', category: 'Lifestyle' },
-  { id: 'int_8', name: 'Cricket & IPL 🏏', slug: 'cricket', category: 'Sports' },
-  { id: 'int_9', name: 'Board Games & Catan 🎲', slug: 'board-games', category: 'Lifestyle' },
+  // Food & Drink
+  { id: 'int_1', name: 'Filter Coffee', slug: 'filter-coffee', category: 'Food & Drink' },
+  { id: 'int_2', name: 'Artisan Cocktails', slug: 'artisan-cocktails', category: 'Food & Drink' },
+  { id: 'int_3', name: 'Street Food & Chaat', slug: 'street-food', category: 'Food & Drink' },
+  { id: 'int_4', name: 'Home Cooking & Spices', slug: 'home-cooking', category: 'Food & Drink' },
+  { id: 'int_5', name: 'Wine Tasting', slug: 'wine-tasting', category: 'Food & Drink' },
+  { id: 'int_6', name: 'Specialty Tea & Matcha', slug: 'specialty-tea', category: 'Food & Drink' },
+  { id: 'int_7', name: 'Baking & Sourdough', slug: 'baking', category: 'Food & Drink' },
+
+  // Music & Sound
   {
-    id: 'int_10',
-    name: 'Architecture & Heritage 🏛️',
+    id: 'int_8',
+    name: 'Hindustani Classical',
+    slug: 'hindustani-classical',
+    category: 'Music & Sound',
+  },
+  { id: 'int_9', name: 'Live Indie Gigs', slug: 'live-gigs', category: 'Music & Sound' },
+  { id: 'int_10', name: 'Sufi & Ghazals', slug: 'sufi-ghazals', category: 'Music & Sound' },
+  { id: 'int_11', name: 'Vinyl Records', slug: 'vinyl-records', category: 'Music & Sound' },
+  {
+    id: 'int_12',
+    name: 'Electronic & Techno',
+    slug: 'electronic-techno',
+    category: 'Music & Sound',
+  },
+  { id: 'int_13', name: 'Jazz & Blues', slug: 'jazz-blues', category: 'Music & Sound' },
+  { id: 'int_14', name: 'Podcasts & Deep Dives', slug: 'podcasts', category: 'Music & Sound' },
+
+  // Arts & Culture
+  { id: 'int_15', name: 'Indie Cinema', slug: 'indie-cinema', category: 'Arts & Culture' },
+  { id: 'int_16', name: 'Modern Indian Art', slug: 'modern-art', category: 'Arts & Culture' },
+  {
+    id: 'int_17',
+    name: 'Architecture & Heritage',
     slug: 'architecture',
     category: 'Arts & Culture',
   },
-  { id: 'int_11', name: 'Yoga & Mindfulness 🧘', slug: 'yoga-mindfulness', category: 'Wellness' },
-  { id: 'int_12', name: 'Live Indie Gigs 🎸', slug: 'live-gigs', category: 'Music' },
-  { id: 'int_13', name: 'Sufi & Ghazals 🎶', slug: 'sufi-ghazals', category: 'Music' },
-  { id: 'int_14', name: 'Heritage Walks 🚶‍♂️', slug: 'heritage-walks', category: 'Outdoors' },
+  { id: 'int_18', name: 'Poetry & Shayari', slug: 'poetry-shayari', category: 'Arts & Culture' },
+  { id: 'int_19', name: 'Film Photography', slug: 'film-photography', category: 'Arts & Culture' },
   {
-    id: 'int_15',
-    name: 'Home Cooking & Spices 🥘',
-    slug: 'home-cooking',
-    category: 'Food & Drink',
+    id: 'int_20',
+    name: 'Museums & Galleries',
+    slug: 'museums-galleries',
+    category: 'Arts & Culture',
   },
-  { id: 'int_16', name: 'Poetry & Shayari ✍️', slug: 'poetry-shayari', category: 'Arts & Culture' },
+  { id: 'int_21', name: 'Theater & Performing Arts', slug: 'theater', category: 'Arts & Culture' },
+
+  // Active & Outdoors
+  {
+    id: 'int_22',
+    name: 'Weekend Trekking',
+    slug: 'weekend-trekking',
+    category: 'Active & Outdoors',
+  },
+  { id: 'int_23', name: 'Heritage Walks', slug: 'heritage-walks', category: 'Active & Outdoors' },
+  { id: 'int_24', name: 'Running & Marathons', slug: 'running', category: 'Active & Outdoors' },
+  {
+    id: 'int_25',
+    name: 'Yoga & Mindfulness',
+    slug: 'yoga-mindfulness',
+    category: 'Active & Outdoors',
+  },
+  { id: 'int_26', name: 'Cycling & Gravel', slug: 'cycling', category: 'Active & Outdoors' },
+  { id: 'int_27', name: 'Scuba & Surfing', slug: 'scuba-surfing', category: 'Active & Outdoors' },
+  { id: 'int_28', name: 'Rock Climbing', slug: 'rock-climbing', category: 'Active & Outdoors' },
+
+  // Lifestyle & Leisure
+  {
+    id: 'int_29',
+    name: 'Books & Literature',
+    slug: 'books-literature',
+    category: 'Lifestyle & Leisure',
+  },
+  {
+    id: 'int_30',
+    name: 'Board Games & Catan',
+    slug: 'board-games',
+    category: 'Lifestyle & Leisure',
+  },
+  { id: 'int_31', name: 'Dog & Pet Lover', slug: 'pet-lover', category: 'Lifestyle & Leisure' },
+  { id: 'int_32', name: 'Solo Traveling', slug: 'solo-traveling', category: 'Lifestyle & Leisure' },
+  {
+    id: 'int_33',
+    name: 'Astronomy & Stargazing',
+    slug: 'astronomy',
+    category: 'Lifestyle & Leisure',
+  },
+  {
+    id: 'int_34',
+    name: 'Vintage Thrifting',
+    slug: 'vintage-thrifting',
+    category: 'Lifestyle & Leisure',
+  },
+
+  // Sports & Fitness
+  { id: 'int_35', name: 'Cricket & IPL', slug: 'cricket', category: 'Sports & Fitness' },
+  { id: 'int_36', name: 'Formula 1', slug: 'formula-1', category: 'Sports & Fitness' },
+  {
+    id: 'int_37',
+    name: 'Football & Premier League',
+    slug: 'football',
+    category: 'Sports & Fitness',
+  },
+  { id: 'int_38', name: 'Tennis & Padel', slug: 'tennis-padel', category: 'Sports & Fitness' },
+  { id: 'int_39', name: 'Chess & Strategy', slug: 'chess', category: 'Sports & Fitness' },
+  {
+    id: 'int_40',
+    name: 'Gym & Calisthenics',
+    slug: 'gym-calisthenics',
+    category: 'Sports & Fitness',
+  },
+
+  // Tech & Creative
+  { id: 'int_41', name: 'Creative Coding', slug: 'creative-coding', category: 'Tech & Creative' },
+  {
+    id: 'int_42',
+    name: 'Design & Typography',
+    slug: 'design-typography',
+    category: 'Tech & Creative',
+  },
+  { id: 'int_43', name: 'Pottery & Ceramics', slug: 'pottery', category: 'Tech & Creative' },
+  { id: 'int_44', name: 'AI & Futurism', slug: 'ai-futurism', category: 'Tech & Creative' },
+  {
+    id: 'int_45',
+    name: 'Mechanical Keyboards',
+    slug: 'mechanical-keyboards',
+    category: 'Tech & Creative',
+  },
 ];
+
+// ============================================================================
+// Semantic Icon Resolver
+// Maps passion keywords and slugs to dedicated vector icons
+// ============================================================================
+
+const getInterestIcon = (item: {
+  slug?: string;
+  name: string;
+  category?: string;
+}): React.FC<any> => {
+  const key = `${item.slug || ''} ${item.name.toLowerCase()} ${item.category?.toLowerCase() || ''}`;
+
+  if (
+    key.includes('coffee') ||
+    key.includes('tea') ||
+    key.includes('matcha') ||
+    key.includes('chai')
+  )
+    return Coffee;
+  if (
+    key.includes('wine') ||
+    key.includes('cocktail') ||
+    key.includes('bar') ||
+    key.includes('brew')
+  )
+    return Wine;
+  if (
+    key.includes('cinema') ||
+    key.includes('film') ||
+    key.includes('movie') ||
+    key.includes('theater')
+  )
+    return Film;
+  if (
+    key.includes('food') ||
+    key.includes('cook') ||
+    key.includes('chaat') ||
+    key.includes('baking') ||
+    key.includes('bake')
+  )
+    return UtensilsCrossed;
+  if (
+    key.includes('trek') ||
+    key.includes('hike') ||
+    key.includes('mountain') ||
+    key.includes('climbing') ||
+    key.includes('camp')
+  )
+    return Mountain;
+  if (key.includes('photo') || key.includes('camera')) return Camera;
+  if (
+    key.includes('art') ||
+    key.includes('paint') ||
+    key.includes('pottery') ||
+    key.includes('ceramics') ||
+    key.includes('gallery')
+  )
+    return Palette;
+  if (
+    key.includes('architecture') ||
+    key.includes('heritage') ||
+    key.includes('museum') ||
+    key.includes('history')
+  )
+    return Landmark;
+  if (key.includes('book') || key.includes('literature') || key.includes('read')) return BookOpen;
+  if (
+    key.includes('cricket') ||
+    key.includes('football') ||
+    key.includes('formula') ||
+    key.includes('tennis') ||
+    key.includes('chess') ||
+    key.includes('ipl')
+  )
+    return Trophy;
+  if (
+    key.includes('gym') ||
+    key.includes('calisthenics') ||
+    key.includes('fitness') ||
+    key.includes('workout')
+  )
+    return Dumbbell;
+  if (
+    key.includes('run') ||
+    key.includes('marathon') ||
+    key.includes('cycling') ||
+    key.includes('scuba') ||
+    key.includes('surfing')
+  )
+    return Activity;
+  if (
+    key.includes('board') ||
+    key.includes('catan') ||
+    key.includes('gaming') ||
+    key.includes('game')
+  )
+    return Gamepad2;
+  if (key.includes('walk') || key.includes('stroll')) return Footprints;
+  if (
+    key.includes('yoga') ||
+    key.includes('mindful') ||
+    key.includes('meditation') ||
+    key.includes('wellness')
+  )
+    return Sun;
+  if (
+    key.includes('classical') ||
+    key.includes('sufi') ||
+    key.includes('ghazal') ||
+    key.includes('vinyl') ||
+    key.includes('techno') ||
+    key.includes('jazz') ||
+    key.includes('music')
+  )
+    return Music;
+  if (
+    key.includes('gig') ||
+    key.includes('live') ||
+    key.includes('concert') ||
+    key.includes('podcast')
+  )
+    return Headphones;
+  if (key.includes('poetry') || key.includes('shayari') || key.includes('write')) return PenTool;
+  if (key.includes('travel') || key.includes('solo') || key.includes('trip')) return Plane;
+  if (key.includes('pet') || key.includes('dog') || key.includes('cat') || key.includes('animal'))
+    return Heart;
+  if (
+    key.includes('code') ||
+    key.includes('coding') ||
+    key.includes('software') ||
+    key.includes('dev')
+  )
+    return Code;
+  if (key.includes('ai') || key.includes('futurism') || key.includes('keyboard')) return Cpu;
+  if (key.includes('design') || key.includes('typography')) return Feather;
+  if (key.includes('star') || key.includes('astronomy') || key.includes('sky')) return Sparkles;
+
+  // Fallbacks by category
+  if (item.category?.toLowerCase().includes('food')) return UtensilsCrossed;
+  if (item.category?.toLowerCase().includes('music')) return Music;
+  if (item.category?.toLowerCase().includes('art')) return Palette;
+  if (
+    item.category?.toLowerCase().includes('outdoor') ||
+    item.category?.toLowerCase().includes('active')
+  )
+    return Mountain;
+  if (
+    item.category?.toLowerCase().includes('sport') ||
+    item.category?.toLowerCase().includes('fitness')
+  )
+    return Trophy;
+  if (
+    item.category?.toLowerCase().includes('tech') ||
+    item.category?.toLowerCase().includes('creative')
+  )
+    return Code;
+  if (
+    item.category?.toLowerCase().includes('lifestyle') ||
+    item.category?.toLowerCase().includes('leisure')
+  )
+    return BookOpen;
+
+  return Sparkles;
+};
+
+// Category Icon Mapping for Filter Tabs
+const getCategoryIcon = (category: string): React.FC<any> => {
+  const cat = category.toLowerCase();
+  if (cat === 'all') return Layers;
+  if (cat.includes('food')) return Coffee;
+  if (cat.includes('music')) return Music;
+  if (cat.includes('art')) return Palette;
+  if (cat.includes('outdoor') || cat.includes('active')) return Mountain;
+  if (cat.includes('lifestyle') || cat.includes('leisure')) return BookOpen;
+  if (cat.includes('sport') || cat.includes('fitness')) return Trophy;
+  if (cat.includes('tech') || cat.includes('creative')) return Code;
+  return Sparkles;
+};
+
+// ============================================================================
+// Main Screen Component
+// ============================================================================
 
 export default function OnboardingInterestsScreen(): React.JSX.Element {
   const router = useRouter();
@@ -54,7 +398,14 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
   const { maxContentWidth } = useResponsiveLayout();
   const profileApi = getDefaultProfileApi();
 
-  // Animated scroll listener for glossy top vignette
+  // Load Folkra brand font
+  const [fontsLoaded] = useFonts({
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Folkra: require('../../assets/fonts/folkra.ttf'),
+  });
+  const folkraFont = fontsLoaded ? 'Folkra' : undefined;
+
+  // Scroll listener for glossy top vignette
   const scrollY = useRef(new Animated.Value(0)).current;
   const handleScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
     useNativeDriver: true,
@@ -65,18 +416,20 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     extrapolate: 'clamp',
   });
 
-  // Load Folkra brand font
-  const [fontsLoaded] = useFonts({
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    Folkra: require('../../assets/fonts/folkra.ttf'),
-  });
-  const folkraFont = fontsLoaded ? 'Folkra' : undefined;
-
-  const { draftInterests, toggleDraftInterest } = useOnboardingStore();
+  const { draftInterests, toggleDraftInterest, setDraftInterests } = useOnboardingStore();
 
   const [availableInterests, setAvailableInterests] = useState<InterestItem[]>(FALLBACK_INTERESTS);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+
+  // Ensure no passions are selected by default on initial entry
+  useEffect(() => {
+    if (draftInterests.length < 3 && draftInterests.length > 0) {
+      setDraftInterests([]);
+    }
+  }, []);
 
   useEffect(() => {
     trackOnboardingEvent('interests_viewed');
@@ -98,11 +451,61 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     };
   }, []);
 
+  // Sanitized taxonomy: guarantees zero emojis anywhere in UI
+  const sanitizedTaxonomy = useMemo(() => {
+    return availableInterests.map((item) => ({
+      ...item,
+      name: cleanInterestName(item.name),
+    }));
+  }, [availableInterests]);
+
+  // Distinct category list
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(sanitizedTaxonomy.map((item) => item.category || 'General')));
+    return ['All', ...cats];
+  }, [sanitizedTaxonomy]);
+
+  // Filtered interests based on active tab and search query
+  const filteredInterests = useMemo(() => {
+    const trimmed = searchQuery.trim().toLowerCase();
+    return sanitizedTaxonomy.filter((item) => {
+      const matchesSearch =
+        trimmed === '' ||
+        item.name.toLowerCase().includes(trimmed) ||
+        (item.slug && item.slug.toLowerCase().includes(trimmed)) ||
+        (item.category && item.category.toLowerCase().includes(trimmed));
+
+      const matchesCategory =
+        activeCategory === 'All' || (item.category || 'General') === activeCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [sanitizedTaxonomy, searchQuery, activeCategory]);
+
+  // Check if current search query exactly matches an existing passion
+  const hasExactSearchMatch = useMemo(() => {
+    const trimmed = searchQuery.trim().toLowerCase();
+    if (!trimmed) return false;
+    return sanitizedTaxonomy.some((item) => item.name.toLowerCase() === trimmed);
+  }, [sanitizedTaxonomy, searchQuery]);
+
+  // Map of category to selected count (for visual category badges)
+  const categorySelectedCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of sanitizedTaxonomy) {
+      if (draftInterests.includes(item.id)) {
+        const cat = item.category || 'General';
+        counts[cat] = (counts[cat] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [sanitizedTaxonomy, draftInterests]);
+
   const handleToggle = (id: string) => {
     const isSelected = draftInterests.includes(id);
     if (!isSelected && draftInterests.length >= 10) {
       haptics.notificationError();
-      setErrorMessage('You can select a maximum of 10 interests.');
+      setErrorMessage('You can select a maximum of 10 passions.');
       return;
     }
 
@@ -117,10 +520,59 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     }
   };
 
+  // Add custom passion searched by user (No restrictions, fully flexible)
+  const handleAddCustomPassion = (rawName: string) => {
+    const cleaned = cleanInterestName(rawName).trim();
+    if (!cleaned) return;
+
+    if (draftInterests.length >= 10) {
+      haptics.notificationError();
+      setErrorMessage('You can select a maximum of 10 passions.');
+      return;
+    }
+
+    // Check if it already exists in taxonomy
+    const existing = sanitizedTaxonomy.find((i) => i.name.toLowerCase() === cleaned.toLowerCase());
+
+    if (existing) {
+      if (!draftInterests.includes(existing.id)) {
+        haptics.selection();
+        toggleDraftInterest(existing.id);
+      }
+    } else {
+      const customId = `custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const customSlug = cleaned
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+      const customItem: InterestItem = {
+        id: customId,
+        name: cleaned,
+        slug: customSlug,
+        category: 'Custom & Personal',
+      };
+      setAvailableInterests((prev) => [customItem, ...prev]);
+      toggleDraftInterest(customId);
+      haptics.notificationSuccess();
+    }
+
+    setSearchQuery('');
+    if (errorMessage) setErrorMessage(undefined);
+  };
+
+  const handleBack = () => {
+    haptics.impactLight();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(onboarding)/photos');
+    }
+  };
+
   const handleNext = async () => {
     if (draftInterests.length < 3) {
       haptics.notificationError();
-      setErrorMessage('Please select at least 3 interests that represent you.');
+      setErrorMessage('Please select at least 3 passions that represent you.');
       return;
     }
 
@@ -141,23 +593,12 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     }
   };
 
-  // Group available interests by category
-  const categories = Array.from(
-    new Set(availableInterests.map((item) => item.category || 'General'))
-  );
-
-  const handleBack = () => {
-    haptics.impactLight();
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(onboarding)/photos');
-    }
-  };
+  const isMinimumMet = draftInterests.length >= 3;
+  const count = draftInterests.length;
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0B0B0E' : '#FAFAFA' }]}>
-      {/* Glossy, Faded, Frosted-Glass Top Vignette (Reveals dynamically on scroll) */}
+      {/* Specular Frosted Top Vignette (Fades in dynamically on scroll) */}
       <Animated.View
         pointerEvents="none"
         style={[
@@ -189,7 +630,6 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
           locations={[0, 0.4, 0.68, 0.88, 1.0]}
           style={StyleSheet.absoluteFill}
         />
-        {/* Specular Gloss Sheen Layer */}
         <LinearGradient
           colors={
             isDark
@@ -209,7 +649,7 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
         />
       </Animated.View>
 
-      {/* Encircled floating circular back button on top left corner */}
+      {/* Floating Circular Back Button on top left */}
       <TouchableOpacity
         onPress={handleBack}
         style={[
@@ -227,23 +667,28 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
         accessibilityLabel="Go back"
         testID="onboarding-back-button"
       >
-        <ArrowLeft size={20} color={theme.colors.textPrimary} />
+        <ArrowLeft size={19} color={theme.colors.textPrimary} />
       </TouchableOpacity>
 
       <Animated.ScrollView
         contentContainerStyle={[
           styles.content,
           {
-            maxWidth: maxContentWidth,
+            maxWidth: maxContentWidth || 540,
             width: '100%',
             alignSelf: 'center',
-            paddingTop: Math.max(insets.top + 64, 76),
+            paddingTop: Math.max(insets.top + 60, 72),
+            paddingBottom: Math.max(insets.bottom + 130, 150),
           },
         ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
+        {/* ======================================================== */}
+        {/* Header Section (with clean unboxed 03 / 06 step counter) */}
+        {/* ======================================================== */}
         <View style={styles.header}>
           <View style={styles.titleRow}>
             <Heading
@@ -252,6 +697,8 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
             >
               What are you into?
             </Heading>
+
+            {/* Clean unboxed 03 / 06 step counter */}
             <View style={styles.stepBadgeInline}>
               <Text
                 style={[
@@ -279,65 +726,472 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
               </Text>
             </View>
           </View>
+
           <Text level="body" color="secondary" style={styles.subtitle}>
-            Select 3 to 10 passions to help us curate profiles who share your rhythm.
+            Select 3 to 10 passions to help us curate profiles who share your rhythm and creative
+            soul.
           </Text>
         </View>
 
+        {/* Error Notification Banner */}
         {errorMessage && (
           <View
             style={[
               styles.errorBanner,
-              { backgroundColor: theme.colors.errorSoft, borderColor: theme.colors.error },
+              {
+                backgroundColor: isDark ? 'rgba(239, 68, 68, 0.14)' : '#FEE2E2',
+                borderColor: isDark ? 'rgba(239, 68, 68, 0.35)' : '#FCA5A5',
+              },
             ]}
           >
-            <Text level="bodySmall" style={{ color: theme.colors.error, fontWeight: '600' }}>
+            <AlertCircle size={15} color="#EF4444" style={{ marginRight: 8, marginTop: 1 }} />
+            <Text level="bodySmall" style={styles.errorBannerText}>
               {errorMessage}
             </Text>
           </View>
         )}
 
-        <View style={styles.categoriesContainer}>
-          {categories.map((category) => {
-            const items = availableInterests.filter((i) => (i.category || 'General') === category);
+        {/* ======================================================== */}
+        {/* Compact, Non-Boxy Curation & Rhythm Progress Bar */}
+        {/* ======================================================== */}
+        <View style={styles.compactRhythmSection}>
+          <View style={styles.compactRhythmHeader}>
+            <View style={styles.compactRhythmStatusCluster}>
+              <View
+                style={[
+                  styles.statusIndicatorDot,
+                  {
+                    backgroundColor: isMinimumMet ? '#10B981' : theme.colors.textTertiary,
+                  },
+                ]}
+              />
+              <Text style={[styles.compactRhythmStatusText, { color: theme.colors.textSecondary }]}>
+                {count === 0
+                  ? 'Select at least 3 passions to continue'
+                  : count < 3
+                    ? `${3 - count} more needed for minimum`
+                    : count === 10
+                      ? 'Maximum 10 passions selected'
+                      : `Minimum reached • ${10 - count} optional open`}
+              </Text>
+            </View>
 
-            return (
-              <View key={category} style={styles.categorySection}>
-                <Text
-                  level="title"
+            <Text
+              style={[
+                styles.compactRhythmCountText,
+                {
+                  color: isMinimumMet ? theme.colors.textPrimary : theme.colors.textTertiary,
+                  fontFamily: folkraFont,
+                },
+              ]}
+            >
+              {count}/10
+            </Text>
+          </View>
+
+          {/* 10-Segment Progress Rail */}
+          <View style={styles.compactSegmentRail}>
+            {Array.from({ length: 10 }).map((_, idx) => {
+              const isFilled = idx < count;
+              const isMandatory = idx < 3;
+              return (
+                <View
+                  key={`rail-tick-${idx}`}
                   style={[
-                    styles.categoryTitle,
-                    { color: theme.colors.textPrimary, fontFamily: folkraFont },
+                    styles.compactSegmentTick,
+                    {
+                      backgroundColor: isFilled
+                        ? isDark
+                          ? '#FFFFFF'
+                          : '#121216'
+                        : isMandatory
+                          ? isDark
+                            ? 'rgba(255, 255, 255, 0.16)'
+                            : '#DCDCE0'
+                          : isDark
+                            ? 'rgba(255, 255, 255, 0.06)'
+                            : '#ECECF0',
+                    },
                   ]}
-                >
-                  {category}
-                </Text>
-                <View style={styles.chipRow}>
-                  {items.map((item) => {
+                />
+              );
+            })}
+          </View>
+        </View>
+
+        {/* ======================================================== */}
+        {/* Search Input Bar (Fully Functional for Searching & Custom Passions) */}
+        {/* ======================================================== */}
+        <View
+          style={[
+            styles.searchBarContainer,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F4F4F6',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
+            },
+          ]}
+        >
+          <Search size={16} color={theme.colors.textTertiary} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.colors.textPrimary }]}
+            placeholder="Search or type any passion..."
+            placeholderTextColor={theme.colors.textTertiary}
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (errorMessage) setErrorMessage(undefined);
+            }}
+            autoCorrect={false}
+            autoCapitalize="words"
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              if (searchQuery.trim().length > 0 && !hasExactSearchMatch) {
+                handleAddCustomPassion(searchQuery.trim());
+              }
+            }}
+            clearButtonMode="while-editing"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              style={styles.clearSearchButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search input"
+            >
+              <X size={14} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* If user types something that isn't already an exact match, offer instant Custom Passion creation */}
+        {searchQuery.trim().length > 0 && !hasExactSearchMatch && (
+          <TouchableOpacity
+            onPress={() => handleAddCustomPassion(searchQuery.trim())}
+            style={[
+              styles.customPassionActionCard,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F4F4F6',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E4E4E7',
+              },
+            ]}
+            activeOpacity={0.78}
+            accessibilityRole="button"
+            accessibilityLabel={`Add ${searchQuery.trim()} as custom passion`}
+          >
+            <View
+              style={[
+                styles.customPassionIconBadge,
+                { backgroundColor: isDark ? '#FFFFFF' : '#121216' },
+              ]}
+            >
+              <Plus size={13} color={isDark ? '#000000' : '#FFFFFF'} strokeWidth={3} />
+            </View>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text
+                style={[styles.customPassionActionTitle, { color: theme.colors.textPrimary }]}
+                numberOfLines={1}
+              >
+                Add "{cleanInterestName(searchQuery.trim())}"
+              </Text>
+              <Text style={[styles.customPassionActionSub, { color: theme.colors.textTertiary }]}>
+                Tap to include as your custom passion
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.customPassionAddPill,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                },
+              ]}
+            >
+              <Text style={[styles.customPassionAddPillText, { color: theme.colors.textPrimary }]}>
+                Add
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* ======================================================== */}
+        {/* Horizontal Category Filter Pills (When not actively searching) */}
+        {/* ======================================================== */}
+        {searchQuery.trim() === '' && (
+          <View style={styles.expandedCategoryPillsWrapper}>
+            {/* Left Soft Fade Mask */}
+            <LinearGradient
+              colors={
+                isDark
+                  ? ['#0B0B0E', 'rgba(11, 11, 14, 0.85)', 'rgba(11, 11, 14, 0.0)']
+                  : ['#FAFAFA', 'rgba(250, 250, 250, 0.85)', 'rgba(250, 250, 250, 0.0)']
+              }
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.fadeMaskLeft}
+              pointerEvents="none"
+            />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryPillsScroll}
+              style={styles.expandedHorizontalScroll}
+            >
+              {categories.map((category) => {
+                const isActive = activeCategory === category;
+                const CatIcon = getCategoryIcon(category);
+                const selectedCount =
+                  category === 'All' ? count : categorySelectedCounts[category] || 0;
+
+                return (
+                  <TouchableOpacity
+                    key={`cat-tab-${category}`}
+                    onPress={() => {
+                      haptics.selection();
+                      setActiveCategory(category);
+                    }}
+                    style={[
+                      styles.categoryPill,
+                      {
+                        backgroundColor: isActive
+                          ? isDark
+                            ? '#FFFFFF'
+                            : '#121216'
+                          : isDark
+                            ? 'rgba(255, 255, 255, 0.04)'
+                            : '#FFFFFF',
+                        borderColor: isActive
+                          ? isDark
+                            ? '#FFFFFF'
+                            : '#121216'
+                          : isDark
+                            ? 'rgba(255, 255, 255, 0.08)'
+                            : '#E4E4E7',
+                      },
+                    ]}
+                    activeOpacity={0.8}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: isActive }}
+                  >
+                    <CatIcon
+                      size={12.5}
+                      color={
+                        isActive ? (isDark ? '#0B0B0E' : '#FFFFFF') : theme.colors.textSecondary
+                      }
+                      style={{ marginRight: 5 }}
+                    />
+                    <Text
+                      style={[
+                        styles.categoryPillText,
+                        {
+                          color: isActive
+                            ? isDark
+                              ? '#0B0B0E'
+                              : '#FFFFFF'
+                            : theme.colors.textPrimary,
+                          fontWeight: isActive ? '700' : '500',
+                        },
+                      ]}
+                    >
+                      {category}
+                    </Text>
+                    {selectedCount > 0 && (
+                      <View
+                        style={[
+                          styles.categoryPillBadge,
+                          {
+                            backgroundColor: isActive
+                              ? isDark
+                                ? '#0B0B0E'
+                                : '#FFFFFF'
+                              : isDark
+                                ? 'rgba(255, 255, 255, 0.15)'
+                                : '#E4E4E7',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryPillBadgeText,
+                            {
+                              color: isActive
+                                ? isDark
+                                  ? '#FFFFFF'
+                                  : '#121216'
+                                : theme.colors.textPrimary,
+                            },
+                          ]}
+                        >
+                          {selectedCount}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Right Soft Fade Mask */}
+            <LinearGradient
+              colors={
+                isDark
+                  ? ['rgba(11, 11, 14, 0.0)', 'rgba(11, 11, 14, 0.85)', '#0B0B0E']
+                  : ['rgba(250, 250, 250, 0.0)', 'rgba(250, 250, 250, 0.85)', '#FAFAFA']
+              }
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.fadeMaskRight}
+              pointerEvents="none"
+            />
+          </View>
+        )}
+
+        {/* ======================================================== */}
+        {/* Passions Grid (Compact, High-Density Side-by-Side Arrangement) */}
+        {/* ======================================================== */}
+        {filteredInterests.length === 0 && searchQuery.trim() !== '' ? (
+          <View style={styles.emptyStateContainer}>
+            <View
+              style={[
+                styles.emptyStateIconCircle,
+                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
+              ]}
+            >
+              <Search size={20} color={theme.colors.textTertiary} />
+            </View>
+            <Text
+              style={[
+                styles.emptyStateTitle,
+                { color: theme.colors.textPrimary, fontFamily: folkraFont },
+              ]}
+            >
+              NO CATALOG RESULTS
+            </Text>
+            <Text style={[styles.emptyStateSubtitle, { color: theme.colors.textSecondary }]}>
+              {`No existing passion in our catalog matches "${searchQuery.trim()}". You can tap "Add" above to make it your own custom passion!`}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.passionsContainer}>
+            {/* If searching or a single category selected, render flat fluid grid */}
+            {searchQuery.trim() !== '' || activeCategory !== 'All' ? (
+              <View>
+                {activeCategory !== 'All' && searchQuery.trim() === '' && (
+                  <View style={styles.categoryGroupHeader}>
+                    <View
+                      style={[
+                        styles.categoryGroupIconCircle,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7',
+                        },
+                      ]}
+                    >
+                      {React.createElement(getCategoryIcon(activeCategory), {
+                        size: 16,
+                        color: theme.colors.textPrimary,
+                      })}
+                    </View>
+                    <Text
+                      style={[
+                        styles.categoryGroupTitle,
+                        { color: theme.colors.textPrimary, fontFamily: folkraFont },
+                      ]}
+                    >
+                      {activeCategory.toUpperCase()}
+                    </Text>
+                    <View
+                      style={[
+                        styles.categoryCountBadge,
+                        {
+                          backgroundColor: isDark
+                            ? 'rgba(255, 255, 255, 0.08)'
+                            : 'rgba(0, 0, 0, 0.05)',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.categoryCountBadgeText,
+                          { color: theme.colors.textSecondary },
+                        ]}
+                      >
+                        {filteredInterests.length}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                <View style={styles.chipGrid}>
+                  {filteredInterests.map((item) => {
                     const isSelected = draftInterests.includes(item.id);
+                    const PassionIcon = getInterestIcon(item);
+
                     return (
                       <TouchableOpacity
                         key={item.id}
                         onPress={() => handleToggle(item.id)}
                         style={[
-                          styles.chip,
+                          styles.passionCard,
                           {
                             backgroundColor: isSelected
-                              ? theme.colors.accent
-                              : theme.colors.surfaceMuted,
-                            borderColor: isSelected ? theme.colors.accent : theme.colors.border,
+                              ? isDark
+                                ? '#FFFFFF'
+                                : '#121216'
+                              : isDark
+                                ? '#121216'
+                                : '#FFFFFF',
+                            borderColor: isSelected
+                              ? isDark
+                                ? '#FFFFFF'
+                                : '#121216'
+                              : isDark
+                                ? 'rgba(255, 255, 255, 0.08)'
+                                : '#E4E4E7',
                           },
                         ]}
+                        activeOpacity={0.82}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: isSelected }}
-                        accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'not selected'}`}
+                        accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
                       >
+                        <View
+                          style={[
+                            styles.passionIconCircle,
+                            {
+                              backgroundColor: isSelected
+                                ? isDark
+                                  ? '#0B0B0E'
+                                  : '#FFFFFF'
+                                : isDark
+                                  ? 'rgba(255, 255, 255, 0.06)'
+                                  : '#F4F4F6',
+                            },
+                          ]}
+                        >
+                          {isSelected ? (
+                            <Check
+                              size={12}
+                              color={isDark ? '#FFFFFF' : '#0B0B0E'}
+                              strokeWidth={2.8}
+                            />
+                          ) : (
+                            <PassionIcon size={12.5} color={theme.colors.textSecondary} />
+                          )}
+                        </View>
+
                         <Text
-                          level="bodySmall"
-                          style={{
-                            color: isSelected ? '#FFFFFF' : theme.colors.textPrimary,
-                            fontWeight: isSelected ? '700' : '500',
-                          }}
+                          style={[
+                            styles.passionCardTitle,
+                            {
+                              color: isSelected
+                                ? isDark
+                                  ? '#0B0B0E'
+                                  : '#FFFFFF'
+                                : theme.colors.textPrimary,
+                            },
+                          ]}
+                          numberOfLines={1}
                         >
                           {item.name}
                         </Text>
@@ -346,29 +1200,279 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                   })}
                 </View>
               </View>
-            );
-          })}
-        </View>
+            ) : (
+              // Browsing All: Grouped by category with tight side-by-side chips
+              categories
+                .filter((cat) => cat !== 'All')
+                .map((category) => {
+                  const categoryItems = sanitizedTaxonomy.filter(
+                    (i) => (i.category || 'General') === category
+                  );
+                  if (categoryItems.length === 0) return null;
+                  const CatGroupIcon = getCategoryIcon(category);
 
-        <View style={styles.buttonWrapper}>
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            isLoading={isLoading}
-            disabled={draftInterests.length < 3}
-            onPress={handleNext}
-            accessibilityLabel={`Continue to prompts (${draftInterests.length} of 3 required selected)`}
-          >
-            {draftInterests.length < 3
-              ? `Select at least 3 interests (${draftInterests.length}/3)`
-              : `Continue (${draftInterests.length} Selected)`}
-          </Button>
-        </View>
+                  return (
+                    <View key={`group-cat-${category}`} style={styles.categoryGroupSection}>
+                      <View style={styles.categoryGroupHeader}>
+                        <View
+                          style={[
+                            styles.categoryGroupIconCircle,
+                            {
+                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
+                              borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7',
+                            },
+                          ]}
+                        >
+                          <CatGroupIcon size={16} color={theme.colors.textPrimary} />
+                        </View>
+                        <Text
+                          style={[
+                            styles.categoryGroupTitle,
+                            { color: theme.colors.textPrimary, fontFamily: folkraFont },
+                          ]}
+                        >
+                          {category.toUpperCase()}
+                        </Text>
+                        <View
+                          style={[
+                            styles.categoryCountBadge,
+                            {
+                              backgroundColor: isDark
+                                ? 'rgba(255, 255, 255, 0.08)'
+                                : 'rgba(0, 0, 0, 0.05)',
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.categoryCountBadgeText,
+                              { color: theme.colors.textSecondary },
+                            ]}
+                          >
+                            {categoryItems.length}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.chipGrid}>
+                        {categoryItems.map((item) => {
+                          const isSelected = draftInterests.includes(item.id);
+                          const PassionIcon = getInterestIcon(item);
+
+                          return (
+                            <TouchableOpacity
+                              key={item.id}
+                              onPress={() => handleToggle(item.id)}
+                              style={[
+                                styles.passionCard,
+                                {
+                                  backgroundColor: isSelected
+                                    ? isDark
+                                      ? '#FFFFFF'
+                                      : '#121216'
+                                    : isDark
+                                      ? '#121216'
+                                      : '#FFFFFF',
+                                  borderColor: isSelected
+                                    ? isDark
+                                      ? '#FFFFFF'
+                                      : '#121216'
+                                    : isDark
+                                      ? 'rgba(255, 255, 255, 0.08)'
+                                      : '#E4E4E7',
+                                },
+                              ]}
+                              activeOpacity={0.82}
+                              accessibilityRole="checkbox"
+                              accessibilityState={{ checked: isSelected }}
+                              accessibilityLabel={`${item.name}, ${isSelected ? 'selected' : 'unselected'}`}
+                            >
+                              <View
+                                style={[
+                                  styles.passionIconCircle,
+                                  {
+                                    backgroundColor: isSelected
+                                      ? isDark
+                                        ? '#0B0B0E'
+                                        : '#FFFFFF'
+                                      : isDark
+                                        ? 'rgba(255, 255, 255, 0.06)'
+                                        : '#F4F4F6',
+                                  },
+                                ]}
+                              >
+                                {isSelected ? (
+                                  <Check
+                                    size={12}
+                                    color={isDark ? '#FFFFFF' : '#0B0B0E'}
+                                    strokeWidth={2.8}
+                                  />
+                                ) : (
+                                  <PassionIcon size={12.5} color={theme.colors.textSecondary} />
+                                )}
+                              </View>
+
+                              <Text
+                                style={[
+                                  styles.passionCardTitle,
+                                  {
+                                    color: isSelected
+                                      ? isDark
+                                        ? '#0B0B0E'
+                                        : '#FFFFFF'
+                                      : theme.colors.textPrimary,
+                                  },
+                                ]}
+                                numberOfLines={1}
+                              >
+                                {item.name}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  );
+                })
+            )}
+          </View>
+        )}
       </Animated.ScrollView>
+
+      {/* ======================================================== */}
+      {/* Floating Bottom Action Dock with 8-Stop Feather Fade     */}
+      {/* ======================================================== */}
+      <View style={styles.floatingDock} pointerEvents="box-none">
+        {/* Soft, Natural Feathered Fade Above the Button */}
+        <LinearGradient
+          colors={
+            isDark
+              ? [
+                  'rgba(11, 11, 14, 0.0)',
+                  'rgba(11, 11, 14, 0.05)',
+                  'rgba(11, 11, 14, 0.16)',
+                  'rgba(11, 11, 14, 0.38)',
+                  'rgba(11, 11, 14, 0.68)',
+                  'rgba(11, 11, 14, 0.90)',
+                  'rgba(11, 11, 14, 1.0)',
+                  'rgba(11, 11, 14, 1.0)',
+                ]
+              : [
+                  'rgba(250, 250, 250, 0.0)',
+                  'rgba(250, 250, 250, 0.05)',
+                  'rgba(250, 250, 250, 0.16)',
+                  'rgba(250, 250, 250, 0.38)',
+                  'rgba(250, 250, 250, 0.68)',
+                  'rgba(250, 250, 250, 0.90)',
+                  'rgba(250, 250, 250, 1.0)',
+                  'rgba(250, 250, 250, 1.0)',
+                ]
+          }
+          locations={[0, 0.04, 0.1, 0.16, 0.22, 0.3, 0.38, 1.0]}
+          style={styles.dockGradientBackdrop}
+          pointerEvents="none"
+        />
+
+        <View
+          style={[
+            styles.dockInner,
+            {
+              maxWidth: maxContentWidth || 520,
+              paddingBottom: Math.max(insets.bottom + 14, 20),
+            },
+          ]}
+        >
+          {/* Professional CTA Button (Solid, Non-See-Through Button) */}
+          <TouchableOpacity
+            onPress={handleNext}
+            disabled={isLoading}
+            style={[
+              styles.professionalCtaButton,
+              {
+                backgroundColor: isMinimumMet
+                  ? isDark
+                    ? '#FFFFFF'
+                    : '#121216'
+                  : isDark
+                    ? '#222228'
+                    : '#E4E4E7',
+                borderColor: isMinimumMet
+                  ? isDark
+                    ? 'transparent'
+                    : 'rgba(0, 0, 0, 0.12)'
+                  : isDark
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(0, 0, 0, 0.08)',
+                borderWidth: isMinimumMet ? (isDark ? 0 : 1) : 1,
+                shadowColor: '#000000',
+                shadowOpacity: isMinimumMet ? (isDark ? 0.28 : 0.12) : 0.06,
+                opacity: isLoading ? 0.75 : 1,
+              },
+            ]}
+            activeOpacity={0.88}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isMinimumMet
+                ? `Continue to prompts (${count} selected)`
+                : count === 0
+                  ? 'Select at least 3 passions to continue (0 of 3 selected)'
+                  : `Select at least 3 passions (${count} of 3 required)`
+            }
+            testID="interests-continue-button"
+          >
+            {isLoading ? (
+              <ActivityIndicator
+                size="small"
+                color={
+                  isMinimumMet ? (isDark ? '#000000' : '#FFFFFF') : isDark ? '#A1A1AA' : '#71717A'
+                }
+              />
+            ) : (
+              <View style={styles.buttonInnerRow}>
+                <Text
+                  style={[
+                    styles.professionalCtaText,
+                    {
+                      color: isMinimumMet
+                        ? isDark
+                          ? '#000000'
+                          : '#FFFFFF'
+                        : isDark
+                          ? '#8E8E93'
+                          : '#71717A',
+                      fontFamily: folkraFont,
+                    },
+                  ]}
+                >
+                  {count < 3
+                    ? count === 0
+                      ? 'SELECT AT LEAST 3 PASSIONS (0/3)'
+                      : `SELECT ${3 - count} MORE PASSION${3 - count > 1 ? 'S' : ''} (${count}/3)`
+                    : `CONTINUE (${count} SELECTED)`}
+                </Text>
+                {isMinimumMet && (
+                  <ArrowRight
+                    size={17}
+                    color={isDark ? '#000000' : '#FFFFFF'}
+                    style={{ marginLeft: 8 }}
+                  />
+                )}
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <Text style={[styles.dockFootnoteText, { color: theme.colors.textTertiary }]}>
+            You can refine or add more passions anytime in your profile settings.
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
+
+// ============================================================================
+// Styles
+// ============================================================================
 
 const styles = StyleSheet.create({
   container: {
@@ -404,39 +1508,41 @@ const styles = StyleSheet.create({
     height: '55%',
   },
   content: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
   },
   header: {
-    marginBottom: 8,
+    marginBottom: 14,
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   title: {
-    fontSize: 30,
+    fontSize: 29,
     fontWeight: '700',
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
+    flex: 1,
   },
+  // Clean unboxed 03 / 06 step counter
   stepBadgeInline: {
     flexDirection: 'row',
     alignItems: 'baseline',
+    marginLeft: 12,
   },
   stepCurrentText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   stepDividerText: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '400',
     marginHorizontal: 2,
   },
   stepTotalText: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '500',
     letterSpacing: 0.5,
   },
@@ -445,34 +1551,329 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   errorBanner: {
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  errorBannerText: {
+    color: '#EF4444',
+    fontWeight: '600',
+    flex: 1,
+    lineHeight: 18,
+  },
+  // Compact, Non-Boxy Curation & Rhythm Progress Bar
+  compactRhythmSection: {
+    marginBottom: 14,
+  },
+  compactRhythmHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  compactRhythmStatusCluster: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  statusIndicatorDot: {
+    width: 6.5,
+    height: 6.5,
+    borderRadius: 3.5,
+    marginRight: 7,
+  },
+  compactRhythmStatusText: {
+    fontSize: 12.5,
+    fontWeight: '500',
+  },
+  compactRhythmCountText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  compactSegmentRail: {
+    flexDirection: 'row',
+    gap: 3.5,
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  compactSegmentTick: {
+    flex: 1,
+    height: '100%',
+    borderRadius: 2,
+  },
+  // Expanded Horizontal Scroll Wrappers & Soft Gradient Fade Masks
+  expandedScrollWrapper: {
+    position: 'relative',
+    marginHorizontal: -20,
+    marginTop: 10,
+  },
+  expandedCategoryPillsWrapper: {
+    position: 'relative',
+    marginHorizontal: -20,
+    marginBottom: 14,
+  },
+  expandedHorizontalScroll: {
+    width: '100%',
+  },
+  fadeMaskLeft: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 26,
+    zIndex: 10,
+  },
+  fadeMaskRight: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 26,
+    zIndex: 10,
+  },
+  // Search Bar Styles
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    borderRadius: 13,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  clearSearchButton: {
+    padding: 4,
+  },
+  // Custom Passion Action Card
+  customPassionActionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  customPassionIconBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  customPassionActionTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  customPassionActionSub: {
+    fontSize: 11.5,
+    marginTop: 1,
+  },
+  customPassionAddPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 12,
+  },
+  customPassionAddPillText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  // Category Pills
+  categoryPillsScroll: {
+    flexDirection: 'row',
+    gap: 7,
+    paddingHorizontal: 20,
+    paddingVertical: 2,
+  },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 11,
+    paddingVertical: 6.5,
+    borderRadius: 14,
     borderWidth: 1,
   },
-  categoriesContainer: {
-    marginVertical: 20,
-    gap: 20,
+  categoryPillText: {
+    fontSize: 12,
+    letterSpacing: -0.1,
   },
-  categorySection: {
-    gap: 10,
+  categoryPillBadge: {
+    marginLeft: 5,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 9,
+    minWidth: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  categoryTitle: {
+  categoryPillBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  // Empty State
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 36,
+    paddingHorizontal: 20,
+  },
+  emptyStateIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  emptyStateTitle: {
+    fontSize: 14,
     fontWeight: '700',
-    fontSize: 15,
+    letterSpacing: 0.6,
+    marginBottom: 6,
   },
-  chipRow: {
+  emptyStateSubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  // Passions Container & Fluid Side-by-Side Grid
+  passionsContainer: {
+    gap: 22,
+  },
+  categoryGroupSection: {
+    gap: 12,
+  },
+  categoryGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  categoryGroupIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 9,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  categoryGroupTitle: {
+    fontSize: 16.5,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  categoryCountBadge: {
+    marginLeft: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  categoryCountBadgeText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  // Multi-option fluid side-by-side chip grid
+  chipGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 7,
+    alignItems: 'center',
   },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 20,
+  passionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 7,
+    paddingRight: 11,
+    paddingVertical: 6,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 1,
+    alignSelf: 'flex-start',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  buttonWrapper: {
-    marginTop: 16,
+  passionIconCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  passionCardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+  // Floating Bottom Dock with Feathered Fade (Matching photos.tsx)
+  floatingDock: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 36,
+    paddingHorizontal: 18,
+    zIndex: 30,
+  },
+  dockGradientBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  dockInner: {
+    width: '100%',
+    alignSelf: 'center',
+  },
+  professionalCtaButton: {
+    height: 54,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  buttonInnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  professionalCtaText: {
+    fontSize: 15.5,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  dockFootnoteText: {
+    fontSize: 11.5,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 16,
   },
 });

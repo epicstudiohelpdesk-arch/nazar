@@ -73,7 +73,11 @@ export const PHOTO_FILTERS: readonly PhotoFilter[] = [
     id: 'portra_400',
     name: 'Portra 400',
     tagline: 'Warm skin tones & highlights',
-    gradientColors: ['rgba(255, 237, 213, 0.16)', 'rgba(251, 191, 36, 0.10)', 'rgba(249, 115, 22, 0.08)'],
+    gradientColors: [
+      'rgba(255, 237, 213, 0.16)',
+      'rgba(251, 191, 36, 0.10)',
+      'rgba(249, 115, 22, 0.08)',
+    ],
     locations: [0, 0.45, 1],
     vignette: true,
   },
@@ -81,7 +85,11 @@ export const PHOTO_FILTERS: readonly PhotoFilter[] = [
     id: 'golden_hour',
     name: 'Golden Hour',
     tagline: 'Honeyed golden radiance',
-    gradientColors: ['rgba(251, 191, 36, 0.20)', 'rgba(245, 158, 11, 0.14)', 'rgba(217, 119, 6, 0.10)'],
+    gradientColors: [
+      'rgba(251, 191, 36, 0.20)',
+      'rgba(245, 158, 11, 0.14)',
+      'rgba(217, 119, 6, 0.10)',
+    ],
     locations: [0, 0.5, 1],
     vignette: true,
   },
@@ -89,7 +97,11 @@ export const PHOTO_FILTERS: readonly PhotoFilter[] = [
     id: 'warm_ember',
     name: 'Warm Ember',
     tagline: 'Amber undertones & warmth',
-    gradientColors: ['rgba(255, 125, 45, 0.16)', 'rgba(234, 88, 12, 0.12)', 'rgba(180, 83, 9, 0.08)'],
+    gradientColors: [
+      'rgba(255, 125, 45, 0.16)',
+      'rgba(234, 88, 12, 0.12)',
+      'rgba(180, 83, 9, 0.08)',
+    ],
     locations: [0, 0.55, 1],
     vignette: true,
   },
@@ -105,7 +117,11 @@ export const PHOTO_FILTERS: readonly PhotoFilter[] = [
     id: 'cinematic_teal',
     name: 'Cinematic Teal',
     tagline: 'Moody shadows & speculars',
-    gradientColors: ['rgba(45, 212, 191, 0.14)', 'rgba(13, 148, 136, 0.10)', 'rgba(15, 23, 42, 0.24)'],
+    gradientColors: [
+      'rgba(45, 212, 191, 0.14)',
+      'rgba(13, 148, 136, 0.10)',
+      'rgba(15, 23, 42, 0.24)',
+    ],
     locations: [0, 0.45, 1],
     vignette: true,
   },
@@ -113,7 +129,11 @@ export const PHOTO_FILTERS: readonly PhotoFilter[] = [
     id: 'velvet_rose',
     name: 'Velvet Rose',
     tagline: 'Romantic champagne blush',
-    gradientColors: ['rgba(251, 113, 133, 0.15)', 'rgba(244, 63, 94, 0.10)', 'rgba(190, 24, 93, 0.08)'],
+    gradientColors: [
+      'rgba(251, 113, 133, 0.15)',
+      'rgba(244, 63, 94, 0.10)',
+      'rgba(190, 24, 93, 0.08)',
+    ],
     locations: [0, 0.5, 1],
     vignette: true,
   },
@@ -129,7 +149,11 @@ export const PHOTO_FILTERS: readonly PhotoFilter[] = [
     id: 'silver_gelatin',
     name: 'Silver Gelatin',
     tagline: 'Timeless silver-halide film',
-    gradientColors: ['rgba(244, 244, 245, 0.16)', 'rgba(113, 113, 122, 0.30)', 'rgba(24, 24, 27, 0.44)'],
+    gradientColors: [
+      'rgba(244, 244, 245, 0.16)',
+      'rgba(113, 113, 122, 0.30)',
+      'rgba(24, 24, 27, 0.44)',
+    ],
     locations: [0, 0.4, 1],
     vignette: true,
   },
@@ -137,7 +161,11 @@ export const PHOTO_FILTERS: readonly PhotoFilter[] = [
     id: 'nordic_cool',
     name: 'Nordic Cool',
     tagline: 'Clean daylight & minimalism',
-    gradientColors: ['rgba(186, 230, 253, 0.14)', 'rgba(125, 211, 252, 0.08)', 'rgba(71, 85, 105, 0.10)'],
+    gradientColors: [
+      'rgba(186, 230, 253, 0.14)',
+      'rgba(125, 211, 252, 0.08)',
+      'rgba(71, 85, 105, 0.10)',
+    ],
     locations: [0, 0.5, 1],
     vignette: false,
   },
@@ -145,7 +173,11 @@ export const PHOTO_FILTERS: readonly PhotoFilter[] = [
     id: 'ektar_100',
     name: 'Ektar 100',
     tagline: 'Vivid fine-grain color',
-    gradientColors: ['rgba(253, 186, 116, 0.14)', 'rgba(239, 68, 68, 0.09)', 'rgba(168, 85, 247, 0.07)'],
+    gradientColors: [
+      'rgba(253, 186, 116, 0.14)',
+      'rgba(239, 68, 68, 0.09)',
+      'rgba(168, 85, 247, 0.07)',
+    ],
     locations: [0, 0.55, 1],
     vignette: true,
   },
@@ -153,7 +185,11 @@ export const PHOTO_FILTERS: readonly PhotoFilter[] = [
     id: 'tokyo_night',
     name: 'Tokyo Night',
     tagline: 'Indigo twilight & amber glow',
-    gradientColors: ['rgba(99, 102, 241, 0.15)', 'rgba(79, 70, 229, 0.12)', 'rgba(15, 23, 42, 0.32)'],
+    gradientColors: [
+      'rgba(99, 102, 241, 0.15)',
+      'rgba(79, 70, 229, 0.12)',
+      'rgba(15, 23, 42, 0.32)',
+    ],
     locations: [0, 0.5, 1],
     vignette: true,
   },
@@ -229,7 +265,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
 
   const studioPulseOpacity = studioPulseAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.10, 0.38],
+    outputRange: [0.1, 0.38],
   });
 
   const studioDotOpacity = studioPulseAnim.interpolate({
@@ -268,8 +304,14 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
   const [cropTranslate, setCropTranslate] = useState({ x: 0, y: 0 });
   const [isInteracting, setIsInteracting] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
-  const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
-  const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({ width: 340, height: 340 });
+  const [imageNaturalSize, setImageNaturalSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({
+    width: 340,
+    height: 340,
+  });
 
   const cropScaleRef = useRef(1);
   const cropPanRef = useRef({ x: 0, y: 0 });
@@ -362,8 +404,10 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
 
     const targetScale = cropScaleRef.current > 1.15 ? 1.0 : 1.75;
     const bounds = calculatePanBounds(targetScale, contW, contH, origW, origH);
-    const targetX = targetScale === 1.0 ? 0 : Math.max(bounds.minX, Math.min(bounds.maxX, cropPanRef.current.x));
-    const targetY = targetScale === 1.0 ? 0 : Math.max(bounds.minY, Math.min(bounds.maxY, cropPanRef.current.y));
+    const targetX =
+      targetScale === 1.0 ? 0 : Math.max(bounds.minX, Math.min(bounds.maxX, cropPanRef.current.x));
+    const targetY =
+      targetScale === 1.0 ? 0 : Math.max(bounds.minY, Math.min(bounds.maxY, cropPanRef.current.y));
 
     cropScaleRef.current = targetScale;
     cropPanRef.current = { x: targetX, y: targetY };
@@ -448,7 +492,10 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
             prevPinchMidRef.current = null;
           } else if (numTouches >= 2 && t0 && t1) {
             prevPinchDistRef.current = Math.hypot(t0.pageX - t1.pageX, t0.pageY - t1.pageY);
-            prevPinchMidRef.current = { x: (t0.pageX + t1.pageX) / 2, y: (t0.pageY + t1.pageY) / 2 };
+            prevPinchMidRef.current = {
+              x: (t0.pageX + t1.pageX) / 2,
+              y: (t0.pageY + t1.pageY) / 2,
+            };
             prevTouchPosRef.current = null;
           }
           return;
@@ -521,7 +568,8 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
           if (cropPanRef.current.y > bounds.maxY && panDy > 0) panDy *= 0.32;
           if (cropPanRef.current.y < bounds.minY && panDy < 0) panDy *= 0.32;
 
-          const nextPanX = cropPanRef.current.x + panDx + (Math.abs(focalDx) < 25 ? focalDx * 0.5 : 0);
+          const nextPanX =
+            cropPanRef.current.x + panDx + (Math.abs(focalDx) < 25 ? focalDx * 0.5 : 0);
           const nextPanY = cropPanRef.current.y + panDy;
 
           cropScaleRef.current = nextScale;
@@ -975,9 +1023,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
       if (finalPhotoUri !== pendingPhotoUri) {
         setDraftPhotos(
           draftPhotos.map((p) =>
-            p.id === editingPhotoId
-              ? { ...p, url: finalPhotoUri, filterId: selectedFilterId }
-              : p
+            p.id === editingPhotoId ? { ...p, url: finalPhotoUri, filterId: selectedFilterId } : p
           )
         );
       } else {
@@ -991,9 +1037,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
     }
 
     const existingCoverPhoto =
-      activeSlotIndex === 0
-        ? draftPhotos.find((p) => p.isPrimary) || draftPhotos[0]
-        : undefined;
+      activeSlotIndex === 0 ? draftPhotos.find((p) => p.isPrimary) || draftPhotos[0] : undefined;
     const isReplacingCover = activeSlotIndex === 0 && Boolean(existingCoverPhoto);
     const existingCoverId = isReplacingCover ? existingCoverPhoto?.id : null;
 
@@ -1037,9 +1081,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
       };
 
       if (photoToReplaceId) {
-        setDraftPhotos(
-          draftPhotos.map((p) => (p.id === photoToReplaceId ? newPhotoItem : p))
-        );
+        setDraftPhotos(draftPhotos.map((p) => (p.id === photoToReplaceId ? newPhotoItem : p)));
       } else {
         addDraftPhoto(newPhotoItem);
       }
@@ -1066,9 +1108,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
       };
 
       if (photoToReplaceId) {
-        setDraftPhotos(
-          draftPhotos.map((p) => (p.id === photoToReplaceId ? fallbackPhotoItem : p))
-        );
+        setDraftPhotos(draftPhotos.map((p) => (p.id === photoToReplaceId ? fallbackPhotoItem : p)));
       } else {
         addDraftPhoto(fallbackPhotoItem);
       }
@@ -1511,11 +1551,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
               style={[
                 styles.requiredBadgeText,
                 {
-                  color: coverPhoto
-                    ? isDark
-                      ? '#FFFFFF'
-                      : '#111114'
-                    : theme.colors.textTertiary,
+                  color: coverPhoto ? (isDark ? '#FFFFFF' : '#111114') : theme.colors.textTertiary,
                   fontWeight: coverPhoto ? '700' : '500',
                 },
               ]}
@@ -1605,7 +1641,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                   'rgba(8, 8, 12, 0.98)',
                   'rgba(8, 8, 12, 1.0)',
                 ]}
-                locations={[0, 0.12, 0.25, 0.40, 0.56, 0.72, 0.84, 0.94, 1.0]}
+                locations={[0, 0.12, 0.25, 0.4, 0.56, 0.72, 0.84, 0.94, 1.0]}
                 style={styles.bigCoverBottomGradient}
                 pointerEvents="none"
               />
@@ -1800,11 +1836,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                   Frame Your First Impression
                 </Text>
 
-                <Text
-                  level="caption"
-                  color="tertiary"
-                  style={styles.viewfinderSubtitle}
-                >
+                <Text level="caption" color="tertiary" style={styles.viewfinderSubtitle}>
                   High-resolution 4:5 portrait shown first on Nazar
                 </Text>
               </TouchableOpacity>
@@ -1816,19 +1848,20 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                   style={[
                     styles.studioActionButton,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.08)'
-                        : 'rgba(0, 0, 0, 0.04)',
-                      borderColor: isDark
-                        ? 'rgba(255, 255, 255, 0.16)'
-                        : 'rgba(0, 0, 0, 0.10)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.10)',
                     },
                   ]}
                   activeOpacity={0.78}
                   accessibilityRole="button"
                   accessibilityLabel="Take live portrait with camera"
                 >
-                  <Camera size={13.5} color={theme.colors.textPrimary} strokeWidth={2} style={{ marginRight: 6 }} />
+                  <Camera
+                    size={13.5}
+                    color={theme.colors.textPrimary}
+                    strokeWidth={2}
+                    style={{ marginRight: 6 }}
+                  />
                   <Text style={[styles.studioActionText, { color: theme.colors.textPrimary }]}>
                     Take Photo
                   </Text>
@@ -1839,19 +1872,20 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                   style={[
                     styles.studioActionButton,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.08)'
-                        : 'rgba(0, 0, 0, 0.04)',
-                      borderColor: isDark
-                        ? 'rgba(255, 255, 255, 0.16)'
-                        : 'rgba(0, 0, 0, 0.10)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.10)',
                     },
                   ]}
                   activeOpacity={0.78}
                   accessibilityRole="button"
                   accessibilityLabel="Choose from photo library"
                 >
-                  <ImagePlus size={13.5} color={theme.colors.textPrimary} strokeWidth={2} style={{ marginRight: 6 }} />
+                  <ImagePlus
+                    size={13.5}
+                    color={theme.colors.textPrimary}
+                    strokeWidth={2}
+                    style={{ marginRight: 6 }}
+                  />
                   <Text style={[styles.studioActionText, { color: theme.colors.textPrimary }]}>
                     Photo Library
                   </Text>
@@ -2097,13 +2131,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                     ? 'Continue to Interests'
                     : `Add At Least 2 Photos (${filledCount}/2)`}
                 </Text>
-                {isMinimumMet && (
-                  <ArrowRight
-                    size={17}
-                    color="#000000"
-                    style={{ marginLeft: 8 }}
-                  />
-                )}
+                {isMinimumMet && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
               </View>
             )}
           </TouchableOpacity>
@@ -2140,7 +2168,8 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                   { color: isDark ? 'rgba(255, 255, 255, 0.50)' : 'rgba(0, 0, 0, 0.50)' },
                 ]}
               >
-                SLOT 0{activeSlotIndex + 1} · {PHOTO_SLOTS[activeSlotIndex]?.prompt?.toUpperCase() || 'SUPPORTING'}
+                SLOT 0{activeSlotIndex + 1} ·{' '}
+                {PHOTO_SLOTS[activeSlotIndex]?.prompt?.toUpperCase() || 'SUPPORTING'}
               </Text>
             </View>
 
@@ -2322,7 +2351,12 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
             },
           ]}
         >
-          <Sun size={13} color={theme.colors.textSecondary} strokeWidth={2} style={{ marginRight: 7 }} />
+          <Sun
+            size={13}
+            color={theme.colors.textSecondary}
+            strokeWidth={2}
+            style={{ marginRight: 7 }}
+          />
           <Text level="caption" color="secondary" style={styles.pickerHintText}>
             Natural daylight and relaxed expressions highlight your authenticity
           </Text>
@@ -2412,10 +2446,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
             }}
           >
             {/* Gesture-driven Animated Image container */}
-            <View
-              style={styles.studioGestureWrap}
-              {...panResponder.panHandlers}
-            >
+            <View style={styles.studioGestureWrap} {...panResponder.panHandlers}>
               <View style={styles.studioImageCenterWrap} pointerEvents="none">
                 <Animated.Image
                   source={{ uri: pendingPhotoUri }}
@@ -2465,7 +2496,9 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                 <Text style={styles.studioCropHintText}>
                   {isInteracting
                     ? 'Framing Portrait'
-                    : cropScale > 1.05 || Math.abs(cropTranslate.x) > 2 || Math.abs(cropTranslate.y) > 2
+                    : cropScale > 1.05 ||
+                        Math.abs(cropTranslate.x) > 2 ||
+                        Math.abs(cropTranslate.y) > 2
                       ? `Framed · ${cropScale.toFixed(1)}x`
                       : 'Pinch / Drag to Crop'}
                 </Text>
@@ -2485,7 +2518,9 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                   <Grid3X3 size={12} color="#FFFFFF" strokeWidth={2} />
                 </TouchableOpacity>
 
-                {(cropScale > 1.02 || Math.abs(cropTranslate.x) > 1 || Math.abs(cropTranslate.y) > 1) && (
+                {(cropScale > 1.02 ||
+                  Math.abs(cropTranslate.x) > 1 ||
+                  Math.abs(cropTranslate.y) > 1) && (
                   <TouchableOpacity
                     onPress={handleResetCrop}
                     style={styles.studioHudPillButton}
@@ -2512,10 +2547,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                 <TouchableOpacity
                   onPress={handleZoomOut}
                   disabled={cropScale <= 1.0}
-                  style={[
-                    styles.studioZoomStepButton,
-                    cropScale <= 1.0 && { opacity: 0.4 },
-                  ]}
+                  style={[styles.studioZoomStepButton, cropScale <= 1.0 && { opacity: 0.4 }]}
                   activeOpacity={0.7}
                   accessibilityRole="button"
                   accessibilityLabel="Zoom out"
@@ -2530,10 +2562,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                 <TouchableOpacity
                   onPress={handleZoomIn}
                   disabled={cropScale >= 3.5}
-                  style={[
-                    styles.studioZoomStepButton,
-                    cropScale >= 3.5 && { opacity: 0.4 },
-                  ]}
+                  style={[styles.studioZoomStepButton, cropScale >= 3.5 && { opacity: 0.4 }]}
                   activeOpacity={0.7}
                   accessibilityRole="button"
                   accessibilityLabel="Zoom in"
@@ -2650,10 +2679,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
           >
             <RotateCw size={12.5} color={theme.colors.textPrimary} style={{ marginRight: 5 }} />
             <Text
-              style={[
-                styles.studioRetakeText,
-                { color: theme.colors.textPrimary },
-              ]}
+              style={[styles.studioRetakeText, { color: theme.colors.textPrimary }]}
               numberOfLines={1}
             >
               Retake / Change

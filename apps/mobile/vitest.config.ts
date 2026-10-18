@@ -33,10 +33,7 @@ export default defineConfig({
       'expo-crypto': path.resolve(__dirname, 'tests/mocks/expo-crypto.ts'),
       'expo-blur': path.resolve(__dirname, 'tests/mocks/expo-blur.ts'),
       'expo-image-picker': path.resolve(__dirname, 'tests/mocks/expo-image-picker.ts'),
-      'expo-image-manipulator': path.resolve(
-        __dirname,
-        'tests/mocks/expo-image-manipulator.ts'
-      ),
+      'expo-image-manipulator': path.resolve(__dirname, 'tests/mocks/expo-image-manipulator.ts'),
     },
   },
 });

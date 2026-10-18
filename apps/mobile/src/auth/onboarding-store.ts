@@ -228,9 +228,7 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
 
   updateDraftPhotoFilter: (id, filterId) =>
     set((state) => ({
-      draftPhotos: state.draftPhotos.map((p) =>
-        p.id === id ? { ...p, filterId } : p
-      ),
+      draftPhotos: state.draftPhotos.map((p) => (p.id === id ? { ...p, filterId } : p)),
     })),
 
   setDraftInterests: (interestIds) => set({ draftInterests: interestIds }),
@@ -291,7 +289,8 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         isPrimary: m.isPrimary,
         status: m.status,
       })),
-      draftInterests: (profile.interests || []).map((i) => i.id),
+      draftInterests:
+        (profile.interests || []).length >= 3 ? (profile.interests || []).map((i) => i.id) : [],
       draftPrompts: (profile.prompts || []).map((p) => ({
         promptDefinitionId: p.promptDefinitionId,
         prompt: p.prompt,
