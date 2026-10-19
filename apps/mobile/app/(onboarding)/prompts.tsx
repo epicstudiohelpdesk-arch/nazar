@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -430,6 +430,8 @@ export function selectSmartDefaultPrompt(
 
 export default function OnboardingPromptsScreen(): React.JSX.Element {
   const router = useRouter();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
+  const isFromReview = returnTo === 'preview';
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme.mode === 'dark';
@@ -758,10 +760,18 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
     try {
       await profileApi.updateMyPrompts({ prompts: promptPayload });
       trackOnboardingEvent('prompts_completed', { promptCount: validPrompts.length });
+      if (isFromReview) {
+        router.replace('/(onboarding)/preview');
+        return;
+      }
       router.push('/(onboarding)/preferences');
     } catch {
       // Local fallback
       trackOnboardingEvent('prompts_completed', { promptCount: validPrompts.length });
+      if (isFromReview) {
+        router.replace('/(onboarding)/preview');
+        return;
+      }
       router.push('/(onboarding)/preferences');
     } finally {
       setIsLoading(false);
@@ -770,6 +780,10 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
 
   const handleBack = () => {
     haptics.impactLight();
+    if (isFromReview) {
+      router.replace('/(onboarding)/preview');
+      return;
+    }
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -1333,9 +1347,11 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
             activeOpacity={0.88}
             accessibilityRole="button"
             accessibilityLabel={
-              isMinimumMet
-                ? `Continue to preferences (${validPromptsCount} prompt${validPromptsCount > 1 ? 's' : ''} answered)`
-                : 'Answer at least 1 prompt to continue (0 of 1 completed)'
+              isFromReview
+                ? 'Back to Review'
+                : isMinimumMet
+                  ? `Continue to preferences (${validPromptsCount} prompt${validPromptsCount > 1 ? 's' : ''} answered)`
+                  : 'Answer at least 1 prompt to continue (0 of 1 completed)'
             }
             testID="prompts-continue-button"
           >
@@ -1353,9 +1369,13 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                   ]}
                   numberOfLines={1}
                 >
-                  {isMinimumMet ? 'Continue to Preferences' : 'Answer at least 1 prompt (0/1)'}
+                  {isFromReview
+                    ? 'Back to Review'
+                    : isMinimumMet
+                      ? 'Continue to Preferences'
+                      : 'Answer at least 1 prompt (0/1)'}
                 </Text>
-                {isMinimumMet && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
+                {(isFromReview || isMinimumMet) && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
               </View>
             )}
           </TouchableOpacity>

@@ -14,7 +14,7 @@ import {
   Keyboard,
   Animated,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
@@ -424,6 +424,8 @@ const MAP_LAYERS = [
 
 export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const router = useRouter();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
+  const isFromReview = returnTo === 'preview';
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
   const { maxContentWidth } = useResponsiveLayout();
@@ -1145,6 +1147,10 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const handleBack = () => {
     dismissActiveField();
     haptics.impactLight();
+    if (isFromReview) {
+      router.replace('/(onboarding)/preview');
+      return;
+    }
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -1292,6 +1298,10 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
         intent,
       });
 
+      if (isFromReview) {
+        router.replace('/(onboarding)/preview');
+        return;
+      }
       router.push('/(onboarding)/photos');
     } catch (err: unknown) {
       if (__DEV__) {
@@ -1300,6 +1310,10 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           gender: coreGender,
           intent,
         });
+        if (isFromReview) {
+          router.replace('/(onboarding)/preview');
+          return;
+        }
         router.push('/(onboarding)/photos');
         return;
       }
@@ -2820,7 +2834,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             ]}
             activeOpacity={0.88}
             accessibilityRole="button"
-            accessibilityLabel="Continue to Photos"
+            accessibilityLabel={isFromReview ? 'Back to Review' : 'Continue to Photos'}
             testID="submit-button"
           >
             {isLoading ? (
@@ -2836,7 +2850,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     },
                   ]}
                 >
-                  Continue to Photos
+                  {isFromReview ? 'Back to Review' : 'Continue to Photos'}
                 </Text>
                 <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />
               </View>

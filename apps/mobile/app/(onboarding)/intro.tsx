@@ -575,22 +575,32 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
         />
 
         <View style={[styles.dockInner, { maxWidth: maxContentWidth || 540 }]}>
-          {/* Tactile Primary CTA Button - Previous Form Restored */}
+          {/* Tactile Primary CTA Button - Luxury White Form */}
           <TouchableOpacity
             onPress={handleStart}
             activeOpacity={0.88}
             style={[
               styles.primaryStartButton,
               {
-                backgroundColor: theme.colors.accent,
-                shadowColor: theme.colors.accent,
+                backgroundColor: '#FFFFFF',
+                shadowColor: '#000000',
+                shadowOpacity: isDark ? 0.32 : 0.12,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: isDark ? 'transparent' : 'rgba(0, 0, 0, 0.12)',
               },
             ]}
             accessibilityRole="button"
             accessibilityLabel="Begin Profile Creation"
             testID="begin-profile-creation-btn"
           >
-            <RNText style={styles.primaryButtonLabel}>Begin Profile Creation</RNText>
+            <RNText
+              style={[
+                styles.primaryButtonLabel,
+                folkraFont ? { fontFamily: folkraFont } : null,
+              ]}
+            >
+              Begin Profile Creation
+            </RNText>
 
             <View style={styles.buttonArrowCircle}>
               <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.4} />
@@ -786,10 +796,10 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     paddingLeft: 24,
     paddingRight: 10,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    elevation: 6,
   },
   buttonLabelGroup: {
     flexDirection: 'column',
@@ -797,14 +807,14 @@ const styles = StyleSheet.create({
   },
   primaryButtonLabel: {
     fontFamily: 'Folkra',
-    color: '#FFFFFF',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
   primaryButtonSubLabel: {
     fontFamily: 'Folkra',
-    color: 'rgba(255, 255, 255, 0.75)',
+    color: 'rgba(0, 0, 0, 0.65)',
     fontSize: 11,
     fontWeight: '500',
     marginTop: 1,
@@ -813,7 +823,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
   },

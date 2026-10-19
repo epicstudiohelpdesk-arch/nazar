@@ -10,7 +10,7 @@ import {
   Keyboard,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -1550,6 +1550,8 @@ const getCategoryIcon = (category: string): LucideIcon => {
 
 export default function OnboardingInterestsScreen(): React.JSX.Element {
   const router = useRouter();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
+  const isFromReview = returnTo === 'preview';
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme.mode === 'dark';
@@ -2083,6 +2085,10 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
 
   const handleBack = () => {
     haptics.impactLight();
+    if (isFromReview) {
+      router.replace('/(onboarding)/preview');
+      return;
+    }
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -2105,10 +2111,18 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
     try {
       await profileApi.updateMyInterests({ interestIds: draftInterests });
       trackOnboardingEvent('interests_completed', { count: draftInterests.length });
+      if (isFromReview) {
+        router.replace('/(onboarding)/preview');
+        return;
+      }
       router.push('/(onboarding)/lifestyle');
     } catch {
       // Offline fallback: store holds draft and flow continues
       trackOnboardingEvent('interests_completed', { count: draftInterests.length });
+      if (isFromReview) {
+        router.replace('/(onboarding)/preview');
+        return;
+      }
       router.push('/(onboarding)/lifestyle');
     } finally {
       setIsLoading(false);
@@ -2786,11 +2800,13 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
             activeOpacity={0.88}
             accessibilityRole="button"
             accessibilityLabel={
-              isMinimumMet
-                ? `Continue to lifestyle (${count} selected)`
-                : count === 0
-                  ? 'Select at least 3 passions to continue (0 of 3 selected)'
-                  : `Select at least 3 passions (${count} of 3 required)`
+              isFromReview
+                ? 'Back to Review'
+                : isMinimumMet
+                  ? `Continue to lifestyle (${count} selected)`
+                  : count === 0
+                    ? 'Select at least 3 passions to continue (0 of 3 selected)'
+                    : `Select at least 3 passions (${count} of 3 required)`
             }
             testID="interests-continue-button"
           >
@@ -2807,13 +2823,15 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                     },
                   ]}
                 >
-                  {count < 3
-                    ? count === 0
-                      ? 'Select at least 3 passions (0/3)'
-                      : `Select ${3 - count} more passion${3 - count > 1 ? 's' : ''} (${count}/3)`
-                    : `Continue to Lifestyle (${count} selected)`}
+                  {isFromReview
+                    ? 'Back to Review'
+                    : count < 3
+                      ? count === 0
+                        ? 'Select at least 3 passions (0/3)'
+                        : `Select ${3 - count} more passion${3 - count > 1 ? 's' : ''} (${count}/3)`
+                      : `Continue to Lifestyle (${count} selected)`}
                 </Text>
-                {isMinimumMet && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
+                {(isFromReview || isMinimumMet) && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
               </View>
             )}
           </TouchableOpacity>

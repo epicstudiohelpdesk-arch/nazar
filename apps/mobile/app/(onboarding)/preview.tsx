@@ -1,15 +1,24 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Animated, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Camera,
+  User,
+  MessageCircle,
+  Heart,
+  SlidersHorizontal,
+  Edit3,
+  ShieldCheck,
+  Eye,
+} from 'lucide-react-native';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
-import { Icon } from '../../src/design/primitives/Icon.js';
-import { Button } from '../../src/design/components/button/Button.js';
 import { ProfileCard, type ProfileCardData } from '../../src/design/components/card/ProfileCard.js';
 import { getDefaultProfileApi } from '../../src/profile/profile-api.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
@@ -48,7 +57,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
   const [isActivating, setIsActivating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
-  // Calculate age
+  // Calculate age from date of birth
   const calculateAge = (dobString?: string): number => {
     if (!dobString) return 24;
     const dob = new Date(dobString);
@@ -74,7 +83,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
 
   const previewData: ProfileCardData = {
     id: 'preview-me',
-    name: draftProfile.displayName || 'You',
+    name: draftProfile.displayName || 'Sophie Bennett',
     age: calculateAge(draftProfile.dateOfBirth),
     city: draftProfile.city || 'Mumbai',
     occupation: draftProfile.occupation || undefined,
@@ -83,11 +92,29 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
     imageUrl: primaryUrl,
     images: photoUrls.length > 0 ? photoUrls : [primaryUrl],
     isVerified: true,
-    interests: draftInterests.map((id) => id.replace('int_', '').replace('-', ' ')),
-    prompts: draftPrompts.map((p) => ({
-      question: p.prompt,
-      answer: p.answer,
-    })),
+    interests:
+      draftInterests.length > 0
+        ? draftInterests.map((id) =>
+            id
+              .replace('int_', '')
+              .replace(/[-_]/g, ' ')
+              .split(' ')
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(' ')
+          )
+        : ['Design', 'Specialty Coffee', 'Architecture', 'Travel'],
+    prompts:
+      draftPrompts.length > 0
+        ? draftPrompts.map((p) => ({
+            question: p.prompt,
+            answer: p.answer,
+          }))
+        : [
+            {
+              question: 'A life goal of mine',
+              answer: 'Build products that make people feel at home anywhere in the world.',
+            },
+          ],
   };
 
   const handleActivate = async () => {
@@ -123,7 +150,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0B0B0E' : '#FAFAFA' }]}>
-      {/* Glossy, Faded, Frosted-Glass Top Vignette (Reveals dynamically on scroll) */}
+      {/* Glossy, Frosted-Glass Top Vignette (Reveals dynamically on scroll) */}
       <Animated.View
         pointerEvents="none"
         style={[
@@ -178,6 +205,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
       {/* Encircled floating circular back button on top left corner */}
       <TouchableOpacity
         onPress={handleBack}
+        delayPressIn={0}
         style={[
           styles.encircledBackButton,
           {
@@ -210,27 +238,17 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
+        {/* Header Title Section: Clean & Professional */}
         <View style={styles.header}>
-          <View style={styles.titleRow}>
-            <Heading
-              level="h1"
-              style={[styles.title, { fontFamily: folkraFont, color: theme.colors.textPrimary }]}
-            >
-              Review your profile
-            </Heading>
-            <View style={styles.reviewBadge}>
-              <Text
-                style={[
-                  styles.reviewBadgeText,
-                  { color: theme.colors.textPrimary, fontFamily: folkraFont },
-                ]}
-              >
-                FINAL
-              </Text>
-            </View>
-          </View>
+          <Heading
+            level="h1"
+            style={[styles.title, { fontFamily: folkraFont, color: theme.colors.textPrimary }]}
+          >
+            Review your profile
+          </Heading>
           <Text level="body" color="secondary" style={styles.subtitle}>
-            Here is how your profile will appear on Nazar discovery.
+            This is your official presence on Nazar. Inspect how your card renders in discovery and
+            fine-tune any detail before entering the community.
           </Text>
         </View>
 
@@ -238,81 +256,392 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
           <View
             style={[
               styles.errorBanner,
-              { backgroundColor: theme.colors.errorSoft, borderColor: theme.colors.error },
+              {
+                backgroundColor: isDark ? 'rgba(244, 63, 94, 0.08)' : 'rgba(244, 63, 94, 0.05)',
+                borderColor: isDark ? 'rgba(244, 63, 94, 0.24)' : 'rgba(244, 63, 94, 0.18)',
+              },
             ]}
           >
-            <Text level="bodySmall" style={{ color: theme.colors.error, fontWeight: '600' }}>
+            <Text style={[styles.errorBannerText, { color: isDark ? '#FDA4AF' : '#E11D48' }]}>
               {errorMessage}
             </Text>
           </View>
         )}
 
-        {/* Profile Card Preview */}
-        <View style={styles.cardWrapper}>
-          <ProfileCard profile={previewData} context="profilePreview" />
+        {/* Live Discovery Deck Simulation Canvas */}
+        <View style={styles.previewCanvasContainer}>
+          <View style={styles.previewCanvasHeader}>
+            <View style={styles.deckStatusRow}>
+              <Eye size={12} color={theme.colors.textSecondary} strokeWidth={2.2} />
+              <Text
+                style={[styles.deckStatusText, { color: theme.colors.textSecondary }]}
+                numberOfLines={1}
+              >
+                Live Discovery Deck Simulation
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.deckHintPill,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.035)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                },
+              ]}
+            >
+              <Text
+                style={[styles.deckHintText, { color: theme.colors.textTertiary }]}
+                numberOfLines={1}
+              >
+                Tap photo edges to cycle
+              </Text>
+            </View>
+          </View>
+
+          {/* Card Presentation */}
+          <View style={styles.cardWrapper}>
+            <ProfileCard profile={previewData} context="profilePreview" />
+          </View>
         </View>
 
-        {/* Quick Edit Links */}
-        <View style={styles.editPillsRow}>
-          <TouchableOpacity
-            style={[styles.editPill, { borderColor: theme.colors.border }]}
-            onPress={() => {
-              haptics.selection();
-              router.push('/(onboarding)/profile-setup');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Edit basic details"
-          >
-            <Icon name="edit" size="tiny" color={theme.colors.accent} />
-            <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '600' }}>
-              Edit Basics
+        {/* Curated Profile Milestones (Fluid, Non-Boxy Quick Tune Rows) */}
+        <View style={styles.milestonesSection}>
+          <View style={styles.milestonesSectionHeader}>
+            <Text
+              style={[
+                styles.milestonesSectionTitle,
+                { color: theme.colors.textPrimary, fontFamily: folkraFont },
+              ]}
+            >
+              Profile Breakdown
             </Text>
-          </TouchableOpacity>
+            <Text style={[styles.milestonesSectionHint, { color: theme.colors.textTertiary }]}>
+              Tap to refine
+            </Text>
+          </View>
 
-          <TouchableOpacity
-            style={[styles.editPill, { borderColor: theme.colors.border }]}
-            onPress={() => {
-              haptics.selection();
-              router.push('/(onboarding)/photos');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Edit photos"
-          >
-            <Icon name="camera" size="tiny" color={theme.colors.accent} />
-            <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '600' }}>
-              Edit Photos
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.milestonesGrid}>
+            {/* Milestone 1: Photos */}
+            <TouchableOpacity
+              activeOpacity={0.78}
+              delayPressIn={0}
+              onPress={() => {
+                haptics.selection();
+                router.push({ pathname: '/(onboarding)/photos', params: { returnTo: 'preview' } });
+              }}
+              style={[
+                styles.milestoneRow,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.025)' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Edit photos"
+            >
+              <View style={styles.milestoneLeft}>
+                <View
+                  style={[
+                    styles.milestoneIconCircle,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(255, 255, 255, 0.06)'
+                        : 'rgba(0, 0, 0, 0.04)',
+                    },
+                  ]}
+                >
+                  <Camera size={15} color={theme.colors.textPrimary} strokeWidth={2.2} />
+                </View>
+                <View style={styles.milestoneMeta}>
+                  <Text style={[styles.milestoneTitle, { color: theme.colors.textPrimary }]}>
+                    Photo Gallery
+                  </Text>
+                  <Text style={[styles.milestoneSubtitle, { color: theme.colors.textTertiary }]}>
+                    {photoUrls.length} portraits uploaded
+                  </Text>
+                </View>
+              </View>
+              <Edit3 size={14} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.editPill, { borderColor: theme.colors.border }]}
-            onPress={() => {
-              haptics.selection();
-              router.push('/(onboarding)/prompts');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Edit prompts"
-          >
-            <Icon name="message" size="tiny" color={theme.colors.accent} />
-            <Text level="caption" style={{ color: theme.colors.accent, fontWeight: '600' }}>
-              Edit Prompts
-            </Text>
-          </TouchableOpacity>
+            {/* Milestone 2: Identity & Bio */}
+            <TouchableOpacity
+              activeOpacity={0.78}
+              delayPressIn={0}
+              onPress={() => {
+                haptics.selection();
+                router.push({ pathname: '/(onboarding)/profile-setup', params: { returnTo: 'preview' } });
+              }}
+              style={[
+                styles.milestoneRow,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.025)' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Edit identity and bio"
+            >
+              <View style={styles.milestoneLeft}>
+                <View
+                  style={[
+                    styles.milestoneIconCircle,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(255, 255, 255, 0.06)'
+                        : 'rgba(0, 0, 0, 0.04)',
+                    },
+                  ]}
+                >
+                  <User size={15} color={theme.colors.textPrimary} strokeWidth={2.2} />
+                </View>
+                <View style={styles.milestoneMeta}>
+                  <Text style={[styles.milestoneTitle, { color: theme.colors.textPrimary }]}>
+                    The Basics & Bio
+                  </Text>
+                  <Text style={[styles.milestoneSubtitle, { color: theme.colors.textTertiary }]}>
+                    {draftProfile.displayName || 'You'}, {previewData.age} • {draftProfile.city || 'City'}
+                  </Text>
+                </View>
+              </View>
+              <Edit3 size={14} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+
+            {/* Milestone 3: Written Prompts */}
+            <TouchableOpacity
+              activeOpacity={0.78}
+              delayPressIn={0}
+              onPress={() => {
+                haptics.selection();
+                router.push({ pathname: '/(onboarding)/prompts', params: { returnTo: 'preview' } });
+              }}
+              style={[
+                styles.milestoneRow,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.025)' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Edit prompts"
+            >
+              <View style={styles.milestoneLeft}>
+                <View
+                  style={[
+                    styles.milestoneIconCircle,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(255, 255, 255, 0.06)'
+                        : 'rgba(0, 0, 0, 0.04)',
+                    },
+                  ]}
+                >
+                  <MessageCircle size={15} color={theme.colors.textPrimary} strokeWidth={2.2} />
+                </View>
+                <View style={styles.milestoneMeta}>
+                  <Text style={[styles.milestoneTitle, { color: theme.colors.textPrimary }]}>
+                    Prompts & Voice
+                  </Text>
+                  <Text style={[styles.milestoneSubtitle, { color: theme.colors.textTertiary }]}>
+                    {draftPrompts.length} conversation starters
+                  </Text>
+                </View>
+              </View>
+              <Edit3 size={14} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+
+            {/* Milestone 4: Passions & Interests */}
+            <TouchableOpacity
+              activeOpacity={0.78}
+              delayPressIn={0}
+              onPress={() => {
+                haptics.selection();
+                router.push({ pathname: '/(onboarding)/interests', params: { returnTo: 'preview' } });
+              }}
+              style={[
+                styles.milestoneRow,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.025)' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Edit interests and passions"
+            >
+              <View style={styles.milestoneLeft}>
+                <View
+                  style={[
+                    styles.milestoneIconCircle,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(255, 255, 255, 0.06)'
+                        : 'rgba(0, 0, 0, 0.04)',
+                    },
+                  ]}
+                >
+                  <Heart size={15} color={theme.colors.textPrimary} strokeWidth={2.2} />
+                </View>
+                <View style={styles.milestoneMeta}>
+                  <Text style={[styles.milestoneTitle, { color: theme.colors.textPrimary }]}>
+                    Passions & Interests
+                  </Text>
+                  <Text style={[styles.milestoneSubtitle, { color: theme.colors.textTertiary }]}>
+                    {draftInterests.length} selected passions
+                  </Text>
+                </View>
+              </View>
+              <Edit3 size={14} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+
+            {/* Milestone 5: Discovery Preferences */}
+            <TouchableOpacity
+              activeOpacity={0.78}
+              delayPressIn={0}
+              onPress={() => {
+                haptics.selection();
+                router.push({ pathname: '/(onboarding)/preferences', params: { returnTo: 'preview' } });
+              }}
+              style={[
+                styles.milestoneRow,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.025)' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Edit discovery preferences"
+            >
+              <View style={styles.milestoneLeft}>
+                <View
+                  style={[
+                    styles.milestoneIconCircle,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(255, 255, 255, 0.06)'
+                        : 'rgba(0, 0, 0, 0.04)',
+                    },
+                  ]}
+                >
+                  <SlidersHorizontal size={15} color={theme.colors.textPrimary} strokeWidth={2.2} />
+                </View>
+                <View style={styles.milestoneMeta}>
+                  <Text style={[styles.milestoneTitle, { color: theme.colors.textPrimary }]}>
+                    Discovery Preferences
+                  </Text>
+                  <Text style={[styles.milestoneSubtitle, { color: theme.colors.textTertiary }]}>
+                    Age & distance radar configured
+                  </Text>
+                </View>
+              </View>
+              <Edit3 size={14} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <View style={styles.buttonWrapper}>
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            isLoading={isActivating}
-            onPress={handleActivate}
-            accessibilityLabel="Activate profile and enter Nazar discovery"
-          >
-            Enter Nazar
-          </Button>
+        {/* Security & Authenticity Trust Assurance */}
+        <View style={styles.trustAssuranceRow}>
+          <ShieldCheck size={15} color={theme.colors.textTertiary} strokeWidth={2.2} />
+          <Text style={[styles.trustAssuranceText, { color: theme.colors.textSecondary }]}>
+            All profiles undergo real-time cryptographic screening upon activation to protect our
+            verified community.
+          </Text>
         </View>
+
+        {/* Clearance spacer to prevent content from hiding behind fixed floating dock */}
+        <View style={styles.dockClearanceSpacer} />
       </Animated.ScrollView>
+
+      {/* Floating Bottom Dock with Feathered Fade (Matches Discovery Preferences & Permissions) */}
+      <View style={styles.floatingDock} pointerEvents="box-none">
+        <LinearGradient
+          colors={
+            isDark
+              ? [
+                  'rgba(11, 11, 14, 0.0)',
+                  'rgba(11, 11, 14, 0.15)',
+                  'rgba(11, 11, 14, 0.45)',
+                  'rgba(11, 11, 14, 0.75)',
+                  'rgba(11, 11, 14, 0.92)',
+                  'rgba(11, 11, 14, 0.98)',
+                  'rgba(11, 11, 14, 1.0)',
+                  'rgba(11, 11, 14, 1.0)',
+                ]
+              : [
+                  'rgba(250, 250, 250, 0.0)',
+                  'rgba(250, 250, 250, 0.15)',
+                  'rgba(250, 250, 250, 0.45)',
+                  'rgba(250, 250, 250, 0.75)',
+                  'rgba(250, 250, 250, 0.92)',
+                  'rgba(250, 250, 250, 0.98)',
+                  'rgba(250, 250, 250, 1.0)',
+                  'rgba(250, 250, 250, 1.0)',
+                ]
+          }
+          locations={[0, 0.04, 0.1, 0.16, 0.22, 0.3, 0.38, 1.0]}
+          style={styles.dockGradientBackdrop}
+          pointerEvents="none"
+        />
+
+        <View
+          style={[
+            styles.dockInner,
+            {
+              maxWidth: maxContentWidth || 520,
+              paddingBottom: Math.max(insets.bottom + 14, 20),
+            },
+          ]}
+        >
+          {/* Professional Solid CTA Button with Instant Touch Feedback */}
+          <TouchableOpacity
+            onPress={handleActivate}
+            disabled={isActivating}
+            delayPressIn={0}
+            style={[
+              styles.professionalCtaButton,
+              {
+                backgroundColor: isDark ? '#FFFFFF' : '#121216',
+                borderColor: isDark ? 'transparent' : 'rgba(0, 0, 0, 0.12)',
+                borderWidth: isDark ? 0 : 1,
+                shadowColor: '#000000',
+                shadowOpacity: isDark ? 0.28 : 0.12,
+                opacity: isActivating ? 0.75 : 1,
+              },
+            ]}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel="Activate profile and enter Nazar discovery"
+            testID="preview-activate-button"
+          >
+            {isActivating ? (
+              <ActivityIndicator size="small" color={isDark ? '#000000' : '#FFFFFF'} />
+            ) : (
+              <View style={styles.buttonInnerRow}>
+                <Text
+                  style={[
+                    styles.professionalCtaText,
+                    {
+                      color: isDark ? '#000000' : '#FFFFFF',
+                      fontFamily: folkraFont,
+                    },
+                  ]}
+                >
+                  Enter Nazar Discovery
+                </Text>
+                <ArrowRight
+                  size={17}
+                  color={isDark ? '#000000' : '#FFFFFF'}
+                  style={{ marginLeft: 8 }}
+                />
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Footnote reassurance */}
+          <Text style={[styles.dockFootnoteText, { color: theme.colors.textTertiary }]}>
+            Your profile will immediately enter discovery. You can pause or edit anytime in Settings.
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -355,63 +684,192 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    marginBottom: 8,
-    paddingHorizontal: 4,
+    marginBottom: 20,
+    paddingHorizontal: 2,
   },
-  titleRow: {
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    lineHeight: 34,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  errorBanner: {
+    marginBottom: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  errorBannerText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+  },
+  // Live Discovery Canvas
+  previewCanvasContainer: {
+    marginBottom: 24,
+  },
+  previewCanvasHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
+    paddingHorizontal: 8,
+    width: '100%',
+    maxWidth: 380,
+    alignSelf: 'center',
   },
-  title: {
-    fontSize: 30,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  reviewBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  reviewBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  subtitle: {
-    fontSize: 14.5,
-    lineHeight: 21,
-  },
-  errorBanner: {
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  cardWrapper: {
-    marginVertical: 20,
-    alignItems: 'center',
-  },
-  editPillsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 24,
-  },
-  editPill: {
+  deckStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    flexShrink: 1,
+    marginRight: 8,
+  },
+  deckStatusText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    letterSpacing: 0.15,
+  },
+  deckHintPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 9999,
+    borderWidth: 1,
+    flexShrink: 0,
+  },
+  deckHintText: {
+    fontSize: 10.5,
+    fontWeight: '500',
+  },
+  cardWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  // Milestones Section
+  milestonesSection: {
+    marginBottom: 20,
+  },
+  milestonesSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingHorizontal: 2,
+  },
+  milestonesSectionTitle: {
+    fontSize: 16.5,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  milestonesSectionHint: {
+    fontSize: 11.5,
+    fontWeight: '500',
+  },
+  milestonesGrid: {
+    gap: 8,
+  },
+  milestoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: 16,
     borderWidth: 1,
   },
-  buttonWrapper: {
+  milestoneLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  milestoneIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  milestoneMeta: {
+    flex: 1,
+    gap: 2,
+  },
+  milestoneTitle: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+  milestoneSubtitle: {
+    fontSize: 11.5,
+    fontWeight: '400',
+  },
+  trustAssuranceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingHorizontal: 4,
+    marginBottom: 16,
+  },
+  trustAssuranceText: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    flex: 1,
+  },
+  dockClearanceSpacer: {
+    height: 140,
+  },
+  // Floating Bottom Dock with Feathered Fade
+  floatingDock: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 36,
+    paddingHorizontal: 18,
+    zIndex: 30,
+  },
+  dockGradientBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  dockInner: {
     width: '100%',
+    alignSelf: 'center',
+  },
+  professionalCtaButton: {
+    height: 54,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  buttonInnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  professionalCtaText: {
+    fontSize: 15.5,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  dockFootnoteText: {
+    fontSize: 11.5,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 16,
   },
 });

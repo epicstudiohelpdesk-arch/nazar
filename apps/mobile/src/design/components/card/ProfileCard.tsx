@@ -8,6 +8,7 @@ import {
   type GestureResponderEvent,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
@@ -59,6 +60,7 @@ export interface ProfileCardProps {
   readonly onSuperLike?: () => void;
   readonly onMessage?: () => void;
   readonly onPress?: () => void;
+  readonly onFollow?: () => void;
   readonly onInlineLike?: (attachment: {
     readonly type: 'MEDIA' | 'PROMPT';
     readonly id?: string;
@@ -69,6 +71,35 @@ export interface ProfileCardProps {
   readonly testID?: string;
 }
 
+/**
+ * High-fidelity 12-lobed scalloped verified badge matching user specifications:
+ * - Light mode: emerald green rosette (#10B981) with white checkmark
+ * - Dark mode: pure white rosette (#FFFFFF) with black checkmark
+ */
+const ScallopedVerifiedBadge: React.FC<{ readonly isDark: boolean; readonly size?: number }> = ({
+  isDark,
+  size = 22,
+}) => {
+  const fillColor = isDark ? '#FFFFFF' : '#10B981';
+  const checkColor = isDark ? '#0A0A0D' : '#FFFFFF';
+
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M 12 2.8 A 2.41 2.41 0 0 1 16.6 4.03 A 2.41 2.41 0 0 1 19.97 7.4 A 2.41 2.41 0 0 1 21.2 12 A 2.41 2.41 0 0 1 19.97 16.6 A 2.41 2.41 0 0 1 16.6 19.97 A 2.41 2.41 0 0 1 12 21.2 A 2.41 2.41 0 0 1 7.4 19.97 A 2.41 2.41 0 0 1 4.03 16.6 A 2.41 2.41 0 0 1 2.8 12 A 2.41 2.41 0 0 1 4.03 7.4 A 2.41 2.41 0 0 1 7.4 4.03 A 2.41 2.41 0 0 1 12 2.8 Z"
+        fill={fillColor}
+      />
+      <Path
+        d="M 8.5 12.2 L 10.8 14.5 L 15.8 9.5"
+        stroke={checkColor}
+        strokeWidth={2.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+};
+
 export const ProfileCard: React.FC<ProfileCardProps> = ({
   profile,
   context = 'discovery',
@@ -77,6 +108,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   onSuperLike,
   onMessage,
   onPress,
+  onFollow: _onFollow,
   onInlineLike,
   isSubmitting = false,
   style,
@@ -118,46 +150,47 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     }
   };
 
-  if (isDiscovery) {
-    const featuredPrompt =
-      profile.prompts && profile.prompts.length > 0 ? profile.prompts[0] : null;
-    const effectiveDistance = profile.contextualInfo
-      ? profile.contextualInfo.replace(/🎟️|✈️/g, '').trim()
-      : null;
+  const featuredPrompt =
+    profile.prompts && profile.prompts.length > 0 ? profile.prompts[0] : null;
+  const effectiveDistance = profile.contextualInfo
+    ? profile.contextualInfo.replace(/🎟️|✈️/g, '').trim()
+    : null;
 
-    const lifestylePills: { id: string; emoji: string; text: string }[] = [];
-    if (profile.education) {
-      lifestylePills.push({ id: 'edu', emoji: '🎓', text: profile.education });
-    }
-    if (profile.occupation) {
-      lifestylePills.push({ id: 'occ', emoji: '💼', text: profile.occupation });
-    }
-    if (profile.interests && profile.interests.length > 0) {
-      profile.interests.slice(0, 4).forEach((interest, idx) => {
-        const lower = interest.toLowerCase();
-        let emoji = '✨';
-        if (lower.includes('coffee') || lower.includes('drink') || lower.includes('wine'))
-          emoji = '🍷';
-        else if (lower.includes('design') || lower.includes('art')) emoji = '🎨';
-        else if (lower.includes('architecture')) emoji = '🏛️';
-        else if (lower.includes('book') || lower.includes('read')) emoji = '📚';
-        else if (lower.includes('trek') || lower.includes('outdoor')) emoji = '🏔️';
-        else if (lower.includes('tech') || lower.includes('code')) emoji = '💻';
-        else if (lower.includes('music') || lower.includes('rock')) emoji = '🎵';
-        else if (lower.includes('dance')) emoji = '💃';
-        else if (lower.includes('science')) emoji = '🔬';
-        else if (lower.includes('game')) emoji = '🎮';
-        else if (lower.includes('anime')) emoji = '🇯🇵';
-        else if (lower.includes('yoga')) emoji = '🧘';
-        else if (lower.includes('food') || lower.includes('ramen')) emoji = '🍜';
-        lifestylePills.push({ id: `int-${idx}`, emoji, text: interest });
-      });
-    }
-    if (lifestylePills.length < 3) {
-      lifestylePills.push({ id: 'ls-1', emoji: '👄', text: 'Better in person' });
-      lifestylePills.push({ id: 'ls-2', emoji: '💬', text: 'Time together' });
-      lifestylePills.push({ id: 'ls-3', emoji: '🌙', text: 'Aries' });
-    }
+  const lifestylePills: { id: string; emoji: string; text: string }[] = [];
+  if (profile.education) {
+    lifestylePills.push({ id: 'edu', emoji: '🎓', text: profile.education });
+  }
+  if (profile.occupation) {
+    lifestylePills.push({ id: 'occ', emoji: '💼', text: profile.occupation });
+  }
+  if (profile.interests && profile.interests.length > 0) {
+    profile.interests.slice(0, 4).forEach((interest, idx) => {
+      const lower = interest.toLowerCase();
+      let emoji = '✨';
+      if (lower.includes('coffee') || lower.includes('drink') || lower.includes('wine'))
+        emoji = '🍷';
+      else if (lower.includes('design') || lower.includes('art')) emoji = '🎨';
+      else if (lower.includes('architecture')) emoji = '🏛️';
+      else if (lower.includes('book') || lower.includes('read')) emoji = '📚';
+      else if (lower.includes('trek') || lower.includes('outdoor')) emoji = '🏔️';
+      else if (lower.includes('tech') || lower.includes('code')) emoji = '💻';
+      else if (lower.includes('music') || lower.includes('rock')) emoji = '🎵';
+      else if (lower.includes('dance')) emoji = '💃';
+      else if (lower.includes('science')) emoji = '🔬';
+      else if (lower.includes('game')) emoji = '🎮';
+      else if (lower.includes('anime')) emoji = '🇯🇵';
+      else if (lower.includes('yoga')) emoji = '🧘';
+      else if (lower.includes('food') || lower.includes('ramen')) emoji = '🍜';
+      lifestylePills.push({ id: `int-${idx}`, emoji, text: interest });
+    });
+  }
+  if (lifestylePills.length < 3) {
+    lifestylePills.push({ id: 'ls-1', emoji: '👄', text: 'Better in person' });
+    lifestylePills.push({ id: 'ls-2', emoji: '💬', text: 'Time together' });
+    lifestylePills.push({ id: 'ls-3', emoji: '🌙', text: 'Aries' });
+  }
+
+  if (isDiscovery) {
 
     return (
       <View
@@ -303,7 +336,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                   <Text style={styles.discoveryAgeText}>, {profile.age}</Text>
                   {effectiveVerified && (
                     <View style={styles.discoveryVerifiedBadge}>
-                      <Icon name="check" size={10} color="#FFFFFF" strokeWidth={3.4} />
+                      <ScallopedVerifiedBadge isDark={true} size={19} />
                     </View>
                   )}
                   <View style={styles.onlineBadge}>
@@ -431,6 +464,238 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             </View>
           </View>
         </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Profile Preview Mode (Pixel-perfect matching luxury preview card design with complete profile contents)
+  if (context === 'profilePreview') {
+    return (
+      <View
+        style={[
+          styles.previewOuterBezel,
+          {
+            backgroundColor: isDark ? '#1E1F24' : '#F6F7F9',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            shadowColor: '#000000',
+            shadowOpacity: isDark ? 0.45 : 0.09,
+          },
+          style,
+        ]}
+        testID={testID || `profile-card-preview-${profile.id}`}
+      >
+        <View
+          style={[
+            styles.previewInnerCard,
+            {
+              backgroundColor: isDark ? '#141519' : '#ECEEF1',
+            },
+          ]}
+        >
+          {/* Full-bleed Portrait Photograph */}
+          {currentPhoto ? (
+            <Image
+              source={{ uri: currentPhoto }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+              accessibilityLabel={`${profile.name}'s profile photo`}
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Text variant="display" weight="bold" style={{ color: colors.accent }}>
+                {(profile.name || 'S').charAt(0)}
+              </Text>
+            </View>
+          )}
+
+          {/* Interactive photo cycling touch zones */}
+          {mediaList.length > 1 && (
+            <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+              <TouchableOpacity
+                style={styles.previewTapAreaLeft}
+                onPress={handlePrevPhoto}
+                activeOpacity={1}
+                accessibilityRole="button"
+                accessibilityLabel="Previous photo"
+              />
+              <TouchableOpacity
+                style={styles.previewTapAreaRight}
+                onPress={handleNextPhoto}
+                activeOpacity={1}
+                accessibilityRole="button"
+                accessibilityLabel="Next photo"
+              />
+            </View>
+          )}
+
+          {/* Top Story Indicator Bars when multiple photos */}
+          {mediaList.length > 1 && (
+            <View style={styles.previewStoryProgressRow} pointerEvents="none">
+              {mediaList.map((_, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    styles.previewStoryProgressBar,
+                    {
+                      backgroundColor:
+                        idx === activePhotoIdx ? '#FFFFFF' : 'rgba(255, 255, 255, 0.35)',
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Top Minimal Photo Counter (Only when multiple photos exist) */}
+          {mediaList.length > 1 && (
+            <View style={styles.previewTopRow} pointerEvents="box-none">
+              <View />
+              <View style={styles.previewFrostedPill}>
+                <Icon name="camera" size={10} color="#FFFFFF" style={{ marginRight: 3.5 }} />
+                <Text style={styles.previewFrostedPillText}>
+                  {activePhotoIdx + 1}/{mediaList.length}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Multi-stop Frosted Glass Bottom Scrim Gradient */}
+          <LinearGradient
+            colors={
+              isDark
+                ? [
+                    'rgba(18, 19, 24, 0.0)',
+                    'rgba(18, 19, 24, 0.38)',
+                    'rgba(18, 19, 24, 0.84)',
+                    'rgba(18, 19, 24, 0.96)',
+                    'rgba(18, 19, 24, 0.99)',
+                  ]
+                : [
+                    'rgba(255, 255, 255, 0.0)',
+                    'rgba(255, 255, 255, 0.42)',
+                    'rgba(255, 255, 255, 0.86)',
+                    'rgba(255, 255, 255, 0.96)',
+                    'rgba(255, 255, 255, 0.99)',
+                  ]
+            }
+            locations={[0, 0.22, 0.55, 0.82, 1.0]}
+            style={styles.previewGradientScrim}
+            pointerEvents="none"
+          />
+
+          {/* Bottom Overlay Content */}
+          <View style={styles.previewOverlayContent} pointerEvents="box-none">
+            {/* 1. Name & Age & Scalloped Rosette Verified Badge */}
+            <View style={styles.previewNameRow}>
+              <View style={styles.previewNameAndAge}>
+                <Text
+                  style={[
+                    styles.previewNameText,
+                    { color: isDark ? '#FFFFFF' : '#0F172A' },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {profile.name || 'Sophie Bennett'}
+                </Text>
+                {profile.age ? (
+                  <Text
+                    style={[
+                      styles.previewAgeText,
+                      { color: isDark ? '#FFFFFF' : '#0F172A' },
+                    ]}
+                  >
+                    , {profile.age}
+                  </Text>
+                ) : null}
+              </View>
+
+              {(effectiveVerified ?? true) && (
+                <View style={styles.previewBadgeWrapper}>
+                  <ScallopedVerifiedBadge isDark={isDark} size={22} />
+                </View>
+              )}
+            </View>
+
+            {/* 2. Professional Location & Career Subtitle */}
+            {(effectiveCity || profile.occupation || profile.education) && (
+              <View style={styles.previewMetaRow}>
+                {effectiveCity && (
+                  <View style={styles.previewMetaItem}>
+                    <Icon
+                      name="location"
+                      size={12}
+                      color={isDark ? 'rgba(255, 255, 255, 0.70)' : '#64748B'}
+                      style={{ marginRight: 3.5 }}
+                    />
+                    <Text
+                      style={[
+                        styles.previewMetaText,
+                        { color: isDark ? 'rgba(255, 255, 255, 0.85)' : '#475569' },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {effectiveCity}
+                    </Text>
+                  </View>
+                )}
+
+                {effectiveCity && (profile.occupation || profile.education) && (
+                  <Text
+                    style={[
+                      styles.previewMetaDot,
+                      { color: isDark ? 'rgba(255, 255, 255, 0.35)' : '#94A3B8' },
+                    ]}
+                  >
+                    •
+                  </Text>
+                )}
+
+                {(profile.occupation || profile.education) && (
+                  <View style={styles.previewMetaItem}>
+                    <Icon
+                      name={profile.occupation ? 'briefcase' : 'graduationCap'}
+                      size={12}
+                      color={isDark ? 'rgba(255, 255, 255, 0.70)' : '#64748B'}
+                      style={{ marginRight: 3.5 }}
+                    />
+                    <Text
+                      style={[
+                        styles.previewMetaText,
+                        { color: isDark ? 'rgba(255, 255, 255, 0.85)' : '#475569' },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {profile.occupation || profile.education}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* 3. Headline / Bio / Personal Statement */}
+            {profile.bio ? (
+              <Text
+                style={[
+                  styles.previewBioText,
+                  { color: isDark ? 'rgba(255, 255, 255, 0.90)' : '#334155' },
+                ]}
+                numberOfLines={3}
+              >
+                {profile.bio}
+              </Text>
+            ) : featuredPrompt ? (
+              <Text
+                style={[
+                  styles.previewBioText,
+                  { color: isDark ? 'rgba(255, 255, 255, 0.90)' : '#334155', fontStyle: 'italic' },
+                ]}
+                numberOfLines={3}
+              >
+                “{featuredPrompt.answer}”
+              </Text>
+            ) : null}
+          </View>
+        </View>
       </View>
     );
   }
@@ -1294,18 +1559,9 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   discoveryVerifiedBadge: {
-    width: 19,
-    height: 19,
-    borderRadius: 9.5,
-    backgroundColor: '#3B82F6',
     marginLeft: 7,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.45,
-    shadowRadius: 4,
-    elevation: 3,
   },
   onlineBadge: {
     flexDirection: 'row',
@@ -1440,5 +1696,167 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: 'rgba(255, 255, 255, 0.65)',
     letterSpacing: 0.2,
+  },
+  // Profile Preview Mode styles matching luxury screenshot design
+  previewOuterBezel: {
+    borderRadius: 42,
+    padding: 7,
+    borderWidth: 1.5,
+    shadowOffset: { width: 0, height: 16 },
+    shadowRadius: 32,
+    elevation: 8,
+    width: '100%',
+    maxWidth: 380,
+    alignSelf: 'center',
+  },
+  previewInnerCard: {
+    borderRadius: 35,
+    overflow: 'hidden',
+    aspectRatio: 0.58,
+    position: 'relative',
+    width: '100%',
+  },
+  previewTapAreaLeft: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: '45%',
+    zIndex: 5,
+  },
+  previewTapAreaRight: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    right: 0,
+    width: '45%',
+    zIndex: 5,
+  },
+  previewStoryProgressRow: {
+    position: 'absolute',
+    top: 14,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4.5,
+    zIndex: 10,
+  },
+  previewStoryProgressBar: {
+    width: 22,
+    height: 2.5,
+    borderRadius: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.35,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  previewTopRow: {
+    position: 'absolute',
+    top: 24,
+    left: 18,
+    right: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 10,
+  },
+  previewMatchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8.5,
+    paddingVertical: 4.5,
+    borderRadius: 999,
+  },
+  previewMatchText: {
+    color: '#FFFFFF',
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  previewFrostedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 15, 20, 0.55)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+  },
+  previewFrostedPillText: {
+    color: '#FFFFFF',
+    fontSize: 10.5,
+    fontWeight: '600',
+  },
+  previewGradientScrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '50%',
+    zIndex: 2,
+  },
+  previewOverlayContent: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 22,
+    paddingBottom: 26,
+    paddingTop: 14,
+    zIndex: 10,
+  },
+  previewNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  previewNameAndAge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+  },
+  previewNameText: {
+    fontSize: 25,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+  },
+  previewAgeText: {
+    fontSize: 24,
+    fontWeight: '500',
+    letterSpacing: -0.3,
+  },
+  previewBadgeWrapper: {
+    marginLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 5,
+    marginBottom: 8,
+  },
+  previewMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  previewMetaText: {
+    fontSize: 13.5,
+    fontWeight: '500',
+  },
+  previewMetaDot: {
+    fontSize: 11,
+    marginHorizontal: 1,
+  },
+  previewBioText: {
+    fontSize: 14.5,
+    fontWeight: '400',
+    lineHeight: 21.5,
+    letterSpacing: -0.1,
   },
 });

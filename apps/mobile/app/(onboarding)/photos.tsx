@@ -11,7 +11,7 @@ import {
   PanResponder,
   Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -219,6 +219,8 @@ const PHOTO_SLOTS: readonly SlotConfig[] = [COVER_SLOT, ...SECONDARY_SLOTS];
 
 export default function OnboardingPhotosScreen(): React.JSX.Element {
   const router = useRouter();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
+  const isFromReview = returnTo === 'preview';
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme.mode === 'dark';
@@ -1169,11 +1171,19 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
     haptics.impactMedium();
     setErrorMessage(undefined);
     trackOnboardingEvent('photos_completed', { photoCount: filledCount });
+    if (isFromReview) {
+      router.replace('/(onboarding)/preview');
+      return;
+    }
     router.push('/(onboarding)/interests');
   };
 
   const handleBack = () => {
     haptics.impactLight();
+    if (isFromReview) {
+      router.replace('/(onboarding)/preview');
+      return;
+    }
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -2108,9 +2118,11 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
             activeOpacity={0.88}
             accessibilityRole="button"
             accessibilityLabel={
-              isMinimumMet
-                ? 'Continue to Interests'
-                : `Add at least 2 photos (${filledCount} of 2 required)`
+              isFromReview
+                ? 'Back to Review'
+                : isMinimumMet
+                  ? 'Continue to Interests'
+                  : `Add at least 2 photos (${filledCount} of 2 required)`
             }
             testID="submit-button"
           >
@@ -2127,11 +2139,13 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                     },
                   ]}
                 >
-                  {isMinimumMet
-                    ? 'Continue to Interests'
-                    : `Add At Least 2 Photos (${filledCount}/2)`}
+                  {isFromReview
+                    ? 'Back to Review'
+                    : isMinimumMet
+                      ? 'Continue to Interests'
+                      : `Add At Least 2 Photos (${filledCount}/2)`}
                 </Text>
-                {isMinimumMet && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
+                {(isFromReview || isMinimumMet) && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
               </View>
             )}
           </TouchableOpacity>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -54,6 +54,8 @@ const getDistanceDescriptor = (km: number): string => {
 
 export default function OnboardingPreferencesScreen(): React.JSX.Element {
   const router = useRouter();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
+  const isFromReview = returnTo === 'preview';
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme.mode === 'dark';
@@ -200,6 +202,10 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
         maxDistanceKm,
       });
 
+      if (isFromReview) {
+        router.replace('/(onboarding)/preview');
+        return;
+      }
       router.push('/(onboarding)/permissions');
     } catch {
       // Local fallback
@@ -208,6 +214,10 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
         maxAge,
         maxDistanceKm,
       });
+      if (isFromReview) {
+        router.replace('/(onboarding)/preview');
+        return;
+      }
       router.push('/(onboarding)/permissions');
     } finally {
       setIsLoading(false);
@@ -216,6 +226,10 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
 
   const handleBack = () => {
     haptics.impactLight();
+    if (isFromReview) {
+      router.replace('/(onboarding)/preview');
+      return;
+    }
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -990,7 +1004,7 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
             ]}
             activeOpacity={0.88}
             accessibilityRole="button"
-            accessibilityLabel="Continue to permissions"
+            accessibilityLabel={isFromReview ? 'Back to Review' : 'Continue to permissions'}
             testID="preferences-continue-button"
           >
             {isLoading ? (
@@ -1006,7 +1020,7 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
                     },
                   ]}
                 >
-                  Continue
+                  {isFromReview ? 'Back to Review' : 'Continue'}
                 </Text>
                 <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />
               </View>
