@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,20 +10,14 @@ import {
   ActivityIndicator,
   Animated,
   Text as RNText,
+  useWindowDimensions,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFonts } from 'expo-font';
-import {
-  ShieldCheck,
-  RotateCcw,
-  Clock,
-  ArrowRight,
-  ArrowLeft,
-  Edit3,
-  Lock,
-} from 'lucide-react-native';
+import { RotateCcw, Clock, ArrowRight, ArrowLeft, Lock, KeyRound } from 'lucide-react-native';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { Heading } from '../../src/design/primitives/Heading.js';
 import { Text } from '../../src/design/primitives/Text.js';
@@ -40,6 +34,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isSignUp = mode !== 'signin';
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const { theme } = useTheme();
   const authService = getDefaultAuthService();
   const sessionService = getDefaultSessionService();
@@ -63,13 +58,13 @@ export default function OtpVerificationScreen(): React.JSX.Element {
     haptics.notificationError();
     otpShakeAnim.setValue(0);
     Animated.sequence([
-      Animated.timing(otpShakeAnim, { toValue: -8, duration: 40, useNativeDriver: true }),
-      Animated.timing(otpShakeAnim, { toValue: 8, duration: 40, useNativeDriver: true }),
-      Animated.timing(otpShakeAnim, { toValue: -6, duration: 40, useNativeDriver: true }),
-      Animated.timing(otpShakeAnim, { toValue: 6, duration: 40, useNativeDriver: true }),
-      Animated.timing(otpShakeAnim, { toValue: -3, duration: 35, useNativeDriver: true }),
-      Animated.timing(otpShakeAnim, { toValue: 3, duration: 35, useNativeDriver: true }),
-      Animated.timing(otpShakeAnim, { toValue: 0, duration: 30, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: -6, duration: 35, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 6, duration: 35, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: -4, duration: 35, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 4, duration: 35, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: -2, duration: 30, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 2, duration: 30, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 0, duration: 25, useNativeDriver: true }),
     ]).start();
   };
 
@@ -77,6 +72,13 @@ export default function OtpVerificationScreen(): React.JSX.Element {
 
   // Animated scroll listener for glossy top vignette
   const scrollY = useRef(new Animated.Value(0)).current;
+  const currentScrollY = useRef<number>(0);
+  useEffect(() => {
+    const id = scrollY.addListener(({ value }) => {
+      currentScrollY.current = value;
+    });
+    return () => scrollY.removeListener(id);
+  }, [scrollY]);
   const handleScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
     useNativeDriver: true,
   });
@@ -85,6 +87,92 @@ export default function OtpVerificationScreen(): React.JSX.Element {
     outputRange: [0, 0.45, 1],
     extrapolate: 'clamp',
   });
+
+  // Animated keyboard elevation for smooth, soft, and swift upward shift
+  const keyboardShiftAnim = useRef(new Animated.Value(0)).current;
+  const buttonBottomContentY = useRef<number>(0);
+  const currentKeyboardHeight = useRef<number>(0);
+  const isKeyboardActiveRef = useRef<boolean>(false);
+
+  const animateToKeyboard = useCallback(
+    (kbHeight: number, animDuration?: number) => {
+      if (kbHeight <= 0) return;
+      currentKeyboardHeight.current = kbHeight;
+
+      // Position Verify & Proceed button exactly 6px (within 5-7px) above the keyboard
+      const keyboardTop = windowHeight - kbHeight;
+      const targetButtonBottom = keyboardTop - 6;
+      const effectiveButtonBottom =
+        buttonBottomContentY.current > 0
+          ? buttonBottomContentY.current - currentScrollY.current
+          : 530;
+      const shiftAmount = Math.max(0, effectiveButtonBottom - targetButtonBottom);
+
+      Animated.timing(keyboardShiftAnim, {
+        toValue: -shiftAmount,
+        duration: animDuration && animDuration > 0 ? animDuration : 260,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1.0),
+        useNativeDriver: true,
+      }).start();
+    },
+    [windowHeight, keyboardShiftAnim]
+  );
+
+  const resetKeyboardPosition = useCallback(
+    (animDuration?: number) => {
+      Animated.timing(keyboardShiftAnim, {
+        toValue: 0,
+        duration: animDuration && animDuration > 0 ? animDuration : 260,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1.0),
+        useNativeDriver: true,
+      }).start();
+    },
+    [keyboardShiftAnim]
+  );
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      const h = e.endCoordinates?.height || 0;
+      isKeyboardActiveRef.current = true;
+      const dur = e.duration && e.duration > 0 ? e.duration : 260;
+      animateToKeyboard(h, dur);
+    });
+
+    const didShowSub =
+      Platform.OS === 'ios'
+        ? Keyboard.addListener('keyboardDidShow', (e) => {
+            const h = e.endCoordinates?.height || 0;
+            isKeyboardActiveRef.current = true;
+            animateToKeyboard(h, 150);
+          })
+        : null;
+
+    const hideSub = Keyboard.addListener(hideEvent, (e) => {
+      currentKeyboardHeight.current = 0;
+      isKeyboardActiveRef.current = false;
+      const dur = e?.duration && e.duration > 0 ? e.duration : 260;
+      resetKeyboardPosition(dur);
+    });
+
+    const didHideSub =
+      Platform.OS === 'ios'
+        ? Keyboard.addListener('keyboardDidHide', () => {
+            currentKeyboardHeight.current = 0;
+            isKeyboardActiveRef.current = false;
+            resetKeyboardPosition(150);
+          })
+        : null;
+
+    return () => {
+      showSub.remove();
+      didShowSub?.remove();
+      hideSub.remove();
+      didHideSub?.remove();
+    };
+  }, [animateToKeyboard, resetKeyboardPosition]);
 
   // 45s countdown timer for resending
   useEffect(() => {
@@ -122,7 +210,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
 
     if (codeToVerify.length < 6) {
       triggerOtpShake();
-      setErrorMessage('Please enter the full 6-digit verification code.');
+      setErrorMessage(undefined);
       return;
     }
 
@@ -316,6 +404,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
       <TouchableOpacity
         onPress={() => {
           haptics.light();
+          Keyboard.dismiss();
           if (router.canGoBack()) {
             router.back();
           } else {
@@ -340,48 +429,41 @@ export default function OtpVerificationScreen(): React.JSX.Element {
       </TouchableOpacity>
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={styles.keyboardContainer}>
+        <Animated.View
+          style={[styles.keyboardContainer, { transform: [{ translateY: keyboardShiftAnim }] }]}
+        >
           <Animated.ScrollView
             style={styles.keyboardContainer}
             contentContainerStyle={[
               styles.scrollContent,
               {
-                paddingTop: Math.max(insets.top + 64, 76),
-                paddingBottom: Math.max(insets.bottom + 24, 32),
+                paddingTop: Math.max(insets.top + 20, 28),
+                paddingBottom: Math.max(insets.bottom + 20, 28),
               },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+            automaticallyAdjustKeyboardInsets={false}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
           >
-            {/* Header / Security Badge */}
+            {/* Header */}
             <View style={styles.header}>
-              <View
-                style={[
-                  styles.badgeWrapper,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                  },
-                ]}
-              >
-                <ShieldCheck size={24} color={isDark ? '#FFFFFF' : '#1C1917'} />
+              {/* Verification Concept Icon (Floating, Unboxed & Crisp White) */}
+              <View style={styles.iconWrapper}>
+                <KeyRound
+                  size={36}
+                  color={isDark ? '#FFFFFF' : theme.colors.textPrimary}
+                  strokeWidth={1.8}
+                />
               </View>
 
-              <Text
-                style={[
-                  styles.eyebrow,
-                  {
-                    color: isDark ? 'rgba(255, 255, 255, 0.55)' : 'rgba(0, 0, 0, 0.5)',
-                    fontFamily: folkraFont,
-                  },
-                ]}
-              >
+              {/* Eyebrow */}
+              <Text level="caption" color="tertiary" style={styles.eyebrow}>
                 V E R I F I C A T I O N
               </Text>
+
               <Heading
                 level="h1"
                 style={[styles.title, { fontFamily: folkraFont, color: theme.colors.textPrimary }]}
@@ -392,23 +474,14 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                 We sent a secure one-time verification code to
               </Text>
 
-              {/* Destination Pill with quick change button */}
-              <View
-                style={[
-                  styles.destinationCard,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                  },
-                ]}
-              >
+              {/* Destination & Edit Link (Clean, Modern, Unboxed) */}
+              <View style={styles.destinationRow}>
                 <Text
                   level="body"
                   style={[styles.destinationText, { color: theme.colors.textPrimary }]}
                 >
                   {formatDestination(pendingIdentifier)}
                 </Text>
-
                 <TouchableOpacity
                   onPress={() => {
                     haptics.light();
@@ -418,20 +491,13 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                       router.replace('/(auth)/login');
                     }
                   }}
-                  style={styles.changeButton}
+                  style={styles.editButton}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel="Change destination"
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityLabel="Edit phone number or email"
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
-                  <Edit3
-                    size={12}
-                    color={isDark ? '#FFFFFF' : '#1C1917'}
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text style={[styles.changeText, { color: isDark ? '#FFFFFF' : '#1C1917' }]}>
-                    Edit
-                  </Text>
+                  <Text style={[styles.editText, { color: theme.colors.accent }]}>Edit</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -457,59 +523,30 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                 />
               </Animated.View>
 
-              {/* Resend Action Pill */}
-              <View style={styles.resendWrapper}>
+              {/* Resend Action Area */}
+              <View style={styles.resendContainer}>
+                <Text style={[styles.resendPromptText, { color: theme.colors.textSecondary }]}>
+                  Didn't receive code?{' '}
+                </Text>
                 {resendCooldown > 0 ? (
-                  <View
-                    style={[
-                      styles.resendBadge,
-                      {
-                        backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.04)'
-                          : 'rgba(0, 0, 0, 0.03)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(0, 0, 0, 0.06)',
-                      },
-                    ]}
-                  >
-                    <Clock size={13} color={theme.colors.textTertiary} style={{ marginRight: 6 }} />
-                    <Text
-                      level="bodySmall"
-                      color="tertiary"
-                      style={{ fontWeight: '500', fontSize: 13 }}
-                    >
-                      Resend code in {resendCooldown}s
+                  <View style={styles.resendCooldownGroup}>
+                    <Clock size={12} color={theme.colors.textTertiary} style={{ marginRight: 4 }} />
+                    <Text style={[styles.resendCooldownText, { color: theme.colors.textTertiary }]}>
+                      Resend in {resendCooldown}s
                     </Text>
                   </View>
                 ) : (
                   <TouchableOpacity
                     onPress={handleResend}
-                    style={[
-                      styles.resendActiveButton,
-                      {
-                        backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(0, 0, 0, 0.05)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.1)',
-                      },
-                    ]}
-                    activeOpacity={0.75}
+                    style={styles.resendActionButton}
+                    activeOpacity={0.7}
                     accessibilityRole="button"
                     accessibilityLabel="Resend verification code"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <RotateCcw
-                      size={13}
-                      color={isDark ? '#FFFFFF' : '#1C1917'}
-                      style={{ marginRight: 6 }}
-                    />
-                    <Text
-                      level="bodySmall"
-                      style={{
-                        color: isDark ? '#FFFFFF' : '#1C1917',
-                        fontWeight: '600',
-                        fontSize: 13,
-                      }}
-                    >
-                      Didn't receive code? Resend
+                    <RotateCcw size={12} color={theme.colors.accent} style={{ marginRight: 4 }} />
+                    <Text style={[styles.resendActionText, { color: theme.colors.accent }]}>
+                      Resend
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -517,7 +554,16 @@ export default function OtpVerificationScreen(): React.JSX.Element {
             </View>
 
             {/* Verify Button */}
-            <View style={styles.buttonWrapper}>
+            <View
+              style={styles.buttonWrapper}
+              onLayout={(e) => {
+                const layout = e.nativeEvent.layout;
+                buttonBottomContentY.current = layout.y + layout.height;
+                if (isKeyboardActiveRef.current && currentKeyboardHeight.current > 0) {
+                  animateToKeyboard(currentKeyboardHeight.current, 200);
+                }
+              }}
+            >
               <TouchableOpacity
                 style={[
                   styles.verifyButton,
@@ -565,7 +611,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
               </Text>
             </View>
           </Animated.ScrollView>
-        </View>
+        </Animated.View>
       </TouchableWithoutFeedback>
     </View>
   );
@@ -580,6 +626,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 22,
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   encircledBackButton: {
     position: 'absolute',
@@ -612,22 +660,12 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 28,
-    marginTop: 8,
+    marginBottom: 24,
   },
-  badgeWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  iconWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    marginBottom: 12,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: 14,
   },
   eyebrow: {
     fontSize: 11,
@@ -646,32 +684,30 @@ const styles = StyleSheet.create({
   subtitle: {
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 12,
-    maxWidth: 300,
+    marginBottom: 8,
+    maxWidth: 320,
     fontSize: 14,
   },
-  destinationCard: {
+  destinationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    borderWidth: 1,
+    justifyContent: 'center',
+    marginTop: 2,
   },
   destinationText: {
     fontWeight: '600',
+    fontSize: 14.5,
+    letterSpacing: 0.2,
+  },
+  editButton: {
+    marginLeft: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+  },
+  editText: {
     fontSize: 14,
-    marginRight: 10,
-  },
-  changeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-  },
-  changeText: {
-    fontSize: 13,
     fontWeight: '600',
+    letterSpacing: 0.1,
   },
   inputContainer: {
     alignItems: 'center',
@@ -681,25 +717,33 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  resendWrapper: {
+  resendContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 22,
-    alignItems: 'center',
   },
-  resendBadge: {
+  resendPromptText: {
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  resendCooldownGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    borderWidth: 1,
   },
-  resendActiveButton: {
+  resendCooldownText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  resendActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    borderWidth: 1,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+  },
+  resendActionText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   buttonWrapper: {
     marginTop: 12,

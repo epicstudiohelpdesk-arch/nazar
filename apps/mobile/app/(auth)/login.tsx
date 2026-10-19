@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   StatusBar,
   TouchableOpacity,
   TextInput as RNTextInput,
+  type ScrollView as RNScrollView,
   TouchableWithoutFeedback,
   Keyboard,
   Platform,
@@ -12,6 +13,7 @@ import {
   FlatList,
   Animated,
   useWindowDimensions,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,7 +29,6 @@ import {
   X,
   ChevronDown,
   Search,
-  Check,
 } from 'lucide-react-native';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { Text } from '../../src/design/primitives/Text.js';
@@ -46,251 +47,14 @@ import {
 } from '../../src/auth/passkey-auth.js';
 import { getDefaultSessionService } from '../../src/auth/session-service.js';
 
-export interface Country {
-  name: string;
-  code: string;
-  dialCode: string;
-  flag: string;
-  placeholder: string;
-  maxLength: number;
-}
-
-const DEFAULT_COUNTRY: Country = {
-  name: 'India',
-  code: 'IN',
-  dialCode: '+91',
-  flag: '🇮🇳',
-  placeholder: '98765 43210',
-  maxLength: 10,
-};
-
-const COUNTRIES: Country[] = [
+import {
+  type Country,
   DEFAULT_COUNTRY,
-  {
-    name: 'United States',
-    code: 'US',
-    dialCode: '+1',
-    flag: '🇺🇸',
-    placeholder: '202 555 0199',
-    maxLength: 10,
-  },
-  {
-    name: 'United Kingdom',
-    code: 'GB',
-    dialCode: '+44',
-    flag: '🇬🇧',
-    placeholder: '7911 123456',
-    maxLength: 10,
-  },
-  {
-    name: 'Canada',
-    code: 'CA',
-    dialCode: '+1',
-    flag: '🇨🇦',
-    placeholder: '416 555 0143',
-    maxLength: 10,
-  },
-  {
-    name: 'Australia',
-    code: 'AU',
-    dialCode: '+61',
-    flag: '🇦🇺',
-    placeholder: '412 345 678',
-    maxLength: 9,
-  },
-  {
-    name: 'United Arab Emirates',
-    code: 'AE',
-    dialCode: '+971',
-    flag: '🇦🇪',
-    placeholder: '50 123 4567',
-    maxLength: 9,
-  },
-  {
-    name: 'Singapore',
-    code: 'SG',
-    dialCode: '+65',
-    flag: '🇸🇬',
-    placeholder: '8123 4567',
-    maxLength: 8,
-  },
-  {
-    name: 'Germany',
-    code: 'DE',
-    dialCode: '+49',
-    flag: '🇩🇪',
-    placeholder: '151 23456789',
-    maxLength: 11,
-  },
-  {
-    name: 'France',
-    code: 'FR',
-    dialCode: '+33',
-    flag: '🇫🇷',
-    placeholder: '6 12 34 56 78',
-    maxLength: 9,
-  },
-  {
-    name: 'Netherlands',
-    code: 'NL',
-    dialCode: '+31',
-    flag: '🇳🇱',
-    placeholder: '6 12345678',
-    maxLength: 9,
-  },
-  {
-    name: 'Saudi Arabia',
-    code: 'SA',
-    dialCode: '+966',
-    flag: '🇸🇦',
-    placeholder: '50 123 4567',
-    maxLength: 9,
-  },
-  {
-    name: 'Qatar',
-    code: 'QA',
-    dialCode: '+974',
-    flag: '🇶🇦',
-    placeholder: '3312 3456',
-    maxLength: 8,
-  },
-  {
-    name: 'Kuwait',
-    code: 'KW',
-    dialCode: '+965',
-    flag: '🇰🇼',
-    placeholder: '9123 4567',
-    maxLength: 8,
-  },
-  {
-    name: 'New Zealand',
-    code: 'NZ',
-    dialCode: '+64',
-    flag: '🇳🇿',
-    placeholder: '21 123 4567',
-    maxLength: 9,
-  },
-  {
-    name: 'Ireland',
-    code: 'IE',
-    dialCode: '+353',
-    flag: '🇮🇪',
-    placeholder: '85 123 4567',
-    maxLength: 9,
-  },
-  {
-    name: 'Switzerland',
-    code: 'CH',
-    dialCode: '+41',
-    flag: '🇨🇭',
-    placeholder: '78 123 45 67',
-    maxLength: 9,
-  },
-  {
-    name: 'Sweden',
-    code: 'SE',
-    dialCode: '+46',
-    flag: '🇸🇪',
-    placeholder: '70 123 45 67',
-    maxLength: 9,
-  },
-  {
-    name: 'Spain',
-    code: 'ES',
-    dialCode: '+34',
-    flag: '🇪🇸',
-    placeholder: '612 34 56 78',
-    maxLength: 9,
-  },
-  {
-    name: 'Italy',
-    code: 'IT',
-    dialCode: '+39',
-    flag: '🇮🇹',
-    placeholder: '312 345 6789',
-    maxLength: 10,
-  },
-  {
-    name: 'Japan',
-    code: 'JP',
-    dialCode: '+81',
-    flag: '🇯🇵',
-    placeholder: '90 1234 5678',
-    maxLength: 10,
-  },
-  {
-    name: 'South Korea',
-    code: 'KR',
-    dialCode: '+82',
-    flag: '🇰🇷',
-    placeholder: '10 1234 5678',
-    maxLength: 10,
-  },
-  {
-    name: 'Brazil',
-    code: 'BR',
-    dialCode: '+55',
-    flag: '🇧🇷',
-    placeholder: '11 91234 5678',
-    maxLength: 11,
-  },
-  {
-    name: 'South Africa',
-    code: 'ZA',
-    dialCode: '+27',
-    flag: '🇿🇦',
-    placeholder: '71 123 4567',
-    maxLength: 9,
-  },
-  {
-    name: 'Malaysia',
-    code: 'MY',
-    dialCode: '+60',
-    flag: '🇲🇾',
-    placeholder: '12 345 6789',
-    maxLength: 10,
-  },
-  {
-    name: 'Indonesia',
-    code: 'ID',
-    dialCode: '+62',
-    flag: '🇮🇩',
-    placeholder: '812 3456 7890',
-    maxLength: 11,
-  },
-  {
-    name: 'Philippines',
-    code: 'PH',
-    dialCode: '+63',
-    flag: '🇵🇭',
-    placeholder: '917 123 4567',
-    maxLength: 10,
-  },
-  {
-    name: 'Nepal',
-    code: 'NP',
-    dialCode: '+977',
-    flag: '🇳🇵',
-    placeholder: '984 1234567',
-    maxLength: 10,
-  },
-  {
-    name: 'Bangladesh',
-    code: 'BD',
-    dialCode: '+880',
-    flag: '🇧🇩',
-    placeholder: '1712 345678',
-    maxLength: 10,
-  },
-  {
-    name: 'Sri Lanka',
-    code: 'LK',
-    dialCode: '+94',
-    flag: '🇱🇰',
-    placeholder: '71 234 5678',
-    maxLength: 9,
-  },
-];
+  COUNTRIES,
+  formatPhoneNumberByCountry,
+} from '../../src/auth/countries.js';
+
+export type { Country };
 
 export default function LoginScreen(): React.JSX.Element {
   const router = useRouter();
@@ -313,6 +77,10 @@ export default function LoginScreen(): React.JSX.Element {
   const [email, setEmail] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<Country>(DEFAULT_COUNTRY);
   const [isCountryModalVisible, setIsCountryModalVisible] = useState(false);
+  const isCountryModalVisibleRef = useRef(false);
+  useEffect(() => {
+    isCountryModalVisibleRef.current = isCountryModalVisible;
+  }, [isCountryModalVisible]);
   const [countrySearch, setCountrySearch] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -323,17 +91,127 @@ export default function LoginScreen(): React.JSX.Element {
   const phoneInputRef = useRef<RNTextInput>(null);
   const emailInputRef = useRef<RNTextInput>(null);
   const searchInputRef = useRef<RNTextInput>(null);
-  const scrollViewRef = useRef<any>(null);
+  const scrollViewRef = useRef<RNScrollView>(null);
 
   // Field shake animation & attention highlight state
   const fieldShakeAnim = useRef(new Animated.Value(0)).current;
   const [isFieldHighlighted, setIsFieldHighlighted] = useState(false);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countrySelectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Animated scroll listener for glossy top vignette
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const currentScrollY = useRef<number>(0);
+  useEffect(() => {
+    const id = scrollY.addListener(({ value }) => {
+      currentScrollY.current = value;
+    });
+    return () => scrollY.removeListener(id);
+  }, [scrollY]);
+  const handleScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+    useNativeDriver: true,
+  });
+  const headerGlossOpacity = scrollY.interpolate({
+    inputRange: [0, 20, 60],
+    outputRange: [0, 0.45, 1],
+    extrapolate: 'clamp',
+  });
+
+  // Animated keyboard elevation for smooth, soft, and swift upward shift
+  const keyboardShiftAnim = useRef(new Animated.Value(0)).current;
+  const buttonBottomContentY = useRef<number>(0);
+  const currentKeyboardHeight = useRef<number>(0);
+  const isKeyboardActiveRef = useRef<boolean>(false);
+
+  const animateToKeyboard = useCallback(
+    (kbHeight: number, animDuration?: number) => {
+      if (kbHeight <= 0) return;
+      currentKeyboardHeight.current = kbHeight;
+
+      // Position Continue button exactly 6px (within 5-7px) above the keyboard
+      const keyboardTop = windowHeight - kbHeight;
+      const targetButtonBottom = keyboardTop - 6;
+      const effectiveButtonBottom =
+        buttonBottomContentY.current > 0
+          ? buttonBottomContentY.current - currentScrollY.current
+          : 530;
+      const shiftAmount = Math.max(0, effectiveButtonBottom - targetButtonBottom);
+
+      Animated.timing(keyboardShiftAnim, {
+        toValue: -shiftAmount,
+        duration: animDuration && animDuration > 0 ? animDuration : 260,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1.0),
+        useNativeDriver: true,
+      }).start();
+    },
+    [windowHeight, keyboardShiftAnim]
+  );
+
+  const resetKeyboardPosition = useCallback(
+    (animDuration?: number) => {
+      Animated.timing(keyboardShiftAnim, {
+        toValue: 0,
+        duration: animDuration && animDuration > 0 ? animDuration : 260,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1.0),
+        useNativeDriver: true,
+      }).start();
+    },
+    [keyboardShiftAnim]
+  );
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      if (isCountryModalVisibleRef.current) return;
+      const h = e.endCoordinates?.height || 0;
+      isKeyboardActiveRef.current = true;
+      const dur = e.duration && e.duration > 0 ? e.duration : 260;
+      animateToKeyboard(h, dur);
+    });
+
+    const didShowSub =
+      Platform.OS === 'ios'
+        ? Keyboard.addListener('keyboardDidShow', (e) => {
+            if (isCountryModalVisibleRef.current) return;
+            const h = e.endCoordinates?.height || 0;
+            isKeyboardActiveRef.current = true;
+            animateToKeyboard(h, 150);
+          })
+        : null;
+
+    const hideSub = Keyboard.addListener(hideEvent, (e) => {
+      currentKeyboardHeight.current = 0;
+      isKeyboardActiveRef.current = false;
+      const dur = e?.duration && e.duration > 0 ? e.duration : 260;
+      resetKeyboardPosition(dur);
+    });
+
+    const didHideSub =
+      Platform.OS === 'ios'
+        ? Keyboard.addListener('keyboardDidHide', () => {
+            currentKeyboardHeight.current = 0;
+            isKeyboardActiveRef.current = false;
+            resetKeyboardPosition(150);
+          })
+        : null;
+
+    return () => {
+      showSub.remove();
+      didShowSub?.remove();
+      hideSub.remove();
+      didHideSub?.remove();
+    };
+  }, [animateToKeyboard, resetKeyboardPosition]);
 
   useEffect(() => {
     return () => {
       if (highlightTimeoutRef.current) {
         clearTimeout(highlightTimeoutRef.current);
+      }
+      if (countrySelectTimerRef.current) {
+        clearTimeout(countrySelectTimerRef.current);
       }
     };
   }, []);
@@ -359,26 +237,15 @@ export default function LoginScreen(): React.JSX.Element {
 
     fieldShakeAnim.setValue(0);
     Animated.sequence([
-      Animated.timing(fieldShakeAnim, { toValue: -8, duration: 40, useNativeDriver: true }),
-      Animated.timing(fieldShakeAnim, { toValue: 8, duration: 40, useNativeDriver: true }),
-      Animated.timing(fieldShakeAnim, { toValue: -6, duration: 40, useNativeDriver: true }),
-      Animated.timing(fieldShakeAnim, { toValue: 6, duration: 40, useNativeDriver: true }),
-      Animated.timing(fieldShakeAnim, { toValue: -3, duration: 35, useNativeDriver: true }),
-      Animated.timing(fieldShakeAnim, { toValue: 3, duration: 35, useNativeDriver: true }),
-      Animated.timing(fieldShakeAnim, { toValue: 0, duration: 30, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: -6, duration: 35, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: 6, duration: 35, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: -4, duration: 35, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: 4, duration: 35, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: -2, duration: 30, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: 2, duration: 30, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: 0, duration: 25, useNativeDriver: true }),
     ]).start();
   };
-
-  // Animated scroll listener for glossy top vignette
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const handleScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-    useNativeDriver: true,
-  });
-  const headerGlossOpacity = scrollY.interpolate({
-    inputRange: [0, 20, 60],
-    outputRange: [0, 0.45, 1],
-    extrapolate: 'clamp',
-  });
 
   const { setAuthIdentifier } = useOnboardingStore();
 
@@ -438,7 +305,22 @@ export default function LoginScreen(): React.JSX.Element {
 
   // Clean phone input (numbers only, max digits determined by selected country)
   const handlePhoneChange = (text: string) => {
-    const cleaned = text.replace(/[^0-9]/g, '').slice(0, selectedCountry.maxLength);
+    let cleaned = text.replace(/[^0-9]/g, '');
+
+    // Strip pasted dial code if user pasted full international number matching selected country
+    const dialDigits = selectedCountry.dialCode.replace(/[^0-9]/g, '');
+    if (cleaned.startsWith(dialDigits) && cleaned.length > selectedCountry.maxLength) {
+      cleaned = cleaned.slice(dialDigits.length);
+    }
+
+    // Strip leading national trunk zero (e.g. 09876543210 -> 9876543210)
+    if (cleaned.startsWith('0') && cleaned.length > 1) {
+      cleaned = cleaned.replace(/^0+/, '');
+    }
+
+    // Strictly limit to the selected country's max digit count
+    cleaned = cleaned.slice(0, selectedCountry.maxLength);
+
     setPhoneNumber(cleaned);
     if (errorMessage) setErrorMessage(undefined);
     if (suggestionMode) setSuggestionMode(null);
@@ -453,35 +335,20 @@ export default function LoginScreen(): React.JSX.Element {
   };
 
   const formatPhoneNumber = (num: string): string => {
-    if (selectedCountry.code === 'IN') {
-      if (num.length > 5) {
-        return `${num.slice(0, 5)} ${num.slice(5)}`;
-      }
-      return num;
-    }
-    if (selectedCountry.code === 'US' || selectedCountry.code === 'CA') {
-      if (num.length > 6) {
-        return `${num.slice(0, 3)} ${num.slice(3, 6)} ${num.slice(6)}`;
-      } else if (num.length > 3) {
-        return `${num.slice(0, 3)} ${num.slice(3)}`;
-      }
-      return num;
-    }
-    if (num.length > 4) {
-      return `${num.slice(0, 4)} ${num.slice(4)}`;
-    }
-    return num;
+    return formatPhoneNumberByCountry(num, selectedCountry);
   };
 
   const isInputValid = useMemo(() => {
     if (activeTab === 'phone') {
-      const minLength = Math.max(6, selectedCountry.maxLength - 3);
-      return phoneNumber.trim().length >= minLength;
+      const minLength = selectedCountry.minLength || selectedCountry.maxLength;
+      const maxLength = selectedCountry.maxLength;
+      const len = phoneNumber.trim().length;
+      return len >= minLength && len <= maxLength;
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(email.trim());
     }
-  }, [activeTab, phoneNumber, selectedCountry.maxLength, email]);
+  }, [activeTab, phoneNumber, selectedCountry, email]);
 
   const handleContinue = async () => {
     if (rateLimitSeconds > 0 || isLoading) return;
@@ -492,8 +359,9 @@ export default function LoginScreen(): React.JSX.Element {
     let identifierType: 'PHONE' | 'EMAIL' = 'PHONE';
 
     if (activeTab === 'phone') {
-      const minLength = Math.max(6, selectedCountry.maxLength - 3);
-      if (phoneNumber.length < minLength) {
+      const minLength = selectedCountry.minLength || selectedCountry.maxLength;
+      const maxLength = selectedCountry.maxLength;
+      if (phoneNumber.length < minLength || phoneNumber.length > maxLength) {
         triggerFieldShake();
         return;
       }
@@ -567,7 +435,8 @@ export default function LoginScreen(): React.JSX.Element {
     if (provider === 'passkey') {
       try {
         if (isSignUp) {
-          const hasPhone = activeTab === 'phone' && phoneNumber.trim().length >= 6;
+          const phoneMinLen = selectedCountry.minLength || selectedCountry.maxLength;
+          const hasPhone = activeTab === 'phone' && phoneNumber.trim().length >= phoneMinLen;
           const hasEmail = activeTab === 'email' && email.trim().length >= 3;
 
           if (!hasPhone && !hasEmail) {
@@ -817,7 +686,9 @@ export default function LoginScreen(): React.JSX.Element {
       </TouchableOpacity>
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={styles.keyboardContainer}>
+        <Animated.View
+          style={[styles.keyboardContainer, { transform: [{ translateY: keyboardShiftAnim }] }]}
+        >
           <Animated.ScrollView
             ref={scrollViewRef}
             style={styles.keyboardContainer}
@@ -830,7 +701,7 @@ export default function LoginScreen(): React.JSX.Element {
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+            automaticallyAdjustKeyboardInsets={false}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
@@ -972,12 +843,11 @@ export default function LoginScreen(): React.JSX.Element {
                     style={[
                       styles.inputLabel,
                       {
-                        color: isFieldHighlighted
-                          ? isDark
-                            ? '#FFFFFF'
-                            : '#1C1917'
-                          : errorMessage
-                            ? theme.colors.error
+                        color:
+                          isFieldHighlighted || isInputFocused
+                            ? isDark
+                              ? '#FFFFFF'
+                              : '#1C1917'
                             : theme.colors.textSecondary,
                       },
                     ]}
@@ -1007,6 +877,8 @@ export default function LoginScreen(): React.JSX.Element {
                     {/* Country Code Dropdown Button */}
                     <TouchableOpacity
                       onPress={() => {
+                        phoneInputRef.current?.blur();
+                        emailInputRef.current?.blur();
                         Keyboard.dismiss();
                         haptics.selection();
                         setIsCountryModalVisible(true);
@@ -1085,12 +957,11 @@ export default function LoginScreen(): React.JSX.Element {
                     style={[
                       styles.inputLabel,
                       {
-                        color: isFieldHighlighted
-                          ? isDark
-                            ? '#FFFFFF'
-                            : '#1C1917'
-                          : errorMessage
-                            ? theme.colors.error
+                        color:
+                          isFieldHighlighted || isInputFocused
+                            ? isDark
+                              ? '#FFFFFF'
+                              : '#1C1917'
                             : theme.colors.textSecondary,
                       },
                     ]}
@@ -1225,7 +1096,16 @@ export default function LoginScreen(): React.JSX.Element {
             </View>
 
             {/* Primary Action Button */}
-            <View style={styles.primaryButtonWrapper}>
+            <View
+              style={styles.primaryButtonWrapper}
+              onLayout={(e) => {
+                const layout = e.nativeEvent.layout;
+                buttonBottomContentY.current = layout.y + layout.height;
+                if (isKeyboardActiveRef.current && currentKeyboardHeight.current > 0) {
+                  animateToKeyboard(currentKeyboardHeight.current, 200);
+                }
+              }}
+            >
               <TouchableOpacity
                 style={[
                   styles.primaryButton,
@@ -1371,13 +1251,19 @@ export default function LoginScreen(): React.JSX.Element {
               By continuing, you agree to our Terms of Service & Privacy Policy.
             </Text>
           </Animated.ScrollView>
-        </View>
+        </Animated.View>
       </TouchableWithoutFeedback>
 
       {/* Bottom Sheet Country Code Modal */}
       <SmoothBottomSheetModal
         visible={isCountryModalVisible}
         onClose={() => {
+          if (countrySelectTimerRef.current) {
+            clearTimeout(countrySelectTimerRef.current);
+          }
+          searchInputRef.current?.blur();
+          phoneInputRef.current?.blur();
+          Keyboard.dismiss();
           setIsCountryModalVisible(false);
           setCountrySearch('');
         }}
@@ -1386,13 +1272,27 @@ export default function LoginScreen(): React.JSX.Element {
       >
         {/* Modal Header */}
         <View style={styles.modalHeader}>
-          <Text
-            style={[styles.modalTitle, { color: theme.colors.textPrimary, fontFamily: folkraFont }]}
-          >
-            Select Country / Region
-          </Text>
+          <View style={styles.modalTitleContainer}>
+            <Text
+              style={[
+                styles.modalTitle,
+                { color: theme.colors.textPrimary, fontFamily: folkraFont },
+              ]}
+            >
+              Select Country / Region
+            </Text>
+            <Text style={[styles.modalSubtitle, { color: theme.colors.textSecondary }]}>
+              Choose your country code for verification
+            </Text>
+          </View>
           <TouchableOpacity
             onPress={() => {
+              if (countrySelectTimerRef.current) {
+                clearTimeout(countrySelectTimerRef.current);
+              }
+              searchInputRef.current?.blur();
+              phoneInputRef.current?.blur();
+              Keyboard.dismiss();
               haptics.light();
               setIsCountryModalVisible(false);
               setCountrySearch('');
@@ -1401,6 +1301,7 @@ export default function LoginScreen(): React.JSX.Element {
               styles.modalCloseButton,
               {
                 backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : theme.colors.surfaceMuted,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
               },
             ]}
             accessibilityRole="button"
@@ -1416,11 +1317,11 @@ export default function LoginScreen(): React.JSX.Element {
             styles.modalSearchCard,
             {
               backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : theme.colors.surfaceMuted,
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : theme.colors.border,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 10 }} />
           <RNTextInput
             ref={searchInputRef}
             style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
@@ -1434,7 +1335,12 @@ export default function LoginScreen(): React.JSX.Element {
             clearButtonMode="while-editing"
           />
           {countrySearch.length > 0 && (
-            <TouchableOpacity onPress={() => setCountrySearch('')}>
+            <TouchableOpacity
+              onPress={() => setCountrySearch('')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.modalSearchClear}
+              accessibilityLabel="Clear search"
+            >
               <X size={14} color={theme.colors.textTertiary} />
             </TouchableOpacity>
           )}
@@ -1449,6 +1355,20 @@ export default function LoginScreen(): React.JSX.Element {
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.countryListContent}
+          initialNumToRender={15}
+          maxToRenderPerBatch={20}
+          windowSize={7}
+          ListEmptyComponent={
+            <View style={styles.modalEmptyContainer}>
+              <Search size={28} color={theme.colors.textTertiary} style={{ marginBottom: 8 }} />
+              <Text style={[styles.modalEmptyTitle, { color: theme.colors.textPrimary }]}>
+                No countries found
+              </Text>
+              <Text style={[styles.modalEmptySubtitle, { color: theme.colors.textSecondary }]}>
+                Try searching with a different name or dial code
+              </Text>
+            </View>
+          }
           renderItem={({ item }) => {
             const isSelected = item.code === selectedCountry.code;
             return (
@@ -1456,20 +1376,25 @@ export default function LoginScreen(): React.JSX.Element {
                 style={[
                   styles.countryRow,
                   isSelected && {
-                    backgroundColor: isDark ? 'rgba(230, 57, 32, 0.14)' : 'rgba(230, 57, 32, 0.08)',
+                    backgroundColor: '#FFFFFF',
                   },
                 ]}
                 onPress={() => {
+                  searchInputRef.current?.blur();
+                  phoneInputRef.current?.blur();
+                  Keyboard.dismiss();
                   haptics.selection();
                   setSelectedCountry(item);
-                  setIsCountryModalVisible(false);
-                  setCountrySearch('');
+                  setErrorMessage(undefined);
+                  setSuggestionMode(null);
                   if (phoneNumber.length > item.maxLength) {
                     setPhoneNumber(phoneNumber.slice(0, item.maxLength));
                   }
-                  setTimeout(() => {
-                    phoneInputRef.current?.focus();
-                  }, 300);
+                  if (countrySelectTimerRef.current) {
+                    clearTimeout(countrySelectTimerRef.current);
+                  }
+                  setIsCountryModalVisible(false);
+                  setCountrySearch('');
                 }}
                 activeOpacity={0.7}
               >
@@ -1479,10 +1404,11 @@ export default function LoginScreen(): React.JSX.Element {
                     style={[
                       styles.countryRowName,
                       {
-                        color: isSelected ? theme.colors.accent : theme.colors.textPrimary,
+                        color: isSelected ? '#000000' : theme.colors.textPrimary,
                         fontWeight: isSelected ? '700' : '500',
                       },
                     ]}
+                    numberOfLines={1}
                   >
                     {item.name}
                   </Text>
@@ -1490,16 +1416,14 @@ export default function LoginScreen(): React.JSX.Element {
                     style={[
                       styles.countryRowCodeBadge,
                       {
-                        color: isSelected ? theme.colors.accent : theme.colors.textSecondary,
+                        color: isSelected ? '#000000' : theme.colors.textSecondary,
+                        fontWeight: isSelected ? '700' : '600',
                       },
                     ]}
                   >
                     {item.dialCode}
                   </Text>
                 </View>
-                {isSelected && (
-                  <Check size={18} color={theme.colors.accent} style={{ marginLeft: 8 }} />
-                )}
               </TouchableOpacity>
             );
           }}
@@ -1795,49 +1719,77 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 16,
+  },
+  modalTitleContainer: {
+    flex: 1,
+    paddingRight: 12,
   },
   modalTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
+  },
+  modalSubtitle: {
+    fontSize: 12.5,
+    marginTop: 2,
+    letterSpacing: -0.1,
   },
   modalCloseButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalSearchCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 14,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    paddingHorizontal: 14,
+    marginBottom: 20,
   },
   modalSearchInput: {
     flex: 1,
     fontSize: 14.5,
     paddingVertical: 0,
   },
+  modalSearchClear: {
+    padding: 4,
+  },
+  modalEmptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 36,
+    paddingHorizontal: 20,
+  },
+  modalEmptyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  modalEmptySubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+  },
   countryList: {
     width: '100%',
   },
   countryListContent: {
-    paddingBottom: 24,
+    paddingBottom: 28,
   },
   countryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginBottom: 2,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    marginBottom: 3,
   },
   countryRowFlag: {
     fontSize: 22,
@@ -1848,12 +1800,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginRight: 4,
   },
   countryRowName: {
     fontSize: 15,
+    letterSpacing: -0.2,
+    flex: 1,
+    marginRight: 10,
   },
   countryRowCodeBadge: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 14.5,
+    letterSpacing: -0.1,
   },
 });

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   KeyboardAvoidingView,
+  Keyboard,
   Animated,
   Easing,
   Platform,
@@ -46,11 +47,11 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const windowHeight = Dimensions.get('window').height;
-  const initialOffset = Math.max(windowHeight, 800);
+  const exitOffset = Math.max(Math.round(windowHeight * 0.85), 650);
 
   const [isRendered, setIsRendered] = useState(visible);
   const backdropAnim = useRef(new Animated.Value(visible ? 1 : 0)).current;
-  const sheetTranslateY = useRef(new Animated.Value(visible ? 0 : initialOffset)).current;
+  const sheetTranslateY = useRef(new Animated.Value(visible ? 0 : exitOffset)).current;
 
   useEffect(() => {
     let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
@@ -72,17 +73,18 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
         }),
       ]).start();
     } else if (isRendered) {
+      Keyboard.dismiss();
       Animated.parallel([
         Animated.timing(sheetTranslateY, {
-          toValue: initialOffset,
-          duration: 220,
-          easing: Easing.in(Easing.cubic),
+          toValue: exitOffset,
+          duration: 460,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
           useNativeDriver: true,
         }),
         Animated.timing(backdropAnim, {
           toValue: 0,
-          duration: 200,
-          easing: Easing.in(Easing.quad),
+          duration: 400,
+          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
       ]).start(() => {
@@ -93,7 +95,7 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
       fallbackTimer = setTimeout(() => {
         setIsRendered(false);
         onDismiss?.();
-      }, 350);
+      }, 550);
     }
 
     return () => {
@@ -101,7 +103,7 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
         clearTimeout(fallbackTimer);
       }
     };
-  }, [visible, isRendered, initialOffset, backdropAnim, sheetTranslateY]);
+  }, [visible, isRendered, exitOffset, backdropAnim, sheetTranslateY]);
 
   if (!isRendered) {
     return null;
