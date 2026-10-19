@@ -2145,7 +2145,9 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                       ? 'Continue to Interests'
                       : `Add At Least 2 Photos (${filledCount}/2)`}
                 </Text>
-                {(isFromReview || isMinimumMet) && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
+                {(isFromReview || isMinimumMet) && (
+                  <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />
+                )}
               </View>
             )}
           </TouchableOpacity>

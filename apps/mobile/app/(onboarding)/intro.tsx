@@ -594,10 +594,7 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
             testID="begin-profile-creation-btn"
           >
             <RNText
-              style={[
-                styles.primaryButtonLabel,
-                folkraFont ? { fontFamily: folkraFont } : null,
-              ]}
+              style={[styles.primaryButtonLabel, folkraFont ? { fontFamily: folkraFont } : null]}
             >
               Begin Profile Creation
             </RNText>

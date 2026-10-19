@@ -344,9 +344,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
                   style={[
                     styles.milestoneIconCircle,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.06)'
-                        : 'rgba(0, 0, 0, 0.04)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                     },
                   ]}
                 >
@@ -370,7 +368,10 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
               delayPressIn={0}
               onPress={() => {
                 haptics.selection();
-                router.push({ pathname: '/(onboarding)/profile-setup', params: { returnTo: 'preview' } });
+                router.push({
+                  pathname: '/(onboarding)/profile-setup',
+                  params: { returnTo: 'preview' },
+                });
               }}
               style={[
                 styles.milestoneRow,
@@ -387,9 +388,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
                   style={[
                     styles.milestoneIconCircle,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.06)'
-                        : 'rgba(0, 0, 0, 0.04)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                     },
                   ]}
                 >
@@ -400,7 +399,8 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
                     The Basics & Bio
                   </Text>
                   <Text style={[styles.milestoneSubtitle, { color: theme.colors.textTertiary }]}>
-                    {draftProfile.displayName || 'You'}, {previewData.age} • {draftProfile.city || 'City'}
+                    {draftProfile.displayName || 'You'}, {previewData.age} •{' '}
+                    {draftProfile.city || 'City'}
                   </Text>
                 </View>
               </View>
@@ -430,9 +430,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
                   style={[
                     styles.milestoneIconCircle,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.06)'
-                        : 'rgba(0, 0, 0, 0.04)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                     },
                   ]}
                 >
@@ -456,7 +454,10 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
               delayPressIn={0}
               onPress={() => {
                 haptics.selection();
-                router.push({ pathname: '/(onboarding)/interests', params: { returnTo: 'preview' } });
+                router.push({
+                  pathname: '/(onboarding)/interests',
+                  params: { returnTo: 'preview' },
+                });
               }}
               style={[
                 styles.milestoneRow,
@@ -473,9 +474,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
                   style={[
                     styles.milestoneIconCircle,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.06)'
-                        : 'rgba(0, 0, 0, 0.04)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                     },
                   ]}
                 >
@@ -499,7 +498,10 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
               delayPressIn={0}
               onPress={() => {
                 haptics.selection();
-                router.push({ pathname: '/(onboarding)/preferences', params: { returnTo: 'preview' } });
+                router.push({
+                  pathname: '/(onboarding)/preferences',
+                  params: { returnTo: 'preview' },
+                });
               }}
               style={[
                 styles.milestoneRow,
@@ -516,9 +518,7 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
                   style={[
                     styles.milestoneIconCircle,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.06)'
-                        : 'rgba(0, 0, 0, 0.04)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                     },
                   ]}
                 >
@@ -638,7 +638,8 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
 
           {/* Footnote reassurance */}
           <Text style={[styles.dockFootnoteText, { color: theme.colors.textTertiary }]}>
-            Your profile will immediately enter discovery. You can pause or edit anytime in Settings.
+            Your profile will immediately enter discovery. You can pause or edit anytime in
+            Settings.
           </Text>
         </View>
       </View>

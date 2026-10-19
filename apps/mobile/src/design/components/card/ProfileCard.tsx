@@ -150,8 +150,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     }
   };
 
-  const featuredPrompt =
-    profile.prompts && profile.prompts.length > 0 ? profile.prompts[0] : null;
+  const featuredPrompt = profile.prompts && profile.prompts.length > 0 ? profile.prompts[0] : null;
   const effectiveDistance = profile.contextualInfo
     ? profile.contextualInfo.replace(/🎟️|✈️/g, '').trim()
     : null;
@@ -191,7 +190,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   }
 
   if (isDiscovery) {
-
     return (
       <View
         style={[
@@ -589,21 +587,13 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             <View style={styles.previewNameRow}>
               <View style={styles.previewNameAndAge}>
                 <Text
-                  style={[
-                    styles.previewNameText,
-                    { color: isDark ? '#FFFFFF' : '#0F172A' },
-                  ]}
+                  style={[styles.previewNameText, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
                   numberOfLines={1}
                 >
                   {profile.name || 'Sophie Bennett'}
                 </Text>
                 {profile.age ? (
-                  <Text
-                    style={[
-                      styles.previewAgeText,
-                      { color: isDark ? '#FFFFFF' : '#0F172A' },
-                    ]}
-                  >
+                  <Text style={[styles.previewAgeText, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
                     , {profile.age}
                   </Text>
                 ) : null}

@@ -2831,7 +2831,9 @@ export default function OnboardingInterestsScreen(): React.JSX.Element {
                         : `Select ${3 - count} more passion${3 - count > 1 ? 's' : ''} (${count}/3)`
                       : `Continue to Lifestyle (${count} selected)`}
                 </Text>
-                {(isFromReview || isMinimumMet) && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
+                {(isFromReview || isMinimumMet) && (
+                  <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />
+                )}
               </View>
             )}
           </TouchableOpacity>

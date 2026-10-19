@@ -390,7 +390,9 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                         },
                       ]}
                     >
-                      {locationGranted ? 'Active • Neighborhood Radar' : 'Optional • Proximity Paused'}
+                      {locationGranted
+                        ? 'Active • Neighborhood Radar'
+                        : 'Optional • Proximity Paused'}
                     </Text>
                   </View>
                 </View>
@@ -401,13 +403,9 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
             </View>
 
             {/* Concise Narrative (No Text Clipping) */}
-            <Text
-              style={[
-                styles.fluidDescription,
-                { color: theme.colors.textSecondary },
-              ]}
-            >
-              Encrypted neighborhood radar. Coarse coordinates are hashed on-device and never visible to others.
+            <Text style={[styles.fluidDescription, { color: theme.colors.textSecondary }]}>
+              Encrypted neighborhood radar. Coarse coordinates are hashed on-device and never
+              visible to others.
             </Text>
           </TouchableOpacity>
 
@@ -492,7 +490,9 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                         },
                       ]}
                     >
-                      {notificationsGranted ? 'Active • Instant Dispatch' : 'Muted • In-App Feed Only'}
+                      {notificationsGranted
+                        ? 'Active • Instant Dispatch'
+                        : 'Muted • In-App Feed Only'}
                     </Text>
                   </View>
                 </View>
@@ -503,13 +503,9 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
             </View>
 
             {/* Concise Narrative matching Section 1 exactly */}
-            <Text
-              style={[
-                styles.fluidDescription,
-                { color: theme.colors.textSecondary },
-              ]}
-            >
-              Instant alerts for mutual matches, chat replies, and safety check-ins with zero marketing spam.
+            <Text style={[styles.fluidDescription, { color: theme.colors.textSecondary }]}>
+              Instant alerts for mutual matches, chat replies, and safety check-ins with zero
+              marketing spam.
             </Text>
           </TouchableOpacity>
 
@@ -527,11 +523,7 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                         'rgba(255, 255, 255, 0.12)',
                         'rgba(255, 255, 255, 0.0)',
                       ]
-                    : [
-                        'rgba(0, 0, 0, 0.0)',
-                        'rgba(0, 0, 0, 0.08)',
-                        'rgba(0, 0, 0, 0.0)',
-                      ]
+                    : ['rgba(0, 0, 0, 0.0)', 'rgba(0, 0, 0, 0.08)', 'rgba(0, 0, 0, 0.0)']
                 }
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
@@ -545,9 +537,7 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                 style={[
                   styles.shieldEmblem,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(255, 255, 255, 0.06)'
-                      : 'rgba(0, 0, 0, 0.04)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                   },
                 ]}
               >
@@ -568,18 +558,11 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                 style={[
                   styles.minimalPill,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(255, 255, 255, 0.07)'
-                      : 'rgba(0, 0, 0, 0.05)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.05)',
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.minimalPillText,
-                    { color: isDark ? '#D4D4D8' : '#52525B' },
-                  ]}
-                >
+                <Text style={[styles.minimalPillText, { color: isDark ? '#D4D4D8' : '#52525B' }]}>
                   ZERO-PII
                 </Text>
               </View>
@@ -596,8 +579,9 @@ export default function OnboardingPermissionsScreen(): React.JSX.Element {
                     Local Device Revocation
                   </Text>
                   <Text style={[styles.principleBody, { color: theme.colors.textSecondary }]}>
-                    Permissions stay strictly confined to this handset. You can modify or permanently
-                    revoke them anytime via system settings without impacting account standing.
+                    Permissions stay strictly confined to this handset. You can modify or
+                    permanently revoke them anytime via system settings without impacting account
+                    standing.
                   </Text>
                 </View>
               </View>

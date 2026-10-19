@@ -1375,7 +1375,9 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                       ? 'Continue to Preferences'
                       : 'Answer at least 1 prompt (0/1)'}
                 </Text>
-                {(isFromReview || isMinimumMet) && <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />}
+                {(isFromReview || isMinimumMet) && (
+                  <ArrowRight size={17} color="#000000" style={{ marginLeft: 8 }} />
+                )}
               </View>
             )}
           </TouchableOpacity>
