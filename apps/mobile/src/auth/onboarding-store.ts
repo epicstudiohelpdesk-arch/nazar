@@ -311,8 +311,7 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         bio: profile.bio || state.draftProfile.bio,
         occupation: profile.occupation || state.draftProfile.occupation,
         education: profile.education || state.draftProfile.education,
-        religion:
-          (profile as { religion?: string }).religion || state.draftProfile.religion,
+        religion: (profile as { religion?: string }).religion || state.draftProfile.religion,
         interestedInReligions:
           (profile as { interestedInReligions?: string[] }).interestedInReligions ||
           state.draftProfile.interestedInReligions,

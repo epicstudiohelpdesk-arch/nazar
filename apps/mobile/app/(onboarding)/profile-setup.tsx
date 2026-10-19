@@ -323,78 +323,175 @@ export interface InternetIdentitySuggestion {
   coreGender: Gender;
 }
 
-export const GENDER_IDENTITY_ABBREVIATIONS: Record<string, { label: string; desc: string; core: Gender }[]> = {
+export const GENDER_IDENTITY_ABBREVIATIONS: Record<
+  string,
+  { label: string; desc: string; core: Gender }[]
+> = {
   demi: [
-    { label: 'Demigirl', desc: 'Partially identifies with womanhood or feminine traits', core: 'NON_BINARY' },
-    { label: 'Demiboy', desc: 'Partially identifies with manhood or masculine traits', core: 'NON_BINARY' },
-    { label: 'Demigender', desc: 'Non-binary gender identity partially connected to a gender', core: 'NON_BINARY' },
+    {
+      label: 'Demigirl',
+      desc: 'Partially identifies with womanhood or feminine traits',
+      core: 'NON_BINARY',
+    },
+    {
+      label: 'Demiboy',
+      desc: 'Partially identifies with manhood or masculine traits',
+      core: 'NON_BINARY',
+    },
+    {
+      label: 'Demigender',
+      desc: 'Non-binary gender identity partially connected to a gender',
+      core: 'NON_BINARY',
+    },
   ],
   enby: [
-    { label: 'Non-binary (Enby)', desc: 'Gender identity expanding beyond binary male or female', core: 'NON_BINARY' },
+    {
+      label: 'Non-binary (Enby)',
+      desc: 'Gender identity expanding beyond binary male or female',
+      core: 'NON_BINARY',
+    },
   ],
   nb: [
-    { label: 'Non-binary', desc: 'Gender identity expanding beyond binary male or female', core: 'NON_BINARY' },
+    {
+      label: 'Non-binary',
+      desc: 'Gender identity expanding beyond binary male or female',
+      core: 'NON_BINARY',
+    },
   ],
   trans: [
-    { label: 'Transfeminine', desc: 'Assigned male at birth, identifies with feminine gender spectrum', core: 'WOMAN' },
-    { label: 'Transmasculine', desc: 'Assigned female at birth, identifies with masculine gender spectrum', core: 'MAN' },
-    { label: 'Transgender Woman', desc: 'Identifies as a woman with transgender lived journey', core: 'WOMAN' },
-    { label: 'Transgender Man', desc: 'Identifies as a man with transgender lived journey', core: 'MAN' },
+    {
+      label: 'Transfeminine',
+      desc: 'Assigned male at birth, identifies with feminine gender spectrum',
+      core: 'WOMAN',
+    },
+    {
+      label: 'Transmasculine',
+      desc: 'Assigned female at birth, identifies with masculine gender spectrum',
+      core: 'MAN',
+    },
+    {
+      label: 'Transgender Woman',
+      desc: 'Identifies as a woman with transgender lived journey',
+      core: 'WOMAN',
+    },
+    {
+      label: 'Transgender Man',
+      desc: 'Identifies as a man with transgender lived journey',
+      core: 'MAN',
+    },
   ],
   transfem: [
-    { label: 'Transfeminine', desc: 'Assigned male at birth, identifies with feminine gender spectrum', core: 'WOMAN' },
+    {
+      label: 'Transfeminine',
+      desc: 'Assigned male at birth, identifies with feminine gender spectrum',
+      core: 'WOMAN',
+    },
   ],
   transmasc: [
-    { label: 'Transmasculine', desc: 'Assigned female at birth, identifies with masculine gender spectrum', core: 'MAN' },
+    {
+      label: 'Transmasculine',
+      desc: 'Assigned female at birth, identifies with masculine gender spectrum',
+      core: 'MAN',
+    },
   ],
   andro: [
-    { label: 'Androgyne', desc: 'Blends masculine and feminine gender expressions harmoniously', core: 'NON_BINARY' },
-    { label: 'Androgynous', desc: 'Gender expression combining traits outside the binary', core: 'NON_BINARY' },
+    {
+      label: 'Androgyne',
+      desc: 'Blends masculine and feminine gender expressions harmoniously',
+      core: 'NON_BINARY',
+    },
+    {
+      label: 'Androgynous',
+      desc: 'Gender expression combining traits outside the binary',
+      core: 'NON_BINARY',
+    },
   ],
   neutro: [
-    { label: 'Neutrois', desc: 'A neutral, null, or genderless non-binary identity', core: 'NON_BINARY' },
+    {
+      label: 'Neutrois',
+      desc: 'A neutral, null, or genderless non-binary identity',
+      core: 'NON_BINARY',
+    },
   ],
   neutrois: [
-    { label: 'Neutrois', desc: 'A neutral, null, or genderless non-binary identity', core: 'NON_BINARY' },
+    {
+      label: 'Neutrois',
+      desc: 'A neutral, null, or genderless non-binary identity',
+      core: 'NON_BINARY',
+    },
   ],
   two: [
-    { label: 'Two-Spirit', desc: 'Sacred Indigenous cultural and spiritual gender identity', core: 'NON_BINARY' },
+    {
+      label: 'Two-Spirit',
+      desc: 'Sacred Indigenous cultural and spiritual gender identity',
+      core: 'NON_BINARY',
+    },
   ],
   '2s': [
-    { label: 'Two-Spirit', desc: 'Sacred Indigenous cultural and spiritual gender identity', core: 'NON_BINARY' },
+    {
+      label: 'Two-Spirit',
+      desc: 'Sacred Indigenous cultural and spiritual gender identity',
+      core: 'NON_BINARY',
+    },
   ],
   gnc: [
-    { label: 'Gender Non-Conforming', desc: 'Expresses gender outside traditional societal stereotypes', core: 'NON_BINARY' },
+    {
+      label: 'Gender Non-Conforming',
+      desc: 'Expresses gender outside traditional societal stereotypes',
+      core: 'NON_BINARY',
+    },
   ],
   inter: [
-    { label: 'Intersex', desc: 'Natural biological variations in sex characteristics', core: 'OTHER' },
+    {
+      label: 'Intersex',
+      desc: 'Natural biological variations in sex characteristics',
+      core: 'OTHER',
+    },
   ],
   x: [
-    { label: 'X-gender', desc: 'Japanese non-binary gender identity definition', core: 'NON_BINARY' },
+    {
+      label: 'X-gender',
+      desc: 'Japanese non-binary gender identity definition',
+      core: 'NON_BINARY',
+    },
   ],
-  hijra: [
-    { label: 'Hijra', desc: 'South Asian cultural third gender community', core: 'OTHER' },
-  ],
+  hijra: [{ label: 'Hijra', desc: 'South Asian cultural third gender community', core: 'OTHER' }],
   faafafine: [
-    { label: "Fa'afafine", desc: 'Samoan traditional third gender identity and cultural role', core: 'OTHER' },
+    {
+      label: "Fa'afafine",
+      desc: 'Samoan traditional third gender identity and cultural role',
+      core: 'OTHER',
+    },
   ],
   mahu: [
-    { label: 'Māhū', desc: 'Hawaiian and Tahitian traditional third gender role in society', core: 'OTHER' },
+    {
+      label: 'Māhū',
+      desc: 'Hawaiian and Tahitian traditional third gender role in society',
+      core: 'OTHER',
+    },
   ],
-  muxe: [
-    { label: 'Muxe', desc: 'Zapotec third gender identity in Oaxaca, Mexico', core: 'OTHER' },
-  ],
+  muxe: [{ label: 'Muxe', desc: 'Zapotec third gender identity in Oaxaca, Mexico', core: 'OTHER' }],
   fluid: [
-    { label: 'Genderfluid', desc: 'Gender identity shifts or fluctuates dynamically over time', core: 'NON_BINARY' },
+    {
+      label: 'Genderfluid',
+      desc: 'Gender identity shifts or fluctuates dynamically over time',
+      core: 'NON_BINARY',
+    },
   ],
   queer: [
-    { label: 'Genderqueer', desc: 'Queer expression defying normative social categories', core: 'NON_BINARY' },
+    {
+      label: 'Genderqueer',
+      desc: 'Queer expression defying normative social categories',
+      core: 'NON_BINARY',
+    },
   ],
 };
 
-const IDENTITY_CONTEXT_KEYWORDS = /\b(gender identity|gender|non-binary|nonbinary|transgender|cisgender|third gender|agender|bigender|pangender|genderfluid|genderqueer|neutrois|androgyne|androgynous|demigender|demiboy|demigirl|two-spirit|intersex|queer identity|two spirit|indigenous gender|cultural gender|hijra|fa'afafine|māhū|muxe|femme|masc|gender expression)\b/i;
+const IDENTITY_CONTEXT_KEYWORDS =
+  /\b(gender identity|gender|non-binary|nonbinary|transgender|cisgender|third gender|agender|bigender|pangender|genderfluid|genderqueer|neutrois|androgyne|androgynous|demigender|demiboy|demigirl|two-spirit|intersex|queer identity|two spirit|indigenous gender|cultural gender|hijra|fa'afafine|māhū|muxe|femme|masc|gender expression)\b/i;
 
-const IDENTITY_EXCLUSION_KEYWORDS = /\b(plant|genus|species|film|album|song|music|crustacean|asteroid|insect|beetle|moth|village|commune|town|city|municipality|footballer|actor|actress|singer|musician|politician|cricketer|company|corporation|brand|software|airline|car|automobile|flag|article|book|journal|organization|killing|femicide|archives|museum|podcast|show|episode|hardware|river|lake|mountain|railway|airport)\b/i;
+const IDENTITY_EXCLUSION_KEYWORDS =
+  /\b(plant|genus|species|film|album|song|music|crustacean|asteroid|insect|beetle|moth|village|commune|town|city|municipality|footballer|actor|actress|singer|musician|politician|cricketer|company|corporation|brand|software|airline|car|automobile|flag|article|book|journal|organization|killing|femicide|archives|museum|podcast|show|episode|hardware|river|lake|mountain|railway|airport)\b/i;
 
 function inferCoreGender(label: string, desc: string): Gender {
   const combined = `${label} ${desc}`.toLowerCase();
@@ -404,7 +501,11 @@ function inferCoreGender(label: string, desc: string): Gender {
   if (/\b(man|men|male|masculine|boy|transmasc|cis male|demiboy)\b/.test(combined)) {
     return 'MAN';
   }
-  if (/\b(non-binary|nonbinary|enby|genderfluid|genderqueer|agender|bigender|pangender|neutrois|androgyne|two-spirit)\b/.test(combined)) {
+  if (
+    /\b(non-binary|nonbinary|enby|genderfluid|genderqueer|agender|bigender|pangender|neutrois|androgyne|two-spirit)\b/.test(
+      combined
+    )
+  ) {
     return 'NON_BINARY';
   }
   return 'OTHER';
@@ -417,11 +518,34 @@ function inferCoreGender(label: string, desc: string): Gender {
 export const GENDER_SYNONYMS_MAP: Record<string, string[]> = {
   woman: ['woman', 'women', 'female', 'females', 'girl', 'girls', 'femme', 'cis woman', 'she/her'],
   man: ['man', 'men', 'male', 'males', 'guy', 'guys', 'masc', 'cis man', 'he/him'],
-  non_binary: ['non-binary', 'nonbinary', 'nb', 'enby', 'genderqueer', 'neither', 'they/them', 'neutral'],
+  non_binary: [
+    'non-binary',
+    'nonbinary',
+    'nb',
+    'enby',
+    'genderqueer',
+    'neither',
+    'they/them',
+    'neutral',
+  ],
   cisgender_woman: ['cisgender woman', 'cis woman', 'cis female', 'cisgender female'],
   cisgender_man: ['cisgender man', 'cis man', 'cis male', 'cisgender male'],
-  transgender_woman: ['transgender woman', 'trans woman', 'transfem', 'transfeminine', 'mtf', 'trans female'],
-  transgender_man: ['transgender man', 'trans man', 'transmasc', 'transmasculine', 'ftm', 'trans male'],
+  transgender_woman: [
+    'transgender woman',
+    'trans woman',
+    'transfem',
+    'transfeminine',
+    'mtf',
+    'trans female',
+  ],
+  transgender_man: [
+    'transgender man',
+    'trans man',
+    'transmasc',
+    'transmasculine',
+    'ftm',
+    'trans male',
+  ],
   genderfluid: ['genderfluid', 'gender fluid', 'fluid', 'fluidity', 'shifting'],
   genderqueer: ['genderqueer', 'gender queer', 'queer', 'non-normative'],
   agender: ['agender', 'genderless', 'null', 'void', 'neutral', 'gender free'],
@@ -511,9 +635,7 @@ export function rankSearchCandidates<T extends { label: string; desc: string; id
     if (queryWords.length > 1) {
       const allTokensMatch = queryWords.every(
         (qw) =>
-          labelLower.includes(qw) ||
-          descLower.includes(qw) ||
-          keywords.some((k) => k.includes(qw))
+          labelLower.includes(qw) || descLower.includes(qw) || keywords.some((k) => k.includes(qw))
       );
       if (allTokensMatch) {
         score += 35;
@@ -624,8 +746,10 @@ export async function searchOnlineIdentities(
       const rawLabel = item.label || '';
       const rawDesc = item.description || '';
       if (rawLabel.length > 32 || rawLabel.includes(':') || rawLabel.includes('.')) continue;
-      if (IDENTITY_EXCLUSION_KEYWORDS.test(rawDesc) || IDENTITY_EXCLUSION_KEYWORDS.test(rawLabel)) continue;
-      if (!IDENTITY_CONTEXT_KEYWORDS.test(rawDesc) && !IDENTITY_CONTEXT_KEYWORDS.test(rawLabel)) continue;
+      if (IDENTITY_EXCLUSION_KEYWORDS.test(rawDesc) || IDENTITY_EXCLUSION_KEYWORDS.test(rawLabel))
+        continue;
+      if (!IDENTITY_CONTEXT_KEYWORDS.test(rawDesc) && !IDENTITY_CONTEXT_KEYWORDS.test(rawLabel))
+        continue;
 
       let label = rawLabel
         .replace(/\s*\([^)]*gender[^)]*\)/gi, '')
@@ -655,7 +779,8 @@ export async function searchOnlineIdentities(
       const rawSnippet = (item.snippet || '').replace(/<[^>]+>/g, '');
       if (rawTitle.length > 32 || rawTitle.includes(':') || rawTitle.includes('/')) continue;
       if (IDENTITY_EXCLUSION_KEYWORDS.test(rawTitle)) continue;
-      if (!IDENTITY_CONTEXT_KEYWORDS.test(rawSnippet) && !IDENTITY_CONTEXT_KEYWORDS.test(rawTitle)) continue;
+      if (!IDENTITY_CONTEXT_KEYWORDS.test(rawSnippet) && !IDENTITY_CONTEXT_KEYWORDS.test(rawTitle))
+        continue;
 
       let label = rawTitle
         .replace(/\s*\([^)]*gender[^)]*\)/gi, '')
@@ -796,9 +921,34 @@ export const RELIGION_OPTIONS: ReligionOption[] = [
 
 export const RELIGION_SYNONYMS_MAP: Record<string, string[]> = {
   agnostic: ['agnostic', 'agnosticism', 'undecided', 'skeptic', 'questioning', 'unsure'],
-  atheist: ['atheist', 'atheism', 'non-religious', 'secular', 'nonbeliever', 'godless', 'materialist'],
-  buddhist: ['buddhist', 'buddhism', 'dharma', 'zen', 'theravada', 'mahayana', 'tibetan', 'vipassana'],
-  catholic: ['catholic', 'catholicism', 'roman catholic', 'latin rite', 'papal', 'jesuit', 'franciscan'],
+  atheist: [
+    'atheist',
+    'atheism',
+    'non-religious',
+    'secular',
+    'nonbeliever',
+    'godless',
+    'materialist',
+  ],
+  buddhist: [
+    'buddhist',
+    'buddhism',
+    'dharma',
+    'zen',
+    'theravada',
+    'mahayana',
+    'tibetan',
+    'vipassana',
+  ],
+  catholic: [
+    'catholic',
+    'catholicism',
+    'roman catholic',
+    'latin rite',
+    'papal',
+    'jesuit',
+    'franciscan',
+  ],
   christian: [
     'christian',
     'christianity',
@@ -861,7 +1011,17 @@ export const RELIGION_SYNONYMS_MAP: Record<string, string[]> = {
     'ismaili',
     'ibadi',
   ],
-  sikh: ['sikh', 'sikhism', 'khalsa', 'gurdwara', 'sardar', 'waheguru', 'guru nanak', 'singh', 'kaur'],
+  sikh: [
+    'sikh',
+    'sikhism',
+    'khalsa',
+    'gurdwara',
+    'sardar',
+    'waheguru',
+    'guru nanak',
+    'singh',
+    'kaur',
+  ],
   spiritual: [
     'spiritual',
     'spirituality',
@@ -876,12 +1036,53 @@ export const RELIGION_SYNONYMS_MAP: Record<string, string[]> = {
   ],
   daoist: ['daoist', 'taoist', 'daoism', 'taoism', 'yin yang', 'laozi', 'daodejing'],
   shinto: ['shinto', 'kami', 'shintoism', 'jinja'],
-  zoroastrian: ['zoroastrian', 'zoroastrianism', 'parsi', 'mazdayasna', 'zarathustra', 'ahura mazda'],
+  zoroastrian: [
+    'zoroastrian',
+    'zoroastrianism',
+    'parsi',
+    'mazdayasna',
+    'zarathustra',
+    'ahura mazda',
+  ],
   bahai: ['bahai', "baha'i", 'bahaism', 'baha faith', 'abdu-l-baha', 'bahaullah'],
-  pagan: ['pagan', 'wicca', 'wiccan', 'heathen', 'polytheist', 'animist', 'druid', 'hellenist', 'norse'],
-  humanist: ['humanist', 'humanism', 'secular humanist', 'rationalist', 'freethinker', 'ethical culture'],
-  indigenous: ['indigenous', 'traditional', 'folk religion', 'ancestral', 'animism', 'tribal', 'native american', 'aboriginal'],
-  prefer_not_to_say: ['prefer not to say', 'private', 'unspecified', 'skip', 'none of your business', 'hidden', 'pass'],
+  pagan: [
+    'pagan',
+    'wicca',
+    'wiccan',
+    'heathen',
+    'polytheist',
+    'animist',
+    'druid',
+    'hellenist',
+    'norse',
+  ],
+  humanist: [
+    'humanist',
+    'humanism',
+    'secular humanist',
+    'rationalist',
+    'freethinker',
+    'ethical culture',
+  ],
+  indigenous: [
+    'indigenous',
+    'traditional',
+    'folk religion',
+    'ancestral',
+    'animism',
+    'tribal',
+    'native american',
+    'aboriginal',
+  ],
+  prefer_not_to_say: [
+    'prefer not to say',
+    'private',
+    'unspecified',
+    'skip',
+    'none of your business',
+    'hidden',
+    'pass',
+  ],
   other: ['other', 'self-describe', 'custom', 'unique', 'type my own', 'eclectic'],
 };
 
@@ -924,34 +1125,44 @@ export const INTERESTED_IN_RELIGION_SYNONYMS_MAP: Record<string, string[]> = {
 
 export const RELIGION_ABBREVIATIONS: Record<string, { label: string; desc: string }[]> = {
   sbnr: [
-    { label: 'Spiritual but not religious', desc: 'Personal spirituality without organized religion' },
+    {
+      label: 'Spiritual but not religious',
+      desc: 'Personal spirituality without organized religion',
+    },
   ],
-  rc: [
-    { label: 'Roman Catholic', desc: 'Practices Catholic faith in communion with the Pope' },
-  ],
-  eo: [
-    { label: 'Eastern Orthodox', desc: 'Christian tradition rooted in Eastern church history' },
-  ],
+  rc: [{ label: 'Roman Catholic', desc: 'Practices Catholic faith in communion with the Pope' }],
+  eo: [{ label: 'Eastern Orthodox', desc: 'Christian tradition rooted in Eastern church history' }],
   lds: [
-    { label: 'Latter-day Saint (Mormon)', desc: 'Christian restorationist movement and Book of Mormon' },
+    {
+      label: 'Latter-day Saint (Mormon)',
+      desc: 'Christian restorationist movement and Book of Mormon',
+    },
   ],
   jw: [
-    { label: "Jehovah's Witness", desc: 'Millenarian Christian denomination with distinct beliefs' },
+    {
+      label: "Jehovah's Witness",
+      desc: 'Millenarian Christian denomination with distinct beliefs',
+    },
   ],
   uu: [
-    { label: 'Unitarian Universalist', desc: 'Inclusive religious movement dedicated to freedom of belief' },
+    {
+      label: 'Unitarian Universalist',
+      desc: 'Inclusive religious movement dedicated to freedom of belief',
+    },
   ],
   quaker: [
-    { label: 'Quaker (Friend)', desc: 'Religious Society of Friends valuing inner light and simplicity' },
+    {
+      label: 'Quaker (Friend)',
+      desc: 'Religious Society of Friends valuing inner light and simplicity',
+    },
   ],
-  rasta: [
-    { label: 'Rastafari', desc: 'Spiritual and cultural movement honoring Haile Selassie' },
-  ],
-  deist: [
-    { label: 'Deist', desc: 'Belief in a creator based on reason, nature, and observation' },
-  ],
+  rasta: [{ label: 'Rastafari', desc: 'Spiritual and cultural movement honoring Haile Selassie' }],
+  deist: [{ label: 'Deist', desc: 'Belief in a creator based on reason, nature, and observation' }],
   pantheist: [
-    { label: 'Pantheist', desc: 'Belief that the universe and reality are identical with divinity' },
+    {
+      label: 'Pantheist',
+      desc: 'Belief that the universe and reality are identical with divinity',
+    },
   ],
 };
 
@@ -1014,8 +1225,10 @@ export async function searchOnlineReligions(
       const rawLabel = item.label || '';
       const rawDesc = item.description || '';
       if (rawLabel.length > 36 || rawLabel.includes(':') || rawLabel.includes('.')) continue;
-      if (RELIGION_EXCLUSION_KEYWORDS.test(rawDesc) || RELIGION_EXCLUSION_KEYWORDS.test(rawLabel)) continue;
-      if (!RELIGION_CONTEXT_KEYWORDS.test(rawDesc) && !RELIGION_CONTEXT_KEYWORDS.test(rawLabel)) continue;
+      if (RELIGION_EXCLUSION_KEYWORDS.test(rawDesc) || RELIGION_EXCLUSION_KEYWORDS.test(rawLabel))
+        continue;
+      if (!RELIGION_CONTEXT_KEYWORDS.test(rawDesc) && !RELIGION_CONTEXT_KEYWORDS.test(rawLabel))
+        continue;
 
       let label = rawLabel
         .replace(/\s*\([^)]*religion[^)]*\)/gi, '')
@@ -1044,7 +1257,8 @@ export async function searchOnlineReligions(
       const rawSnippet = (item.snippet || '').replace(/<[^>]+>/g, '');
       if (rawTitle.length > 36 || rawTitle.includes(':') || rawTitle.includes('/')) continue;
       if (RELIGION_EXCLUSION_KEYWORDS.test(rawTitle)) continue;
-      if (!RELIGION_CONTEXT_KEYWORDS.test(rawSnippet) && !RELIGION_CONTEXT_KEYWORDS.test(rawTitle)) continue;
+      if (!RELIGION_CONTEXT_KEYWORDS.test(rawSnippet) && !RELIGION_CONTEXT_KEYWORDS.test(rawTitle))
+        continue;
 
       let label = rawTitle
         .replace(/\s*\([^)]*religion[^)]*\)/gi, '')
@@ -1313,14 +1527,20 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const [isGenderModalVisible, setIsGenderModalVisible] = useState(false);
   const [genderSearchText, setGenderSearchText] = useState('');
   const [isSearchingGenderInternet, setIsSearchingGenderInternet] = useState(false);
-  const [internetGenderSuggestions, setInternetGenderSuggestions] = useState<InternetIdentitySuggestion[]>([]);
+  const [internetGenderSuggestions, setInternetGenderSuggestions] = useState<
+    InternetIdentitySuggestion[]
+  >([]);
   const genderSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isInterestedInModalVisible, setIsInterestedInModalVisible] = useState(false);
   const [interestedInSearchText, setInterestedInSearchText] = useState('');
   const [isSearchingInterestedInInternet, setIsSearchingInterestedInInternet] = useState(false);
-  const [internetInterestedInSuggestions, setInternetInterestedInSuggestions] = useState<InterestedInOption[]>([]);
-  const [customInterestedInOptions, setCustomInterestedInOptions] = useState<InterestedInOption[]>([]);
+  const [internetInterestedInSuggestions, setInternetInterestedInSuggestions] = useState<
+    InterestedInOption[]
+  >([]);
+  const [customInterestedInOptions, setCustomInterestedInOptions] = useState<InterestedInOption[]>(
+    []
+  );
   const interestedInSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interestedInSearchInputRef = useRef<RNTextInput>(null);
 
@@ -1377,12 +1597,13 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       return ['all'];
     }
   );
-  const [isInterestedInReligionModalVisible, setIsInterestedInReligionModalVisible] = useState(false);
+  const [isInterestedInReligionModalVisible, setIsInterestedInReligionModalVisible] =
+    useState(false);
   const [interestedInReligionSearchText, setInterestedInReligionSearchText] = useState('');
-  const [isSearchingInterestedInReligionInternet, setIsSearchingInterestedInReligionInternet] = useState(false);
-  const [internetInterestedInReligionSuggestions, setInternetInterestedInReligionSuggestions] = useState<
-    { id: string; label: string; desc: string }[]
-  >([]);
+  const [isSearchingInterestedInReligionInternet, setIsSearchingInterestedInReligionInternet] =
+    useState(false);
+  const [internetInterestedInReligionSuggestions, setInternetInterestedInReligionSuggestions] =
+    useState<{ id: string; label: string; desc: string }[]>([]);
   const [customInterestedInReligionOptions, setCustomInterestedInReligionOptions] = useState<
     { id: string; label: string; desc: string }[]
   >([]);
@@ -1421,9 +1642,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       religionAbortRef.current?.abort();
       interestedInReligionAbortRef.current?.abort();
       if (genderSearchDebounceRef.current) clearTimeout(genderSearchDebounceRef.current);
-      if (interestedInSearchDebounceRef.current) clearTimeout(interestedInSearchDebounceRef.current);
+      if (interestedInSearchDebounceRef.current)
+        clearTimeout(interestedInSearchDebounceRef.current);
       if (religionSearchDebounceRef.current) clearTimeout(religionSearchDebounceRef.current);
-      if (interestedInReligionSearchDebounceRef.current) clearTimeout(interestedInReligionSearchDebounceRef.current);
+      if (interestedInReligionSearchDebounceRef.current)
+        clearTimeout(interestedInReligionSearchDebounceRef.current);
     };
   }, []);
 
@@ -1648,20 +1871,12 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
   // Filtered genders for search modal with relevance ranking & synonym matching
   const filteredGenders = useMemo(() => {
-    return rankSearchCandidates(
-      MODERN_GENDER_OPTIONS,
-      genderSearchText,
-      GENDER_SYNONYMS_MAP
-    );
+    return rankSearchCandidates(MODERN_GENDER_OPTIONS, genderSearchText, GENDER_SYNONYMS_MAP);
   }, [genderSearchText]);
 
   // Filtered religions for search modal with relevance ranking & synonym matching
   const filteredReligions = useMemo(() => {
-    return rankSearchCandidates(
-      RELIGION_OPTIONS,
-      religionSearchText,
-      RELIGION_SYNONYMS_MAP
-    );
+    return rankSearchCandidates(RELIGION_OPTIONS, religionSearchText, RELIGION_SYNONYMS_MAP);
   }, [religionSearchText]);
 
   const allInterestedInReligionOptions = useMemo<InterestedInReligionOption[]>(() => {
@@ -2042,9 +2257,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       // 2. Check in-memory cache
       const lower = trimmed.toLowerCase();
       if (interestedInReligionSearchCache.has(lower)) {
-        setInternetInterestedInReligionSuggestions(
-          interestedInReligionSearchCache.get(lower)!
-        );
+        setInternetInterestedInReligionSuggestions(interestedInReligionSearchCache.get(lower)!);
         setIsSearchingInterestedInReligionInternet(false);
         return;
       }
@@ -2059,9 +2272,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           const webItems = await searchOnlineReligions(trimmed, controller.signal);
           if (controller.signal.aborted) return;
 
-          const combined: { id: string; label: string; desc: string }[] = [
-            ...instantDiscoveries,
-          ];
+          const combined: { id: string; label: string; desc: string }[] = [...instantDiscoveries];
           for (const item of webItems) {
             const existsInPreset = allInterestedInReligionOptions.some(
               (r) => r.label.toLowerCase() === item.label.toLowerCase()
@@ -2079,8 +2290,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             if (combined.length >= 6) break;
           }
 
-          if (interestedInReligionSearchCache.size > 60)
-            interestedInReligionSearchCache.clear();
+          if (interestedInReligionSearchCache.size > 60) interestedInReligionSearchCache.clear();
           interestedInReligionSearchCache.set(lower, combined);
           setInternetInterestedInReligionSuggestions(combined);
         } catch (err: unknown) {
@@ -3005,11 +3215,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         },
                       ]}
                     >
-                      <User
-                        size={16}
-                        color={fieldIconColor}
-                        style={styles.inputLeadingIcon}
-                      />
+                      <User size={16} color={fieldIconColor} style={styles.inputLeadingIcon} />
                       <RNTextInput
                         ref={nameInputRef}
                         style={[
@@ -3101,9 +3307,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                           style={[
                             styles.modernBarInputText,
                             {
-                              color: dateOfBirth
-                                ? fieldInputTextColor
-                                : theme.colors.textTertiary,
+                              color: dateOfBirth ? fieldInputTextColor : theme.colors.textTertiary,
                               fontWeight: dateOfBirth ? '600' : '400',
                             },
                           ]}
@@ -3143,11 +3347,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       accessibilityRole="button"
                       accessibilityLabel="Select gender identity"
                     >
-                      <Users
-                        size={16}
-                        color={fieldIconColor}
-                        style={styles.inputLeadingIcon}
-                      />
+                      <Users size={16} color={fieldIconColor} style={styles.inputLeadingIcon} />
                       <Text
                         style={[
                           styles.modernBarInputText,
@@ -3189,11 +3389,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       accessibilityRole="button"
                       accessibilityLabel="Select religion or beliefs"
                     >
-                      <Church
-                        size={16}
-                        color={fieldIconColor}
-                        style={styles.inputLeadingIcon}
-                      />
+                      <Church size={16} color={fieldIconColor} style={styles.inputLeadingIcon} />
                       <Text
                         style={[
                           styles.modernBarInputText,
@@ -3253,11 +3449,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       accessibilityRole="button"
                       accessibilityLabel="Select relationship intent"
                     >
-                      <Heart
-                        size={16}
-                        color={fieldIconColor}
-                        style={styles.inputLeadingIcon}
-                      />
+                      <Heart size={16} color={fieldIconColor} style={styles.inputLeadingIcon} />
                       <Text
                         style={[
                           styles.modernBarInputText,
@@ -3298,11 +3490,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       accessibilityRole="button"
                       accessibilityLabel="Select who you are interested in"
                     >
-                      <Compass
-                        size={16}
-                        color={fieldIconColor}
-                        style={styles.inputLeadingIcon}
-                      />
+                      <Compass size={16} color={fieldIconColor} style={styles.inputLeadingIcon} />
                       <Text
                         style={[
                           styles.modernBarInputText,
@@ -3344,11 +3532,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       accessibilityRole="button"
                       accessibilityLabel="Select religions or beliefs you want to meet"
                     >
-                      <Church
-                        size={16}
-                        color={fieldIconColor}
-                        style={styles.inputLeadingIcon}
-                      />
+                      <Church size={16} color={fieldIconColor} style={styles.inputLeadingIcon} />
                       <Text
                         style={[
                           styles.modernBarInputText,
@@ -3456,11 +3640,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         },
                       ]}
                     >
-                      <MapPin
-                        size={16}
-                        color={fieldIconColor}
-                        style={styles.inputLeadingIcon}
-                      />
+                      <MapPin size={16} color={fieldIconColor} style={styles.inputLeadingIcon} />
                       <RNTextInput
                         ref={cityInputRef}
                         style={[
@@ -3709,11 +3889,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         },
                       ]}
                     >
-                      <Briefcase
-                        size={16}
-                        color={fieldIconColor}
-                        style={styles.inputLeadingIcon}
-                      />
+                      <Briefcase size={16} color={fieldIconColor} style={styles.inputLeadingIcon} />
                       <RNTextInput
                         ref={occupationInputRef}
                         style={[
@@ -4062,7 +4238,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           ]}
         >
           {isSearchingGenderInternet ? (
-            <ActivityIndicator size="small" color={theme.colors.textPrimary} style={{ marginRight: 8 }} />
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.textPrimary}
+              style={{ marginRight: 8 }}
+            />
           ) : (
             <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
           )}
@@ -4178,7 +4358,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
               {internetGenderSuggestions.map((item) => {
                 const isSelected =
-                  (selectedGenderId === 'other' && customGenderText.toLowerCase() === item.label.toLowerCase()) ||
+                  (selectedGenderId === 'other' &&
+                    customGenderText.toLowerCase() === item.label.toLowerCase()) ||
                   selectedGenderId === item.id;
 
                 return (
@@ -4219,12 +4400,22 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                               : 'rgba(0, 0, 0, 0.05)',
                           }}
                         >
-                          <Text style={{ fontSize: 10, fontWeight: '700', color: theme.colors.textTertiary }}>
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontWeight: '700',
+                              color: theme.colors.textTertiary,
+                            }}
+                          >
                             WEB
                           </Text>
                         </View>
                       </View>
-                      <Text level="caption" color="tertiary" style={{ marginTop: 2, lineHeight: 16 }}>
+                      <Text
+                        level="caption"
+                        color="tertiary"
+                        style={{ marginTop: 2, lineHeight: 16 }}
+                      >
                         {item.desc}
                       </Text>
                     </View>
@@ -4253,7 +4444,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           {/* Searching online status indicator */}
           {isSearchingGenderInternet && internetGenderSuggestions.length === 0 && (
             <View style={styles.modalSearchLoadingRow}>
-              <ActivityIndicator size="small" color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+              <ActivityIndicator
+                size="small"
+                color={theme.colors.textSecondary}
+                style={{ marginRight: 8 }}
+              />
               <Text level="caption" color="secondary">
                 Searching global identity catalog...
               </Text>
@@ -4266,7 +4461,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             !isSearchingGenderInternet &&
             genderSearchText.trim().length > 0 && (
               <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                <Text level="caption" color="secondary" style={{ textAlign: 'center', marginBottom: 12 }}>
+                <Text
+                  level="caption"
+                  color="secondary"
+                  style={{ textAlign: 'center', marginBottom: 12 }}
+                >
                   No preset identities matching &quot;{genderSearchText.trim()}&quot;
                 </Text>
                 <TouchableOpacity
@@ -4285,7 +4484,9 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={{ color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' }}>
+                  <Text
+                    style={{ color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' }}
+                  >
                     Tap to self-describe as &quot;{genderSearchText.trim()}&quot;
                   </Text>
                 </TouchableOpacity>
@@ -4934,7 +5135,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
         visible={isInterestedInModalVisible}
         onClose={() => {
           setIsInterestedInModalVisible(false);
-          if (interestedInSearchDebounceRef.current) clearTimeout(interestedInSearchDebounceRef.current);
+          if (interestedInSearchDebounceRef.current)
+            clearTimeout(interestedInSearchDebounceRef.current);
           interestedInAbortRef.current?.abort();
           setInterestedInSearchText('');
           setInternetInterestedInSuggestions([]);
@@ -4963,7 +5165,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             onPress={() => {
               haptics.selection();
               setIsInterestedInModalVisible(false);
-              if (interestedInSearchDebounceRef.current) clearTimeout(interestedInSearchDebounceRef.current);
+              if (interestedInSearchDebounceRef.current)
+                clearTimeout(interestedInSearchDebounceRef.current);
               interestedInAbortRef.current?.abort();
               setInterestedInSearchText('');
               setInternetInterestedInSuggestions([]);
@@ -4993,7 +5196,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           ]}
         >
           {isSearchingInterestedInInternet ? (
-            <ActivityIndicator size="small" color={theme.colors.textPrimary} style={{ marginRight: 8 }} />
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.textPrimary}
+              style={{ marginRight: 8 }}
+            />
           ) : (
             <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
           )}
@@ -5012,7 +5219,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           {interestedInSearchText.length > 0 && (
             <TouchableOpacity
               onPress={() => {
-                if (interestedInSearchDebounceRef.current) clearTimeout(interestedInSearchDebounceRef.current);
+                if (interestedInSearchDebounceRef.current)
+                  clearTimeout(interestedInSearchDebounceRef.current);
                 interestedInAbortRef.current?.abort();
                 setInterestedInSearchText('');
                 setInternetInterestedInSuggestions([]);
@@ -5155,7 +5363,13 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                               : 'rgba(0, 0, 0, 0.05)',
                           }}
                         >
-                          <Text style={{ fontSize: 10, fontWeight: '700', color: theme.colors.textTertiary }}>
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontWeight: '700',
+                              color: theme.colors.textTertiary,
+                            }}
+                          >
                             WEB
                           </Text>
                         </View>
@@ -5194,7 +5408,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           {/* Searching online status indicator */}
           {isSearchingInterestedInInternet && internetInterestedInSuggestions.length === 0 && (
             <View style={styles.modalSearchLoadingRow}>
-              <ActivityIndicator size="small" color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+              <ActivityIndicator
+                size="small"
+                color={theme.colors.textSecondary}
+                style={{ marginRight: 8 }}
+              />
               <Text level="caption" color="secondary">
                 Searching global categories online...
               </Text>
@@ -5210,8 +5428,13 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                 <Text level="caption" color="secondary" style={{ textAlign: 'center' }}>
                   No categories matching &quot;{interestedInSearchText.trim()}&quot;
                 </Text>
-                <Text level="caption" color="tertiary" style={{ textAlign: 'center', marginTop: 4 }}>
-                  Try broader terms like &quot;women&quot;, &quot;men&quot;, &quot;non-binary&quot;, or &quot;everyone&quot;.
+                <Text
+                  level="caption"
+                  color="tertiary"
+                  style={{ textAlign: 'center', marginTop: 4 }}
+                >
+                  Try broader terms like &quot;women&quot;, &quot;men&quot;, &quot;non-binary&quot;,
+                  or &quot;everyone&quot;.
                 </Text>
               </View>
             )}
@@ -5230,7 +5453,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           onPress={() => {
             haptics.notificationSuccess();
             setIsInterestedInModalVisible(false);
-            if (interestedInSearchDebounceRef.current) clearTimeout(interestedInSearchDebounceRef.current);
+            if (interestedInSearchDebounceRef.current)
+              clearTimeout(interestedInSearchDebounceRef.current);
             interestedInAbortRef.current?.abort();
             setInterestedInSearchText('');
             setInternetInterestedInSuggestions([]);
@@ -5287,7 +5511,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             onPress={() => {
               haptics.selection();
               setIsReligionModalVisible(false);
-              if (religionSearchDebounceRef.current) clearTimeout(religionSearchDebounceRef.current);
+              if (religionSearchDebounceRef.current)
+                clearTimeout(religionSearchDebounceRef.current);
               religionAbortRef.current?.abort();
               setReligionSearchText('');
               setInternetReligionSuggestions([]);
@@ -5317,7 +5542,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           ]}
         >
           {isSearchingReligionInternet ? (
-            <ActivityIndicator size="small" color={theme.colors.textPrimary} style={{ marginRight: 8 }} />
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.textPrimary}
+              style={{ marginRight: 8 }}
+            />
           ) : (
             <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
           )}
@@ -5336,7 +5565,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           {religionSearchText.length > 0 && (
             <TouchableOpacity
               onPress={() => {
-                if (religionSearchDebounceRef.current) clearTimeout(religionSearchDebounceRef.current);
+                if (religionSearchDebounceRef.current)
+                  clearTimeout(religionSearchDebounceRef.current);
                 religionAbortRef.current?.abort();
                 setReligionSearchText('');
                 setInternetReligionSuggestions([]);
@@ -5425,7 +5655,8 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
               {internetReligionSuggestions.map((item) => {
                 const isSelected =
-                  (selectedReligionId === 'other' && customReligionText.toLowerCase() === item.label.toLowerCase()) ||
+                  (selectedReligionId === 'other' &&
+                    customReligionText.toLowerCase() === item.label.toLowerCase()) ||
                   religion.toLowerCase() === item.label.toLowerCase();
 
                 return (
@@ -5466,12 +5697,22 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                               : 'rgba(0, 0, 0, 0.05)',
                           }}
                         >
-                          <Text style={{ fontSize: 10, fontWeight: '700', color: theme.colors.textTertiary }}>
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontWeight: '700',
+                              color: theme.colors.textTertiary,
+                            }}
+                          >
                             WEB
                           </Text>
                         </View>
                       </View>
-                      <Text level="caption" color="tertiary" style={{ marginTop: 2, lineHeight: 16 }}>
+                      <Text
+                        level="caption"
+                        color="tertiary"
+                        style={{ marginTop: 2, lineHeight: 16 }}
+                      >
                         {item.desc}
                       </Text>
                     </View>
@@ -5500,7 +5741,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           {/* Searching online status indicator */}
           {isSearchingReligionInternet && internetReligionSuggestions.length === 0 && (
             <View style={styles.modalSearchLoadingRow}>
-              <ActivityIndicator size="small" color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+              <ActivityIndicator
+                size="small"
+                color={theme.colors.textSecondary}
+                style={{ marginRight: 8 }}
+              />
               <Text level="caption" color="secondary">
                 Searching global traditions online...
               </Text>
@@ -5513,7 +5758,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             !isSearchingReligionInternet &&
             religionSearchText.trim().length > 0 && (
               <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                <Text level="caption" color="secondary" style={{ textAlign: 'center', marginBottom: 12 }}>
+                <Text
+                  level="caption"
+                  color="secondary"
+                  style={{ textAlign: 'center', marginBottom: 12 }}
+                >
                   No preset religions matching &quot;{religionSearchText.trim()}&quot;
                 </Text>
                 <TouchableOpacity
@@ -5535,7 +5784,9 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={{ color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' }}>
+                  <Text
+                    style={{ color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' }}
+                  >
                     Tap to set as &quot;{religionSearchText.trim()}&quot;
                   </Text>
                 </TouchableOpacity>
@@ -5950,8 +6201,13 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                 <Text level="caption" color="secondary" style={{ textAlign: 'center' }}>
                   No traditions matching &quot;{interestedInReligionSearchText.trim()}&quot;
                 </Text>
-                <Text level="caption" color="tertiary" style={{ textAlign: 'center', marginTop: 4 }}>
-                  Try broader terms like &quot;all&quot;, &quot;spiritual&quot;, &quot;buddhist&quot;, or &quot;hindu&quot;.
+                <Text
+                  level="caption"
+                  color="tertiary"
+                  style={{ textAlign: 'center', marginTop: 4 }}
+                >
+                  Try broader terms like &quot;all&quot;, &quot;spiritual&quot;,
+                  &quot;buddhist&quot;, or &quot;hindu&quot;.
                 </Text>
               </View>
             )}

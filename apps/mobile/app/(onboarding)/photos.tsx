@@ -1984,16 +1984,17 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                 style={[
                   styles.inspirationIconBadge,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(255, 255, 255, 0.05)'
-                      : 'rgba(0, 0, 0, 0.035)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.035)',
                   },
                 ]}
               >
                 <UserCheck size={15} color={theme.colors.textPrimary} strokeWidth={2} />
               </View>
               <View style={styles.inspirationContent}>
-                <Text level="bodySmall" style={[styles.inspirationTitle, { color: theme.colors.textPrimary }]}>
+                <Text
+                  level="bodySmall"
+                  style={[styles.inspirationTitle, { color: theme.colors.textPrimary }]}
+                >
                   Solo Portrait
                 </Text>
                 <Text level="caption" color="secondary" style={styles.inspirationDesc}>
@@ -2006,9 +2007,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
               style={[
                 styles.inspirationDivider,
                 {
-                  backgroundColor: isDark
-                    ? 'rgba(255, 255, 255, 0.06)'
-                    : 'rgba(0, 0, 0, 0.06)',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
                 },
               ]}
             />
@@ -2019,16 +2018,17 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                 style={[
                   styles.inspirationIconBadge,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(255, 255, 255, 0.05)'
-                      : 'rgba(0, 0, 0, 0.035)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.035)',
                   },
                 ]}
               >
                 <Sun size={15} color={theme.colors.textPrimary} strokeWidth={2} />
               </View>
               <View style={styles.inspirationContent}>
-                <Text level="bodySmall" style={[styles.inspirationTitle, { color: theme.colors.textPrimary }]}>
+                <Text
+                  level="bodySmall"
+                  style={[styles.inspirationTitle, { color: theme.colors.textPrimary }]}
+                >
                   Natural Light
                 </Text>
                 <Text level="caption" color="secondary" style={styles.inspirationDesc}>
@@ -2041,9 +2041,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
               style={[
                 styles.inspirationDivider,
                 {
-                  backgroundColor: isDark
-                    ? 'rgba(255, 255, 255, 0.06)'
-                    : 'rgba(0, 0, 0, 0.06)',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
                 },
               ]}
             />
@@ -2054,16 +2052,17 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
                 style={[
                   styles.inspirationIconBadge,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(255, 255, 255, 0.05)'
-                      : 'rgba(0, 0, 0, 0.035)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.035)',
                   },
                 ]}
               >
                 <Compass size={15} color={theme.colors.textPrimary} strokeWidth={2} />
               </View>
               <View style={styles.inspirationContent}>
-                <Text level="bodySmall" style={[styles.inspirationTitle, { color: theme.colors.textPrimary }]}>
+                <Text
+                  level="bodySmall"
+                  style={[styles.inspirationTitle, { color: theme.colors.textPrimary }]}
+                >
                   Candid Moments
                 </Text>
                 <Text level="caption" color="secondary" style={styles.inspirationDesc}>

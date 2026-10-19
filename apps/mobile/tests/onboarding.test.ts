@@ -576,11 +576,8 @@ describe('Onboarding & First-Run Suite', () => {
       });
 
       it('ranks religion search candidates with exact match and synonyms', async () => {
-        const {
-          RELIGION_OPTIONS,
-          RELIGION_SYNONYMS_MAP,
-          rankSearchCandidates,
-        } = await import('../app/(onboarding)/profile-setup.js');
+        const { RELIGION_OPTIONS, RELIGION_SYNONYMS_MAP, rankSearchCandidates } =
+          await import('../app/(onboarding)/profile-setup.js');
 
         // Exact match
         const exact = rankSearchCandidates(RELIGION_OPTIONS, 'Buddhism', RELIGION_SYNONYMS_MAP);
@@ -593,19 +590,24 @@ describe('Onboarding & First-Run Suite', () => {
         expect(islamMatch[0]!.id).toBe('muslim');
 
         // Synonym match: "catholicism" -> Catholic
-        const catholicMatch = rankSearchCandidates(RELIGION_OPTIONS, 'catholicism', RELIGION_SYNONYMS_MAP);
+        const catholicMatch = rankSearchCandidates(
+          RELIGION_OPTIONS,
+          'catholicism',
+          RELIGION_SYNONYMS_MAP
+        );
         expect(catholicMatch.length).toBeGreaterThan(0);
         expect(catholicMatch[0]!.id).toBe('catholic');
       });
 
       it('resolves instant abbreviation discoveries for religion', async () => {
-        const { getInstantReligionDiscoveries } = await import(
-          '../app/(onboarding)/profile-setup.js'
-        );
+        const { getInstantReligionDiscoveries } =
+          await import('../app/(onboarding)/profile-setup.js');
 
         const sbnrResults = getInstantReligionDiscoveries('sbnr');
         expect(sbnrResults.length).toBeGreaterThan(0);
-        expect(sbnrResults.some((r: any) => r.label.toLowerCase().includes('spiritual'))).toBe(true);
+        expect(sbnrResults.some((r: any) => r.label.toLowerCase().includes('spiritual'))).toBe(
+          true
+        );
 
         const rcResults = getInstantReligionDiscoveries('rc');
         expect(rcResults.length).toBeGreaterThan(0);
