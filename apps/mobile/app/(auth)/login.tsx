@@ -7,7 +7,6 @@ import {
   TextInput as RNTextInput,
   TouchableWithoutFeedback,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   FlatList,
@@ -818,13 +817,10 @@ export default function LoginScreen(): React.JSX.Element {
       </TouchableOpacity>
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
-          style={styles.keyboardContainer}
-        >
+        <View style={styles.keyboardContainer}>
           <Animated.ScrollView
             ref={scrollViewRef}
+            style={styles.keyboardContainer}
             contentContainerStyle={[
               styles.scrollContent,
               {
@@ -834,6 +830,7 @@ export default function LoginScreen(): React.JSX.Element {
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
@@ -1374,7 +1371,7 @@ export default function LoginScreen(): React.JSX.Element {
               By continuing, you agree to our Terms of Service & Privacy Policy.
             </Text>
           </Animated.ScrollView>
-        </KeyboardAvoidingView>
+        </View>
       </TouchableWithoutFeedback>
 
       {/* Bottom Sheet Country Code Modal */}
