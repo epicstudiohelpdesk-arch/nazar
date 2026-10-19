@@ -10,6 +10,7 @@ import {
   Easing,
   Platform,
   Dimensions,
+  BackHandler,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -29,6 +30,8 @@ export interface SmoothBottomSheetModalProps {
   readonly blurIntensity?: number;
   readonly showHandle?: boolean;
   readonly disableKeyboardAvoiding?: boolean;
+  readonly keyboardPaddingBottom?: number;
+  readonly useNativeModal?: boolean;
 }
 
 export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
@@ -43,20 +46,43 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
   blurIntensity = Platform.OS === 'ios' ? 2 : 1,
   showHandle = true,
   disableKeyboardAvoiding = false,
+  keyboardPaddingBottom = 7,
+  useNativeModal = true,
 }) => {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const windowHeight = Dimensions.get('window').height;
   const exitOffset = Math.max(Math.round(windowHeight * 0.85), 650);
+  const defaultPaddingBottom = Math.max(insets.bottom + 12, Platform.OS === 'ios' ? 36 : 24);
 
   const [isRendered, setIsRendered] = useState(visible);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const backdropAnim = useRef(new Animated.Value(visible ? 1 : 0)).current;
   const sheetTranslateY = useRef(new Animated.Value(visible ? 0 : exitOffset)).current;
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardOpen(true);
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardOpen(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
 
     if (visible) {
+      setIsKeyboardOpen(false);
       setIsRendered(true);
       Animated.parallel([
         Animated.timing(backdropAnim, {
@@ -74,6 +100,7 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
       ]).start();
     } else if (isRendered) {
       Keyboard.dismiss();
+      setIsKeyboardOpen(false);
       Animated.parallel([
         Animated.timing(sheetTranslateY, {
           toValue: exitOffset,
@@ -103,96 +130,132 @@ export const SmoothBottomSheetModal: React.FC<SmoothBottomSheetModalProps> = ({
         clearTimeout(fallbackTimer);
       }
     };
-  }, [visible, isRendered, exitOffset, backdropAnim, sheetTranslateY]);
+  }, [visible, isRendered, exitOffset, backdropAnim, sheetTranslateY, onDismiss]);
+
+  useEffect(() => {
+    if (useNativeModal || !visible) {
+      return;
+    }
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      onClose();
+      return true;
+    });
+
+    return () => {
+      backHandler.remove();
+    };
+  }, [useNativeModal, visible, onClose]);
 
   if (!isRendered) {
     return null;
   }
 
-  return (
-    <Modal
-      visible={isRendered}
-      transparent={true}
-      animationType="none"
-      onRequestClose={onClose}
-      onDismiss={onDismiss}
-      statusBarTranslucent={true}
-      testID={testID}
-    >
-      <View style={StyleSheet.absoluteFill}>
-        {/* Soft Stationary Dark & Blurry Backdrop (Fades in/out in place without vertical sliding) */}
-        <Animated.View
+  const modalContent = (
+    <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'auto' : 'none'}>
+      {/* Soft Stationary Dark & Blurry Backdrop (Fades in/out in place without vertical sliding) */}
+      <Animated.View
+        pointerEvents={visible ? 'auto' : 'none'}
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            opacity: backdropAnim,
+          },
+        ]}
+      >
+        <BlurView
+          intensity={blurIntensity}
+          tint={isDark ? 'dark' : 'default'}
+          style={StyleSheet.absoluteFill}
+        />
+        <View
           style={[
             StyleSheet.absoluteFill,
             {
-              opacity: backdropAnim,
+              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.24)' : 'rgba(0, 0, 0, 0.12)',
             },
           ]}
-        >
-          <BlurView
-            intensity={blurIntensity}
-            tint={isDark ? 'dark' : 'default'}
-            style={StyleSheet.absoluteFill}
-          />
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.24)' : 'rgba(0, 0, 0, 0.12)',
-              },
-            ]}
-          />
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Dismiss modal"
-          />
-        </Animated.View>
+        />
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss modal"
+        />
+      </Animated.View>
 
-        {/* Bottom Sheet Container */}
-        <KeyboardAvoidingView
-          behavior={
-            disableKeyboardAvoiding ? undefined : Platform.OS === 'ios' ? 'padding' : undefined
-          }
-          style={styles.sheetWrapper}
-          pointerEvents="box-none"
+      {/* Bottom Sheet Container */}
+      <KeyboardAvoidingView
+        behavior={
+          disableKeyboardAvoiding ? undefined : Platform.OS === 'ios' ? 'padding' : undefined
+        }
+        style={styles.sheetWrapper}
+        pointerEvents="box-none"
+      >
+        <Animated.View
+          pointerEvents={visible ? 'auto' : 'none'}
+          style={[
+            styles.sheetSurface,
+            {
+              backgroundColor: isDark ? '#121215' : '#FCFCFD',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.10)' : '#E4E4E7',
+              paddingBottom: isKeyboardOpen ? keyboardPaddingBottom : defaultPaddingBottom,
+              transform: [{ translateY: sheetTranslateY }],
+            },
+            height != null ? { height } : null,
+            maxHeight != null ? { maxHeight } : null,
+            sheetStyle,
+          ]}
         >
-          <Animated.View
-            onStartShouldSetResponder={() => true}
-            style={[
-              styles.sheetSurface,
-              {
-                backgroundColor: isDark ? '#121215' : '#FCFCFD',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.10)' : '#E4E4E7',
-                paddingBottom: Math.max(insets.bottom + 12, Platform.OS === 'ios' ? 36 : 24),
-                transform: [{ translateY: sheetTranslateY }],
-              },
-              height != null ? { height } : null,
-              maxHeight != null ? { maxHeight } : null,
-              sheetStyle,
-            ]}
-          >
-            {showHandle && (
-              <View
-                style={[
-                  styles.handlePill,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.14)',
-                  },
-                ]}
-              />
-            )}
-            {children}
-          </Animated.View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+          {showHandle && (
+            <View
+              style={[
+                styles.handlePill,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.14)',
+                },
+              ]}
+            />
+          )}
+          {children}
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </View>
+  );
+
+  if (useNativeModal) {
+    return (
+      <Modal
+        visible={isRendered}
+        transparent={true}
+        animationType="none"
+        onRequestClose={onClose}
+        onDismiss={onDismiss}
+        statusBarTranslucent={true}
+        testID={testID}
+      >
+        {modalContent}
+      </Modal>
+    );
+  }
+
+  return (
+    <View
+      style={[StyleSheet.absoluteFill, styles.inTreeModalContainer]}
+      pointerEvents={visible ? 'box-none' : 'none'}
+      testID={testID}
+    >
+      {modalContent}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  inTreeModalContainer: {
+    zIndex: 9999,
+    elevation: 9999,
+  },
   sheetWrapper: {
     flex: 1,
     justifyContent: 'flex-end',

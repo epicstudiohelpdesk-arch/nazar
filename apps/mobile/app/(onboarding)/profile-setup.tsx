@@ -32,7 +32,6 @@ import {
   Check,
   X,
   AlertCircle,
-  ShieldCheck,
   Search,
   Crosshair,
   Plus,
@@ -42,6 +41,8 @@ import {
   Satellite,
   Layers,
   Compass,
+  Globe,
+  Church,
 } from 'lucide-react-native';
 import type { Gender, RelationshipIntent } from '@platform/api-contracts';
 import { useTheme } from '../../src/design/theme/ThemeContext.js';
@@ -312,6 +313,763 @@ export const INTERESTED_IN_OPTIONS: InterestedInOption[] = [
 ];
 
 // ============================================================================
+// Internet Gender & Community Identity Search Helpers (Context-Enforced)
+// ============================================================================
+
+export interface InternetIdentitySuggestion {
+  id: string;
+  label: string;
+  desc: string;
+  coreGender: Gender;
+}
+
+export const GENDER_IDENTITY_ABBREVIATIONS: Record<string, { label: string; desc: string; core: Gender }[]> = {
+  demi: [
+    { label: 'Demigirl', desc: 'Partially identifies with womanhood or feminine traits', core: 'NON_BINARY' },
+    { label: 'Demiboy', desc: 'Partially identifies with manhood or masculine traits', core: 'NON_BINARY' },
+    { label: 'Demigender', desc: 'Non-binary gender identity partially connected to a gender', core: 'NON_BINARY' },
+  ],
+  enby: [
+    { label: 'Non-binary (Enby)', desc: 'Gender identity expanding beyond binary male or female', core: 'NON_BINARY' },
+  ],
+  nb: [
+    { label: 'Non-binary', desc: 'Gender identity expanding beyond binary male or female', core: 'NON_BINARY' },
+  ],
+  trans: [
+    { label: 'Transfeminine', desc: 'Assigned male at birth, identifies with feminine gender spectrum', core: 'WOMAN' },
+    { label: 'Transmasculine', desc: 'Assigned female at birth, identifies with masculine gender spectrum', core: 'MAN' },
+    { label: 'Transgender Woman', desc: 'Identifies as a woman with transgender lived journey', core: 'WOMAN' },
+    { label: 'Transgender Man', desc: 'Identifies as a man with transgender lived journey', core: 'MAN' },
+  ],
+  transfem: [
+    { label: 'Transfeminine', desc: 'Assigned male at birth, identifies with feminine gender spectrum', core: 'WOMAN' },
+  ],
+  transmasc: [
+    { label: 'Transmasculine', desc: 'Assigned female at birth, identifies with masculine gender spectrum', core: 'MAN' },
+  ],
+  andro: [
+    { label: 'Androgyne', desc: 'Blends masculine and feminine gender expressions harmoniously', core: 'NON_BINARY' },
+    { label: 'Androgynous', desc: 'Gender expression combining traits outside the binary', core: 'NON_BINARY' },
+  ],
+  neutro: [
+    { label: 'Neutrois', desc: 'A neutral, null, or genderless non-binary identity', core: 'NON_BINARY' },
+  ],
+  neutrois: [
+    { label: 'Neutrois', desc: 'A neutral, null, or genderless non-binary identity', core: 'NON_BINARY' },
+  ],
+  two: [
+    { label: 'Two-Spirit', desc: 'Sacred Indigenous cultural and spiritual gender identity', core: 'NON_BINARY' },
+  ],
+  '2s': [
+    { label: 'Two-Spirit', desc: 'Sacred Indigenous cultural and spiritual gender identity', core: 'NON_BINARY' },
+  ],
+  gnc: [
+    { label: 'Gender Non-Conforming', desc: 'Expresses gender outside traditional societal stereotypes', core: 'NON_BINARY' },
+  ],
+  inter: [
+    { label: 'Intersex', desc: 'Natural biological variations in sex characteristics', core: 'OTHER' },
+  ],
+  x: [
+    { label: 'X-gender', desc: 'Japanese non-binary gender identity definition', core: 'NON_BINARY' },
+  ],
+  hijra: [
+    { label: 'Hijra', desc: 'South Asian cultural third gender community', core: 'OTHER' },
+  ],
+  faafafine: [
+    { label: "Fa'afafine", desc: 'Samoan traditional third gender identity and cultural role', core: 'OTHER' },
+  ],
+  mahu: [
+    { label: 'Māhū', desc: 'Hawaiian and Tahitian traditional third gender role in society', core: 'OTHER' },
+  ],
+  muxe: [
+    { label: 'Muxe', desc: 'Zapotec third gender identity in Oaxaca, Mexico', core: 'OTHER' },
+  ],
+  fluid: [
+    { label: 'Genderfluid', desc: 'Gender identity shifts or fluctuates dynamically over time', core: 'NON_BINARY' },
+  ],
+  queer: [
+    { label: 'Genderqueer', desc: 'Queer expression defying normative social categories', core: 'NON_BINARY' },
+  ],
+};
+
+const IDENTITY_CONTEXT_KEYWORDS = /\b(gender identity|gender|non-binary|nonbinary|transgender|cisgender|third gender|agender|bigender|pangender|genderfluid|genderqueer|neutrois|androgyne|androgynous|demigender|demiboy|demigirl|two-spirit|intersex|queer identity|two spirit|indigenous gender|cultural gender|hijra|fa'afafine|māhū|muxe|femme|masc|gender expression)\b/i;
+
+const IDENTITY_EXCLUSION_KEYWORDS = /\b(plant|genus|species|film|album|song|music|crustacean|asteroid|insect|beetle|moth|village|commune|town|city|municipality|footballer|actor|actress|singer|musician|politician|cricketer|company|corporation|brand|software|airline|car|automobile|flag|article|book|journal|organization|killing|femicide|archives|museum|podcast|show|episode|hardware|river|lake|mountain|railway|airport)\b/i;
+
+function inferCoreGender(label: string, desc: string): Gender {
+  const combined = `${label} ${desc}`.toLowerCase();
+  if (/\b(woman|women|female|feminine|girl|transfem|cis female|demigirl)\b/.test(combined)) {
+    return 'WOMAN';
+  }
+  if (/\b(man|men|male|masculine|boy|transmasc|cis male|demiboy)\b/.test(combined)) {
+    return 'MAN';
+  }
+  if (/\b(non-binary|nonbinary|enby|genderfluid|genderqueer|agender|bigender|pangender|neutrois|androgyne|two-spirit)\b/.test(combined)) {
+    return 'NON_BINARY';
+  }
+  return 'OTHER';
+}
+
+// ============================================================================
+// Intelligent Synonym & Keyword Dictionaries for Instant Local Matching
+// ============================================================================
+
+export const GENDER_SYNONYMS_MAP: Record<string, string[]> = {
+  woman: ['woman', 'women', 'female', 'females', 'girl', 'girls', 'femme', 'cis woman', 'she/her'],
+  man: ['man', 'men', 'male', 'males', 'guy', 'guys', 'masc', 'cis man', 'he/him'],
+  non_binary: ['non-binary', 'nonbinary', 'nb', 'enby', 'genderqueer', 'neither', 'they/them', 'neutral'],
+  cisgender_woman: ['cisgender woman', 'cis woman', 'cis female', 'cisgender female'],
+  cisgender_man: ['cisgender man', 'cis man', 'cis male', 'cisgender male'],
+  transgender_woman: ['transgender woman', 'trans woman', 'transfem', 'transfeminine', 'mtf', 'trans female'],
+  transgender_man: ['transgender man', 'trans man', 'transmasc', 'transmasculine', 'ftm', 'trans male'],
+  genderfluid: ['genderfluid', 'gender fluid', 'fluid', 'fluidity', 'shifting'],
+  genderqueer: ['genderqueer', 'gender queer', 'queer', 'non-normative'],
+  agender: ['agender', 'genderless', 'null', 'void', 'neutral', 'gender free'],
+  bigender: ['bigender', 'bi-gender', 'dual gender', 'two genders'],
+  demigirl: ['demigirl', 'demi-girl', 'demiwoman', 'demi female'],
+  demiboy: ['demiboy', 'demi-boy', 'demiman', 'demi male'],
+  two_spirit: ['two-spirit', 'twospirit', 'two spirit', '2s', 'indigenous gender', 'native'],
+  pangender: ['pangender', 'pan gender', 'omnigender', 'all genders'],
+  androgynous: ['androgynous', 'androgyne', 'andro', 'gender neutral', 'ambiguous'],
+  intersex: ['intersex', 'variations in sex characteristics', 'dsd', 'intersexual'],
+  questioning: ['questioning', 'exploring', 'unsure', 'curious', 'discovering'],
+  other: ['other', 'self-describe', 'custom', 'unique', 'type my own'],
+};
+
+export const INTERESTED_IN_SYNONYMS_MAP: Record<string, string[]> = {
+  ...GENDER_SYNONYMS_MAP,
+  everyone: [
+    'everyone',
+    'all',
+    'any',
+    'anybody',
+    'open to all',
+    'pansexual',
+    'all genders',
+    'men and women',
+    'both',
+    'any gender',
+  ],
+  woman: ['women', 'woman', 'female', 'females', 'girls', 'femmes', 'she/her', 'lesbian'],
+  man: ['men', 'man', 'male', 'males', 'guys', 'mascs', 'he/him', 'gay'],
+};
+
+export function rankSearchCandidates<T extends { label: string; desc: string; id: string }>(
+  items: T[],
+  query: string,
+  keywordsMap?: Record<string, string[]>
+): T[] {
+  const cleanQuery = query.trim().toLowerCase();
+  if (!cleanQuery) return items;
+
+  const queryWords = cleanQuery.split(/\s+/).filter(Boolean);
+  const scored: { item: T; score: number }[] = [];
+
+  for (const item of items) {
+    const labelLower = item.label.toLowerCase();
+    const descLower = item.desc.toLowerCase();
+    const keywords = (keywordsMap && keywordsMap[item.id]) || [];
+
+    let score = 0;
+
+    // 1. Exact match on label
+    if (labelLower === cleanQuery) {
+      score += 160;
+    }
+    // 2. Exact match on keyword (e.g. "nb", "enby", "girls", "trans")
+    else if (keywords.some((k) => k === cleanQuery)) {
+      score += 140;
+    }
+    // 3. Label starts with entire query
+    else if (labelLower.startsWith(cleanQuery)) {
+      score += 100;
+    }
+    // 4. Word boundary match in label (e.g. "binary" matches "Non-Binary")
+    else if (labelLower.split(/[\s\-_()]+/).some((w) => w.startsWith(cleanQuery))) {
+      score += 80;
+    }
+    // 5. Keyword starts with query
+    else if (keywords.some((k) => k.startsWith(cleanQuery))) {
+      score += 70;
+    }
+    // 6. Label contains clean query
+    else if (labelLower.includes(cleanQuery)) {
+      score += 50;
+    }
+    // 7. Keyword contains query
+    else if (keywords.some((k) => k.includes(cleanQuery))) {
+      score += 40;
+    }
+    // 8. Description starts with query or contains query
+    else if (descLower.startsWith(cleanQuery)) {
+      score += 30;
+    } else if (descLower.includes(cleanQuery)) {
+      score += 20;
+    }
+
+    // Boost if all multi-word query tokens match
+    if (queryWords.length > 1) {
+      const allTokensMatch = queryWords.every(
+        (qw) =>
+          labelLower.includes(qw) ||
+          descLower.includes(qw) ||
+          keywords.some((k) => k.includes(qw))
+      );
+      if (allTokensMatch) {
+        score += 35;
+      }
+    }
+
+    if (score > 0) {
+      scored.push({ item, score });
+    }
+  }
+
+  // Sort descending by relevance score, ties broken by shorter label length
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.item.label.length - b.item.label.length;
+  });
+
+  return scored.map((s) => s.item);
+}
+
+export function getInstantAbbreviationDiscoveries(query: string): InternetIdentitySuggestion[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const results: InternetIdentitySuggestion[] = [];
+  const seen = new Set<string>();
+
+  for (const [key, list] of Object.entries(GENDER_IDENTITY_ABBREVIATIONS)) {
+    if (key === q || key.startsWith(q) || q.startsWith(key)) {
+      for (const item of list) {
+        const canonical = item.label.toLowerCase();
+        if (
+          !seen.has(canonical) &&
+          !MODERN_GENDER_OPTIONS.some((g) => g.label.toLowerCase() === canonical)
+        ) {
+          seen.add(canonical);
+          results.push({
+            id: `abbrev_${canonical.replace(/\s+/g, '_')}`,
+            label: item.label,
+            desc: item.desc,
+            coreGender: item.core,
+          });
+        }
+      }
+    }
+  }
+  return results.slice(0, 5);
+}
+
+export function getInstantInterestedInDiscoveries(
+  query: string,
+  existingOptions: InterestedInOption[]
+): InterestedInOption[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const results: InterestedInOption[] = [];
+  const seen = new Set<string>();
+
+  for (const [key, list] of Object.entries(GENDER_IDENTITY_ABBREVIATIONS)) {
+    if (key === q || key.startsWith(q) || q.startsWith(key)) {
+      for (const item of list) {
+        const canonical = item.label.toLowerCase();
+        if (
+          !seen.has(canonical) &&
+          !existingOptions.some((g) => g.label.toLowerCase() === canonical)
+        ) {
+          seen.add(canonical);
+          const formattedLabel =
+            item.label.toLowerCase().endsWith('people') ||
+            item.label.toLowerCase().endsWith('women') ||
+            item.label.toLowerCase().endsWith('men') ||
+            item.label.toLowerCase().endsWith('individuals')
+              ? item.label
+              : `${item.label} People`;
+          results.push({
+            id: `interest_abbrev_${canonical.replace(/\s+/g, '_')}`,
+            label: formattedLabel,
+            desc: item.desc,
+            coreGender: item.core,
+          });
+        }
+      }
+    }
+  }
+  return results.slice(0, 5);
+}
+
+export async function searchOnlineIdentities(
+  query: string,
+  signal: AbortSignal
+): Promise<{ label: string; desc: string; coreGender: Gender }[]> {
+  const trimmed = query.trim();
+  const wikidataUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(trimmed)}&language=en&format=json&limit=12`;
+  const wpUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(trimmed + ' gender identity')}&format=json&srlimit=6`;
+
+  const headers = { 'User-Agent': 'NazarApp/1.0 (contact@nazar.app)' };
+
+  const [wdSettled, wpSettled] = await Promise.allSettled([
+    fetch(wikidataUrl, { headers, signal }).then((r) => (r.ok ? r.json() : null)),
+    fetch(wpUrl, { headers, signal }).then((r) => (r.ok ? r.json() : null)),
+  ]);
+
+  const results: { label: string; desc: string; coreGender: Gender }[] = [];
+  const seen = new Set<string>();
+
+  if (wdSettled.status === 'fulfilled' && wdSettled.value?.search) {
+    const items = Array.isArray(wdSettled.value.search) ? wdSettled.value.search : [];
+    for (const item of items) {
+      const rawLabel = item.label || '';
+      const rawDesc = item.description || '';
+      if (rawLabel.length > 32 || rawLabel.includes(':') || rawLabel.includes('.')) continue;
+      if (IDENTITY_EXCLUSION_KEYWORDS.test(rawDesc) || IDENTITY_EXCLUSION_KEYWORDS.test(rawLabel)) continue;
+      if (!IDENTITY_CONTEXT_KEYWORDS.test(rawDesc) && !IDENTITY_CONTEXT_KEYWORDS.test(rawLabel)) continue;
+
+      let label = rawLabel
+        .replace(/\s*\([^)]*gender[^)]*\)/gi, '')
+        .replace(/\s*\(disambiguation\)/gi, '')
+        .trim();
+      if (label) {
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+      }
+      const key = label.toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+
+      results.push({
+        label,
+        desc: rawDesc || 'Gender identity or community expression',
+        coreGender: inferCoreGender(label, rawDesc),
+      });
+
+      if (results.length >= 6) break;
+    }
+  }
+
+  if (results.length < 5 && wpSettled.status === 'fulfilled' && wpSettled.value?.query?.search) {
+    const wpItems = Array.isArray(wpSettled.value.query.search) ? wpSettled.value.query.search : [];
+    for (const item of wpItems) {
+      const rawTitle = item.title || '';
+      const rawSnippet = (item.snippet || '').replace(/<[^>]+>/g, '');
+      if (rawTitle.length > 32 || rawTitle.includes(':') || rawTitle.includes('/')) continue;
+      if (IDENTITY_EXCLUSION_KEYWORDS.test(rawTitle)) continue;
+      if (!IDENTITY_CONTEXT_KEYWORDS.test(rawSnippet) && !IDENTITY_CONTEXT_KEYWORDS.test(rawTitle)) continue;
+
+      let label = rawTitle
+        .replace(/\s*\([^)]*gender[^)]*\)/gi, '')
+        .replace(/\s*\(disambiguation\)/gi, '')
+        .trim();
+      if (label) {
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+      }
+      const key = label.toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+
+      results.push({
+        label,
+        desc: rawSnippet.slice(0, 75).trim() + '...',
+        coreGender: inferCoreGender(label, rawSnippet),
+      });
+
+      if (results.length >= 6) break;
+    }
+  }
+
+  return results;
+}
+
+// ============================================================================
+// Religion & Beliefs Definitions & Internet Search Helpers (Context-Enforced)
+// ============================================================================
+
+export interface ReligionOption {
+  id: string;
+  label: string;
+  desc: string;
+}
+
+export const RELIGION_OPTIONS: ReligionOption[] = [
+  {
+    id: 'agnostic',
+    label: 'Agnostic',
+    desc: 'Open-minded; believes ultimate reality or truth is unknown',
+  },
+  {
+    id: 'atheist',
+    label: 'Atheist',
+    desc: 'Does not subscribe to belief in divine beings or deities',
+  },
+  {
+    id: 'buddhist',
+    label: 'Buddhist',
+    desc: 'Practices mindfulness, compassion, and Buddhist dharma',
+  },
+  {
+    id: 'catholic',
+    label: 'Catholic',
+    desc: 'Practices Roman Catholicism or Catholic sacramental traditions',
+  },
+  {
+    id: 'christian',
+    label: 'Christian',
+    desc: 'Follows Jesus Christ and biblical teachings across traditions',
+  },
+  {
+    id: 'hindu',
+    label: 'Hindu',
+    desc: 'Practices Sanatana Dharma, karma, and philosophical traditions',
+  },
+  {
+    id: 'jain',
+    label: 'Jain',
+    desc: 'Follows Ahimsa (non-violence) and Jain spiritual path',
+  },
+  {
+    id: 'jewish',
+    label: 'Jewish',
+    desc: 'Identifies with Judaism, covenant, and Jewish heritage',
+  },
+  {
+    id: 'muslim',
+    label: 'Muslim',
+    desc: 'Follows Islam, Quranic teachings, and spiritual devotion',
+  },
+  {
+    id: 'sikh',
+    label: 'Sikh',
+    desc: 'Follows Guru Granth Sahib, seva, and Sikh teachings',
+  },
+  {
+    id: 'spiritual',
+    label: 'Spiritual',
+    desc: 'Connected to universal oneness beyond organized religion',
+  },
+  {
+    id: 'daoist',
+    label: 'Daoist / Taoist',
+    desc: 'Follows the Dao, natural flow, and cosmic balance',
+  },
+  {
+    id: 'shinto',
+    label: 'Shinto',
+    desc: 'Traditional Japanese spirituality honoring kami and nature',
+  },
+  {
+    id: 'zoroastrian',
+    label: 'Zoroastrian / Parsi',
+    desc: 'Practices Good Thoughts, Good Words, and Good Deeds',
+  },
+  {
+    id: 'bahai',
+    label: "Bahá'í",
+    desc: 'Believes in the spiritual unity of all humankind',
+  },
+  {
+    id: 'pagan',
+    label: 'Pagan / Earth-Based',
+    desc: 'Honors nature cycles, animism, or polytheistic traditions',
+  },
+  {
+    id: 'humanist',
+    label: 'Humanist',
+    desc: 'Guided by reason, human ethics, and universal empathy',
+  },
+  {
+    id: 'indigenous',
+    label: 'Indigenous / Ancestral',
+    desc: 'Practices native ancestral traditions and earth stewardship',
+  },
+  {
+    id: 'prefer_not_to_say',
+    label: 'Prefer not to say',
+    desc: 'Keeps faith and worldview private on profile',
+  },
+  {
+    id: 'other',
+    label: 'Other',
+    desc: 'Self-describe your unique spiritual or philosophical worldview',
+  },
+];
+
+export const RELIGION_SYNONYMS_MAP: Record<string, string[]> = {
+  agnostic: ['agnostic', 'agnosticism', 'undecided', 'skeptic', 'questioning', 'unsure'],
+  atheist: ['atheist', 'atheism', 'non-religious', 'secular', 'nonbeliever', 'godless', 'materialist'],
+  buddhist: ['buddhist', 'buddhism', 'dharma', 'zen', 'theravada', 'mahayana', 'tibetan', 'vipassana'],
+  catholic: ['catholic', 'catholicism', 'roman catholic', 'latin rite', 'papal', 'jesuit', 'franciscan'],
+  christian: [
+    'christian',
+    'christianity',
+    'protestant',
+    'orthodox',
+    'eastern orthodox',
+    'evangelical',
+    'baptist',
+    'lutheran',
+    'methodist',
+    'pentecostal',
+    'anglican',
+    'presbyterian',
+    'episcopal',
+    'born again',
+    'church of christ',
+    'adventist',
+  ],
+  hindu: [
+    'hindu',
+    'hinduism',
+    'sanatana dharma',
+    'vedic',
+    'vaishnav',
+    'shaivite',
+    'shakta',
+    'advaita',
+    'brahmin',
+    'iskcon',
+    'krishna',
+    'shiva',
+  ],
+  jain: ['jain', 'jainism', 'ahimsa', 'digambara', 'shvetambara', 'tirthankara', 'mahavira'],
+  jewish: [
+    'jewish',
+    'judaism',
+    'jew',
+    'orthodox jew',
+    'reform jew',
+    'conservative jew',
+    'hasidic',
+    'hebrew',
+    'torah',
+    'kabbalah',
+  ],
+  muslim: [
+    'muslim',
+    'islam',
+    'islamic',
+    'sunni',
+    'shia',
+    'sufi',
+    'ahmadi',
+    'deobandi',
+    'quran',
+    'hanafi',
+    'shafii',
+    'maliki',
+    'hanbali',
+    'ismaili',
+    'ibadi',
+  ],
+  sikh: ['sikh', 'sikhism', 'khalsa', 'gurdwara', 'sardar', 'waheguru', 'guru nanak', 'singh', 'kaur'],
+  spiritual: [
+    'spiritual',
+    'spirituality',
+    'spiritual but not religious',
+    'sbnr',
+    'new age',
+    'mystic',
+    'cosmic',
+    'universe',
+    'astrology',
+    'energy',
+  ],
+  daoist: ['daoist', 'taoist', 'daoism', 'taoism', 'yin yang', 'laozi', 'daodejing'],
+  shinto: ['shinto', 'kami', 'shintoism', 'jinja'],
+  zoroastrian: ['zoroastrian', 'zoroastrianism', 'parsi', 'mazdayasna', 'zarathustra', 'ahura mazda'],
+  bahai: ['bahai', "baha'i", 'bahaism', 'baha faith', 'abdu-l-baha', 'bahaullah'],
+  pagan: ['pagan', 'wicca', 'wiccan', 'heathen', 'polytheist', 'animist', 'druid', 'hellenist', 'norse'],
+  humanist: ['humanist', 'humanism', 'secular humanist', 'rationalist', 'freethinker', 'ethical culture'],
+  indigenous: ['indigenous', 'traditional', 'folk religion', 'ancestral', 'animism', 'tribal', 'native american', 'aboriginal'],
+  prefer_not_to_say: ['prefer not to say', 'private', 'unspecified', 'skip', 'none of your business', 'hidden', 'pass'],
+  other: ['other', 'self-describe', 'custom', 'unique', 'type my own', 'eclectic'],
+};
+
+export interface InterestedInReligionOption {
+  id: string;
+  label: string;
+  desc: string;
+}
+
+export const INTERESTED_IN_RELIGION_OPTIONS: InterestedInReligionOption[] = [
+  {
+    id: 'all',
+    label: 'Open to All Religions',
+    desc: 'Open to connecting with people of any faith, spiritual path, or worldview',
+  },
+  ...RELIGION_OPTIONS.filter((r) => r.id !== 'prefer_not_to_say' && r.id !== 'other'),
+  {
+    id: 'other',
+    label: 'Other Traditions',
+    desc: 'Open to specific unique philosophies, paths, or beliefs',
+  },
+];
+
+export const INTERESTED_IN_RELIGION_SYNONYMS_MAP: Record<string, string[]> = {
+  ...RELIGION_SYNONYMS_MAP,
+  all: [
+    'all',
+    'any',
+    'everyone',
+    'open to all',
+    'all religions',
+    'any religion',
+    'all faiths',
+    'any faith',
+    'everything',
+    'no preference',
+    'open-minded',
+  ],
+};
+
+export const RELIGION_ABBREVIATIONS: Record<string, { label: string; desc: string }[]> = {
+  sbnr: [
+    { label: 'Spiritual but not religious', desc: 'Personal spirituality without organized religion' },
+  ],
+  rc: [
+    { label: 'Roman Catholic', desc: 'Practices Catholic faith in communion with the Pope' },
+  ],
+  eo: [
+    { label: 'Eastern Orthodox', desc: 'Christian tradition rooted in Eastern church history' },
+  ],
+  lds: [
+    { label: 'Latter-day Saint (Mormon)', desc: 'Christian restorationist movement and Book of Mormon' },
+  ],
+  jw: [
+    { label: "Jehovah's Witness", desc: 'Millenarian Christian denomination with distinct beliefs' },
+  ],
+  uu: [
+    { label: 'Unitarian Universalist', desc: 'Inclusive religious movement dedicated to freedom of belief' },
+  ],
+  quaker: [
+    { label: 'Quaker (Friend)', desc: 'Religious Society of Friends valuing inner light and simplicity' },
+  ],
+  rasta: [
+    { label: 'Rastafari', desc: 'Spiritual and cultural movement honoring Haile Selassie' },
+  ],
+  deist: [
+    { label: 'Deist', desc: 'Belief in a creator based on reason, nature, and observation' },
+  ],
+  pantheist: [
+    { label: 'Pantheist', desc: 'Belief that the universe and reality are identical with divinity' },
+  ],
+};
+
+export const RELIGION_CONTEXT_KEYWORDS =
+  /(religion|faith|belief|spiritual|church|theism|theology|mosque|temple|tradition|philosophy|movement|sect|denomination|creed|worldview|monotheis|polytheis|dharma|pantheis|order|god|deity)/i;
+
+export const RELIGION_EXCLUSION_KEYWORDS =
+  /(album|song|film|movie|discography|episode|village|town|football|cricket|railway|band|character|novel|actor|singer|track|single|stadium)/i;
+
+export function getInstantReligionDiscoveries(
+  query: string
+): { id: string; label: string; desc: string }[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const results: { id: string; label: string; desc: string }[] = [];
+  const seen = new Set<string>();
+
+  for (const [key, list] of Object.entries(RELIGION_ABBREVIATIONS)) {
+    if (key === q || key.startsWith(q) || q.startsWith(key)) {
+      for (const item of list) {
+        const canonical = item.label.toLowerCase();
+        if (
+          !seen.has(canonical) &&
+          !RELIGION_OPTIONS.some((r) => r.label.toLowerCase() === canonical)
+        ) {
+          seen.add(canonical);
+          results.push({
+            id: `religion_abbrev_${canonical.replace(/\s+/g, '_')}`,
+            label: item.label,
+            desc: item.desc,
+          });
+        }
+      }
+    }
+  }
+  return results.slice(0, 5);
+}
+
+export async function searchOnlineReligions(
+  query: string,
+  signal: AbortSignal
+): Promise<{ label: string; desc: string }[]> {
+  const trimmed = query.trim();
+  const wikidataUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(trimmed)}&language=en&format=json&limit=12`;
+  const wpUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(trimmed + ' religion faith')}&format=json&srlimit=6`;
+
+  const headers = { 'User-Agent': 'NazarApp/1.0 (contact@nazar.app)' };
+
+  const [wdSettled, wpSettled] = await Promise.allSettled([
+    fetch(wikidataUrl, { headers, signal }).then((r) => (r.ok ? r.json() : null)),
+    fetch(wpUrl, { headers, signal }).then((r) => (r.ok ? r.json() : null)),
+  ]);
+
+  const results: { label: string; desc: string }[] = [];
+  const seen = new Set<string>();
+
+  if (wdSettled.status === 'fulfilled' && wdSettled.value?.search) {
+    const items = Array.isArray(wdSettled.value.search) ? wdSettled.value.search : [];
+    for (const item of items) {
+      const rawLabel = item.label || '';
+      const rawDesc = item.description || '';
+      if (rawLabel.length > 36 || rawLabel.includes(':') || rawLabel.includes('.')) continue;
+      if (RELIGION_EXCLUSION_KEYWORDS.test(rawDesc) || RELIGION_EXCLUSION_KEYWORDS.test(rawLabel)) continue;
+      if (!RELIGION_CONTEXT_KEYWORDS.test(rawDesc) && !RELIGION_CONTEXT_KEYWORDS.test(rawLabel)) continue;
+
+      let label = rawLabel
+        .replace(/\s*\([^)]*religion[^)]*\)/gi, '')
+        .replace(/\s*\(disambiguation\)/gi, '')
+        .trim();
+      if (label) {
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+      }
+      const key = label.toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+
+      results.push({
+        label,
+        desc: rawDesc || 'Religious tradition or philosophical worldview',
+      });
+
+      if (results.length >= 6) break;
+    }
+  }
+
+  if (results.length < 5 && wpSettled.status === 'fulfilled' && wpSettled.value?.query?.search) {
+    const wpItems = Array.isArray(wpSettled.value.query.search) ? wpSettled.value.query.search : [];
+    for (const item of wpItems) {
+      const rawTitle = item.title || '';
+      const rawSnippet = (item.snippet || '').replace(/<[^>]+>/g, '');
+      if (rawTitle.length > 36 || rawTitle.includes(':') || rawTitle.includes('/')) continue;
+      if (RELIGION_EXCLUSION_KEYWORDS.test(rawTitle)) continue;
+      if (!RELIGION_CONTEXT_KEYWORDS.test(rawSnippet) && !RELIGION_CONTEXT_KEYWORDS.test(rawTitle)) continue;
+
+      let label = rawTitle
+        .replace(/\s*\([^)]*religion[^)]*\)/gi, '')
+        .replace(/\s*\(disambiguation\)/gi, '')
+        .trim();
+      if (label) {
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+      }
+      const key = label.toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+
+      results.push({
+        label,
+        desc: rawSnippet.slice(0, 75).trim() + '...',
+      });
+
+      if (results.length >= 6) break;
+    }
+  }
+
+  return results;
+}
+
+// ============================================================================
 // Relationship Intent Definitions (Monochromatic)
 // ============================================================================
 
@@ -450,6 +1208,16 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   });
   const folkraFont = fontsLoaded ? 'Folkra' : undefined;
 
+  // Monochromatic typography hierarchy:
+  // 1. Section Headings: Pure white (#FFFFFF)
+  // 2. Top-Left Field Labels: Lighter shade of grey (#D4D4D8)
+  // 3. Inside Field Values: Less light than label (#A1A1AA)
+  // 4. Field Icons: Fixed greyish (#78716C / textTertiary) matching FULL NAME default icon
+  const sectionHeaderColor = isDark ? '#FFFFFF' : theme.colors.textPrimary;
+  const fieldHeaderLabelColor = isDark ? '#D4D4D8' : '#27272A';
+  const fieldInputTextColor = isDark ? '#A1A1AA' : '#52525B';
+  const fieldIconColor = theme.colors.textTertiary;
+
   const { draftProfile, draftPreferences, updateDraftProfile, updateDraftPreferences } =
     useOnboardingStore();
 
@@ -544,9 +1312,87 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
   const [isGenderModalVisible, setIsGenderModalVisible] = useState(false);
   const [genderSearchText, setGenderSearchText] = useState('');
+  const [isSearchingGenderInternet, setIsSearchingGenderInternet] = useState(false);
+  const [internetGenderSuggestions, setInternetGenderSuggestions] = useState<InternetIdentitySuggestion[]>([]);
+  const genderSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [isInterestedInModalVisible, setIsInterestedInModalVisible] = useState(false);
   const [interestedInSearchText, setInterestedInSearchText] = useState('');
+  const [isSearchingInterestedInInternet, setIsSearchingInterestedInInternet] = useState(false);
+  const [internetInterestedInSuggestions, setInternetInterestedInSuggestions] = useState<InterestedInOption[]>([]);
+  const [customInterestedInOptions, setCustomInterestedInOptions] = useState<InterestedInOption[]>([]);
+  const interestedInSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interestedInSearchInputRef = useRef<RNTextInput>(null);
+
+  // Fast In-Memory Query Caches (0ms turnaround for repeated queries)
+  const genderSearchCache = useRef(new Map<string, InternetIdentitySuggestion[]>()).current;
+  const interestedInSearchCache = useRef(new Map<string, InterestedInOption[]>()).current;
+  const genderAbortRef = useRef<AbortController | null>(null);
+  const interestedInAbortRef = useRef<AbortController | null>(null);
+
+  // Religion & Worldview State
+  const [religion, setReligion] = useState<string>(draftProfile.religion || '');
+  const [selectedReligionId, setSelectedReligionId] = useState<string>(() => {
+    if (draftProfile.religion) {
+      const match = RELIGION_OPTIONS.find(
+        (r) => r.label.toLowerCase() === draftProfile.religion?.toLowerCase()
+      );
+      if (match) return match.id;
+      return 'other';
+    }
+    return '';
+  });
+  const [customReligionText, setCustomReligionText] = useState<string>(() => {
+    if (draftProfile.religion) {
+      const match = RELIGION_OPTIONS.find(
+        (r) => r.label.toLowerCase() === draftProfile.religion?.toLowerCase()
+      );
+      if (!match) return draftProfile.religion;
+    }
+    return '';
+  });
+  const [isReligionModalVisible, setIsReligionModalVisible] = useState(false);
+  const [religionSearchText, setReligionSearchText] = useState('');
+  const [isSearchingReligionInternet, setIsSearchingReligionInternet] = useState(false);
+  const [internetReligionSuggestions, setInternetReligionSuggestions] = useState<
+    { id: string; label: string; desc: string }[]
+  >([]);
+  const [showReligionOnProfile, setShowReligionOnProfile] = useState(true);
+  const religionSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const religionSearchInputRef = useRef<RNTextInput>(null);
+  const religionSearchCache = useRef(
+    new Map<string, { id: string; label: string; desc: string }[]>()
+  ).current;
+  const religionAbortRef = useRef<AbortController | null>(null);
+
+  // Open To Religions (Religious Preference) State
+  const [selectedInterestedInReligionIds, setSelectedInterestedInReligionIds] = useState<string[]>(
+    () => {
+      if (draftProfile.interestedInReligions && draftProfile.interestedInReligions.length > 0) {
+        return draftProfile.interestedInReligions;
+      }
+      if (draftPreferences.religionPreferences && draftPreferences.religionPreferences.length > 0) {
+        return draftPreferences.religionPreferences;
+      }
+      return ['all'];
+    }
+  );
+  const [isInterestedInReligionModalVisible, setIsInterestedInReligionModalVisible] = useState(false);
+  const [interestedInReligionSearchText, setInterestedInReligionSearchText] = useState('');
+  const [isSearchingInterestedInReligionInternet, setIsSearchingInterestedInReligionInternet] = useState(false);
+  const [internetInterestedInReligionSuggestions, setInternetInterestedInReligionSuggestions] = useState<
+    { id: string; label: string; desc: string }[]
+  >([]);
+  const [customInterestedInReligionOptions, setCustomInterestedInReligionOptions] = useState<
+    { id: string; label: string; desc: string }[]
+  >([]);
+  const interestedInReligionSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interestedInReligionSearchInputRef = useRef<RNTextInput>(null);
+  const interestedInReligionSearchCache = useRef(
+    new Map<string, { id: string; label: string; desc: string }[]>()
+  ).current;
+  const interestedInReligionAbortRef = useRef<AbortController | null>(null);
+
   const [isIntentModalVisible, setIsIntentModalVisible] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -565,6 +1411,19 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     return () => {
       showSub.remove();
       hideSub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      genderAbortRef.current?.abort();
+      interestedInAbortRef.current?.abort();
+      religionAbortRef.current?.abort();
+      interestedInReligionAbortRef.current?.abort();
+      if (genderSearchDebounceRef.current) clearTimeout(genderSearchDebounceRef.current);
+      if (interestedInSearchDebounceRef.current) clearTimeout(interestedInSearchDebounceRef.current);
+      if (religionSearchDebounceRef.current) clearTimeout(religionSearchDebounceRef.current);
+      if (interestedInReligionSearchDebounceRef.current) clearTimeout(interestedInReligionSearchDebounceRef.current);
     };
   }, []);
 
@@ -665,27 +1524,37 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     return hasName && hasDob && hasCity && hasInterestedIn;
   }, [displayName, dateOfBirth, currentAge, city, selectedInterestedInIds]);
 
+  const allInterestedInOptions = useMemo<InterestedInOption[]>(() => {
+    const combined = [...INTERESTED_IN_OPTIONS];
+    for (const opt of customInterestedInOptions) {
+      if (!combined.some((c) => c.id === opt.id)) {
+        combined.push(opt);
+      }
+    }
+    return combined;
+  }, [customInterestedInOptions]);
+
   const selectedCoreGenders = useMemo<Gender[]>(() => {
     if (selectedInterestedInIds.includes('everyone')) {
       return ['OTHER'];
     }
     const coreSet = new Set<Gender>();
     selectedInterestedInIds.forEach((id) => {
-      const found = INTERESTED_IN_OPTIONS.find((opt) => opt.id === id);
+      const found = allInterestedInOptions.find((opt) => opt.id === id);
       if (found) {
         coreSet.add(found.coreGender);
       }
     });
     return coreSet.size > 0 ? Array.from(coreSet) : ['OTHER'];
-  }, [selectedInterestedInIds]);
+  }, [selectedInterestedInIds, allInterestedInOptions]);
 
   const filteredInterestedInOptions = useMemo(() => {
-    const q = interestedInSearchText.trim().toLowerCase();
-    if (!q) return INTERESTED_IN_OPTIONS;
-    return INTERESTED_IN_OPTIONS.filter(
-      (item) => item.label.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q)
+    return rankSearchCandidates(
+      allInterestedInOptions,
+      interestedInSearchText,
+      INTERESTED_IN_SYNONYMS_MAP
     );
-  }, [interestedInSearchText]);
+  }, [interestedInSearchText, allInterestedInOptions]);
 
   const toggleInterestedInId = (id: string) => {
     haptics.selection();
@@ -711,20 +1580,20 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       return 'Everyone (Open to All)';
     }
     if (selectedInterestedInIds.length === 1) {
-      const match = INTERESTED_IN_OPTIONS.find((o) => o.id === selectedInterestedInIds[0]);
+      const match = allInterestedInOptions.find((o) => o.id === selectedInterestedInIds[0]);
       return match ? match.label : 'Everyone (Open to All)';
     }
     if (selectedInterestedInIds.length === 2) {
-      const m1 = INTERESTED_IN_OPTIONS.find((o) => o.id === selectedInterestedInIds[0]);
-      const m2 = INTERESTED_IN_OPTIONS.find((o) => o.id === selectedInterestedInIds[1]);
+      const m1 = allInterestedInOptions.find((o) => o.id === selectedInterestedInIds[0]);
+      const m2 = allInterestedInOptions.find((o) => o.id === selectedInterestedInIds[1]);
       if (m1 && m2) return `${m1.label} & ${m2.label}`;
     }
-    const m1 = INTERESTED_IN_OPTIONS.find((o) => o.id === selectedInterestedInIds[0]);
+    const m1 = allInterestedInOptions.find((o) => o.id === selectedInterestedInIds[0]);
     if (m1) {
       return `${m1.label} +${selectedInterestedInIds.length - 1} more`;
     }
     return 'Everyone (Open to All)';
-  }, [selectedInterestedInIds]);
+  }, [selectedInterestedInIds, allInterestedInOptions]);
 
   const maxDaysInTempMonth = useMemo(() => {
     return new Date(tempYear, tempMonth + 1, 0).getDate();
@@ -767,14 +1636,475 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     return INTENT_OPTIONS.find((i) => i.value === intent) || INTENT_OPTIONS[0]!;
   }, [intent]);
 
-  // Filtered genders for search modal
+  const activeReligionLabel = useMemo(() => {
+    if (selectedReligionId === 'other') {
+      return customReligionText.trim() || 'Other (self-described)';
+    }
+    const found = RELIGION_OPTIONS.find((r) => r.id === selectedReligionId);
+    if (found) return found.label;
+    if (religion) return religion;
+    return 'Select religion or beliefs';
+  }, [selectedReligionId, customReligionText, religion]);
+
+  // Filtered genders for search modal with relevance ranking & synonym matching
   const filteredGenders = useMemo(() => {
-    const q = genderSearchText.trim().toLowerCase();
-    if (!q) return MODERN_GENDER_OPTIONS;
-    return MODERN_GENDER_OPTIONS.filter(
-      (item) => item.label.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q)
+    return rankSearchCandidates(
+      MODERN_GENDER_OPTIONS,
+      genderSearchText,
+      GENDER_SYNONYMS_MAP
     );
   }, [genderSearchText]);
+
+  // Filtered religions for search modal with relevance ranking & synonym matching
+  const filteredReligions = useMemo(() => {
+    return rankSearchCandidates(
+      RELIGION_OPTIONS,
+      religionSearchText,
+      RELIGION_SYNONYMS_MAP
+    );
+  }, [religionSearchText]);
+
+  const allInterestedInReligionOptions = useMemo<InterestedInReligionOption[]>(() => {
+    const combined = [...INTERESTED_IN_RELIGION_OPTIONS];
+    for (const opt of customInterestedInReligionOptions) {
+      if (!combined.some((c) => c.id === opt.id)) {
+        combined.push(opt);
+      }
+    }
+    return combined;
+  }, [customInterestedInReligionOptions]);
+
+  const activeInterestedInReligionLabel = useMemo(() => {
+    if (selectedInterestedInReligionIds.includes('all')) {
+      return 'Open to All Religions';
+    }
+    if (selectedInterestedInReligionIds.length === 1) {
+      const match = allInterestedInReligionOptions.find(
+        (o) => o.id === selectedInterestedInReligionIds[0]
+      );
+      return match ? match.label : 'Open to All Religions';
+    }
+    if (selectedInterestedInReligionIds.length === 2) {
+      const m1 = allInterestedInReligionOptions.find(
+        (o) => o.id === selectedInterestedInReligionIds[0]
+      );
+      const m2 = allInterestedInReligionOptions.find(
+        (o) => o.id === selectedInterestedInReligionIds[1]
+      );
+      if (m1 && m2) return `${m1.label} & ${m2.label}`;
+    }
+    const m1 = allInterestedInReligionOptions.find(
+      (o) => o.id === selectedInterestedInReligionIds[0]
+    );
+    if (m1) {
+      return `${m1.label} +${selectedInterestedInReligionIds.length - 1} more`;
+    }
+    return 'Open to All Religions';
+  }, [selectedInterestedInReligionIds, allInterestedInReligionOptions]);
+
+  const filteredInterestedInReligionOptions = useMemo(() => {
+    return rankSearchCandidates(
+      allInterestedInReligionOptions,
+      interestedInReligionSearchText,
+      INTERESTED_IN_RELIGION_SYNONYMS_MAP
+    );
+  }, [interestedInReligionSearchText, allInterestedInReligionOptions]);
+
+  const toggleInterestedInReligionId = (id: string) => {
+    haptics.selection();
+    if (id === 'all') {
+      setSelectedInterestedInReligionIds(['all']);
+      return;
+    }
+
+    let updated: string[];
+    if (selectedInterestedInReligionIds.includes('all')) {
+      updated = [id];
+    } else if (selectedInterestedInReligionIds.includes(id)) {
+      if (selectedInterestedInReligionIds.length <= 1) {
+        updated = ['all'];
+      } else {
+        updated = selectedInterestedInReligionIds.filter((item) => item !== id);
+      }
+    } else {
+      updated = [...selectedInterestedInReligionIds, id];
+    }
+    setSelectedInterestedInReligionIds(updated);
+  };
+
+  // ============================================================================
+  // High-Efficiency Search Handlers with Caching & Cancellation
+  // ============================================================================
+
+  const handleGenderSearchTextChange = useCallback(
+    (text: string) => {
+      setGenderSearchText(text);
+
+      if (genderSearchDebounceRef.current) {
+        clearTimeout(genderSearchDebounceRef.current);
+      }
+      genderAbortRef.current?.abort();
+
+      const trimmed = text.trim();
+      if (trimmed.length < 2) {
+        setInternetGenderSuggestions([]);
+        setIsSearchingGenderInternet(false);
+        return;
+      }
+
+      const lower = trimmed.toLowerCase();
+
+      // 1. Instant Fast-Path: immediately populate matching abbreviations (0ms latency)
+      const instantDiscoveries = getInstantAbbreviationDiscoveries(lower);
+      if (instantDiscoveries.length > 0) {
+        setInternetGenderSuggestions(instantDiscoveries);
+      }
+
+      // 2. In-memory query cache check (0ms turnaround)
+      if (genderSearchCache.has(lower)) {
+        const cached = genderSearchCache.get(lower)!;
+        setInternetGenderSuggestions(cached);
+        setIsSearchingGenderInternet(false);
+        return;
+      }
+
+      // 3. Debounced concurrent online search (snappy 200ms)
+      setIsSearchingGenderInternet(true);
+      genderSearchDebounceRef.current = setTimeout(async () => {
+        const controller = new AbortController();
+        genderAbortRef.current = controller;
+
+        try {
+          const raw = await searchOnlineIdentities(trimmed, controller.signal);
+          if (controller.signal.aborted) return;
+
+          const combined = [...instantDiscoveries];
+          const seen = new Set(combined.map((c) => c.label.toLowerCase()));
+          MODERN_GENDER_OPTIONS.forEach((g) => seen.add(g.label.toLowerCase()));
+
+          for (const item of raw) {
+            const key = item.label.toLowerCase();
+            if (!seen.has(key)) {
+              seen.add(key);
+              combined.push({
+                id: `wd_${key.replace(/\s+/g, '_')}`,
+                label: item.label,
+                desc: item.desc,
+                coreGender: item.coreGender,
+              });
+            }
+            if (combined.length >= 6) break;
+          }
+
+          if (genderSearchCache.size > 60) genderSearchCache.clear();
+          genderSearchCache.set(lower, combined);
+          setInternetGenderSuggestions(combined);
+        } catch (err: unknown) {
+          if (err instanceof Error && err.name === 'AbortError') return;
+        } finally {
+          if (!controller.signal.aborted) {
+            setIsSearchingGenderInternet(false);
+          }
+        }
+      }, 200);
+    },
+    [genderSearchCache]
+  );
+
+  const handleSelectInternetGender = (item: InternetIdentitySuggestion) => {
+    haptics.selection();
+    const existing = MODERN_GENDER_OPTIONS.find(
+      (g) => g.label.toLowerCase() === item.label.toLowerCase()
+    );
+    if (existing && existing.id !== 'other') {
+      setSelectedGenderId(existing.id);
+    } else {
+      setSelectedGenderId('other');
+      setCustomGenderText(item.label);
+    }
+    setIsGenderModalVisible(false);
+    if (genderSearchDebounceRef.current) clearTimeout(genderSearchDebounceRef.current);
+    genderAbortRef.current?.abort();
+    setGenderSearchText('');
+    setInternetGenderSuggestions([]);
+  };
+
+  const handleInterestedInSearchTextChange = useCallback(
+    (text: string) => {
+      setInterestedInSearchText(text);
+
+      if (interestedInSearchDebounceRef.current) {
+        clearTimeout(interestedInSearchDebounceRef.current);
+      }
+      interestedInAbortRef.current?.abort();
+
+      const trimmed = text.trim();
+      if (trimmed.length < 2) {
+        setInternetInterestedInSuggestions([]);
+        setIsSearchingInterestedInInternet(false);
+        return;
+      }
+
+      const lower = trimmed.toLowerCase();
+
+      // 1. Instant Fast-Path: immediately populate matching abbreviations (0ms latency)
+      const instantDiscoveries = getInstantInterestedInDiscoveries(lower, allInterestedInOptions);
+      if (instantDiscoveries.length > 0) {
+        setInternetInterestedInSuggestions(instantDiscoveries);
+      }
+
+      // 2. In-memory query cache check (0ms turnaround)
+      if (interestedInSearchCache.has(lower)) {
+        const cached = interestedInSearchCache.get(lower)!;
+        setInternetInterestedInSuggestions(cached);
+        setIsSearchingInterestedInInternet(false);
+        return;
+      }
+
+      // 3. Debounced concurrent online search (snappy 200ms)
+      setIsSearchingInterestedInInternet(true);
+      interestedInSearchDebounceRef.current = setTimeout(async () => {
+        const controller = new AbortController();
+        interestedInAbortRef.current = controller;
+
+        try {
+          const raw = await searchOnlineIdentities(trimmed, controller.signal);
+          if (controller.signal.aborted) return;
+
+          const combined = [...instantDiscoveries];
+          const seen = new Set(combined.map((c) => c.label.toLowerCase()));
+          allInterestedInOptions.forEach((g) => seen.add(g.label.toLowerCase()));
+
+          for (const item of raw) {
+            const formattedLabel =
+              item.label.toLowerCase().endsWith('people') ||
+              item.label.toLowerCase().endsWith('women') ||
+              item.label.toLowerCase().endsWith('men') ||
+              item.label.toLowerCase().endsWith('individuals')
+                ? item.label
+                : `${item.label} People`;
+
+            const key = formattedLabel.toLowerCase();
+            if (!seen.has(key)) {
+              seen.add(key);
+              combined.push({
+                id: `interest_wd_${key.replace(/\s+/g, '_')}`,
+                label: formattedLabel,
+                desc: item.desc || 'Gender identity or community discovered online',
+                coreGender: item.coreGender,
+              });
+            }
+            if (combined.length >= 6) break;
+          }
+
+          if (interestedInSearchCache.size > 60) interestedInSearchCache.clear();
+          interestedInSearchCache.set(lower, combined);
+          setInternetInterestedInSuggestions(combined);
+        } catch (err: unknown) {
+          if (err instanceof Error && err.name === 'AbortError') return;
+        } finally {
+          if (!controller.signal.aborted) {
+            setIsSearchingInterestedInInternet(false);
+          }
+        }
+      }, 200);
+    },
+    [allInterestedInOptions, interestedInSearchCache]
+  );
+
+  const handleSelectInternetInterestedIn = (item: InterestedInOption) => {
+    if (!customInterestedInOptions.some((c) => c.id === item.id)) {
+      setCustomInterestedInOptions((prev) => [...prev, item]);
+    }
+    toggleInterestedInId(item.id);
+  };
+
+  const handleReligionSearchTextChange = useCallback(
+    (text: string) => {
+      setReligionSearchText(text);
+
+      if (religionSearchDebounceRef.current) {
+        clearTimeout(religionSearchDebounceRef.current);
+      }
+      religionAbortRef.current?.abort();
+
+      const trimmed = text.trim();
+      if (trimmed.length < 2) {
+        setInternetReligionSuggestions([]);
+        setIsSearchingReligionInternet(false);
+        return;
+      }
+
+      // 1. Instant abbreviation discoveries (0ms turnaround)
+      const instantDiscoveries = getInstantReligionDiscoveries(trimmed);
+      if (instantDiscoveries.length > 0) {
+        setInternetReligionSuggestions(instantDiscoveries);
+      }
+
+      // 2. Check in-memory cache
+      const lower = trimmed.toLowerCase();
+      if (religionSearchCache.has(lower)) {
+        setInternetReligionSuggestions(religionSearchCache.get(lower)!);
+        setIsSearchingReligionInternet(false);
+        return;
+      }
+
+      // 3. Debounced concurrent web fetch (Wikidata + Wikipedia)
+      setIsSearchingReligionInternet(true);
+      religionSearchDebounceRef.current = setTimeout(async () => {
+        const controller = new AbortController();
+        religionAbortRef.current = controller;
+
+        try {
+          const webItems = await searchOnlineReligions(trimmed, controller.signal);
+          if (controller.signal.aborted) return;
+
+          const combined: { id: string; label: string; desc: string }[] = [...instantDiscoveries];
+          for (const item of webItems) {
+            const existsInPreset = RELIGION_OPTIONS.some(
+              (r) => r.label.toLowerCase() === item.label.toLowerCase()
+            );
+            const existsInCombined = combined.some(
+              (c) => c.label.toLowerCase() === item.label.toLowerCase()
+            );
+            if (!existsInPreset && !existsInCombined) {
+              combined.push({
+                id: `web_rel_${item.label.toLowerCase().replace(/\s+/g, '_')}`,
+                label: item.label,
+                desc: item.desc || 'Worldview or tradition discovered online',
+              });
+            }
+            if (combined.length >= 6) break;
+          }
+
+          if (religionSearchCache.size > 60) religionSearchCache.clear();
+          religionSearchCache.set(lower, combined);
+          setInternetReligionSuggestions(combined);
+        } catch (err: unknown) {
+          if (err instanceof Error && err.name === 'AbortError') return;
+        } finally {
+          if (!controller.signal.aborted) {
+            setIsSearchingReligionInternet(false);
+          }
+        }
+      }, 200);
+    },
+    [religionSearchCache]
+  );
+
+  const handleSelectReligion = (item: ReligionOption) => {
+    haptics.selection();
+    setSelectedReligionId(item.id);
+    if (item.id === 'other') {
+      // Allow custom input
+    } else {
+      setReligion(item.label);
+      setIsReligionModalVisible(false);
+      setReligionSearchText('');
+      setInternetReligionSuggestions([]);
+      setIsSearchingReligionInternet(false);
+    }
+  };
+
+  const handleSelectInternetReligion = (item: { id: string; label: string; desc: string }) => {
+    haptics.selection();
+    setSelectedReligionId('other');
+    setCustomReligionText(item.label);
+    setReligion(item.label);
+    setIsReligionModalVisible(false);
+    setReligionSearchText('');
+    setInternetReligionSuggestions([]);
+    setIsSearchingReligionInternet(false);
+  };
+
+  const handleInterestedInReligionSearchTextChange = useCallback(
+    (text: string) => {
+      setInterestedInReligionSearchText(text);
+
+      if (interestedInReligionSearchDebounceRef.current) {
+        clearTimeout(interestedInReligionSearchDebounceRef.current);
+      }
+      interestedInReligionAbortRef.current?.abort();
+
+      const trimmed = text.trim();
+      if (trimmed.length < 2) {
+        setInternetInterestedInReligionSuggestions([]);
+        setIsSearchingInterestedInReligionInternet(false);
+        return;
+      }
+
+      // 1. Instant abbreviation lookup
+      const instantDiscoveries = getInstantReligionDiscoveries(trimmed);
+      if (instantDiscoveries.length > 0) {
+        setInternetInterestedInReligionSuggestions(instantDiscoveries);
+      }
+
+      // 2. Check in-memory cache
+      const lower = trimmed.toLowerCase();
+      if (interestedInReligionSearchCache.has(lower)) {
+        setInternetInterestedInReligionSuggestions(
+          interestedInReligionSearchCache.get(lower)!
+        );
+        setIsSearchingInterestedInReligionInternet(false);
+        return;
+      }
+
+      // 3. Debounced concurrent web fetch
+      setIsSearchingInterestedInReligionInternet(true);
+      interestedInReligionSearchDebounceRef.current = setTimeout(async () => {
+        const controller = new AbortController();
+        interestedInReligionAbortRef.current = controller;
+
+        try {
+          const webItems = await searchOnlineReligions(trimmed, controller.signal);
+          if (controller.signal.aborted) return;
+
+          const combined: { id: string; label: string; desc: string }[] = [
+            ...instantDiscoveries,
+          ];
+          for (const item of webItems) {
+            const existsInPreset = allInterestedInReligionOptions.some(
+              (r) => r.label.toLowerCase() === item.label.toLowerCase()
+            );
+            const existsInCombined = combined.some(
+              (c) => c.label.toLowerCase() === item.label.toLowerCase()
+            );
+            if (!existsInPreset && !existsInCombined) {
+              combined.push({
+                id: `rel_interest_${item.label.toLowerCase().replace(/\s+/g, '_')}`,
+                label: item.label,
+                desc: item.desc || 'Tradition or worldview discovered online',
+              });
+            }
+            if (combined.length >= 6) break;
+          }
+
+          if (interestedInReligionSearchCache.size > 60)
+            interestedInReligionSearchCache.clear();
+          interestedInReligionSearchCache.set(lower, combined);
+          setInternetInterestedInReligionSuggestions(combined);
+        } catch (err: unknown) {
+          if (err instanceof Error && err.name === 'AbortError') return;
+        } finally {
+          if (!controller.signal.aborted) {
+            setIsSearchingInterestedInReligionInternet(false);
+          }
+        }
+      }, 200);
+    },
+    [allInterestedInReligionOptions, interestedInReligionSearchCache]
+  );
+
+  const handleSelectInternetInterestedInReligion = (item: {
+    id: string;
+    label: string;
+    desc: string;
+  }) => {
+    if (!customInterestedInReligionOptions.some((c) => c.id === item.id)) {
+      setCustomInterestedInReligionOptions((prev) => [...prev, item]);
+    }
+    toggleInterestedInReligionId(item.id);
+  };
 
   // ============================================================================
   // Internet Location Autocomplete Search (Photon API by Komoot / OpenStreetMap)
@@ -1232,6 +2562,12 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
     const formattedDob = dateOfBirth.toISOString().split('T')[0];
     const coreGender = activeGenderOption.coreGender;
     const finalGenderIdentity = activeGenderLabel;
+    const finalReligion =
+      selectedReligionId === 'other'
+        ? customReligionText.trim()
+        : selectedReligionId === 'prefer_not_to_say'
+          ? 'Prefer not to say'
+          : religion.trim();
 
     updateDraftProfile({
       displayName: displayName.trim(),
@@ -1240,7 +2576,9 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       genderIdentity: finalGenderIdentity,
       interestedIn: selectedCoreGenders,
       interestedInIdentities: selectedInterestedInIds,
+      interestedInReligions: selectedInterestedInReligionIds,
       intent,
+      religion: finalReligion || undefined,
       city: city.trim(),
       coordinates: selectedCoords || undefined,
       bio: bio.trim(),
@@ -1250,6 +2588,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
     updateDraftPreferences({
       genderPreferences: selectedCoreGenders,
+      religionPreferences: selectedInterestedInReligionIds,
     });
 
     setIsLoading(true);
@@ -1621,7 +2960,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                 {/* Section 1: Who You Are */}
                 {/* ======================================================== */}
                 <View
-                  style={styles.sectionGroup}
+                  style={[styles.sectionGroup, { marginTop: 10 }]}
                   onLayout={(e) => {
                     section1Y.current = e.nativeEvent.layout.y;
                   }}
@@ -1630,7 +2969,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     <Text
                       style={[
                         styles.sectionHeaderTitle,
-                        { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                        { color: sectionHeaderColor, fontFamily: folkraFont },
                       ]}
                     >
                       WHO YOU ARE
@@ -1640,7 +2979,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                   {/* Full Name */}
                   <View style={styles.fieldWrapper}>
                     <View style={styles.fieldHeaderRow}>
-                      <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
+                      <Text style={[styles.fieldLabel, { color: fieldHeaderLabelColor }]}>
                         Full Name
                       </Text>
                       <Text style={[styles.fieldCounter, { color: theme.colors.textTertiary }]}>
@@ -1668,11 +3007,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     >
                       <User
                         size={16}
-                        color={
-                          focusedField === 'displayName'
-                            ? theme.colors.textPrimary
-                            : theme.colors.textTertiary
-                        }
+                        color={fieldIconColor}
                         style={styles.inputLeadingIcon}
                       />
                       <RNTextInput
@@ -1680,7 +3015,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         style={[
                           styles.modernBarInput,
                           {
-                            color: theme.colors.textPrimary,
+                            color: fieldInputTextColor,
                           },
                         ]}
                         placeholder="What should we call you?"
@@ -1723,7 +3058,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                   {/* Date of Birth */}
                   <View style={styles.fieldWrapper}>
                     <View style={styles.fieldHeaderRow}>
-                      <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
+                      <Text style={[styles.fieldLabel, { color: fieldHeaderLabelColor }]}>
                         Date of Birth
                       </Text>
                       {currentAge !== null && (
@@ -1759,7 +3094,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       >
                         <Calendar
                           size={16}
-                          color={dateOfBirth ? theme.colors.textPrimary : theme.colors.textTertiary}
+                          color={fieldIconColor}
                           style={styles.inputLeadingIcon}
                         />
                         <Text
@@ -1767,7 +3102,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                             styles.modernBarInputText,
                             {
                               color: dateOfBirth
-                                ? theme.colors.textPrimary
+                                ? fieldInputTextColor
                                 : theme.colors.textTertiary,
                               fontWeight: dateOfBirth ? '600' : '400',
                             },
@@ -1785,7 +3120,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     <Text
                       style={[
                         styles.fieldLabel,
-                        { color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 2 },
+                        { color: fieldHeaderLabelColor, marginBottom: 6, marginLeft: 2 },
                       ]}
                     >
                       Gender Identity
@@ -1810,13 +3145,13 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     >
                       <Users
                         size={16}
-                        color={theme.colors.textTertiary}
+                        color={fieldIconColor}
                         style={styles.inputLeadingIcon}
                       />
                       <Text
                         style={[
                           styles.modernBarInputText,
-                          { color: theme.colors.textPrimary, fontWeight: '600' },
+                          { color: fieldInputTextColor, fontWeight: '600' },
                         ]}
                         numberOfLines={1}
                       >
@@ -1826,15 +3161,15 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     </TouchableOpacity>
                   </View>
 
-                  {/* Interested In */}
+                  {/* Religion / Beliefs */}
                   <View style={styles.fieldWrapper}>
                     <Text
                       style={[
                         styles.fieldLabel,
-                        { color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 2 },
+                        { color: fieldHeaderLabelColor, marginBottom: 6, marginLeft: 2 },
                       ]}
                     >
-                      Interested In
+                      Religion / Beliefs
                     </Text>
                     <TouchableOpacity
                       style={[
@@ -1847,25 +3182,29 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                       onPress={() => {
                         dismissActiveField();
                         haptics.selection();
-                        setIsInterestedInModalVisible(true);
+                        setReligionSearchText('');
+                        setIsReligionModalVisible(true);
                       }}
                       activeOpacity={0.7}
                       accessibilityRole="button"
-                      accessibilityLabel="Select who you are interested in"
+                      accessibilityLabel="Select religion or beliefs"
                     >
-                      <Compass
+                      <Church
                         size={16}
-                        color={theme.colors.textTertiary}
+                        color={fieldIconColor}
                         style={styles.inputLeadingIcon}
                       />
                       <Text
                         style={[
                           styles.modernBarInputText,
-                          { color: theme.colors.textPrimary, fontWeight: '600' },
+                          {
+                            color: religion ? fieldInputTextColor : theme.colors.textTertiary,
+                            fontWeight: religion ? '600' : '400',
+                          },
                         ]}
                         numberOfLines={1}
                       >
-                        {activeInterestedInLabel}
+                        {activeReligionLabel}
                       </Text>
                       <ChevronDown size={15} color={theme.colors.textTertiary} />
                     </TouchableOpacity>
@@ -1880,18 +3219,19 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     <Text
                       style={[
                         styles.sectionHeaderTitle,
-                        { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                        { color: sectionHeaderColor, fontFamily: folkraFont },
                       ]}
                     >
                       YOUR INTENTIONS
                     </Text>
                   </View>
 
+                  {/* Relationship Intent */}
                   <View style={styles.fieldWrapper}>
                     <Text
                       style={[
                         styles.fieldLabel,
-                        { color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 2 },
+                        { color: fieldHeaderLabelColor, marginBottom: 6, marginLeft: 2 },
                       ]}
                     >
                       Relationship Intent
@@ -1915,17 +3255,111 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     >
                       <Heart
                         size={16}
-                        color={theme.colors.textTertiary}
+                        color={fieldIconColor}
                         style={styles.inputLeadingIcon}
                       />
                       <Text
                         style={[
                           styles.modernBarInputText,
-                          { color: theme.colors.textPrimary, fontWeight: '600' },
+                          { color: fieldInputTextColor, fontWeight: '600' },
                         ]}
                         numberOfLines={1}
                       >
                         {activeIntentOption.label}
+                      </Text>
+                      <ChevronDown size={15} color={theme.colors.textTertiary} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Interested In */}
+                  <View style={styles.fieldWrapper}>
+                    <Text
+                      style={[
+                        styles.fieldLabel,
+                        { color: fieldHeaderLabelColor, marginBottom: 6, marginLeft: 2 },
+                      ]}
+                    >
+                      Interested In
+                    </Text>
+                    <TouchableOpacity
+                      style={[
+                        styles.modernInputBar,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB',
+                        },
+                      ]}
+                      onPress={() => {
+                        dismissActiveField();
+                        haptics.selection();
+                        setIsInterestedInModalVisible(true);
+                      }}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel="Select who you are interested in"
+                    >
+                      <Compass
+                        size={16}
+                        color={fieldIconColor}
+                        style={styles.inputLeadingIcon}
+                      />
+                      <Text
+                        style={[
+                          styles.modernBarInputText,
+                          { color: fieldInputTextColor, fontWeight: '600' },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {activeInterestedInLabel}
+                      </Text>
+                      <ChevronDown size={15} color={theme.colors.textTertiary} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Open to Religions */}
+                  <View style={styles.fieldWrapper}>
+                    <Text
+                      style={[
+                        styles.fieldLabel,
+                        { color: fieldHeaderLabelColor, marginBottom: 6, marginLeft: 2 },
+                      ]}
+                    >
+                      Open to Religions
+                    </Text>
+                    <TouchableOpacity
+                      style={[
+                        styles.modernInputBar,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB',
+                        },
+                      ]}
+                      onPress={() => {
+                        dismissActiveField();
+                        haptics.selection();
+                        setInterestedInReligionSearchText('');
+                        setIsInterestedInReligionModalVisible(true);
+                      }}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel="Select religions or beliefs you want to meet"
+                    >
+                      <Church
+                        size={16}
+                        color={fieldIconColor}
+                        style={styles.inputLeadingIcon}
+                      />
+                      <Text
+                        style={[
+                          styles.modernBarInputText,
+                          {
+                            color: fieldInputTextColor,
+                            fontWeight: '600',
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {activeInterestedInReligionLabel}
                       </Text>
                       <ChevronDown size={15} color={theme.colors.textTertiary} />
                     </TouchableOpacity>
@@ -1945,7 +3379,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     <Text
                       style={[
                         styles.sectionHeaderTitle,
-                        { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                        { color: sectionHeaderColor, fontFamily: folkraFont },
                       ]}
                     >
                       WHERE YOU LIVE
@@ -1954,7 +3388,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
                   <View style={styles.fieldWrapper}>
                     <View style={styles.fieldHeaderRow}>
-                      <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
+                      <Text style={[styles.fieldLabel, { color: fieldHeaderLabelColor }]}>
                         City / Neighborhood
                       </Text>
                       {/* Compact Map Button in Header */}
@@ -2024,11 +3458,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     >
                       <MapPin
                         size={16}
-                        color={
-                          focusedField === 'city'
-                            ? theme.colors.textPrimary
-                            : theme.colors.textTertiary
-                        }
+                        color={fieldIconColor}
                         style={styles.inputLeadingIcon}
                       />
                       <RNTextInput
@@ -2036,7 +3466,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         style={[
                           styles.modernBarInput,
                           {
-                            color: theme.colors.textPrimary,
+                            color: fieldInputTextColor,
                           },
                         ]}
                         placeholder="Type a city or locality..."
@@ -2159,7 +3589,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     <Text
                       style={[
                         styles.sectionHeaderTitle,
-                        { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                        { color: sectionHeaderColor, fontFamily: folkraFont },
                       ]}
                     >
                       ABOUT YOU
@@ -2173,7 +3603,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     }}
                   >
                     <View style={styles.fieldHeaderRow}>
-                      <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
+                      <Text style={[styles.fieldLabel, { color: fieldHeaderLabelColor }]}>
                         Bio / About You
                       </Text>
                       <Text style={[styles.fieldCounter, { color: theme.colors.textTertiary }]}>
@@ -2200,7 +3630,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         style={[
                           styles.modernBarTextarea,
                           {
-                            color: theme.colors.textPrimary,
+                            color: fieldInputTextColor,
                           },
                         ]}
                         placeholder="A little about your rhythm, weekend rituals, and what brings you genuine joy..."
@@ -2243,7 +3673,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     <Text
                       style={[
                         styles.sectionHeaderTitle,
-                        { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                        { color: sectionHeaderColor, fontFamily: folkraFont },
                       ]}
                     >
                       CAREER & EDUCATION (OPTIONAL)
@@ -2260,7 +3690,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     <Text
                       style={[
                         styles.fieldLabel,
-                        { color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 2 },
+                        { color: fieldHeaderLabelColor, marginBottom: 6, marginLeft: 2 },
                       ]}
                     >
                       Occupation (Optional)
@@ -2281,11 +3711,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     >
                       <Briefcase
                         size={16}
-                        color={
-                          focusedField === 'occupation'
-                            ? theme.colors.textPrimary
-                            : theme.colors.textTertiary
-                        }
+                        color={fieldIconColor}
                         style={styles.inputLeadingIcon}
                       />
                       <RNTextInput
@@ -2293,7 +3719,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         style={[
                           styles.modernBarInput,
                           {
-                            color: theme.colors.textPrimary,
+                            color: fieldInputTextColor,
                           },
                         ]}
                         placeholder="e.g. Architect, Founder, Designer"
@@ -2340,7 +3766,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     <Text
                       style={[
                         styles.fieldLabel,
-                        { color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 2 },
+                        { color: fieldHeaderLabelColor, marginBottom: 6, marginLeft: 2 },
                       ]}
                     >
                       Education (Optional)
@@ -2361,11 +3787,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     >
                       <GraduationCap
                         size={16}
-                        color={
-                          focusedField === 'education'
-                            ? theme.colors.textPrimary
-                            : theme.colors.textTertiary
-                        }
+                        color={fieldIconColor}
                         style={styles.inputLeadingIcon}
                       />
                       <RNTextInput
@@ -2373,7 +3795,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         style={[
                           styles.modernBarInput,
                           {
-                            color: theme.colors.textPrimary,
+                            color: fieldInputTextColor,
                           },
                         ]}
                         placeholder="e.g. IIT Bombay, NID, St. Xavier's"
@@ -2581,9 +4003,14 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
         visible={isGenderModalVisible}
         onClose={() => {
           setIsGenderModalVisible(false);
+          if (genderSearchDebounceRef.current) clearTimeout(genderSearchDebounceRef.current);
+          genderAbortRef.current?.abort();
           setGenderSearchText('');
+          setInternetGenderSuggestions([]);
+          setIsSearchingGenderInternet(false);
         }}
         sheetStyle={{ maxHeight: '86%' }}
+        keyboardPaddingBottom={7}
         showHandle={true}
       >
         {/* Modal Header */}
@@ -2605,7 +4032,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             onPress={() => {
               haptics.selection();
               setIsGenderModalVisible(false);
+              if (genderSearchDebounceRef.current) clearTimeout(genderSearchDebounceRef.current);
+              genderAbortRef.current?.abort();
               setGenderSearchText('');
+              setInternetGenderSuggestions([]);
+              setIsSearchingGenderInternet(false);
             }}
             style={[
               styles.modalCloseBtn,
@@ -2630,20 +4061,32 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             },
           ]}
         >
-          <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          {isSearchingGenderInternet ? (
+            <ActivityIndicator size="small" color={theme.colors.textPrimary} style={{ marginRight: 8 }} />
+          ) : (
+            <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          )}
           <RNTextInput
             ref={genderSearchInputRef}
             style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
-            placeholder="Search gender identities..."
+            placeholder="Search gender identities or web..."
             placeholderTextColor={theme.colors.textTertiary}
             value={genderSearchText}
-            onChangeText={setGenderSearchText}
+            onChangeText={handleGenderSearchTextChange}
             autoCapitalize="none"
             autoCorrect={false}
+            spellCheck={false}
+            returnKeyType="search"
           />
           {genderSearchText.length > 0 && (
             <TouchableOpacity
-              onPress={() => setGenderSearchText('')}
+              onPress={() => {
+                if (genderSearchDebounceRef.current) clearTimeout(genderSearchDebounceRef.current);
+                genderAbortRef.current?.abort();
+                setGenderSearchText('');
+                setInternetGenderSuggestions([]);
+                setIsSearchingGenderInternet(false);
+              }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <X size={15} color={theme.colors.textTertiary} />
@@ -2653,7 +4096,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
         {/* Scrollable Genders List */}
         <ScrollView
-          style={{ maxHeight: 420 }}
+          style={{ maxHeight: isKeyboardVisible ? 240 : 420 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -2679,6 +4122,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                   if (item.id !== 'other') {
                     setIsGenderModalVisible(false);
                     setGenderSearchText('');
+                    setInternetGenderSuggestions([]);
                   }
                 }}
                 activeOpacity={0.7}
@@ -2716,6 +4160,137 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
               </TouchableOpacity>
             );
           })}
+
+          {/* Web Discoveries Section */}
+          {internetGenderSuggestions.length > 0 && (
+            <View style={{ marginTop: 12 }}>
+              <View style={styles.modalSubSectionHeader}>
+                <Globe size={13} color={theme.colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text
+                  style={[
+                    styles.modalSubSectionTitle,
+                    { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                  ]}
+                >
+                  WEB DISCOVERIES ({internetGenderSuggestions.length})
+                </Text>
+              </View>
+
+              {internetGenderSuggestions.map((item) => {
+                const isSelected =
+                  (selectedGenderId === 'other' && customGenderText.toLowerCase() === item.label.toLowerCase()) ||
+                  selectedGenderId === item.id;
+
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      styles.selectionOptionRow,
+                      {
+                        backgroundColor: isSelected
+                          ? isDark
+                            ? 'rgba(255, 255, 255, 0.09)'
+                            : '#F4F4F6'
+                          : 'transparent',
+                        borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
+                      },
+                    ]}
+                    onPress={() => handleSelectInternetGender(item)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={{ flex: 1, paddingRight: 10 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text
+                          style={{
+                            color: theme.colors.textPrimary,
+                            fontWeight: isSelected ? '700' : '600',
+                            fontSize: 15,
+                          }}
+                        >
+                          {item.label}
+                        </Text>
+                        <View
+                          style={{
+                            paddingHorizontal: 6,
+                            paddingVertical: 1.5,
+                            borderRadius: 6,
+                            backgroundColor: isDark
+                              ? 'rgba(255, 255, 255, 0.08)'
+                              : 'rgba(0, 0, 0, 0.05)',
+                          }}
+                        >
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: theme.colors.textTertiary }}>
+                            WEB
+                          </Text>
+                        </View>
+                      </View>
+                      <Text level="caption" color="tertiary" style={{ marginTop: 2, lineHeight: 16 }}>
+                        {item.desc}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.radioIndicator,
+                        {
+                          borderColor: isSelected
+                            ? theme.colors.textPrimary
+                            : isDark
+                              ? 'rgba(255, 255, 255, 0.25)'
+                              : '#D4D4D8',
+                          backgroundColor: isSelected ? theme.colors.textPrimary : 'transparent',
+                        },
+                      ]}
+                    >
+                      {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Searching online status indicator */}
+          {isSearchingGenderInternet && internetGenderSuggestions.length === 0 && (
+            <View style={styles.modalSearchLoadingRow}>
+              <ActivityIndicator size="small" color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+              <Text level="caption" color="secondary">
+                Searching global identity catalog...
+              </Text>
+            </View>
+          )}
+
+          {/* No matches empty state with single-tap self-describe prompt */}
+          {filteredGenders.length === 0 &&
+            internetGenderSuggestions.length === 0 &&
+            !isSearchingGenderInternet &&
+            genderSearchText.trim().length > 0 && (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <Text level="caption" color="secondary" style={{ textAlign: 'center', marginBottom: 12 }}>
+                  No preset identities matching &quot;{genderSearchText.trim()}&quot;
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    haptics.selection();
+                    setSelectedGenderId('other');
+                    setCustomGenderText(genderSearchText.trim());
+                  }}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 9,
+                    borderRadius: 10,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    borderWidth: 1,
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#E4E4E7',
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' }}>
+                    Tap to self-describe as &quot;{genderSearchText.trim()}&quot;
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
           {/* Custom Self-Describe Input if selected or no matches */}
           {selectedGenderId === 'other' && (
@@ -2773,6 +4348,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             styles.showOnProfileRow,
             {
               borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
+              paddingBottom: isKeyboardVisible ? 0 : 4,
             },
           ]}
           onPress={() => {
@@ -3091,22 +4667,6 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
           </TouchableOpacity>
         </View>
 
-        {/* Real-time Age Calculation Badge */}
-        <View
-          style={[
-            styles.ageStatusBox,
-            {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F4F4F6',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#E4E4E7',
-            },
-          ]}
-        >
-          <ShieldCheck size={16} color={theme.colors.textPrimary} style={{ marginRight: 6 }} />
-          <Text style={{ color: theme.colors.textPrimary, fontWeight: '700', fontSize: 13 }}>
-            Age: {tempAge} years old {tempAge >= 18 ? '· Verified 18+' : '· (Under 18 not allowed)'}
-          </Text>
-        </View>
-
         {/* 3-Column Picker */}
         <View style={styles.pickerColumnsRow}>
           {/* Day Column */}
@@ -3374,9 +4934,14 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
         visible={isInterestedInModalVisible}
         onClose={() => {
           setIsInterestedInModalVisible(false);
+          if (interestedInSearchDebounceRef.current) clearTimeout(interestedInSearchDebounceRef.current);
+          interestedInAbortRef.current?.abort();
           setInterestedInSearchText('');
+          setInternetInterestedInSuggestions([]);
+          setIsSearchingInterestedInInternet(false);
         }}
         sheetStyle={{ maxHeight: '86%' }}
+        keyboardPaddingBottom={7}
         showHandle={true}
       >
         {/* Header */}
@@ -3398,7 +4963,11 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             onPress={() => {
               haptics.selection();
               setIsInterestedInModalVisible(false);
+              if (interestedInSearchDebounceRef.current) clearTimeout(interestedInSearchDebounceRef.current);
+              interestedInAbortRef.current?.abort();
               setInterestedInSearchText('');
+              setInternetInterestedInSuggestions([]);
+              setIsSearchingInterestedInInternet(false);
             }}
             style={[
               styles.modalCloseBtn,
@@ -3423,20 +4992,32 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             },
           ]}
         >
-          <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          {isSearchingInterestedInInternet ? (
+            <ActivityIndicator size="small" color={theme.colors.textPrimary} style={{ marginRight: 8 }} />
+          ) : (
+            <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          )}
           <RNTextInput
             ref={interestedInSearchInputRef}
             style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
-            placeholder="Search gender categories..."
+            placeholder="Search gender categories or web..."
             placeholderTextColor={theme.colors.textTertiary}
             value={interestedInSearchText}
-            onChangeText={setInterestedInSearchText}
+            onChangeText={handleInterestedInSearchTextChange}
             autoCapitalize="none"
             autoCorrect={false}
+            spellCheck={false}
+            returnKeyType="search"
           />
           {interestedInSearchText.length > 0 && (
             <TouchableOpacity
-              onPress={() => setInterestedInSearchText('')}
+              onPress={() => {
+                if (interestedInSearchDebounceRef.current) clearTimeout(interestedInSearchDebounceRef.current);
+                interestedInAbortRef.current?.abort();
+                setInterestedInSearchText('');
+                setInternetInterestedInSuggestions([]);
+                setIsSearchingInterestedInInternet(false);
+              }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <X size={15} color={theme.colors.textTertiary} />
@@ -3446,7 +5027,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
 
         {/* Scrollable Categories List */}
         <ScrollView
-          style={{ maxHeight: 420 }}
+          style={{ maxHeight: isKeyboardVisible ? 240 : 420 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -3514,6 +5095,126 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
               </TouchableOpacity>
             );
           })}
+
+          {/* Web Discoveries Section */}
+          {internetInterestedInSuggestions.length > 0 && (
+            <View style={{ marginTop: 12 }}>
+              <View style={styles.modalSubSectionHeader}>
+                <Globe size={13} color={theme.colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text
+                  style={[
+                    styles.modalSubSectionTitle,
+                    { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                  ]}
+                >
+                  WEB DISCOVERIES ({internetInterestedInSuggestions.length})
+                </Text>
+              </View>
+
+              {internetInterestedInSuggestions.map((item) => {
+                const isSelected = selectedInterestedInIds.includes(item.id);
+
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      styles.selectionOptionRow,
+                      {
+                        backgroundColor: isSelected
+                          ? isDark
+                            ? 'rgba(255, 255, 255, 0.09)'
+                            : '#F4F4F6'
+                          : 'transparent',
+                        borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
+                      },
+                    ]}
+                    onPress={() => handleSelectInternetInterestedIn(item)}
+                    activeOpacity={0.7}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isSelected }}
+                  >
+                    <View style={{ flex: 1, paddingRight: 10, minWidth: 0 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text
+                          style={{
+                            color: theme.colors.textPrimary,
+                            fontWeight: isSelected ? '700' : '600',
+                            fontSize: 15,
+                          }}
+                          numberOfLines={1}
+                        >
+                          {item.label}
+                        </Text>
+                        <View
+                          style={{
+                            paddingHorizontal: 6,
+                            paddingVertical: 1.5,
+                            borderRadius: 6,
+                            backgroundColor: isDark
+                              ? 'rgba(255, 255, 255, 0.08)'
+                              : 'rgba(0, 0, 0, 0.05)',
+                          }}
+                        >
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: theme.colors.textTertiary }}>
+                            WEB
+                          </Text>
+                        </View>
+                      </View>
+                      <Text
+                        level="caption"
+                        color="tertiary"
+                        style={{ marginTop: 2, lineHeight: 16 }}
+                        numberOfLines={2}
+                      >
+                        {item.desc}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.radioIndicator,
+                        {
+                          borderColor: isSelected
+                            ? theme.colors.textPrimary
+                            : isDark
+                              ? 'rgba(255, 255, 255, 0.25)'
+                              : '#D4D4D8',
+                          backgroundColor: isSelected ? theme.colors.textPrimary : 'transparent',
+                        },
+                      ]}
+                    >
+                      {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Searching online status indicator */}
+          {isSearchingInterestedInInternet && internetInterestedInSuggestions.length === 0 && (
+            <View style={styles.modalSearchLoadingRow}>
+              <ActivityIndicator size="small" color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+              <Text level="caption" color="secondary">
+                Searching global categories online...
+              </Text>
+            </View>
+          )}
+
+          {/* No matches empty state */}
+          {filteredInterestedInOptions.length === 0 &&
+            internetInterestedInSuggestions.length === 0 &&
+            !isSearchingInterestedInInternet &&
+            interestedInSearchText.trim().length > 0 && (
+              <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                <Text level="caption" color="secondary" style={{ textAlign: 'center' }}>
+                  No categories matching &quot;{interestedInSearchText.trim()}&quot;
+                </Text>
+                <Text level="caption" color="tertiary" style={{ textAlign: 'center', marginTop: 4 }}>
+                  Try broader terms like &quot;women&quot;, &quot;men&quot;, &quot;non-binary&quot;, or &quot;everyone&quot;.
+                </Text>
+              </View>
+            )}
         </ScrollView>
 
         {/* Confirm / Done Button */}
@@ -3522,14 +5223,759 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
             styles.confirmCustomButton,
             {
               backgroundColor: theme.colors.textPrimary,
-              marginTop: 16,
-              marginBottom: 8,
+              marginTop: isKeyboardVisible ? 10 : 16,
+              marginBottom: isKeyboardVisible ? 0 : 8,
             },
           ]}
           onPress={() => {
             haptics.notificationSuccess();
             setIsInterestedInModalVisible(false);
+            if (interestedInSearchDebounceRef.current) clearTimeout(interestedInSearchDebounceRef.current);
+            interestedInAbortRef.current?.abort();
             setInterestedInSearchText('');
+            setInternetInterestedInSuggestions([]);
+            setIsSearchingInterestedInInternet(false);
+          }}
+          activeOpacity={0.88}
+        >
+          <Text
+            style={{
+              color: isDark ? '#000000' : '#FFFFFF',
+              fontWeight: '700',
+              fontSize: 14,
+              fontFamily: folkraFont,
+            }}
+          >
+            Done
+          </Text>
+        </TouchableOpacity>
+      </SmoothBottomSheetModal>
+
+      {/* ======================================================== */}
+      {/* 6. Religion & Beliefs Modal with Search Facility */}
+      {/* ======================================================== */}
+      <SmoothBottomSheetModal
+        visible={isReligionModalVisible}
+        onClose={() => {
+          setIsReligionModalVisible(false);
+          if (religionSearchDebounceRef.current) clearTimeout(religionSearchDebounceRef.current);
+          religionAbortRef.current?.abort();
+          setReligionSearchText('');
+          setInternetReligionSuggestions([]);
+          setIsSearchingReligionInternet(false);
+        }}
+        sheetStyle={{ maxHeight: '86%' }}
+        keyboardPaddingBottom={7}
+        showHandle={true}
+      >
+        {/* Header */}
+        <View style={styles.modalHeader}>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.modalTitle,
+                { color: theme.colors.textPrimary, fontFamily: folkraFont },
+              ]}
+            >
+              Religion & Beliefs
+            </Text>
+            <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
+              Select the faith, tradition, or worldview that represents you.
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              haptics.selection();
+              setIsReligionModalVisible(false);
+              if (religionSearchDebounceRef.current) clearTimeout(religionSearchDebounceRef.current);
+              religionAbortRef.current?.abort();
+              setReligionSearchText('');
+              setInternetReligionSuggestions([]);
+              setIsSearchingReligionInternet(false);
+            }}
+            style={[
+              styles.modalCloseBtn,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Close religion selection modal"
+          >
+            <X size={16} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Bar Facility */}
+        <View
+          style={[
+            styles.modalSearchContainer,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F4F4F6',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
+            },
+          ]}
+        >
+          {isSearchingReligionInternet ? (
+            <ActivityIndicator size="small" color={theme.colors.textPrimary} style={{ marginRight: 8 }} />
+          ) : (
+            <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          )}
+          <RNTextInput
+            ref={religionSearchInputRef}
+            style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
+            placeholder="Search religions, faiths, or web..."
+            placeholderTextColor={theme.colors.textTertiary}
+            value={religionSearchText}
+            onChangeText={handleReligionSearchTextChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
+            returnKeyType="search"
+          />
+          {religionSearchText.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                if (religionSearchDebounceRef.current) clearTimeout(religionSearchDebounceRef.current);
+                religionAbortRef.current?.abort();
+                setReligionSearchText('');
+                setInternetReligionSuggestions([]);
+                setIsSearchingReligionInternet(false);
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={15} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Scrollable Religions List */}
+        <ScrollView
+          style={{ maxHeight: isKeyboardVisible ? 240 : 420 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {filteredReligions.map((item) => {
+            const isSelected = selectedReligionId === item.id;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.selectionOptionRow,
+                  {
+                    backgroundColor: isSelected
+                      ? isDark
+                        ? 'rgba(255, 255, 255, 0.09)'
+                        : '#F4F4F6'
+                      : 'transparent',
+                    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
+                  },
+                ]}
+                onPress={() => handleSelectReligion(item)}
+                activeOpacity={0.7}
+              >
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text
+                    style={{
+                      color: theme.colors.textPrimary,
+                      fontWeight: isSelected ? '700' : '600',
+                      fontSize: 15,
+                    }}
+                  >
+                    {item.label}
+                  </Text>
+                  <Text level="caption" color="tertiary" style={{ marginTop: 2, lineHeight: 16 }}>
+                    {item.desc}
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.radioIndicator,
+                    {
+                      borderColor: isSelected
+                        ? theme.colors.textPrimary
+                        : isDark
+                          ? 'rgba(255, 255, 255, 0.25)'
+                          : '#D4D4D8',
+                      backgroundColor: isSelected ? theme.colors.textPrimary : 'transparent',
+                    },
+                  ]}
+                >
+                  {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Web Discoveries Section */}
+          {internetReligionSuggestions.length > 0 && (
+            <View style={{ marginTop: 12 }}>
+              <View style={styles.modalSubSectionHeader}>
+                <Globe size={13} color={theme.colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text
+                  style={[
+                    styles.modalSubSectionTitle,
+                    { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                  ]}
+                >
+                  WEB DISCOVERIES ({internetReligionSuggestions.length})
+                </Text>
+              </View>
+
+              {internetReligionSuggestions.map((item) => {
+                const isSelected =
+                  (selectedReligionId === 'other' && customReligionText.toLowerCase() === item.label.toLowerCase()) ||
+                  religion.toLowerCase() === item.label.toLowerCase();
+
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      styles.selectionOptionRow,
+                      {
+                        backgroundColor: isSelected
+                          ? isDark
+                            ? 'rgba(255, 255, 255, 0.09)'
+                            : '#F4F4F6'
+                          : 'transparent',
+                        borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
+                      },
+                    ]}
+                    onPress={() => handleSelectInternetReligion(item)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={{ flex: 1, paddingRight: 10 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text
+                          style={{
+                            color: theme.colors.textPrimary,
+                            fontWeight: isSelected ? '700' : '600',
+                            fontSize: 15,
+                          }}
+                        >
+                          {item.label}
+                        </Text>
+                        <View
+                          style={{
+                            paddingHorizontal: 6,
+                            paddingVertical: 1.5,
+                            borderRadius: 6,
+                            backgroundColor: isDark
+                              ? 'rgba(255, 255, 255, 0.08)'
+                              : 'rgba(0, 0, 0, 0.05)',
+                          }}
+                        >
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: theme.colors.textTertiary }}>
+                            WEB
+                          </Text>
+                        </View>
+                      </View>
+                      <Text level="caption" color="tertiary" style={{ marginTop: 2, lineHeight: 16 }}>
+                        {item.desc}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.radioIndicator,
+                        {
+                          borderColor: isSelected
+                            ? theme.colors.textPrimary
+                            : isDark
+                              ? 'rgba(255, 255, 255, 0.25)'
+                              : '#D4D4D8',
+                          backgroundColor: isSelected ? theme.colors.textPrimary : 'transparent',
+                        },
+                      ]}
+                    >
+                      {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Searching online status indicator */}
+          {isSearchingReligionInternet && internetReligionSuggestions.length === 0 && (
+            <View style={styles.modalSearchLoadingRow}>
+              <ActivityIndicator size="small" color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+              <Text level="caption" color="secondary">
+                Searching global traditions online...
+              </Text>
+            </View>
+          )}
+
+          {/* No matches empty state with single-tap self-describe prompt */}
+          {filteredReligions.length === 0 &&
+            internetReligionSuggestions.length === 0 &&
+            !isSearchingReligionInternet &&
+            religionSearchText.trim().length > 0 && (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <Text level="caption" color="secondary" style={{ textAlign: 'center', marginBottom: 12 }}>
+                  No preset religions matching &quot;{religionSearchText.trim()}&quot;
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    haptics.selection();
+                    setSelectedReligionId('other');
+                    setCustomReligionText(religionSearchText.trim());
+                    setReligion(religionSearchText.trim());
+                    setIsReligionModalVisible(false);
+                    setReligionSearchText('');
+                  }}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 9,
+                    borderRadius: 10,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    borderWidth: 1,
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#E4E4E7',
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' }}>
+                    Tap to set as &quot;{religionSearchText.trim()}&quot;
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+          {/* Custom Self-Describe Input if other selected */}
+          {selectedReligionId === 'other' && (
+            <View style={styles.customGenderInputBox}>
+              <Text
+                level="caption"
+                style={{
+                  color: theme.colors.textSecondary,
+                  marginBottom: 6,
+                  fontWeight: '600',
+                }}
+              >
+                Type your belief or worldview:
+              </Text>
+              <RNTextInput
+                style={[
+                  styles.textInput,
+                  {
+                    color: theme.colors.textPrimary,
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#E4E4E7',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F8F8FA',
+                  },
+                ]}
+                placeholder="e.g. Omnist, Non-denominational, Eclectic"
+                placeholderTextColor={theme.colors.textTertiary}
+                value={customReligionText}
+                onChangeText={setCustomReligionText}
+                maxLength={40}
+              />
+              <TouchableOpacity
+                style={[styles.confirmCustomButton, { backgroundColor: theme.colors.textPrimary }]}
+                onPress={() => {
+                  haptics.notificationSuccess();
+                  if (customReligionText.trim()) {
+                    setReligion(customReligionText.trim());
+                  }
+                  setIsReligionModalVisible(false);
+                  setReligionSearchText('');
+                }}
+              >
+                <Text
+                  style={{
+                    color: isDark ? '#000000' : '#FFFFFF',
+                    fontWeight: '700',
+                    fontSize: 13,
+                  }}
+                >
+                  Confirm Belief
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Show on Profile Toggle */}
+        <TouchableOpacity
+          style={[
+            styles.showOnProfileRow,
+            {
+              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
+              paddingBottom: isKeyboardVisible ? 0 : 4,
+            },
+          ]}
+          onPress={() => {
+            haptics.selection();
+            setShowReligionOnProfile((prev) => !prev);
+          }}
+          activeOpacity={0.8}
+        >
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <Text style={{ color: theme.colors.textPrimary, fontWeight: '600', fontSize: 13.5 }}>
+              Visible on my profile
+            </Text>
+            <Text level="caption" color="tertiary" style={{ marginTop: 1 }}>
+              {showReligionOnProfile
+                ? 'Your beliefs are shown on your card'
+                : 'Hidden from public profile card'}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.toggleCapsule,
+              {
+                backgroundColor: showReligionOnProfile
+                  ? theme.colors.textPrimary
+                  : isDark
+                    ? 'rgba(255, 255, 255, 0.14)'
+                    : '#D4D4D8',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.toggleKnob,
+                {
+                  backgroundColor: showReligionOnProfile
+                    ? isDark
+                      ? '#000000'
+                      : '#FFFFFF'
+                    : isDark
+                      ? '#FFFFFF'
+                      : '#FFFFFF',
+                  alignSelf: showReligionOnProfile ? 'flex-end' : 'flex-start',
+                },
+              ]}
+            />
+          </View>
+        </TouchableOpacity>
+      </SmoothBottomSheetModal>
+
+      {/* ======================================================== */}
+      {/* 7. Open to Religions (Religious Preferences) Modal */}
+      {/* ======================================================== */}
+      <SmoothBottomSheetModal
+        visible={isInterestedInReligionModalVisible}
+        onClose={() => {
+          setIsInterestedInReligionModalVisible(false);
+          if (interestedInReligionSearchDebounceRef.current)
+            clearTimeout(interestedInReligionSearchDebounceRef.current);
+          interestedInReligionAbortRef.current?.abort();
+          setInterestedInReligionSearchText('');
+          setInternetInterestedInReligionSuggestions([]);
+          setIsSearchingInterestedInReligionInternet(false);
+        }}
+        sheetStyle={{ maxHeight: '86%' }}
+        keyboardPaddingBottom={7}
+        showHandle={true}
+      >
+        {/* Header */}
+        <View style={styles.modalHeader}>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.modalTitle,
+                { color: theme.colors.textPrimary, fontFamily: folkraFont },
+              ]}
+            >
+              Open to Religions
+            </Text>
+            <Text level="caption" color="tertiary" style={{ marginTop: 2 }}>
+              Select all faiths, traditions, and worldviews you would like to meet.
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              haptics.selection();
+              setIsInterestedInReligionModalVisible(false);
+              if (interestedInReligionSearchDebounceRef.current)
+                clearTimeout(interestedInReligionSearchDebounceRef.current);
+              interestedInReligionAbortRef.current?.abort();
+              setInterestedInReligionSearchText('');
+              setInternetInterestedInReligionSuggestions([]);
+              setIsSearchingInterestedInReligionInternet(false);
+            }}
+            style={[
+              styles.modalCloseBtn,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Close open to religions modal"
+          >
+            <X size={16} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Bar Facility */}
+        <View
+          style={[
+            styles.modalSearchContainer,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F4F4F6',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
+            },
+          ]}
+        >
+          {isSearchingInterestedInReligionInternet ? (
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.textPrimary}
+              style={{ marginRight: 8 }}
+            />
+          ) : (
+            <Search size={16} color={theme.colors.textTertiary} style={{ marginRight: 8 }} />
+          )}
+          <RNTextInput
+            ref={interestedInReligionSearchInputRef}
+            style={[styles.modalSearchInput, { color: theme.colors.textPrimary }]}
+            placeholder="Search faiths, traditions, or web..."
+            placeholderTextColor={theme.colors.textTertiary}
+            value={interestedInReligionSearchText}
+            onChangeText={handleInterestedInReligionSearchTextChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
+            returnKeyType="search"
+          />
+          {interestedInReligionSearchText.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                if (interestedInReligionSearchDebounceRef.current)
+                  clearTimeout(interestedInReligionSearchDebounceRef.current);
+                interestedInReligionAbortRef.current?.abort();
+                setInterestedInReligionSearchText('');
+                setInternetInterestedInReligionSuggestions([]);
+                setIsSearchingInterestedInReligionInternet(false);
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={15} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Scrollable Categories List */}
+        <ScrollView
+          style={{ maxHeight: isKeyboardVisible ? 240 : 420 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {filteredInterestedInReligionOptions.map((item) => {
+            const isSelected = selectedInterestedInReligionIds.includes(item.id);
+
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.selectionOptionRow,
+                  {
+                    backgroundColor: isSelected
+                      ? isDark
+                        ? 'rgba(255, 255, 255, 0.09)'
+                        : '#F4F4F6'
+                      : 'transparent',
+                    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
+                  },
+                ]}
+                onPress={() => toggleInterestedInReligionId(item.id)}
+                activeOpacity={0.7}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isSelected }}
+                accessibilityLabel={`${item.label}, ${isSelected ? 'selected' : 'not selected'}`}
+              >
+                <View style={{ flex: 1, paddingRight: 10, minWidth: 0 }}>
+                  <Text
+                    style={{
+                      color: theme.colors.textPrimary,
+                      fontWeight: isSelected ? '700' : '600',
+                      fontSize: 15,
+                    }}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {item.label}
+                  </Text>
+                  <Text
+                    level="caption"
+                    color="tertiary"
+                    style={{ marginTop: 2, lineHeight: 16 }}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {item.desc}
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.radioIndicator,
+                    {
+                      borderColor: isSelected
+                        ? theme.colors.textPrimary
+                        : isDark
+                          ? 'rgba(255, 255, 255, 0.25)'
+                          : '#D4D4D8',
+                      backgroundColor: isSelected ? theme.colors.textPrimary : 'transparent',
+                    },
+                  ]}
+                >
+                  {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Web Discoveries Section */}
+          {internetInterestedInReligionSuggestions.length > 0 && (
+            <View style={{ marginTop: 12 }}>
+              <View style={styles.modalSubSectionHeader}>
+                <Globe size={13} color={theme.colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text
+                  style={[
+                    styles.modalSubSectionTitle,
+                    { color: theme.colors.textSecondary, fontFamily: folkraFont },
+                  ]}
+                >
+                  WEB DISCOVERIES ({internetInterestedInReligionSuggestions.length})
+                </Text>
+              </View>
+
+              {internetInterestedInReligionSuggestions.map((item) => {
+                const isSelected = selectedInterestedInReligionIds.includes(item.id);
+
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      styles.selectionOptionRow,
+                      {
+                        backgroundColor: isSelected
+                          ? isDark
+                            ? 'rgba(255, 255, 255, 0.09)'
+                            : '#F4F4F6'
+                          : 'transparent',
+                        borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F1F4',
+                      },
+                    ]}
+                    onPress={() => handleSelectInternetInterestedInReligion(item)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={{ flex: 1, paddingRight: 10, minWidth: 0 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text
+                          style={{
+                            color: theme.colors.textPrimary,
+                            fontWeight: isSelected ? '700' : '600',
+                            fontSize: 15,
+                          }}
+                          numberOfLines={1}
+                        >
+                          {item.label}
+                        </Text>
+                        <View
+                          style={{
+                            paddingHorizontal: 6,
+                            paddingVertical: 1.5,
+                            borderRadius: 6,
+                            backgroundColor: isDark
+                              ? 'rgba(255, 255, 255, 0.08)'
+                              : 'rgba(0, 0, 0, 0.05)',
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontWeight: '700',
+                              color: theme.colors.textTertiary,
+                            }}
+                          >
+                            WEB
+                          </Text>
+                        </View>
+                      </View>
+                      <Text
+                        level="caption"
+                        color="tertiary"
+                        style={{ marginTop: 2, lineHeight: 16 }}
+                        numberOfLines={2}
+                      >
+                        {item.desc}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.radioIndicator,
+                        {
+                          borderColor: isSelected
+                            ? theme.colors.textPrimary
+                            : isDark
+                              ? 'rgba(255, 255, 255, 0.25)'
+                              : '#D4D4D8',
+                          backgroundColor: isSelected ? theme.colors.textPrimary : 'transparent',
+                        },
+                      ]}
+                    >
+                      {isSelected && <Check size={12} color={isDark ? '#000000' : '#FFFFFF'} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Searching online status indicator */}
+          {isSearchingInterestedInReligionInternet &&
+            internetInterestedInReligionSuggestions.length === 0 && (
+              <View style={styles.modalSearchLoadingRow}>
+                <ActivityIndicator
+                  size="small"
+                  color={theme.colors.textSecondary}
+                  style={{ marginRight: 8 }}
+                />
+                <Text level="caption" color="secondary">
+                  Searching global traditions online...
+                </Text>
+              </View>
+            )}
+
+          {/* No matches empty state */}
+          {filteredInterestedInReligionOptions.length === 0 &&
+            internetInterestedInReligionSuggestions.length === 0 &&
+            !isSearchingInterestedInReligionInternet &&
+            interestedInReligionSearchText.trim().length > 0 && (
+              <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                <Text level="caption" color="secondary" style={{ textAlign: 'center' }}>
+                  No traditions matching &quot;{interestedInReligionSearchText.trim()}&quot;
+                </Text>
+                <Text level="caption" color="tertiary" style={{ textAlign: 'center', marginTop: 4 }}>
+                  Try broader terms like &quot;all&quot;, &quot;spiritual&quot;, &quot;buddhist&quot;, or &quot;hindu&quot;.
+                </Text>
+              </View>
+            )}
+        </ScrollView>
+
+        {/* Confirm / Done Button */}
+        <TouchableOpacity
+          style={[
+            styles.confirmCustomButton,
+            {
+              backgroundColor: theme.colors.textPrimary,
+              marginTop: isKeyboardVisible ? 10 : 16,
+              marginBottom: isKeyboardVisible ? 0 : 8,
+            },
+          ]}
+          onPress={() => {
+            haptics.notificationSuccess();
+            setIsInterestedInReligionModalVisible(false);
+            if (interestedInReligionSearchDebounceRef.current)
+              clearTimeout(interestedInReligionSearchDebounceRef.current);
+            interestedInReligionAbortRef.current?.abort();
+            setInterestedInReligionSearchText('');
+            setInternetInterestedInReligionSuggestions([]);
+            setIsSearchingInterestedInReligionInternet(false);
           }}
           activeOpacity={0.88}
         >
@@ -3649,6 +6095,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.4,
+    color: '#FFFFFF',
   },
   cardBox: {
     borderRadius: 16,
@@ -3840,6 +6287,7 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '600',
     letterSpacing: 0.1,
+    color: '#D4D4D8',
   },
   fieldCounter: {
     fontSize: 11,
@@ -3883,12 +6331,14 @@ const styles = StyleSheet.create({
     height: '100%',
     fontSize: 15,
     fontWeight: '500',
+    color: '#A1A1AA',
     paddingVertical: 0,
     paddingHorizontal: 0,
   },
   modernBarInputText: {
     flex: 1,
     fontSize: 15,
+    color: '#A1A1AA',
     paddingVertical: 0,
     paddingHorizontal: 0,
   },
@@ -3897,6 +6347,7 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     lineHeight: 21,
     fontWeight: '400',
+    color: '#A1A1AA',
     paddingVertical: 0,
     paddingHorizontal: 0,
   },
@@ -4053,20 +6504,11 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
   },
-  ageStatusBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 14,
-  },
   pickerColumnsRow: {
     flexDirection: 'row',
-    height: 180,
+    height: 228,
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   pickerColumn: {
     flex: 1,
@@ -4092,7 +6534,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   pickerItem: {
-    paddingVertical: 9,
+    paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -4104,7 +6546,7 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
   },
   modalConfirmBtn: {
-    height: 48,
+    height: 50,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -4332,5 +6774,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  modalSubSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 8,
+  },
+  modalSubSectionTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+  },
+  modalSearchLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
   },
 });

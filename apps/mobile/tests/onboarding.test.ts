@@ -550,5 +550,104 @@ describe('Onboarding & First-Run Suite', () => {
         expect(fallbackPrompt.prompt).toContain('Sunday morning');
       });
     });
+
+    describe('Religion & Beliefs Field & Search Facility', () => {
+      it('stores and updates religion in draftProfile', () => {
+        const store = useOnboardingStore.getState();
+        expect(store.draftProfile.religion).toBe('');
+
+        store.updateDraftProfile({ religion: 'Spiritual' });
+        expect(useOnboardingStore.getState().draftProfile.religion).toBe('Spiritual');
+
+        store.resetOnboardingDraft();
+        expect(useOnboardingStore.getState().draftProfile.religion).toBe('');
+      });
+
+      it('hydrates religion from private profile response', () => {
+        const store = useOnboardingStore.getState();
+        store.hydrateFromProfile({
+          displayName: 'Anya',
+          dateOfBirth: '1998-05-15',
+          gender: 'WOMAN',
+          religion: 'Hindu',
+        } as any);
+
+        expect(useOnboardingStore.getState().draftProfile.religion).toBe('Hindu');
+      });
+
+      it('ranks religion search candidates with exact match and synonyms', async () => {
+        const {
+          RELIGION_OPTIONS,
+          RELIGION_SYNONYMS_MAP,
+          rankSearchCandidates,
+        } = await import('../app/(onboarding)/profile-setup.js');
+
+        // Exact match
+        const exact = rankSearchCandidates(RELIGION_OPTIONS, 'Buddhism', RELIGION_SYNONYMS_MAP);
+        expect(exact.length).toBeGreaterThan(0);
+        expect(exact[0]!.id).toBe('buddhist');
+
+        // Synonym match: "islam" -> Muslim
+        const islamMatch = rankSearchCandidates(RELIGION_OPTIONS, 'islam', RELIGION_SYNONYMS_MAP);
+        expect(islamMatch.length).toBeGreaterThan(0);
+        expect(islamMatch[0]!.id).toBe('muslim');
+
+        // Synonym match: "catholicism" -> Catholic
+        const catholicMatch = rankSearchCandidates(RELIGION_OPTIONS, 'catholicism', RELIGION_SYNONYMS_MAP);
+        expect(catholicMatch.length).toBeGreaterThan(0);
+        expect(catholicMatch[0]!.id).toBe('catholic');
+      });
+
+      it('resolves instant abbreviation discoveries for religion', async () => {
+        const { getInstantReligionDiscoveries } = await import(
+          '../app/(onboarding)/profile-setup.js'
+        );
+
+        const sbnrResults = getInstantReligionDiscoveries('sbnr');
+        expect(sbnrResults.length).toBeGreaterThan(0);
+        expect(sbnrResults.some((r: any) => r.label.toLowerCase().includes('spiritual'))).toBe(true);
+
+        const rcResults = getInstantReligionDiscoveries('rc');
+        expect(rcResults.length).toBeGreaterThan(0);
+        expect(rcResults.some((r: any) => r.label.toLowerCase().includes('catholic'))).toBe(true);
+      });
+
+      it('stores and updates interestedInReligions and religionPreferences in onboarding store', () => {
+        const store = useOnboardingStore.getState();
+        expect(store.draftProfile.interestedInReligions).toEqual(['all']);
+        expect(store.draftPreferences.religionPreferences).toEqual(['all']);
+
+        store.updateDraftProfile({ interestedInReligions: ['hindu', 'buddhist'] });
+        store.updateDraftPreferences({ religionPreferences: ['hindu', 'buddhist'] });
+
+        expect(useOnboardingStore.getState().draftProfile.interestedInReligions).toEqual([
+          'hindu',
+          'buddhist',
+        ]);
+        expect(useOnboardingStore.getState().draftPreferences.religionPreferences).toEqual([
+          'hindu',
+          'buddhist',
+        ]);
+      });
+
+      it('supports Open to All in INTERESTED_IN_RELIGION_OPTIONS and searches correctly', async () => {
+        const {
+          INTERESTED_IN_RELIGION_OPTIONS,
+          INTERESTED_IN_RELIGION_SYNONYMS_MAP,
+          rankSearchCandidates,
+        } = await import('../app/(onboarding)/profile-setup.js');
+
+        expect(INTERESTED_IN_RELIGION_OPTIONS[0]!.id).toBe('all');
+        expect(INTERESTED_IN_RELIGION_OPTIONS[0]!.label).toBe('Open to All Religions');
+
+        const allMatch = rankSearchCandidates(
+          INTERESTED_IN_RELIGION_OPTIONS,
+          'everyone',
+          INTERESTED_IN_RELIGION_SYNONYMS_MAP
+        );
+        expect(allMatch.length).toBeGreaterThan(0);
+        expect(allMatch[0]!.id).toBe('all');
+      });
+    });
   });
 });

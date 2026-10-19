@@ -300,6 +300,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
   const [selectedFilterId, setSelectedFilterId] = useState<string>('original');
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [replacingPhotoId, setReplacingPhotoId] = useState<string | null>(null);
+  const isPickingRef = useRef(false);
 
   // Interactive Crop & Resize (Framing Viewfinder) States inside Portrait Studio
   const [cropScale, setCropScale] = useState(1);
@@ -831,14 +832,18 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
 
   // Launch device photo gallery / storage
   const handlePickFromGallery = async () => {
+    if (isPickingRef.current) {
+      return;
+    }
+    isPickingRef.current = true;
+
     haptics.selection();
     setErrorMessage(undefined);
 
-    // If bottom sheet is open, close it and wait for native dismissal animation (350ms)
-    // This is required on iOS so UIKit does not reject presenting PHPickerViewController
+    // If bottom sheet is open, close it
     if (isPickerModalVisible) {
       setIsPickerModalVisible(false);
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      await new Promise((resolve) => setTimeout(resolve, 80));
     }
 
     try {
@@ -869,36 +874,48 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
         setSelectedFilterId('original');
         setIsStudioModalVisible(true);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('[Photos] Error in handlePickFromGallery:', err);
-      setErrorMessage(err?.message || 'Failed to select photo from gallery.');
+      const msg = err instanceof Error ? err.message : 'Failed to select photo from gallery.';
+      setErrorMessage(msg);
+    } finally {
+      isPickingRef.current = false;
     }
   };
 
   // Launch in-app native camera capture
   const handleCaptureFromCamera = async () => {
+    if (isPickingRef.current) {
+      return;
+    }
+    isPickingRef.current = true;
+
     haptics.selection();
     setErrorMessage(undefined);
 
-    // If bottom sheet is open, close it and wait for native dismissal animation (350ms)
+    // If bottom sheet is open, close it
     if (isPickerModalVisible) {
       setIsPickerModalVisible(false);
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      await new Promise((resolve) => setTimeout(resolve, 80));
     }
 
     // Simulator Detection:
     // iOS and Android simulators do not have camera hardware. Attempting to launch
     // UIImagePickerController with .camera crashes or hangs UIKit on simulators.
     if (!Device.isDevice) {
+      isPickingRef.current = false;
       Alert.alert(
         'Simulator Camera Unavailable',
         'Camera capture is not supported on device simulators. Opening your photo library instead so you can test the photo studio.',
-        [{ text: 'Open Library', onPress: () => void handlePickFromGallery() }]
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Library', onPress: () => void handlePickFromGallery() },
+        ]
       );
       setErrorMessage(
-        'Camera is not available on simulators. Launching device photo library instead...'
+        'Camera is not available on simulators. You can select a photo from your gallery instead.'
       );
-      return handlePickFromGallery();
+      return;
     }
 
     try {
@@ -928,7 +945,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
         setSelectedFilterId('original');
         setIsStudioModalVisible(true);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('[Photos] Error in handleCaptureFromCamera:', err);
       Alert.alert(
         'Camera Error',
@@ -941,6 +958,8 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
       setErrorMessage(
         'Camera could not be opened. You can select a photo from your gallery instead.'
       );
+    } finally {
+      isPickingRef.current = false;
     }
   };
 
@@ -1958,90 +1977,97 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
             </Text>
           </View>
 
-          <View style={styles.inspirationCardList}>
-            <View
-              style={[
-                styles.inspirationItem,
-                {
-                  backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
-                },
-              ]}
-            >
+          <View style={styles.inspirationList}>
+            {/* Point 1: Solo Portrait */}
+            <View style={styles.inspirationRow}>
               <View
                 style={[
-                  styles.inspirationIconWrap,
+                  styles.inspirationIconBadge,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                    backgroundColor: isDark
+                      ? 'rgba(255, 255, 255, 0.05)'
+                      : 'rgba(0, 0, 0, 0.035)',
                   },
                 ]}
               >
-                <UserCheck size={16} color={theme.colors.textPrimary} strokeWidth={2} />
+                <UserCheck size={15} color={theme.colors.textPrimary} strokeWidth={2} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text level="bodySmall" style={styles.inspirationTitle}>
-                  Solo Cover Portrait
+              <View style={styles.inspirationContent}>
+                <Text level="bodySmall" style={[styles.inspirationTitle, { color: theme.colors.textPrimary }]}>
+                  Solo Portrait
                 </Text>
                 <Text level="caption" color="secondary" style={styles.inspirationDesc}>
-                  A warm, clear portrait where your eyes and smile are easily seen.
+                  Clear, smiling shot where your face and eyes are front and center.
                 </Text>
               </View>
             </View>
 
             <View
               style={[
-                styles.inspirationItem,
+                styles.inspirationDivider,
                 {
-                  backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.06)'
+                    : 'rgba(0, 0, 0, 0.06)',
                 },
               ]}
-            >
+            />
+
+            {/* Point 2: Soft Natural Light */}
+            <View style={styles.inspirationRow}>
               <View
                 style={[
-                  styles.inspirationIconWrap,
+                  styles.inspirationIconBadge,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                    backgroundColor: isDark
+                      ? 'rgba(255, 255, 255, 0.05)'
+                      : 'rgba(0, 0, 0, 0.035)',
                   },
                 ]}
               >
-                <Sun size={16} color={theme.colors.textPrimary} strokeWidth={2} />
+                <Sun size={15} color={theme.colors.textPrimary} strokeWidth={2} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text level="bodySmall" style={styles.inspirationTitle}>
-                  Soft Natural Light
+              <View style={styles.inspirationContent}>
+                <Text level="bodySmall" style={[styles.inspirationTitle, { color: theme.colors.textPrimary }]}>
+                  Natural Light
                 </Text>
                 <Text level="caption" color="secondary" style={styles.inspirationDesc}>
-                  Daylight or cozy cafe lighting creates natural warmth and depth.
+                  Warm daylight or cozy cafe lighting creates depth and natural tones.
                 </Text>
               </View>
             </View>
 
             <View
               style={[
-                styles.inspirationItem,
+                styles.inspirationDivider,
                 {
-                  backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.06)'
+                    : 'rgba(0, 0, 0, 0.06)',
                 },
               ]}
-            >
+            />
+
+            {/* Point 3: Candid Moments */}
+            <View style={styles.inspirationRow}>
               <View
                 style={[
-                  styles.inspirationIconWrap,
+                  styles.inspirationIconBadge,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                    backgroundColor: isDark
+                      ? 'rgba(255, 255, 255, 0.05)'
+                      : 'rgba(0, 0, 0, 0.035)',
                   },
                 ]}
               >
-                <Compass size={16} color={theme.colors.textPrimary} strokeWidth={2} />
+                <Compass size={15} color={theme.colors.textPrimary} strokeWidth={2} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text level="bodySmall" style={styles.inspirationTitle}>
+              <View style={styles.inspirationContent}>
+                <Text level="bodySmall" style={[styles.inspirationTitle, { color: theme.colors.textPrimary }]}>
                   Candid Moments
                 </Text>
                 <Text level="caption" color="secondary" style={styles.inspirationDesc}>
-                  Snapshots of you cooking, traveling, exploring hobbies, or sharing a laugh.
+                  Snapshots showing your hobbies, passions, travels, or authentic laughs.
                 </Text>
               </View>
             </View>
@@ -2167,6 +2193,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
           setReplacingPhotoId(null);
         }}
         showHandle={true}
+        useNativeModal={false}
       >
         {/* Modal Header */}
         <View style={styles.pickerHeader}>
@@ -2408,6 +2435,7 @@ export default function OnboardingPhotosScreen(): React.JSX.Element {
         }}
         showHandle={true}
         sheetStyle={{ maxHeight: '92%' }}
+        useNativeModal={false}
       >
         {/* Studio Header */}
         <View style={styles.modalHeader}>
@@ -3285,13 +3313,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   inspirationSection: {
-    marginBottom: 20,
+    marginTop: 8,
+    marginBottom: 24,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 10,
     paddingHorizontal: 2,
   },
   sectionHeaderTitle: {
@@ -3300,23 +3329,25 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
-  inspirationCardList: {
-    gap: 9,
+  inspirationList: {
+    paddingVertical: 2,
   },
-  inspirationItem: {
+  inspirationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 2,
     gap: 12,
   },
-  inspirationIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  inspirationIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  inspirationContent: {
+    flex: 1,
   },
   inspirationTitle: {
     fontWeight: '700',
@@ -3324,13 +3355,17 @@ const styles = StyleSheet.create({
   },
   inspirationDesc: {
     fontSize: 12,
-    lineHeight: 16,
+    lineHeight: 16.5,
+  },
+  inspirationDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 46,
   },
   reassuranceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 12,
+    gap: 7,
+    marginTop: 16,
     paddingHorizontal: 4,
   },
   reassuranceText: {

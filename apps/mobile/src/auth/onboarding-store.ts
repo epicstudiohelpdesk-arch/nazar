@@ -97,6 +97,7 @@ export interface DraftPreferences {
   genderPreferences: Gender[];
   maxDistanceKm: number;
   relationshipIntent: RelationshipIntent;
+  religionPreferences?: string[];
 }
 
 export interface DraftProfile {
@@ -106,7 +107,9 @@ export interface DraftProfile {
   genderIdentity?: string; // Specific modern gender identity (e.g. Transgender Woman, Genderfluid, Non-binary)
   interestedIn?: Gender[]; // Genders user is interested in discovering (e.g. ['WOMAN'], ['MAN', 'NON_BINARY'], ['OTHER'])
   interestedInIdentities?: string[]; // Specific identities selected for discovery (e.g. ['woman', 'transgender_woman'])
+  interestedInReligions?: string[]; // Religions / worldviews open to meeting (e.g. ['all'] or ['hindu', 'buddhist'])
   intent: RelationshipIntent;
+  religion?: string;
   city: string;
   coordinates?: { latitude: number; longitude: number };
   bio: string;
@@ -177,7 +180,9 @@ const initialDraftProfile: DraftProfile = {
   genderIdentity: 'Woman',
   interestedIn: ['OTHER'],
   interestedInIdentities: ['everyone'],
+  interestedInReligions: ['all'],
   intent: 'LONG_TERM',
+  religion: '',
   city: '',
   bio: '',
   occupation: '',
@@ -190,6 +195,7 @@ const initialDraftPreferences: DraftPreferences = {
   genderPreferences: ['MAN'],
   maxDistanceKm: 50,
   relationshipIntent: 'LONG_TERM',
+  religionPreferences: ['all'],
 };
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
@@ -305,6 +311,11 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         bio: profile.bio || state.draftProfile.bio,
         occupation: profile.occupation || state.draftProfile.occupation,
         education: profile.education || state.draftProfile.education,
+        religion:
+          (profile as { religion?: string }).religion || state.draftProfile.religion,
+        interestedInReligions:
+          (profile as { interestedInReligions?: string[] }).interestedInReligions ||
+          state.draftProfile.interestedInReligions,
       },
       draftPhotos: (profile.media || []).map((m) => ({
         id: m.id,
@@ -326,6 +337,9 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
             genderPreferences: [...profile.preferences.genderPreferences],
             maxDistanceKm: profile.preferences.maxDistanceKm,
             relationshipIntent: profile.preferences.relationshipIntent,
+            religionPreferences:
+              (profile.preferences as { religionPreferences?: string[] }).religionPreferences ||
+              state.draftPreferences.religionPreferences,
           }
         : state.draftPreferences,
     })),
