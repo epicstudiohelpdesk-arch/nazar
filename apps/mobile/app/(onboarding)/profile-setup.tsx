@@ -28,17 +28,11 @@ import {
   Briefcase,
   GraduationCap,
   Heart,
-  Sparkles,
   ChevronDown,
   Check,
   X,
   AlertCircle,
   ShieldCheck,
-  Lock,
-  Coffee,
-  BookOpen,
-  Plane,
-  Music,
   Search,
   Crosshair,
   Plus,
@@ -730,17 +724,6 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
       return `${m1.label} +${selectedInterestedInIds.length - 1} more`;
     }
     return 'Everyone (Open to All)';
-  }, [selectedInterestedInIds]);
-
-  const activeInterestedInDesc = useMemo(() => {
-    if (selectedInterestedInIds.includes('everyone')) {
-      return 'Open to people of all genders and identities';
-    }
-    if (selectedInterestedInIds.length === 1) {
-      const match = INTERESTED_IN_OPTIONS.find((o) => o.id === selectedInterestedInIds[0]);
-      return match ? match.desc : 'Open to people of all genders and identities';
-    }
-    return `${selectedInterestedInIds.length} categories selected for discovery`;
   }, [selectedInterestedInIds]);
 
   const maxDaysInTempMonth = useMemo(() => {
@@ -1654,232 +1637,165 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     </Text>
                   </View>
 
-                  {/* Full Name Card */}
-                  <Animated.View
-                    onLayout={(e) => {
-                      nameCardRelY.current = e.nativeEvent.layout.y;
-                    }}
-                    style={[
-                      styles.cardBox,
-                      {
-                        backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                        borderColor:
-                          focusedField === 'displayName' || highlightedField === 'displayName'
-                            ? theme.colors.textPrimary
-                            : isDark
-                              ? 'rgba(255, 255, 255, 0.08)'
-                              : '#E4E4E7',
-                        marginBottom: 14,
-                        transform: [{ translateX: nameShakeAnim }],
-                      },
-                    ]}
-                  >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardTitleCluster}>
-                        <View
-                          style={[
-                            styles.monochromeIconBadge,
-                            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
-                          ]}
-                        >
-                          <User size={15} color={theme.colors.textPrimary} />
-                        </View>
-                        <Text level="bodySmall" style={styles.cardTitleText}>
-                          Full Name
-                        </Text>
-                      </View>
-                      <Text level="caption" color="tertiary">
+                  {/* Full Name */}
+                  <View style={styles.fieldWrapper}>
+                    <View style={styles.fieldHeaderRow}>
+                      <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
+                        Full Name
+                      </Text>
+                      <Text style={[styles.fieldCounter, { color: theme.colors.textTertiary }]}>
                         {displayName.length}/30
                       </Text>
                     </View>
 
-                    <RNTextInput
-                      ref={nameInputRef}
+                    <Animated.View
+                      onLayout={(e) => {
+                        nameCardRelY.current = e.nativeEvent.layout.y;
+                      }}
                       style={[
-                        styles.textInput,
+                        styles.modernInputBar,
                         {
-                          color: theme.colors.textPrimary,
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                          borderColor:
+                            focusedField === 'displayName' || highlightedField === 'displayName'
+                              ? theme.colors.textPrimary
+                              : isDark
+                                ? 'rgba(255, 255, 255, 0.08)'
+                                : '#E5E7EB',
+                          transform: [{ translateX: nameShakeAnim }],
                         },
                       ]}
-                      placeholder="What should we call you?"
-                      placeholderTextColor={theme.colors.textTertiary}
-                      value={displayName}
-                      onFocus={() => {
-                        cityInputRef.current?.blur();
-                        bioInputRef.current?.blur();
-                        occupationInputRef.current?.blur();
-                        educationInputRef.current?.blur();
-                        setFocusedField('displayName');
-                        ensureFieldInView(section1Y.current + nameCardRelY.current - 95);
-                      }}
-                      onBlur={() => {
-                        setFocusedField((prev) => (prev === 'displayName' ? null : prev));
-                      }}
-                      onChangeText={(t) => {
-                        setDisplayName(t);
-                        if (errorMessage) setErrorMessage(undefined);
-                        ensureFieldInView(section1Y.current + nameCardRelY.current - 95);
-                      }}
-                      onSubmitEditing={dismissActiveField}
-                      maxLength={30}
-                      autoCapitalize="words"
-                      returnKeyType="done"
-                      testID="name-input"
-                    />
-                    <Text level="caption" color="tertiary" style={styles.microNotice}>
-                      This will be displayed on your profile and cannot be changed later.
-                    </Text>
-                  </Animated.View>
-
-                  {/* Date of Birth Trigger Card */}
-                  <Animated.View
-                    onLayout={(e) => {
-                      dobCardRelY.current = e.nativeEvent.layout.y;
-                    }}
-                    style={[
-                      styles.cardBox,
-                      {
-                        backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                        borderColor:
-                          highlightedField === 'dob'
+                    >
+                      <User
+                        size={16}
+                        color={
+                          focusedField === 'displayName'
                             ? theme.colors.textPrimary
-                            : isDark
-                              ? 'rgba(255, 255, 255, 0.08)'
-                              : '#E4E4E7',
-                        marginBottom: 14,
-                        transform: [{ translateX: dobShakeAnim }],
-                      },
-                    ]}
-                  >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardTitleCluster}>
-                        <View
-                          style={[
-                            styles.monochromeIconBadge,
-                            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
-                          ]}
+                            : theme.colors.textTertiary
+                        }
+                        style={styles.inputLeadingIcon}
+                      />
+                      <RNTextInput
+                        ref={nameInputRef}
+                        style={[
+                          styles.modernBarInput,
+                          {
+                            color: theme.colors.textPrimary,
+                          },
+                        ]}
+                        placeholder="What should we call you?"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        value={displayName}
+                        onFocus={() => {
+                          cityInputRef.current?.blur();
+                          bioInputRef.current?.blur();
+                          occupationInputRef.current?.blur();
+                          educationInputRef.current?.blur();
+                          setFocusedField('displayName');
+                          ensureFieldInView(section1Y.current + nameCardRelY.current - 95);
+                        }}
+                        onBlur={() => {
+                          setFocusedField((prev) => (prev === 'displayName' ? null : prev));
+                        }}
+                        onChangeText={(t) => {
+                          setDisplayName(t);
+                          if (errorMessage) setErrorMessage(undefined);
+                          ensureFieldInView(section1Y.current + nameCardRelY.current - 95);
+                        }}
+                        onSubmitEditing={dismissActiveField}
+                        maxLength={30}
+                        autoCapitalize="words"
+                        returnKeyType="done"
+                        testID="name-input"
+                      />
+                      {displayName.length > 0 && focusedField === 'displayName' && (
+                        <TouchableOpacity
+                          onPress={() => setDisplayName('')}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={styles.inputTrailingAction}
                         >
-                          <Calendar size={15} color={theme.colors.textPrimary} />
-                        </View>
-                        <Text level="bodySmall" style={styles.cardTitleText}>
-                          Date of Birth
-                        </Text>
-                      </View>
+                          <X size={14} color={theme.colors.textTertiary} />
+                        </TouchableOpacity>
+                      )}
+                    </Animated.View>
+                  </View>
 
+                  {/* Date of Birth */}
+                  <View style={styles.fieldWrapper}>
+                    <View style={styles.fieldHeaderRow}>
+                      <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
+                        Date of Birth
+                      </Text>
                       {currentAge !== null && (
-                        <View
-                          style={[
-                            styles.monochromeAgePill,
-                            {
-                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F1F4',
-                              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#E4E4E7',
-                            },
-                          ]}
-                        >
-                          <ShieldCheck
-                            size={12}
-                            color={theme.colors.textPrimary}
-                            style={{ marginRight: 4 }}
-                          />
-                          <Text
-                            style={{
-                              color: theme.colors.textPrimary,
-                              fontWeight: '700',
-                              fontSize: 12,
-                            }}
-                          >
-                            {currentAge} yrs · 18+
-                          </Text>
-                        </View>
+                        <Text style={[styles.ageBadgeText, { color: theme.colors.textSecondary }]}>
+                          {currentAge} yrs · 18+
+                        </Text>
                       )}
                     </View>
 
-                    <TouchableOpacity
-                      style={[
-                        styles.dropdownBox,
-                        {
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
-                          height: 52,
-                        },
-                      ]}
-                      onPress={handleOpenDatePicker}
-                      activeOpacity={0.8}
-                      accessibilityRole="button"
-                      accessibilityLabel="Choose date of birth"
+                    <Animated.View
+                      onLayout={(e) => {
+                        dobCardRelY.current = e.nativeEvent.layout.y;
+                      }}
+                      style={{ transform: [{ translateX: dobShakeAnim }] }}
                     >
-                      <Text
-                        style={{
-                          color: dateOfBirth ? theme.colors.textPrimary : theme.colors.textTertiary,
-                          fontWeight: dateOfBirth ? '600' : '400',
-                          fontSize: 15,
-                          flex: 1,
-                        }}
-                      >
-                        {formattedDateString}
-                      </Text>
-                      <View
+                      <TouchableOpacity
+                        onPress={handleOpenDatePicker}
+                        activeOpacity={0.7}
                         style={[
-                          styles.intentChevronBadge,
+                          styles.modernInputBar,
                           {
-                            backgroundColor: isDark
-                              ? 'rgba(255, 255, 255, 0.06)'
-                              : 'rgba(0, 0, 0, 0.04)',
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                            borderColor:
+                              highlightedField === 'dob'
+                                ? theme.colors.textPrimary
+                                : isDark
+                                  ? 'rgba(255, 255, 255, 0.08)'
+                                  : '#E5E7EB',
                           },
                         ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Choose date of birth"
                       >
-                        <ChevronDown size={15} color={theme.colors.textSecondary} />
-                      </View>
-                    </TouchableOpacity>
-
-                    <View style={styles.securityFootnote}>
-                      <Lock
-                        size={12}
-                        color={theme.colors.textTertiary}
-                        style={{ marginRight: 5 }}
-                      />
-                      <Text level="caption" color="tertiary" style={{ flex: 1, lineHeight: 16 }}>
-                        Your age will be public on Nazar, but your exact birthday is always kept
-                        private.
-                      </Text>
-                    </View>
-                  </Animated.View>
-
-                  {/* Modern Gender Identity Trigger Card */}
-                  <View
-                    style={[
-                      styles.cardBox,
-                      {
-                        backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
-                        marginBottom: 14,
-                      },
-                    ]}
-                  >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardTitleCluster}>
-                        <View
+                        <Calendar
+                          size={16}
+                          color={dateOfBirth ? theme.colors.textPrimary : theme.colors.textTertiary}
+                          style={styles.inputLeadingIcon}
+                        />
+                        <Text
                           style={[
-                            styles.monochromeIconBadge,
-                            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
+                            styles.modernBarInputText,
+                            {
+                              color: dateOfBirth
+                                ? theme.colors.textPrimary
+                                : theme.colors.textTertiary,
+                              fontWeight: dateOfBirth ? '600' : '400',
+                            },
                           ]}
                         >
-                          <Users size={15} color={theme.colors.textPrimary} />
-                        </View>
-                        <Text level="bodySmall" style={styles.cardTitleText}>
-                          Gender Identity
+                          {formattedDateString}
                         </Text>
-                      </View>
-                    </View>
+                        <ChevronDown size={15} color={theme.colors.textTertiary} />
+                      </TouchableOpacity>
+                    </Animated.View>
+                  </View>
 
+                  {/* Gender Identity */}
+                  <View style={styles.fieldWrapper}>
+                    <Text
+                      style={[
+                        styles.fieldLabel,
+                        { color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 2 },
+                      ]}
+                    >
+                      Gender Identity
+                    </Text>
                     <TouchableOpacity
                       style={[
-                        styles.intentDropdownBox,
+                        styles.modernInputBar,
                         {
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB',
                         },
                       ]}
                       onPress={() => {
@@ -1888,73 +1804,44 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         setGenderSearchText('');
                         setIsGenderModalVisible(true);
                       }}
-                      activeOpacity={0.8}
+                      activeOpacity={0.7}
                       accessibilityRole="button"
                       accessibilityLabel="Select gender identity"
                     >
-                      <View style={styles.intentContentContainer}>
-                        <Text
-                          style={[styles.intentLabelText, { color: theme.colors.textPrimary }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {activeGenderLabel}
-                        </Text>
-                        <Text
-                          style={[styles.intentDescText, { color: theme.colors.textTertiary }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {activeGenderOption.desc}
-                        </Text>
-                      </View>
-                      <View
+                      <Users
+                        size={16}
+                        color={theme.colors.textTertiary}
+                        style={styles.inputLeadingIcon}
+                      />
+                      <Text
                         style={[
-                          styles.intentChevronBadge,
-                          {
-                            backgroundColor: isDark
-                              ? 'rgba(255, 255, 255, 0.06)'
-                              : 'rgba(0, 0, 0, 0.04)',
-                          },
+                          styles.modernBarInputText,
+                          { color: theme.colors.textPrimary, fontWeight: '600' },
                         ]}
+                        numberOfLines={1}
                       >
-                        <ChevronDown size={15} color={theme.colors.textSecondary} />
-                      </View>
+                        {activeGenderLabel}
+                      </Text>
+                      <ChevronDown size={15} color={theme.colors.textTertiary} />
                     </TouchableOpacity>
                   </View>
 
-                  {/* Interested In (Looking For) Trigger Card */}
-                  <View
-                    style={[
-                      styles.cardBox,
-                      {
-                        backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
-                      },
-                    ]}
-                  >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardTitleCluster}>
-                        <View
-                          style={[
-                            styles.monochromeIconBadge,
-                            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
-                          ]}
-                        >
-                          <Compass size={15} color={theme.colors.textPrimary} />
-                        </View>
-                        <Text level="bodySmall" style={styles.cardTitleText}>
-                          Interested In
-                        </Text>
-                      </View>
-                    </View>
-
+                  {/* Interested In */}
+                  <View style={styles.fieldWrapper}>
+                    <Text
+                      style={[
+                        styles.fieldLabel,
+                        { color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 2 },
+                      ]}
+                    >
+                      Interested In
+                    </Text>
                     <TouchableOpacity
                       style={[
-                        styles.intentDropdownBox,
+                        styles.modernInputBar,
                         {
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB',
                         },
                       ]}
                       onPress={() => {
@@ -1962,38 +1849,25 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         haptics.selection();
                         setIsInterestedInModalVisible(true);
                       }}
-                      activeOpacity={0.8}
+                      activeOpacity={0.7}
                       accessibilityRole="button"
                       accessibilityLabel="Select who you are interested in"
                     >
-                      <View style={styles.intentContentContainer}>
-                        <Text
-                          style={[styles.intentLabelText, { color: theme.colors.textPrimary }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {activeInterestedInLabel}
-                        </Text>
-                        <Text
-                          style={[styles.intentDescText, { color: theme.colors.textTertiary }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {activeInterestedInDesc}
-                        </Text>
-                      </View>
-                      <View
+                      <Compass
+                        size={16}
+                        color={theme.colors.textTertiary}
+                        style={styles.inputLeadingIcon}
+                      />
+                      <Text
                         style={[
-                          styles.intentChevronBadge,
-                          {
-                            backgroundColor: isDark
-                              ? 'rgba(255, 255, 255, 0.06)'
-                              : 'rgba(0, 0, 0, 0.04)',
-                          },
+                          styles.modernBarInputText,
+                          { color: theme.colors.textPrimary, fontWeight: '600' },
                         ]}
+                        numberOfLines={1}
                       >
-                        <ChevronDown size={15} color={theme.colors.textSecondary} />
-                      </View>
+                        {activeInterestedInLabel}
+                      </Text>
+                      <ChevronDown size={15} color={theme.colors.textTertiary} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -2013,37 +1887,21 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     </Text>
                   </View>
 
-                  <View
-                    style={[
-                      styles.cardBox,
-                      {
-                        backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
-                      },
-                    ]}
-                  >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardTitleCluster}>
-                        <View
-                          style={[
-                            styles.monochromeIconBadge,
-                            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
-                          ]}
-                        >
-                          <Heart size={15} color={theme.colors.textPrimary} />
-                        </View>
-                        <Text level="bodySmall" style={styles.cardTitleText}>
-                          Relationship Intent
-                        </Text>
-                      </View>
-                    </View>
-
+                  <View style={styles.fieldWrapper}>
+                    <Text
+                      style={[
+                        styles.fieldLabel,
+                        { color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 2 },
+                      ]}
+                    >
+                      Relationship Intent
+                    </Text>
                     <TouchableOpacity
                       style={[
-                        styles.intentDropdownBox,
+                        styles.modernInputBar,
                         {
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB',
                         },
                       ]}
                       onPress={() => {
@@ -2051,38 +1909,25 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         haptics.selection();
                         setIsIntentModalVisible(true);
                       }}
-                      activeOpacity={0.8}
+                      activeOpacity={0.7}
                       accessibilityRole="button"
                       accessibilityLabel="Select relationship intent"
                     >
-                      <View style={styles.intentContentContainer}>
-                        <Text
-                          style={[styles.intentLabelText, { color: theme.colors.textPrimary }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {activeIntentOption.label}
-                        </Text>
-                        <Text
-                          style={[styles.intentDescText, { color: theme.colors.textTertiary }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {activeIntentOption.desc}
-                        </Text>
-                      </View>
-                      <View
+                      <Heart
+                        size={16}
+                        color={theme.colors.textTertiary}
+                        style={styles.inputLeadingIcon}
+                      />
+                      <Text
                         style={[
-                          styles.intentChevronBadge,
-                          {
-                            backgroundColor: isDark
-                              ? 'rgba(255, 255, 255, 0.06)'
-                              : 'rgba(0, 0, 0, 0.04)',
-                          },
+                          styles.modernBarInputText,
+                          { color: theme.colors.textPrimary, fontWeight: '600' },
                         ]}
+                        numberOfLines={1}
                       >
-                        <ChevronDown size={15} color={theme.colors.textSecondary} />
-                      </View>
+                        {activeIntentOption.label}
+                      </Text>
+                      <ChevronDown size={15} color={theme.colors.textTertiary} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -2107,59 +1952,91 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     </Text>
                   </View>
 
-                  <Animated.View
-                    onLayout={(e) => {
-                      cityCardRelY.current = e.nativeEvent.layout.y;
-                    }}
-                    style={[
-                      styles.cardBox,
-                      {
-                        backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                        borderColor:
-                          focusedField === 'city' || highlightedField === 'city'
-                            ? theme.colors.textPrimary
-                            : isDark
-                              ? 'rgba(255, 255, 255, 0.08)'
-                              : '#E4E4E7',
-                        transform: [{ translateX: cityShakeAnim }],
-                      },
-                    ]}
-                  >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardTitleCluster}>
-                        <View
+                  <View style={styles.fieldWrapper}>
+                    <View style={styles.fieldHeaderRow}>
+                      <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
+                        City / Neighborhood
+                      </Text>
+                      {/* Compact Map Button in Header */}
+                      <TouchableOpacity
+                        onPress={() => {
+                          dismissActiveField();
+                          haptics.selection();
+                          const targetCoords = selectedCoords || {
+                            latitude: 22.5726,
+                            longitude: 88.3639,
+                          };
+                          setMapCenterCoords(targetCoords);
+                          setMapReverseGeocodedName(city.trim() || 'Kolkata, West Bengal');
+                          setIsMapModalVisible(true);
+                          setTimeout(() => {
+                            mapWebViewRef.current?.injectJavaScript(`
+                              if (window.map) {
+                                window.map.setView([${targetCoords.latitude}, ${targetCoords.longitude}], 13);
+                              }
+                              true;
+                            `);
+                          }, 300);
+                        }}
+                        style={[
+                          styles.fieldHeaderAction,
+                          {
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EBEBEF',
+                          },
+                        ]}
+                        activeOpacity={0.75}
+                        accessibilityRole="button"
+                        accessibilityLabel="Choose location from map"
+                      >
+                        <Crosshair
+                          size={11.5}
+                          color={theme.colors.textPrimary}
+                          style={{ marginRight: 3.5 }}
+                        />
+                        <Text
                           style={[
-                            styles.monochromeIconBadge,
-                            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
+                            styles.fieldHeaderActionText,
+                            { color: theme.colors.textPrimary },
                           ]}
                         >
-                          <MapPin size={15} color={theme.colors.textPrimary} />
-                        </View>
-                        <Text level="bodySmall" style={styles.cardTitleText} numberOfLines={1}>
-                          City / Neighborhood
+                          Map
                         </Text>
-                      </View>
+                      </TouchableOpacity>
                     </View>
 
-                    {/* City Input with Real-time Search and Inline Map Button */}
-                    <View style={styles.cityInputContainer}>
+                    <Animated.View
+                      onLayout={(e) => {
+                        cityCardRelY.current = e.nativeEvent.layout.y;
+                      }}
+                      style={[
+                        styles.modernInputBar,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                          borderColor:
+                            focusedField === 'city' || highlightedField === 'city'
+                              ? theme.colors.textPrimary
+                              : isDark
+                                ? 'rgba(255, 255, 255, 0.08)'
+                                : '#E5E7EB',
+                          transform: [{ translateX: cityShakeAnim }],
+                        },
+                      ]}
+                    >
+                      <MapPin
+                        size={16}
+                        color={
+                          focusedField === 'city'
+                            ? theme.colors.textPrimary
+                            : theme.colors.textTertiary
+                        }
+                        style={styles.inputLeadingIcon}
+                      />
                       <RNTextInput
                         ref={cityInputRef}
                         style={[
-                          styles.textInput,
+                          styles.modernBarInput,
                           {
                             color: theme.colors.textPrimary,
-                            borderColor:
-                              focusedField === 'city'
-                                ? theme.colors.textPrimary
-                                : isDark
-                                  ? 'rgba(255, 255, 255, 0.1)'
-                                  : '#E4E4E7',
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
-                            height: 50,
-                            paddingLeft: 14,
-                            paddingRight: isSearchingLocation ? 154 : city.length > 0 ? 154 : 124,
-                            fontSize: 14.5,
                           },
                         ]}
                         placeholder="Type a city or locality..."
@@ -2186,83 +2063,31 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         testID="city-input"
                       />
 
-                      {/* Right-aligned actions inside text field: Activity indicator or Clear X + Choose on Map button */}
-                      <View style={styles.cityInputInlineActions}>
-                        {isSearchingLocation ? (
-                          <ActivityIndicator
-                            size="small"
-                            color={theme.colors.textSecondary}
-                            style={{ marginRight: 6 }}
-                          />
-                        ) : city.length > 0 ? (
-                          <TouchableOpacity
-                            onPress={() => {
-                              haptics.selection();
-                              setCity('');
-                              setLocationSuggestions([]);
-                              setShowSuggestionsDropdown(false);
-                              setSelectedCoords(null);
-                            }}
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                            style={{ marginRight: 6, padding: 3 }}
-                            accessibilityRole="button"
-                            accessibilityLabel="Clear city input"
-                          >
-                            <X size={14} color={theme.colors.textTertiary} />
-                          </TouchableOpacity>
-                        ) : null}
-
-                        {/* Compact Button-Style Choose on Map */}
+                      {/* Right-aligned actions: Activity indicator or Clear X */}
+                      {isSearchingLocation ? (
+                        <ActivityIndicator
+                          size="small"
+                          color={theme.colors.textSecondary}
+                          style={{ marginLeft: 8 }}
+                        />
+                      ) : city.length > 0 ? (
                         <TouchableOpacity
                           onPress={() => {
-                            dismissActiveField();
                             haptics.selection();
-                            const targetCoords = selectedCoords || {
-                              latitude: 22.5726,
-                              longitude: 88.3639,
-                            };
-                            setMapCenterCoords(targetCoords);
-                            setMapReverseGeocodedName(city.trim() || 'Kolkata, West Bengal');
-                            setIsMapModalVisible(true);
-                            setTimeout(() => {
-                              mapWebViewRef.current?.injectJavaScript(`
-                                if (window.map) {
-                                  window.map.setView([${targetCoords.latitude}, ${targetCoords.longitude}], 13);
-                                }
-                                true;
-                              `);
-                            }, 300);
+                            setCity('');
+                            setLocationSuggestions([]);
+                            setShowSuggestionsDropdown(false);
+                            setSelectedCoords(null);
                           }}
-                          style={[
-                            styles.inlineMapButton,
-                            {
-                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#EBEBEF',
-                              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : '#DCDCE0',
-                            },
-                          ]}
-                          activeOpacity={0.75}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={styles.inputTrailingAction}
                           accessibilityRole="button"
-                          accessibilityLabel="Choose location from map"
+                          accessibilityLabel="Clear city input"
                         >
-                          <Crosshair
-                            size={11.5}
-                            color={theme.colors.textPrimary}
-                            style={{ marginRight: 4 }}
-                          />
-                          <Text
-                            style={{
-                              color: theme.colors.textPrimary,
-                              fontWeight: '700',
-                              fontSize: 11,
-                              letterSpacing: -0.1,
-                            }}
-                            numberOfLines={1}
-                          >
-                            Choose on Map
-                          </Text>
+                          <X size={14} color={theme.colors.textTertiary} />
                         </TouchableOpacity>
-                      </View>
-                    </View>
+                      ) : null}
+                    </Animated.View>
 
                     {/* Real-time Internet Autocomplete Dropdown */}
                     {showSuggestionsDropdown && locationSuggestions.length > 0 && (
@@ -2318,12 +2143,7 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         ))}
                       </View>
                     )}
-
-                    <Text level="caption" color="tertiary" style={styles.microNotice}>
-                      Nearby matches will see your general city area. Your exact GPS coordinates
-                      remain strictly private.
-                    </Text>
-                  </Animated.View>
+                  </View>
                 </View>
 
                 {/* ======================================================== */}
@@ -2347,183 +2167,65 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                   </View>
 
                   <View
+                    style={styles.fieldWrapper}
                     onLayout={(e) => {
                       bioCardRelY.current = e.nativeEvent.layout.y;
                     }}
-                    style={[
-                      styles.cardBox,
-                      {
-                        backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                        borderColor:
-                          focusedField === 'bio'
-                            ? theme.colors.textPrimary
-                            : isDark
-                              ? 'rgba(255, 255, 255, 0.08)'
-                              : '#E4E4E7',
-                      },
-                    ]}
                   >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardTitleCluster}>
-                        <View
-                          style={[
-                            styles.monochromeIconBadge,
-                            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
-                          ]}
-                        >
-                          <Sparkles size={15} color={theme.colors.textPrimary} />
-                        </View>
-                        <Text level="bodySmall" style={styles.cardTitleText}>
-                          Bio / Headline
-                        </Text>
-                      </View>
-                      <Text level="caption" color="tertiary">
+                    <View style={styles.fieldHeaderRow}>
+                      <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
+                        Bio / About You
+                      </Text>
+                      <Text style={[styles.fieldCounter, { color: theme.colors.textTertiary }]}>
                         {bio.length}/300
                       </Text>
                     </View>
 
-                    <RNTextInput
-                      ref={bioInputRef}
+                    <View
                       style={[
-                        styles.multilineInput,
+                        styles.modernTextareaBar,
                         {
-                          color: theme.colors.textPrimary,
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E4E4E7',
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                          borderColor:
+                            focusedField === 'bio'
+                              ? theme.colors.textPrimary
+                              : isDark
+                                ? 'rgba(255, 255, 255, 0.08)'
+                                : '#E5E7EB',
                         },
                       ]}
-                      placeholder="A little about your rhythm, weekend rituals, and what brings you genuine joy..."
-                      placeholderTextColor={theme.colors.textTertiary}
-                      value={bio}
-                      onFocus={() => {
-                        nameInputRef.current?.blur();
-                        cityInputRef.current?.blur();
-                        occupationInputRef.current?.blur();
-                        educationInputRef.current?.blur();
-                        setFocusedField('bio');
-                        ensureFieldInView(section4Y.current + bioCardRelY.current - 95);
-                      }}
-                      onBlur={() => {
-                        setFocusedField((prev) => (prev === 'bio' ? null : prev));
-                      }}
-                      onChangeText={(t) => {
-                        setBio(t.slice(0, 300));
-                        ensureFieldInView(section4Y.current + bioCardRelY.current - 95);
-                      }}
-                      multiline
-                      numberOfLines={4}
-                      textAlignVertical="top"
-                      maxLength={300}
-                    />
-
-                    {/* Monochromatic Inspiration Chips */}
-                    <View style={styles.chipsSection}>
-                      <Text level="caption" color="tertiary" style={styles.chipsHeading}>
-                        SPARK AN IDEA
-                      </Text>
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <View style={{ flexDirection: 'row', gap: 6 }}>
-                          <TouchableOpacity
-                            style={[
-                              styles.inspirationCard,
-                              {
-                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F4F4F6',
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
-                              },
-                            ]}
-                            onPress={() => {
-                              haptics.selection();
-                              const prompt = 'Sunday morning coffee ritual: ';
-                              setBio((prev) => (prev ? `${prev.trim()}\n${prompt}` : prompt));
-                              bioInputRef.current?.focus();
-                            }}
-                          >
-                            <Coffee
-                              size={13}
-                              color={theme.colors.textPrimary}
-                              style={{ marginRight: 6 }}
-                            />
-                            <Text level="caption" color="secondary" style={{ fontSize: 12 }}>
-                              Sunday morning ritual
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={[
-                              styles.inspirationCard,
-                              {
-                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F4F4F6',
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
-                              },
-                            ]}
-                            onPress={() => {
-                              haptics.selection();
-                              const prompt = 'Currently reading / obsessed with: ';
-                              setBio((prev) => (prev ? `${prev.trim()}\n${prompt}` : prompt));
-                              bioInputRef.current?.focus();
-                            }}
-                          >
-                            <BookOpen
-                              size={13}
-                              color={theme.colors.textPrimary}
-                              style={{ marginRight: 6 }}
-                            />
-                            <Text level="caption" color="secondary" style={{ fontSize: 12 }}>
-                              Currently obsessed with
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={[
-                              styles.inspirationCard,
-                              {
-                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F4F4F6',
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
-                              },
-                            ]}
-                            onPress={() => {
-                              haptics.selection();
-                              const prompt = 'Next destination on my bucket list: ';
-                              setBio((prev) => (prev ? `${prev.trim()}\n${prompt}` : prompt));
-                              bioInputRef.current?.focus();
-                            }}
-                          >
-                            <Plane
-                              size={13}
-                              color={theme.colors.textPrimary}
-                              style={{ marginRight: 6 }}
-                            />
-                            <Text level="caption" color="secondary" style={{ fontSize: 12 }}>
-                              Next dream destination
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={[
-                              styles.inspirationCard,
-                              {
-                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F4F4F6',
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
-                              },
-                            ]}
-                            onPress={() => {
-                              haptics.selection();
-                              const prompt = 'The song I play on repeat: ';
-                              setBio((prev) => (prev ? `${prev.trim()}\n${prompt}` : prompt));
-                              bioInputRef.current?.focus();
-                            }}
-                          >
-                            <Music
-                              size={13}
-                              color={theme.colors.textPrimary}
-                              style={{ marginRight: 6 }}
-                            />
-                            <Text level="caption" color="secondary" style={{ fontSize: 12 }}>
-                              Songs on repeat
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </ScrollView>
+                    >
+                      <RNTextInput
+                        ref={bioInputRef}
+                        style={[
+                          styles.modernBarTextarea,
+                          {
+                            color: theme.colors.textPrimary,
+                          },
+                        ]}
+                        placeholder="A little about your rhythm, weekend rituals, and what brings you genuine joy..."
+                        placeholderTextColor={theme.colors.textTertiary}
+                        value={bio}
+                        onFocus={() => {
+                          nameInputRef.current?.blur();
+                          cityInputRef.current?.blur();
+                          occupationInputRef.current?.blur();
+                          educationInputRef.current?.blur();
+                          setFocusedField('bio');
+                          ensureFieldInView(section4Y.current + bioCardRelY.current - 95);
+                        }}
+                        onBlur={() => {
+                          setFocusedField((prev) => (prev === 'bio' ? null : prev));
+                        }}
+                        onChangeText={(t) => {
+                          setBio(t.slice(0, 300));
+                          ensureFieldInView(section4Y.current + bioCardRelY.current - 95);
+                        }}
+                        multiline
+                        numberOfLines={3}
+                        textAlignVertical="top"
+                        maxLength={300}
+                      />
                     </View>
                   </View>
                 </View>
@@ -2548,50 +2250,50 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                     </Text>
                   </View>
 
+                  {/* Occupation */}
                   <View
-                    style={[
-                      styles.cardBox,
-                      {
-                        backgroundColor: isDark ? '#121216' : '#FFFFFF',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E4E4E7',
-                      },
-                    ]}
+                    style={styles.fieldWrapper}
+                    onLayout={(e) => {
+                      occupationCardRelY.current = e.nativeEvent.layout.y;
+                    }}
                   >
-                    {/* Occupation */}
-                    <View
-                      style={styles.fieldInnerRow}
-                      onLayout={(e) => {
-                        occupationCardRelY.current = e.nativeEvent.layout.y;
-                      }}
+                    <Text
+                      style={[
+                        styles.fieldLabel,
+                        { color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 2 },
+                      ]}
                     >
-                      <View style={styles.cardHeader}>
-                        <View style={styles.cardTitleCluster}>
-                          <View
-                            style={[
-                              styles.monochromeIconBadge,
-                              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
-                            ]}
-                          >
-                            <Briefcase size={15} color={theme.colors.textPrimary} />
-                          </View>
-                          <Text level="bodySmall" style={styles.cardTitleText}>
-                            Occupation / Title
-                          </Text>
-                        </View>
-                      </View>
+                      Occupation (Optional)
+                    </Text>
+                    <View
+                      style={[
+                        styles.modernInputBar,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                          borderColor:
+                            focusedField === 'occupation'
+                              ? theme.colors.textPrimary
+                              : isDark
+                                ? 'rgba(255, 255, 255, 0.08)'
+                                : '#E5E7EB',
+                        },
+                      ]}
+                    >
+                      <Briefcase
+                        size={16}
+                        color={
+                          focusedField === 'occupation'
+                            ? theme.colors.textPrimary
+                            : theme.colors.textTertiary
+                        }
+                        style={styles.inputLeadingIcon}
+                      />
                       <RNTextInput
                         ref={occupationInputRef}
                         style={[
-                          styles.textInput,
+                          styles.modernBarInput,
                           {
                             color: theme.colors.textPrimary,
-                            borderColor:
-                              focusedField === 'occupation'
-                                ? theme.colors.textPrimary
-                                : isDark
-                                  ? 'rgba(255, 255, 255, 0.1)'
-                                  : '#E4E4E7',
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
                           },
                         ]}
                         placeholder="e.g. Architect, Founder, Designer"
@@ -2616,153 +2318,166 @@ export default function OnboardingProfileSetupScreen(): React.JSX.Element {
                         autoCapitalize="words"
                         returnKeyType="done"
                       />
-                    </View>
-
-                    {/* Education */}
-                    <View
-                      style={[styles.fieldInnerRow, { marginTop: 14 }]}
-                      onLayout={(e) => {
-                        educationCardRelY.current = e.nativeEvent.layout.y;
-                      }}
-                    >
-                      <View style={styles.cardHeader}>
-                        <View style={styles.cardTitleCluster}>
-                          <View
-                            style={[
-                              styles.monochromeIconBadge,
-                              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4' },
-                            ]}
-                          >
-                            <GraduationCap size={15} color={theme.colors.textPrimary} />
-                          </View>
-                          <Text level="bodySmall" style={styles.cardTitleText}>
-                            Education / University
-                          </Text>
-                        </View>
-                      </View>
-                      {/* Education Input with Real-time Search and Inline Spinner / Clear Button */}
-                      <View style={styles.cityInputContainer}>
-                        <RNTextInput
-                          ref={educationInputRef}
-                          style={[
-                            styles.textInput,
-                            {
-                              color: theme.colors.textPrimary,
-                              borderColor:
-                                focusedField === 'education'
-                                  ? theme.colors.textPrimary
-                                  : isDark
-                                    ? 'rgba(255, 255, 255, 0.1)'
-                                    : '#E4E4E7',
-                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8F8FA',
-                              paddingRight: isSearchingEducation
-                                ? 44
-                                : education.length > 0
-                                  ? 44
-                                  : 14,
-                            },
-                          ]}
-                          placeholder="e.g. IIT Bombay, NID, St. Xavier's"
-                          placeholderTextColor={theme.colors.textTertiary}
-                          value={education}
-                          onFocus={() => {
-                            nameInputRef.current?.blur();
-                            cityInputRef.current?.blur();
-                            bioInputRef.current?.blur();
-                            occupationInputRef.current?.blur();
-                            setFocusedField('education');
-                            if (educationSuggestions.length > 0) setShowEducationDropdown(true);
-                            ensureFieldInView(section5Y.current + educationCardRelY.current - 95);
-                          }}
-                          onBlur={() => {
-                            setFocusedField((prev) => (prev === 'education' ? null : prev));
-                            setTimeout(() => setShowEducationDropdown(false), 250);
-                          }}
-                          onChangeText={handleEducationTextChange}
-                          onSubmitEditing={dismissActiveField}
-                          autoCapitalize="words"
-                          returnKeyType="done"
-                          testID="education-input"
-                        />
-
-                        {/* Trailing action: Activity indicator or Clear X button */}
-                        <View style={styles.cityInputTrailingAction}>
-                          {isSearchingEducation ? (
-                            <ActivityIndicator size="small" color={theme.colors.textSecondary} />
-                          ) : education.length > 0 ? (
-                            <TouchableOpacity
-                              onPress={() => {
-                                haptics.selection();
-                                setEducation('');
-                                setEducationSuggestions([]);
-                                setShowEducationDropdown(false);
-                              }}
-                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                              style={{ padding: 3 }}
-                              accessibilityRole="button"
-                              accessibilityLabel="Clear education input"
-                            >
-                              <X size={14} color={theme.colors.textTertiary} />
-                            </TouchableOpacity>
-                          ) : null}
-                        </View>
-                      </View>
-
-                      {/* Real-time Internet Autocomplete Dropdown for Education */}
-                      {showEducationDropdown && educationSuggestions.length > 0 && (
-                        <View
-                          style={[
-                            styles.suggestionsDropdownCard,
-                            {
-                              backgroundColor: isDark ? '#18181E' : '#FFFFFF',
-                              borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7',
-                            },
-                          ]}
+                      {occupation.length > 0 && focusedField === 'occupation' && (
+                        <TouchableOpacity
+                          onPress={() => setOccupation('')}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={styles.inputTrailingAction}
                         >
-                          {educationSuggestions.map((item, idx) => (
-                            <TouchableOpacity
-                              key={`${item.name}-${idx}`}
-                              style={[
-                                styles.suggestionRow,
-                                idx > 0 && {
-                                  borderTopWidth: 1,
-                                  borderTopColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4',
-                                },
-                              ]}
-                              onPress={() => handleSelectEducationSuggestion(item)}
-                              activeOpacity={0.7}
-                            >
-                              <GraduationCap
-                                size={15}
-                                color={theme.colors.textSecondary}
-                                style={{ marginRight: 10, marginTop: 2 }}
-                              />
-                              <View style={{ flex: 1 }}>
-                                <Text
-                                  style={{
-                                    color: theme.colors.textPrimary,
-                                    fontWeight: '600',
-                                    fontSize: 13.5,
-                                  }}
-                                >
-                                  {item.name}
-                                </Text>
-                                {item.location ? (
-                                  <Text
-                                    level="caption"
-                                    color="tertiary"
-                                    numberOfLines={1}
-                                    style={{ marginTop: 1 }}
-                                  >
-                                    {item.location}
-                                  </Text>
-                                ) : null}
-                              </View>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
+                          <X size={14} color={theme.colors.textTertiary} />
+                        </TouchableOpacity>
                       )}
                     </View>
+                  </View>
+
+                  {/* Education */}
+                  <View
+                    style={styles.fieldWrapper}
+                    onLayout={(e) => {
+                      educationCardRelY.current = e.nativeEvent.layout.y;
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.fieldLabel,
+                        { color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 2 },
+                      ]}
+                    >
+                      Education (Optional)
+                    </Text>
+                    <View
+                      style={[
+                        styles.modernInputBar,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : '#F4F4F6',
+                          borderColor:
+                            focusedField === 'education'
+                              ? theme.colors.textPrimary
+                              : isDark
+                                ? 'rgba(255, 255, 255, 0.08)'
+                                : '#E5E7EB',
+                        },
+                      ]}
+                    >
+                      <GraduationCap
+                        size={16}
+                        color={
+                          focusedField === 'education'
+                            ? theme.colors.textPrimary
+                            : theme.colors.textTertiary
+                        }
+                        style={styles.inputLeadingIcon}
+                      />
+                      <RNTextInput
+                        ref={educationInputRef}
+                        style={[
+                          styles.modernBarInput,
+                          {
+                            color: theme.colors.textPrimary,
+                          },
+                        ]}
+                        placeholder="e.g. IIT Bombay, NID, St. Xavier's"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        value={education}
+                        onFocus={() => {
+                          nameInputRef.current?.blur();
+                          cityInputRef.current?.blur();
+                          bioInputRef.current?.blur();
+                          occupationInputRef.current?.blur();
+                          setFocusedField('education');
+                          if (educationSuggestions.length > 0) setShowEducationDropdown(true);
+                          ensureFieldInView(section5Y.current + educationCardRelY.current - 95);
+                        }}
+                        onBlur={() => {
+                          setFocusedField((prev) => (prev === 'education' ? null : prev));
+                          setTimeout(() => setShowEducationDropdown(false), 250);
+                        }}
+                        onChangeText={handleEducationTextChange}
+                        onSubmitEditing={dismissActiveField}
+                        autoCapitalize="words"
+                        returnKeyType="done"
+                        testID="education-input"
+                      />
+
+                      {/* Trailing action: Activity indicator or Clear X button */}
+                      {isSearchingEducation ? (
+                        <ActivityIndicator
+                          size="small"
+                          color={theme.colors.textSecondary}
+                          style={{ marginLeft: 8 }}
+                        />
+                      ) : education.length > 0 ? (
+                        <TouchableOpacity
+                          onPress={() => {
+                            haptics.selection();
+                            setEducation('');
+                            setEducationSuggestions([]);
+                            setShowEducationDropdown(false);
+                          }}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={styles.inputTrailingAction}
+                          accessibilityRole="button"
+                          accessibilityLabel="Clear education input"
+                        >
+                          <X size={14} color={theme.colors.textTertiary} />
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+
+                    {/* Real-time Internet Autocomplete Dropdown for Education */}
+                    {showEducationDropdown && educationSuggestions.length > 0 && (
+                      <View
+                        style={[
+                          styles.suggestionsDropdownCard,
+                          {
+                            backgroundColor: isDark ? '#18181E' : '#FFFFFF',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#E4E4E7',
+                          },
+                        ]}
+                      >
+                        {educationSuggestions.map((item, idx) => (
+                          <TouchableOpacity
+                            key={`${item.name}-${idx}`}
+                            style={[
+                              styles.suggestionRow,
+                              idx > 0 && {
+                                borderTopWidth: 1,
+                                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F1F4',
+                              },
+                            ]}
+                            onPress={() => handleSelectEducationSuggestion(item)}
+                            activeOpacity={0.7}
+                          >
+                            <GraduationCap
+                              size={15}
+                              color={theme.colors.textSecondary}
+                              style={{ marginRight: 10, marginTop: 2 }}
+                            />
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={{
+                                  color: theme.colors.textPrimary,
+                                  fontWeight: '600',
+                                  fontSize: 13.5,
+                                }}
+                              >
+                                {item.name}
+                              </Text>
+                              {item.location ? (
+                                <Text
+                                  level="caption"
+                                  color="tertiary"
+                                  numberOfLines={1}
+                                  style={{ marginTop: 1 }}
+                                >
+                                  {item.location}
+                                </Text>
+                              ) : null}
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 </View>
               </View>
@@ -4110,6 +3825,84 @@ const styles = StyleSheet.create({
   },
   fieldInnerRow: {
     marginBottom: 4,
+  },
+  fieldWrapper: {
+    marginBottom: 14,
+  },
+  fieldHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    paddingHorizontal: 2,
+  },
+  fieldLabel: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+  },
+  fieldCounter: {
+    fontSize: 11,
+  },
+  ageBadgeText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  fieldHeaderAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+  },
+  fieldHeaderActionText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  modernInputBar: {
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+  },
+  modernTextareaBar: {
+    minHeight: 88,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  inputLeadingIcon: {
+    marginRight: 10,
+    flexShrink: 0,
+  },
+  modernBarInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 15,
+    fontWeight: '500',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  modernBarInputText: {
+    flex: 1,
+    fontSize: 15,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  modernBarTextarea: {
+    flex: 1,
+    fontSize: 14.5,
+    lineHeight: 21,
+    fontWeight: '400',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  inputTrailingAction: {
+    marginLeft: 8,
+    padding: 4,
   },
   bottomCtaSection: {
     marginTop: 10,

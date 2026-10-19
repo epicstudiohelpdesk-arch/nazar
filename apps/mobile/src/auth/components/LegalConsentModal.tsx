@@ -1344,7 +1344,7 @@ export const LegalConsentModal: React.FC<LegalConsentModalProps> = ({
                   >
                     Privacy Notice
                   </Text>
-                  , and Data Deletion Rights.
+                  , and Data Rights.
                 </Text>
               </TouchableOpacity>
 
