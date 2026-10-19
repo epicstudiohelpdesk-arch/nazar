@@ -34,6 +34,7 @@ import { useTheme } from '../../src/design/theme/ThemeContext.js';
 import { Text } from '../../src/design/primitives/Text.js';
 import { haptics } from '../../src/design/haptics/index.js';
 import { SmoothBottomSheetModal } from '../../src/design/components/modal/SmoothBottomSheetModal.js';
+import { LegalConsentModal } from '../../src/auth/components/LegalConsentModal.js';
 import { getDefaultAuthService } from '../../src/auth/auth-service.js';
 import { useOnboardingStore } from '../../src/auth/onboarding-store.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
@@ -87,6 +88,11 @@ export default function LoginScreen(): React.JSX.Element {
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [suggestionMode, setSuggestionMode] = useState<'signin' | 'signup' | null>(null);
   const [rateLimitSeconds, setRateLimitSeconds] = useState<number>(0);
+  const [isLegalModalVisible, setIsLegalModalVisible] = useState(false);
+  const pendingIdentifierRef = useRef<{
+    fullIdentifier: string;
+    identifierType: 'PHONE' | 'EMAIL';
+  } | null>(null);
 
   const phoneInputRef = useRef<RNTextInput>(null);
   const emailInputRef = useRef<RNTextInput>(null);
@@ -350,34 +356,7 @@ export default function LoginScreen(): React.JSX.Element {
     }
   }, [activeTab, phoneNumber, selectedCountry, email]);
 
-  const handleContinue = async () => {
-    if (rateLimitSeconds > 0 || isLoading) return;
-    Keyboard.dismiss();
-    haptics.medium();
-
-    let fullIdentifier = '';
-    let identifierType: 'PHONE' | 'EMAIL' = 'PHONE';
-
-    if (activeTab === 'phone') {
-      const minLength = selectedCountry.minLength || selectedCountry.maxLength;
-      const maxLength = selectedCountry.maxLength;
-      if (phoneNumber.length < minLength || phoneNumber.length > maxLength) {
-        triggerFieldShake();
-        return;
-      }
-      fullIdentifier = `${selectedCountry.dialCode}${phoneNumber}`;
-      identifierType = 'PHONE';
-    } else {
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        triggerFieldShake();
-        return;
-      }
-      fullIdentifier = email.trim();
-      identifierType = 'EMAIL';
-    }
-
+  const proceedWithAuth = async (fullIdentifier: string, identifierType: 'PHONE' | 'EMAIL') => {
     setErrorMessage(undefined);
     setSuggestionMode(null);
     setIsLoading(true);
@@ -422,6 +401,59 @@ export default function LoginScreen(): React.JSX.Element {
       pathname: '/(auth)/otp',
       params: { mode: isSignUp ? 'signup' : 'signin' },
     });
+  };
+
+  const handleContinue = async () => {
+    if (rateLimitSeconds > 0 || isLoading) return;
+    Keyboard.dismiss();
+    haptics.medium();
+
+    let fullIdentifier = '';
+    let identifierType: 'PHONE' | 'EMAIL' = 'PHONE';
+
+    if (activeTab === 'phone') {
+      const minLength = selectedCountry.minLength || selectedCountry.maxLength;
+      const maxLength = selectedCountry.maxLength;
+      if (phoneNumber.length < minLength || phoneNumber.length > maxLength) {
+        triggerFieldShake();
+        return;
+      }
+      fullIdentifier = `${selectedCountry.dialCode}${phoneNumber}`;
+      identifierType = 'PHONE';
+    } else {
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        triggerFieldShake();
+        return;
+      }
+      fullIdentifier = email.trim();
+      identifierType = 'EMAIL';
+    }
+
+    // In Sign Up mode: display the Legal Consent modal before proceeding to OTP
+    if (isSignUp) {
+      pendingIdentifierRef.current = { fullIdentifier, identifierType };
+      setIsLegalModalVisible(true);
+      return;
+    }
+
+    // Sign In mode: proceed directly to verification
+    await proceedWithAuth(fullIdentifier, identifierType);
+  };
+
+  const handleLegalModalAgree = () => {
+    setIsLegalModalVisible(false);
+    if (pendingIdentifierRef.current) {
+      proceedWithAuth(
+        pendingIdentifierRef.current.fullIdentifier,
+        pendingIdentifierRef.current.identifierType
+      );
+    }
+  };
+
+  const handleLegalModalClose = () => {
+    setIsLegalModalVisible(false);
   };
 
   const handleSocialAuth = async (provider: 'google' | 'passkey') => {
@@ -1429,6 +1461,16 @@ export default function LoginScreen(): React.JSX.Element {
           }}
         />
       </SmoothBottomSheetModal>
+
+      {/* Legal Data Governance & Privacy Modal (Top-to-Bottom Entrance on Signup) */}
+      <LegalConsentModal
+        visible={isLegalModalVisible}
+        onClose={handleLegalModalClose}
+        onAgree={handleLegalModalAgree}
+        identifier={pendingIdentifierRef.current?.fullIdentifier}
+        identifierType={pendingIdentifierRef.current?.identifierType}
+        testID="legal-consent-modal"
+      />
     </View>
   );
 }

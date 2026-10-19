@@ -395,4 +395,12 @@ describe('Google & Passkey Authentication Suite', () => {
       expect(res.data?.exists).toBe(false);
     });
   });
+
+  describe('LegalConsentModal (Top Sheet Governance)', () => {
+    it('exports LegalConsentModal component from auth package', async () => {
+      const authModule = await import('../src/auth/index.js');
+      expect(authModule.LegalConsentModal).toBeDefined();
+      expect(typeof authModule.LegalConsentModal).toBe('function');
+    });
+  });
 });

@@ -9,3 +9,4 @@ export * from './firebase-auth-service.js';
 export * from './google-auth.js';
 export * from './passkey-auth.js';
 export * from './countries.js';
+export * from './components/LegalConsentModal.js';

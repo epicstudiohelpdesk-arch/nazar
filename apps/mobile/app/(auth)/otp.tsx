@@ -518,7 +518,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                     Keyboard.dismiss();
                     haptics.selection();
                   }}
-                  autoFocus={true}
+                  autoFocus={false}
                   errorMessage={errorMessage}
                 />
               </Animated.View>

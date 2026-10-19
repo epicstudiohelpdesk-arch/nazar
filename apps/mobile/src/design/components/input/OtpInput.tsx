@@ -32,7 +32,7 @@ export const OtpInput: React.FC<OtpInputProps> = ({
   onChangeCode,
   onChangeText,
   onComplete,
-  autoFocus = true,
+  autoFocus = false,
   error,
   errorMessage,
   disabled = false,
