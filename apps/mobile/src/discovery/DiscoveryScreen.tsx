@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   View,
+  Text as RNText,
   StyleSheet,
   SafeAreaView,
   Animated,
@@ -16,7 +17,6 @@ import {
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
-import Svg, { Circle } from 'react-native-svg';
 import type { DiscoveryItemDto, DiscoveryResponseDto } from '@platform/api-contracts';
 import { useTheme } from '../design/theme/ThemeContext.js';
 import { Heading } from '../design/primitives/Heading.js';
@@ -264,6 +264,8 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   const [fontsLoaded] = useFonts({
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     Folkra: require('../../assets/fonts/folkra.ttf'),
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    'Folkra-Regular': require('../../assets/fonts/folkra.ttf'),
   });
   const folkraFont = fontsLoaded ? 'Folkra' : undefined;
 
@@ -275,8 +277,6 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isWorkModeVisible, setIsWorkModeVisible] = useState(false);
-  const [activeFeedTab, setActiveFeedTab] = useState<'for_you' | 'nearby' | 'interests' | 'verified'>('for_you');
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedVibe, setSelectedVibe] = useState<string | null>(null);
 
   // Animated swipe tracking
@@ -375,16 +375,6 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   // Tab-filtered / ordered candidates
   const displayedCandidates: DiscoveryItemDto[] = useMemo(() => {
     let list = [...candidates];
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (c) =>
-          c.profile.displayName.toLowerCase().includes(q) ||
-          c.profile.occupation?.toLowerCase().includes(q) ||
-          c.profile.city?.toLowerCase().includes(q) ||
-          c.profile.interests?.some((i) => i.name.toLowerCase().includes(q))
-      );
-    }
     if (selectedVibe) {
       const v = selectedVibe.toLowerCase();
       const filtered = list.filter(
@@ -394,25 +384,8 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
       );
       if (filtered.length > 0) list = filtered;
     }
-    if (activeFeedTab === 'nearby') {
-      return list.sort((a, b) => {
-        const da =
-          a.distanceBucket?.includes('< 1') ||
-          a.distanceBucket?.includes('1-5') ||
-          a.distanceBucket?.includes('3 km')
-            ? 0
-            : 1;
-        const db =
-          b.distanceBucket?.includes('< 1') ||
-          b.distanceBucket?.includes('1-5') ||
-          b.distanceBucket?.includes('3 km')
-            ? 0
-            : 1;
-        return da - db;
-      });
-    }
     return list;
-  }, [candidates, activeFeedTab, searchQuery, selectedVibe]);
+  }, [candidates, selectedVibe]);
 
   const activeCandidate = displayedCandidates[currentIndex];
   const nextCandidate = displayedCandidates[currentIndex + 1];
@@ -817,63 +790,52 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Top Header - Nazar Brand with Eye Emblem & Notifications */}
-      <View style={styles.topNazarHeader}>
-        <View style={styles.headerBrandCol}>
-          <View style={styles.brandTitleRow}>
-            {/* Concentric Eye Emblem matching reference design */}
-            <Svg width={26} height={26} viewBox="0 0 28 28" style={{ marginRight: 12 }}>
-              <Circle cx={14} cy={14} r={12} fill="#7059E4" />
-              <Circle cx={14} cy={14} r={8} fill="#FFFFFF" />
-              <Circle cx={14} cy={14} r={4.5} fill="#0C0B14" />
-            </Svg>
-            <Text style={styles.brandTitleText}>NAZAR</Text>
-          </View>
-          <Text style={styles.headerTagline}>Real people. Meaningful connections.</Text>
+      {/* Top Header Row: NAZAR Brand (Left) & Actions (Right: Search Icon + Filter Button) */}
+      <View style={styles.topHeaderRow}>
+        <RNText
+          style={[
+            styles.brandTitleText,
+            fontsLoaded ? { fontFamily: 'Folkra' } : null,
+          ]}
+        >
+          NAZAR
+        </RNText>
+
+        <View style={styles.headerRightActions}>
+          <TouchableOpacity
+            style={styles.searchIconButton}
+            onPress={() => {
+              haptics.selection();
+              if (onOpenFilters) {
+                onOpenFilters();
+              } else {
+                router.push('/modal/filters');
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Search"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Icon name="search" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.filterIconButton}
+            onPress={() => {
+              trackOnboardingEvent('filter_opened');
+              if (onOpenFilters) {
+                onOpenFilters();
+              } else {
+                router.push('/modal/filters');
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Open discovery filters"
+            testID="discovery-filter-btn"
+          >
+            <Icon name="filter" size={16} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
-
-        {/* Right: Notification Bell Button */}
-        <TouchableOpacity
-          style={styles.notificationBtn}
-          onPress={() => {
-            haptics.selection();
-            Alert.alert('Notifications', 'You have no new notifications right now.');
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Notifications"
-        >
-          <Icon name="bell" size={22} color="#F7F4FF" />
-          <View style={styles.notificationPinkDot} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Search / Vibe Input Bar */}
-      <View style={styles.searchBarContainer}>
-        <Icon name="search" size={20} color="#8E89A8" style={{ marginRight: 10 }} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Find someone with the same vibe..."
-          placeholderTextColor="#A19AB8"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          style={styles.filterIconButton}
-          onPress={() => {
-            trackOnboardingEvent('filter_opened');
-            if (onOpenFilters) {
-              onOpenFilters();
-            } else {
-              router.push('/modal/filters');
-            }
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Open discovery filters"
-          testID="discovery-filter-btn"
-        >
-          <Icon name="filter" size={16} color="#FFFFFF" />
-        </TouchableOpacity>
       </View>
 
       {/* Stories / Vibes Horizontal Scroll Row */}
@@ -883,23 +845,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
         contentContainerStyle={styles.vibesScrollContent}
         style={styles.vibesScrollView}
       >
-        {/* 1. Add Story */}
-        <TouchableOpacity
-          style={styles.vibeItem}
-          onPress={() => {
-            haptics.selection();
-            Alert.alert('Add to Story', 'Share what you are up to right now with potential matches.');
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Add Story"
-        >
-          <View style={styles.addStoryCircle}>
-            <Icon name="plus" size={20} color="#FFFFFF" strokeWidth={2.4} />
-          </View>
-          <Text style={styles.vibeLabel}>Add Story</Text>
-        </TouchableOpacity>
-
-        {/* 2. Your Vibe */}
+        {/* 1. Your Vibe */}
         <TouchableOpacity
           style={styles.vibeItem}
           onPress={() => {
@@ -1041,35 +987,6 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
           </Text>
         </TouchableOpacity>
       </ScrollView>
-
-      {/* Feed Category Filter Tabs (For You, Nearby, Interests, Verified) */}
-      <View style={styles.feedCategoryRow}>
-        {(['for_you', 'nearby', 'interests', 'verified'] as const).map((tabKey) => {
-          const isActive = activeFeedTab === tabKey;
-          const labelMap: Record<string, string> = {
-            for_you: 'For You',
-            nearby: 'Nearby',
-            interests: 'Interests',
-            verified: 'Verified',
-          };
-          return (
-            <TouchableOpacity
-              key={tabKey}
-              style={[styles.categoryTabBtn, isActive && styles.categoryTabBtnActive]}
-              onPress={() => {
-                haptics.selection();
-                setActiveFeedTab(tabKey);
-              }}
-              accessibilityRole="tab"
-              accessibilityLabel={`${labelMap[tabKey]} feed`}
-            >
-              <Text style={[styles.categoryTabText, isActive && styles.categoryTabTextActive]}>
-                {labelMap[tabKey]}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
 
       {/* Passport Travel Mode Active Banner */}
       {passportQuery.data?.enabled && (
@@ -1504,70 +1421,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0C0B15',
   },
-  topNazarHeader: {
+  topHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 4,
     paddingBottom: 6,
-  },
-  headerBrandCol: {
-    flexDirection: 'column',
-  },
-  brandTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  brandTitleText: {
-    fontSize: 20,
-    fontWeight: '900',
-    letterSpacing: 3,
-    color: '#FFFFFF',
-  },
-  headerTagline: {
-    fontSize: 12,
-    color: '#A39CBD',
-    marginTop: 2,
-    letterSpacing: 0.1,
-  },
-  notificationBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#191727',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  notificationPinkDot: {
-    position: 'absolute',
-    top: 9,
-    right: 10,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#FF4B72',
-  },
-  searchBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#181627',
-    borderWidth: 1,
-    borderColor: '#232035',
-    borderRadius: 22,
-    height: 44,
-    paddingLeft: 14,
-    paddingRight: 6,
-    marginHorizontal: 16,
-    marginTop: 4,
     marginBottom: 8,
   },
-  searchInput: {
-    flex: 1,
+  brandTitleText: {
+    fontFamily: 'Folkra',
+    fontSize: 20,
     color: '#FFFFFF',
-    fontSize: 14.5,
-    paddingVertical: 0,
+    letterSpacing: 1.2,
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  searchIconButton: {
+    padding: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filterIconButton: {
     width: 36,
@@ -1579,7 +1456,7 @@ const styles = StyleSheet.create({
   },
   vibesScrollView: {
     maxHeight: 84,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   vibesScrollContent: {
     paddingHorizontal: 16,
@@ -1588,17 +1465,6 @@ const styles = StyleSheet.create({
   },
   vibeItem: {
     alignItems: 'center',
-  },
-  addStoryCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#131120',
-    borderWidth: 1.5,
-    borderColor: '#3D3856',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   yourVibeGradientRing: {
     width: 58,
@@ -1642,34 +1508,6 @@ const styles = StyleSheet.create({
   },
   vibeLabelActive: {
     color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  feedCategoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    height: 38,
-    borderRadius: 22,
-    backgroundColor: '#191627',
-  },
-  categoryTabBtn: {
-    flex: 1,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 18,
-  },
-  categoryTabBtnActive: {
-    backgroundColor: '#F5F2FF',
-  },
-  categoryTabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#B8B2CD',
-  },
-  categoryTabTextActive: {
-    color: '#0C0B15',
     fontWeight: '700',
   },
   passportBanner: {
