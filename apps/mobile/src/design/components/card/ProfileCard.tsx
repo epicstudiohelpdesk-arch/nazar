@@ -196,9 +196,11 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     profile.interests.slice(0, 3).forEach((interest, idx) => {
       const lower = interest.toLowerCase();
       let emoji = '✨';
-      if (lower.includes('coffee') || lower.includes('drink') || lower.includes('wine')) emoji = '☕';
+      if (lower.includes('coffee') || lower.includes('drink') || lower.includes('wine'))
+        emoji = '☕';
       else if (lower.includes('travel') || lower.includes('trip')) emoji = '✈';
-      else if (lower.includes('music') || lower.includes('rock') || lower.includes('song')) emoji = '♫';
+      else if (lower.includes('music') || lower.includes('rock') || lower.includes('song'))
+        emoji = '♫';
       else if (lower.includes('design') || lower.includes('art')) emoji = '🎨';
       else if (lower.includes('food') || lower.includes('ramen')) emoji = '🍜';
       else if (lower.includes('book') || lower.includes('read')) emoji = '📚';
@@ -215,13 +217,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 
   if (isDiscovery) {
     return (
-      <View
-        style={[
-          styles.discoveryCard,
-          style,
-        ]}
-        testID={testID || `profile-card-${profile.id}`}
-      >
+      <View style={[styles.discoveryCard, style]} testID={testID || `profile-card-${profile.id}`}>
         <TouchableOpacity
           activeOpacity={0.96}
           onPress={onPress}
@@ -442,7 +438,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 <Text style={styles.whyYouMatchText}>
                   <Text style={styles.whyYouMatchHighlight}>Why you match</Text>
                   <Text style={styles.whyYouMatchContent}>
-                    {' '}· {featuredPrompt?.answer || 'indie music & weekend trips'}
+                    {' '}
+                    · {featuredPrompt?.answer || 'indie music & weekend trips'}
                   </Text>
                 </Text>
               </View>

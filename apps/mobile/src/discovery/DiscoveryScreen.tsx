@@ -792,12 +792,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Top Header Row: NAZAR Brand (Left) & Actions (Right: Search Icon + Filter Button) */}
       <View style={styles.topHeaderRow}>
-        <RNText
-          style={[
-            styles.brandTitleText,
-            fontsLoaded ? { fontFamily: 'Folkra' } : null,
-          ]}
-        >
+        <RNText style={[styles.brandTitleText, fontsLoaded ? { fontFamily: 'Folkra' } : null]}>
           NAZAR
         </RNText>
 
@@ -1039,7 +1034,10 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
           // Error State
           <View style={styles.centerContainer}>
             <Icon name="warning" size="lg" color={theme.colors.warning} />
-            <Heading level="h2" style={{ marginTop: 12, textAlign: 'center', fontFamily: folkraFont }}>
+            <Heading
+              level="h2"
+              style={{ marginTop: 12, textAlign: 'center', fontFamily: folkraFont }}
+            >
               Unable to load feed
             </Heading>
             <Text level="body" color="secondary" style={styles.messageText}>
@@ -1317,11 +1315,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
             <View style={styles.inlineTargetHeader}>
               <Icon name="heart" size="sm" color="#FF2400" fill="#FF2400" />
-              <Text
-                variant="label"
-                weight="bold"
-                style={{ marginLeft: 6, color: '#FF2400' }}
-              >
+              <Text variant="label" weight="bold" style={{ marginLeft: 6, color: '#FF2400' }}>
                 {inlineLikeModal?.attachmentType === 'PROMPT' ? 'Like Prompt' : 'Like Photo'}
               </Text>
             </View>

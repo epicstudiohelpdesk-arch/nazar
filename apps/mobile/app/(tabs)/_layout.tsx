@@ -82,12 +82,7 @@ const TabButton: React.FC<TabButtonProps> = ({
     if (routeName === 'matches/index') {
       return (
         <View style={styles.iconWithBadgeWrapper}>
-          <Icon
-            name="heart"
-            size={21}
-            color={iconColor}
-            strokeWidth={isFocused ? 2.2 : 1.9}
-          />
+          <Icon name="heart" size={21} color={iconColor} strokeWidth={isFocused ? 2.2 : 1.9} />
           {config.badge !== undefined && (
             <View style={styles.tabBadgePill}>
               <Animated.Text style={styles.tabBadgeText}>{config.badge}</Animated.Text>
