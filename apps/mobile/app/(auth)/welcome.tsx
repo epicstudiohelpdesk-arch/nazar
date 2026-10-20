@@ -837,7 +837,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   signInHighlight: {
-    color: '#E64A19',
+    color: '#FF2400',
     fontWeight: '700',
   },
   legalNotice: {

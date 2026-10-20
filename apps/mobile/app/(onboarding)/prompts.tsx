@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Easing,
   TextInput,
   ScrollView,
   ActivityIndicator,
@@ -16,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   ArrowLeft,
   ArrowRight,
+  ArrowLeftRight,
   Search,
   X,
   Check,
@@ -27,7 +29,7 @@ import {
   Smile,
   Compass,
   Trash2,
-  RotateCw,
+  ChevronDown,
   AlertCircle,
   BookOpen,
   type LucideIcon,
@@ -560,33 +562,33 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
     cardShakeAnim.setValue(0);
     Animated.sequence([
       Animated.timing(cardShakeAnim, {
-        toValue: -5.5,
-        duration: 40,
+        toValue: -4.5,
+        duration: 55,
+        easing: Easing.out(Easing.sin),
         useNativeDriver: true,
       }),
       Animated.timing(cardShakeAnim, {
-        toValue: 5,
-        duration: 45,
+        toValue: 4,
+        duration: 65,
+        easing: Easing.inOut(Easing.sin),
         useNativeDriver: true,
       }),
       Animated.timing(cardShakeAnim, {
-        toValue: -3.5,
-        duration: 45,
+        toValue: -2.5,
+        duration: 65,
+        easing: Easing.inOut(Easing.sin),
         useNativeDriver: true,
       }),
       Animated.timing(cardShakeAnim, {
-        toValue: 2.5,
-        duration: 45,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardShakeAnim, {
-        toValue: -1,
-        duration: 40,
+        toValue: 1.5,
+        duration: 60,
+        easing: Easing.inOut(Easing.sin),
         useNativeDriver: true,
       }),
       Animated.timing(cardShakeAnim, {
         toValue: 0,
-        duration: 40,
+        duration: 55,
+        easing: Easing.inOut(Easing.sin),
         useNativeDriver: true,
       }),
     ]).start();
@@ -725,9 +727,9 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
 
   const handleNext = async () => {
     if (validPrompts.length === 0) {
-      haptics.notificationError();
+      if (errorMessage) dismissError();
+      haptics.impactLight();
       triggerShake();
-      setErrorMessage('Please write an answer to at least one prompt to continue.');
       return;
     }
 
@@ -1060,40 +1062,27 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                 style={[
                   styles.promptCardContainer,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.035)' : '#FFFFFF',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.09)' : '#E4E4E7',
+                    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.10)',
                   },
                 ]}
               >
-                {/* Top Badge & Action Row */}
+                {/* Top Metadata Row: Chic Unboxed Category & Number + Minimalist Actions */}
                 <View style={styles.promptCardHeaderRow}>
-                  <View style={styles.promptCardBadgeCluster}>
-                    <View
-                      style={[
-                        styles.promptCategoryBadge,
-                        {
-                          backgroundColor: isDark
-                            ? 'rgba(255, 255, 255, 0.08)'
-                            : 'rgba(0, 0, 0, 0.05)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                        },
-                      ]}
+                  <View style={styles.promptCardMetaCluster}>
+                    <CatIcon
+                      size={13}
+                      color="#FF2400"
+                      strokeWidth={2.4}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text
+                      style={[styles.promptCategoryLabel, { color: theme.colors.textSecondary }]}
                     >
-                      <CatIcon
-                        size={11.5}
-                        color={theme.colors.textSecondary}
-                        strokeWidth={2.2}
-                        style={{ marginRight: 4.5 }}
-                      />
-                      <Text
-                        style={[
-                          styles.promptCategoryBadgeText,
-                          { color: theme.colors.textSecondary },
-                        ]}
-                      >
-                        {item.category || 'Personality'}
-                      </Text>
-                    </View>
+                      {(item.category || 'Personality').toUpperCase()}
+                    </Text>
+                    <Text style={[styles.promptMetaDot, { color: theme.colors.textTertiary }]}>
+                      •
+                    </Text>
                     <Text
                       style={[
                         styles.promptCardSlotNumber,
@@ -1113,7 +1102,7 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                           backgroundColor: isDark
                             ? 'rgba(255, 255, 255, 0.06)'
                             : 'rgba(0, 0, 0, 0.04)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.09)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                         },
                       ]}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -1121,17 +1110,26 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                       accessibilityRole="button"
                       accessibilityLabel={`Change question for prompt ${index + 1}`}
                     >
-                      <RotateCw
-                        size={11}
-                        color={theme.colors.textSecondary}
+                      <ArrowLeftRight
+                        size={11.5}
+                        color={isDark ? 'rgba(255, 255, 255, 0.85)' : '#18181B'}
                         strokeWidth={2.2}
-                        style={{ marginRight: 4 }}
+                        style={{ marginRight: 5 }}
                       />
                       <Text
-                        style={[styles.promptChangeButtonText, { color: theme.colors.textPrimary }]}
+                        style={[
+                          styles.promptChangeButtonText,
+                          { color: isDark ? '#FFFFFF' : '#0B0B0E' },
+                        ]}
                       >
-                        Change
+                        Switch
                       </Text>
+                      <ChevronDown
+                        size={11}
+                        color={isDark ? 'rgba(255, 255, 255, 0.50)' : 'rgba(0, 0, 0, 0.45)'}
+                        strokeWidth={2.4}
+                        style={{ marginLeft: 3 }}
+                      />
                     </TouchableOpacity>
 
                     {prompts.length > 1 && (
@@ -1171,23 +1169,15 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                       { color: theme.colors.textPrimary, fontFamily: folkraFont },
                     ]}
                   >
-                    "{item.prompt}"
+                    {item.prompt}
                   </Text>
                 </TouchableOpacity>
 
-                {/* Recessed Answer Text Area */}
-                <View
-                  style={[
-                    styles.answerInputContainer,
-                    {
-                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.02)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                    },
-                  ]}
-                >
+                {/* Seamless Answer Text Area (No Nested Box!) */}
+                <View style={styles.answerInputWrapper}>
                   <TextInput
                     multiline
-                    placeholder="Write your candid, honest answer here..."
+                    placeholder="Write your candid, authentic answer here..."
                     placeholderTextColor={theme.colors.textTertiary}
                     value={item.answer}
                     onChangeText={(text) => handleUpdateAnswer(index, text)}
@@ -1195,42 +1185,27 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                     style={[styles.answerTextInput, { color: theme.colors.textPrimary }]}
                     textAlignVertical="top"
                   />
+                </View>
 
-                  {/* Character Counter & Tip */}
-                  <View style={styles.answerFooterRow}>
-                    <Text style={[styles.answerTipText, { color: theme.colors.textTertiary }]}>
-                      Specific details make great conversation starters
-                    </Text>
-                    <View
-                      style={[
-                        styles.charCountBadge,
-                        {
-                          backgroundColor: isNearLimit
-                            ? isDark
-                              ? 'rgba(245, 158, 11, 0.16)'
-                              : '#FEF3C7'
-                            : isDark
-                              ? 'rgba(255, 255, 255, 0.06)'
-                              : 'rgba(0, 0, 0, 0.04)',
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.charCountText,
-                          {
-                            color: isNearLimit
-                              ? isDark
-                                ? '#FBBF24'
-                                : '#D97706'
-                              : theme.colors.textTertiary,
-                          },
-                        ]}
-                      >
-                        {charCount} / 200
-                      </Text>
-                    </View>
-                  </View>
+                {/* Minimalist Character Counter & Tip */}
+                <View style={styles.answerFooterRow}>
+                  <Text style={[styles.answerTipText, { color: theme.colors.textTertiary }]}>
+                    Specific details spark better chemistry
+                  </Text>
+                  <Text
+                    style={[
+                      styles.charCountText,
+                      {
+                        color: isNearLimit
+                          ? isDark
+                            ? '#FBBF24'
+                            : '#D97706'
+                          : theme.colors.textTertiary,
+                      },
+                    ]}
+                  >
+                    {charCount} / 200
+                  </Text>
                 </View>
               </View>
             );
@@ -1243,25 +1218,15 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
               style={[
                 styles.addPromptSlotButton,
                 {
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#D4D4D8',
-                  backgroundColor: isDark
-                    ? 'rgba(255, 255, 255, 0.025)'
-                    : 'rgba(255, 255, 255, 0.65)',
+                  borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.08)',
                 },
               ]}
               activeOpacity={0.78}
               accessibilityRole="button"
               accessibilityLabel={`Add personality prompt ${prompts.length + 1}`}
             >
-              <View
-                style={[
-                  styles.addPromptIconCircle,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  },
-                ]}
-              >
-                <Plus size={17} color={theme.colors.textPrimary} strokeWidth={2.4} />
+              <View style={styles.addPromptIconCircle}>
+                <Plus size={18} color="#FF2400" strokeWidth={2.5} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
@@ -1275,7 +1240,7 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                     : 'Add a 3rd prompt (Complete profile)'}
                 </Text>
                 <Text style={[styles.addPromptSubtitle, { color: theme.colors.textTertiary }]}>
-                  Profiles with multiple prompts receive 2.4x more conversation starters.
+                  Profiles with 3 prompts receive 2.4x more conversation starters.
                 </Text>
               </View>
             </TouchableOpacity>
@@ -1629,13 +1594,8 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                     </Text>
                   </View>
                   {isCurrentlySelectedInActiveSlot && (
-                    <View
-                      style={[
-                        styles.pickerActiveCheckCircle,
-                        { backgroundColor: isDark ? '#FFFFFF' : '#0B0B0E' },
-                      ]}
-                    >
-                      <Check size={10} color={isDark ? '#000000' : '#FFFFFF'} strokeWidth={3} />
+                    <View style={[styles.pickerActiveCheckCircle, { backgroundColor: '#FF2400' }]}>
+                      <Check size={11} color="#FFFFFF" strokeWidth={3} />
                     </View>
                   )}
                   {isUsedInOtherSlot && (
@@ -1656,7 +1616,7 @@ export default function OnboardingPromptsScreen(): React.JSX.Element {
                     },
                   ]}
                 >
-                  "{item.prompt}"
+                  {item.prompt}
                 </Text>
               </TouchableOpacity>
             );
@@ -1815,41 +1775,32 @@ const styles = StyleSheet.create({
   },
   // Prompt Cards Section
   promptCardsSection: {
-    gap: 16,
+    gap: 8,
   },
   promptCardContainer: {
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    paddingTop: 10,
+    paddingBottom: 22,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   promptCardHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  promptCardBadgeCluster: {
+  promptCardMetaCluster: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
-  promptCategoryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 9,
-    paddingVertical: 4.5,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  promptCategoryBadgeText: {
+  promptCategoryLabel: {
     fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.15,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+  },
+  promptMetaDot: {
+    marginHorizontal: 7,
+    fontSize: 11,
+    opacity: 0.5,
   },
   promptCardSlotNumber: {
     fontSize: 11.5,
@@ -1859,49 +1810,48 @@ const styles = StyleSheet.create({
   promptCardHeaderActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    gap: 8,
   },
   promptChangeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 9,
-    paddingVertical: 4.5,
-    borderRadius: 12,
+    paddingHorizontal: 11,
+    paddingVertical: 5.5,
+    borderRadius: 999,
     borderWidth: 1,
   },
   promptChangeButtonText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 11.5,
+    fontWeight: '700',
+    letterSpacing: 0.15,
   },
   promptRemoveButton: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   promptQuestionWrap: {
-    marginBottom: 12,
+    marginBottom: 10,
+    marginTop: 2,
   },
   promptQuestionTitle: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '700',
-    lineHeight: 23,
-    letterSpacing: -0.2,
+    lineHeight: 26,
+    letterSpacing: -0.25,
   },
-  answerInputContainer: {
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 10,
-    minHeight: 112,
+  answerInputWrapper: {
+    minHeight: 76,
+    paddingTop: 4,
+    paddingBottom: 6,
   },
   answerTextInput: {
-    fontSize: 14.5,
-    lineHeight: 21,
-    minHeight: 64,
+    fontSize: 15.5,
+    lineHeight: 23,
+    minHeight: 68,
     padding: 0,
     textAlignVertical: 'top',
   },
@@ -1909,50 +1859,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 8,
     paddingTop: 6,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(150, 150, 150, 0.15)',
   },
   answerTipText: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '500',
     flex: 1,
     marginRight: 8,
   },
-  charCountBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2.5,
-    borderRadius: 8,
-  },
   charCountText: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '600',
+    letterSpacing: 0.2,
   },
-  // Add Another Prompt Slot Button
+  // Add Another Prompt Slot Button (Unboxed action row with subtle hairline)
   addPromptSlotButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    gap: 13,
+    paddingVertical: 18,
+    paddingHorizontal: 4,
+    gap: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   addPromptIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 36, 0, 0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 36, 0, 0.30)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   addPromptTitle: {
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 2,
   },
   addPromptSubtitle: {
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 16,
     fontWeight: '400',
   },

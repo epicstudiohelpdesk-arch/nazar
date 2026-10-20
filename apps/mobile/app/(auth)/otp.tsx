@@ -468,7 +468,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                 level="h1"
                 style={[styles.title, { fontFamily: folkraFont, color: theme.colors.textPrimary }]}
               >
-                Enter <RNText style={{ color: theme.colors.accent }}>6-digit</RNText> code
+                Enter <RNText style={{ color: '#FF2400' }}>6-digit</RNText> code
               </Heading>
               <Text level="body" color="secondary" style={styles.subtitle}>
                 We sent a secure one-time verification code to
@@ -497,7 +497,7 @@ export default function OtpVerificationScreen(): React.JSX.Element {
                   accessibilityLabel="Edit phone number or email"
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
-                  <Text style={[styles.editText, { color: theme.colors.accent }]}>Edit</Text>
+                  <Text style={[styles.editText, { color: '#FF2400' }]}>Edit</Text>
                 </TouchableOpacity>
               </View>
             </View>

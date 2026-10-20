@@ -18,7 +18,9 @@ import {
   ArrowRight,
   User,
   Camera,
-  Sparkles,
+  Flame,
+  Heart,
+  BookOpen,
   SlidersHorizontal,
   Award,
   Shield,
@@ -36,6 +38,8 @@ interface RoadmapStage {
   readonly icon: React.ComponentType<{ size: number; color: string; strokeWidth?: number }>;
   readonly xPct: number;
   readonly yPct: number;
+  readonly labelOffsetX?: number;
+  readonly labelOffsetY?: number;
 }
 
 const ROADMAP_STAGES: readonly RoadmapStage[] = [
@@ -46,6 +50,7 @@ const ROADMAP_STAGES: readonly RoadmapStage[] = [
     icon: User,
     xPct: 25.86,
     yPct: 10.88,
+    labelOffsetY: 4,
   },
   {
     id: 'photos',
@@ -54,30 +59,47 @@ const ROADMAP_STAGES: readonly RoadmapStage[] = [
     icon: Camera,
     xPct: 81.9,
     yPct: 12.64,
+    labelOffsetX: -14,
   },
   {
     id: 'passions',
     number: '3',
     label: '3. Passions',
-    icon: Sparkles,
+    icon: Flame,
     xPct: 42.03,
     yPct: 30.7,
   },
   {
-    id: 'prompts',
+    id: 'lifestyle',
     number: '4',
-    label: '4. Prompts',
-    icon: SlidersHorizontal,
+    label: '4. Lifestyle',
+    icon: Heart,
     xPct: 74.35,
     yPct: 50.88,
   },
   {
-    id: 'launch',
+    id: 'prompts',
     number: '5',
-    label: '5. Launch',
+    label: '5. Prompts',
+    icon: BookOpen,
+    xPct: 42.03,
+    yPct: 72.85,
+  },
+  {
+    id: 'preferences',
+    number: '6',
+    label: '6. Preferences',
+    icon: SlidersHorizontal,
+    xPct: 18.32,
+    yPct: 92.05,
+  },
+  {
+    id: 'launch',
+    number: '7',
+    label: '7. Launch',
     icon: Award,
-    xPct: 26.94,
-    yPct: 72.81,
+    xPct: 71.12,
+    yPct: 96.44,
   },
 ];
 
@@ -106,17 +128,14 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
   // Active highlighted starting milestone (Step 1 is starting milestone)
   const activeStageIndex = 0;
 
-  // Load Folkra and Ethnocentric brand typography
+  // Load Folkra brand typography
   const [fontsLoaded] = useFonts({
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     Folkra: require('../../assets/fonts/folkra.otf'),
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    Ethnocentric: require('../../assets/fonts/Ethnocentric-Regular.otf'),
   });
   const folkraFont = fontsLoaded ? 'Folkra' : undefined;
-  const ethnocentricFont = fontsLoaded ? 'Ethnocentric' : undefined;
 
-  // Responsive canvas sizing
+  // Responsive canvas sizing matching the exact reference viewBox 464x730
   const availableWidth = Math.min(windowWidth - 32, maxContentWidth || 480, 420);
   const roadmapCanvasHeight = Math.round(availableWidth * (730 / 464));
 
@@ -338,33 +357,25 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
           <LinearGradient
             colors={
               isDark
-                ? ['rgba(230, 57, 32, 0.12)', 'rgba(230, 57, 32, 0.0)']
-                : ['rgba(230, 57, 32, 0.08)', 'rgba(230, 57, 32, 0.0)']
+                ? ['rgba(255, 36, 0, 0.14)', 'rgba(255, 36, 0, 0.0)']
+                : ['rgba(255, 36, 0, 0.08)', 'rgba(255, 36, 0, 0.0)']
             }
             style={styles.ambientAura}
           />
 
-          {/* Workflow Badge */}
-          <View
-            style={[
-              styles.journeyBadge,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
-          >
-            <View style={[styles.badgePulseDot, { backgroundColor: theme.colors.accent }]} />
+          {/* Workflow Header Label (Clean text without tabular box) */}
+          <View style={styles.journeyIndicator}>
+            <View style={[styles.badgePulseDot, { backgroundColor: '#FF2400' }]} />
             <RNText
               style={[
                 styles.journeyBadgeText,
                 {
                   color: isDark ? '#E4E4E7' : '#3F3F46',
-                  fontFamily: ethnocentricFont,
+                  fontFamily: folkraFont,
                 },
               ]}
             >
-              5-STAGE ROADMAP
+              7-STAGE ROADMAP
             </RNText>
           </View>
 
@@ -378,7 +389,7 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
               },
             ]}
           >
-            Build your story on <RNText style={{ color: theme.colors.accent }}>Nazar</RNText>
+            Build your story on <RNText style={{ color: '#FF2400' }}>Nazar</RNText>
           </RNText>
 
           <RNText
@@ -409,11 +420,10 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
             <Svg viewBox="0 0 464 730" width="100%" height="100%">
               <Defs>
                 <SvgLinearGradient id="solidPathFade" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <Stop offset="0%" stopColor={theme.colors.accent} stopOpacity={1} />
-                  <Stop offset="72%" stopColor={theme.colors.accent} stopOpacity={1} />
-                  <Stop offset="82%" stopColor={theme.colors.accent} stopOpacity={0.85} />
-                  <Stop offset="90%" stopColor={theme.colors.accent} stopOpacity={0.35} />
-                  <Stop offset="98%" stopColor={theme.colors.accent} stopOpacity={0} />
+                  <Stop offset="0%" stopColor="#FF2400" stopOpacity={1} />
+                  <Stop offset="90%" stopColor="#FF2400" stopOpacity={1} />
+                  <Stop offset="96%" stopColor="#FF2400" stopOpacity={0.8} />
+                  <Stop offset="100%" stopColor="#FF2400" stopOpacity={0.35} />
                 </SvgLinearGradient>
               </Defs>
 
@@ -447,18 +457,21 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
                   },
                 ]}
               >
-                {/* Luminous Pulsing Glow Halo for Selected Milestone */}
+                {/* Luminous Pulsing Glow Halo for Selected Milestone (The Basics) */}
                 {isSelected && (
                   <View
                     style={[
                       styles.nodeAuraGlow,
                       {
                         backgroundColor: isDark
-                          ? 'rgba(255, 160, 122, 0.22)'
-                          : 'rgba(230, 57, 32, 0.16)',
-                        borderColor: isDark
-                          ? 'rgba(255, 160, 122, 0.50)'
-                          : 'rgba(230, 57, 32, 0.35)',
+                          ? 'rgba(255, 36, 0, 0.22)'
+                          : 'rgba(255, 36, 0, 0.14)',
+                        borderColor: isDark ? 'rgba(255, 36, 0, 0.55)' : 'rgba(255, 36, 0, 0.35)',
+                        shadowColor: '#FF2400',
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: isDark ? 0.6 : 0.35,
+                        shadowRadius: 14,
+                        elevation: 6,
                       },
                     ]}
                   />
@@ -469,8 +482,10 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
                   style={[
                     styles.nodeDisc,
                     {
-                      backgroundColor: isSelected ? '#FFA07A' : theme.colors.accent,
-                      shadowColor: isSelected ? '#FFA07A' : theme.colors.accent,
+                      backgroundColor: isSelected ? '#FFFFFF' : '#FF2400',
+                      shadowColor: '#FF2400',
+                      shadowOpacity: isSelected ? (isDark ? 0.6 : 0.3) : isDark ? 0.45 : 0.25,
+                      shadowRadius: isSelected ? 12 : 8,
                       borderColor: isSelected
                         ? '#FFFFFF'
                         : isDark
@@ -482,43 +497,32 @@ export default function OnboardingIntroScreen(): React.JSX.Element {
                 >
                   <StageIcon
                     size={22}
-                    color={isSelected ? '#121214' : '#FFFFFF'}
+                    color={isSelected ? '#FF2400' : '#FFFFFF'}
                     strokeWidth={2.4}
                   />
                 </View>
 
-                {/* Milestone Capsule Pill Label Underneath */}
+                {/* Milestone Label Underneath (Clean floating typography without tabular box) */}
                 <View
                   style={[
-                    styles.nodePill,
-                    {
-                      backgroundColor: isDark
-                        ? isSelected
-                          ? 'rgba(28, 28, 36, 0.95)'
-                          : 'rgba(18, 18, 24, 0.88)'
-                        : isSelected
-                          ? '#FFFFFF'
-                          : 'rgba(255, 255, 255, 0.92)',
-                      borderColor: isSelected
-                        ? isDark
-                          ? '#FFA07A'
-                          : theme.colors.accent
-                        : isDark
-                          ? 'rgba(255, 255, 255, 0.12)'
-                          : 'rgba(0, 0, 0, 0.08)',
-                    },
+                    styles.nodeLabelWrapper,
+                    stage.labelOffsetY ? { marginTop: 8 + stage.labelOffsetY } : null,
+                    stage.labelOffsetX ? { transform: [{ translateX: stage.labelOffsetX }] } : null,
                   ]}
                 >
                   <RNText
                     style={[
-                      styles.nodePillText,
+                      styles.nodeLabelText,
                       {
                         color: isSelected
                           ? isDark
-                            ? '#FFA07A'
-                            : theme.colors.accent
-                          : theme.colors.textPrimary,
-                        fontWeight: isSelected ? '800' : '700',
+                            ? '#FFFFFF'
+                            : '#000000'
+                          : isDark
+                            ? 'rgba(255, 255, 255, 0.85)'
+                            : 'rgba(0, 0, 0, 0.75)',
+                        fontWeight: isSelected ? '700' : '600',
+                        fontFamily: folkraFont || 'Folkra',
                       },
                     ]}
                     numberOfLines={1}
@@ -670,13 +674,9 @@ const styles = StyleSheet.create({
     borderRadius: 70,
     opacity: 0.8,
   },
-  journeyBadge: {
+  journeyIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
     marginBottom: 12,
     gap: 7,
   },
@@ -686,9 +686,9 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   journeyBadgeText: {
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 1.6,
+    letterSpacing: 1.2,
   },
   mainTitle: {
     textAlign: 'center',
@@ -709,23 +709,24 @@ const styles = StyleSheet.create({
   roadmapCanvasContainer: {
     alignSelf: 'center',
     position: 'relative',
-    marginVertical: 10,
+    marginTop: 10,
+    marginBottom: 24,
   },
   nodeAnchor: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 100,
-    marginLeft: -50,
+    width: 120,
+    marginLeft: -60,
     marginTop: -26,
     zIndex: 10,
   },
   nodeAuraGlow: {
     position: 'absolute',
-    top: -5,
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    top: -7,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
     borderWidth: 1.5,
     zIndex: 1,
   },
@@ -738,31 +739,20 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     overflow: 'hidden',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.32,
-    shadowRadius: 8,
     elevation: 6,
     zIndex: 2,
   },
-  nodePill: {
-    marginTop: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 3.5,
-    borderRadius: 999,
-    borderWidth: 1,
+  nodeLabelWrapper: {
+    marginTop: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 3,
     zIndex: 3,
   },
-  nodePillText: {
+  nodeLabelText: {
     fontFamily: 'Folkra',
-    fontSize: 11,
+    fontSize: 11.5,
     textAlign: 'center',
-    letterSpacing: -0.15,
+    letterSpacing: -0.1,
   },
   actionDock: {
     position: 'absolute',

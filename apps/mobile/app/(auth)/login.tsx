@@ -748,7 +748,7 @@ export default function LoginScreen(): React.JSX.Element {
                   <Text style={[styles.headingLineTwoLead, { color: theme.colors.textPrimary }]}>
                     {isSignUp ? 'Worth ' : 'Ready to '}
                   </Text>
-                  <Text style={[styles.headingLineTwoAccent, { color: theme.colors.accent }]}>
+                  <Text style={[styles.headingLineTwoAccent, { color: '#FF2400' }]}>
                     {isSignUp ? 'Falling For' : 'Reconnect?'}
                   </Text>
                 </View>
@@ -1099,7 +1099,7 @@ export default function LoginScreen(): React.JSX.Element {
                       backgroundColor: isDark
                         ? 'rgba(236, 72, 153, 0.14)'
                         : 'rgba(236, 72, 153, 0.08)',
-                      borderColor: theme.colors.accent,
+                      borderColor: '#FF2400',
                     },
                   ]}
                   onPress={() => {
@@ -1117,7 +1117,7 @@ export default function LoginScreen(): React.JSX.Element {
                 >
                   <Text
                     level="bodySmall"
-                    style={{ color: theme.colors.accent, fontWeight: '700', textAlign: 'center' }}
+                    style={{ color: '#FF2400', fontWeight: '700', textAlign: 'center' }}
                   >
                     {suggestionMode === 'signup'
                       ? '✨ New to Nazar? Tap to Create Account'
@@ -1272,7 +1272,7 @@ export default function LoginScreen(): React.JSX.Element {
                 accessibilityRole="button"
                 accessibilityLabel={isSignUp ? 'Switch to Sign In' : 'Switch to Sign Up'}
               >
-                <Text level="bodySmall" style={{ color: theme.colors.accent, fontWeight: '700' }}>
+                <Text level="bodySmall" style={{ color: '#FF2400', fontWeight: '700' }}>
                   {isSignUp ? 'Sign In' : 'Sign Up'}
                 </Text>
               </TouchableOpacity>

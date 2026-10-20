@@ -1331,17 +1331,11 @@ export const LegalConsentModal: React.FC<LegalConsentModalProps> = ({
                   style={[styles.checkboxLabel, { color: theme.colors.textPrimary }]}
                 >
                   I have read and agree to Nazar's{' '}
-                  <Text
-                    level="caption"
-                    style={[styles.linkHighlight, { color: theme.colors.accent }]}
-                  >
+                  <Text level="caption" style={[styles.linkHighlight, { color: '#FF2400' }]}>
                     Terms of Service
                   </Text>
                   ,{' '}
-                  <Text
-                    level="caption"
-                    style={[styles.linkHighlight, { color: theme.colors.accent }]}
-                  >
+                  <Text level="caption" style={[styles.linkHighlight, { color: '#FF2400' }]}>
                     Privacy Notice
                   </Text>
                   , and Data Rights.

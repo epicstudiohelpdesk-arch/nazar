@@ -13,6 +13,7 @@ export const X = createMockIcon('X');
 export const MessageCircle = createMockIcon('MessageCircle');
 export const Search = createMockIcon('Search');
 export const SlidersHorizontal = createMockIcon('SlidersHorizontal');
+export const ArrowLeftRight = createMockIcon('ArrowLeftRight');
 export const Settings = createMockIcon('Settings');
 export const Shield = createMockIcon('Shield');
 export const Flag = createMockIcon('Flag');
@@ -99,5 +100,6 @@ export const Radio = createMockIcon('Radio');
 export const Sparkle = createMockIcon('Sparkle');
 export const Layers = createMockIcon('Layers');
 export const Filter = createMockIcon('Filter');
+export const Award = createMockIcon('Award');
 
 export type LucideIcon = React.FC<any>;

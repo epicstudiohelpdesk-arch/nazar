@@ -138,7 +138,6 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
   );
 
   const [isLoading, setIsLoading] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
 
   // User's gender preferences already collected in "The Basics"
   const genderPreferences =
@@ -150,14 +149,12 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
 
   const handleApplyAgePreset = (preset: AgePreset) => {
     haptics.selection();
-    setHasInteracted(true);
     setMinAge(preset.min);
     setMaxAge(preset.max);
   };
 
   const handleApplyDistancePreset = (km: number) => {
     haptics.selection();
-    setHasInteracted(true);
     setMaxDistanceKm(km);
   };
 
@@ -516,7 +513,6 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
                   <TouchableOpacity
                     onPress={() => {
                       haptics.selection();
-                      setHasInteracted(true);
                       setMinAge((prev) => Math.max(18, prev - 1));
                     }}
                     disabled={minAge <= 18}
@@ -548,7 +544,6 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
                   <TouchableOpacity
                     onPress={() => {
                       haptics.selection();
-                      setHasInteracted(true);
                       setMinAge((prev) => Math.min(maxAge - 1, prev + 1));
                     }}
                     disabled={minAge >= maxAge - 1}
@@ -587,7 +582,6 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
                   <TouchableOpacity
                     onPress={() => {
                       haptics.selection();
-                      setHasInteracted(true);
                       setMaxAge((prev) => Math.max(minAge + 1, prev - 1));
                     }}
                     disabled={maxAge <= minAge + 1}
@@ -619,7 +613,6 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
                   <TouchableOpacity
                     onPress={() => {
                       haptics.selection();
-                      setHasInteracted(true);
                       setMaxAge((prev) => Math.min(70, prev + 1));
                     }}
                     disabled={maxAge >= 70}
@@ -809,7 +802,6 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
               <TouchableOpacity
                 onPress={() => {
                   haptics.selection();
-                  setHasInteracted(true);
                   setMaxDistanceKm((prev) => Math.max(5, prev - 5));
                 }}
                 disabled={maxDistanceKm <= 5}
@@ -844,7 +836,6 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
               <TouchableOpacity
                 onPress={() => {
                   haptics.selection();
-                  setHasInteracted(true);
                   setMaxDistanceKm((prev) => Math.min(200, prev + 5));
                 }}
                 disabled={maxDistanceKm >= 200}
@@ -999,7 +990,7 @@ export default function OnboardingPreferencesScreen(): React.JSX.Element {
                 borderWidth: isDark ? 0 : 1,
                 shadowColor: '#000000',
                 shadowOpacity: isDark ? 0.28 : 0.12,
-                opacity: isLoading ? 0.75 : hasInteracted ? 1 : 0.6,
+                opacity: isLoading ? 0.75 : 1,
               },
             ]}
             activeOpacity={0.88}
