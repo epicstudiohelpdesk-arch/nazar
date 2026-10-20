@@ -139,13 +139,33 @@ export class CommunitiesRepository implements ICommunitiesRepository {
     return rows.map((r) => r.community);
   }
 
+  async upsertMembership(
+    data: NewCommunityMembershipRow,
+    tx?: DrizzleDatabase
+  ): Promise<{ membership: CommunityMembershipRow; wasCreated: boolean }> {
+    const client = this.getClient(tx);
+    const [row] = await client
+      .insert(communityMemberships)
+      .values(data)
+      .onConflictDoNothing({
+        target: [communityMemberships.communityId, communityMemberships.userId],
+      })
+      .returning();
+
+    if (row) {
+      return { membership: row, wasCreated: true };
+    }
+
+    const existing = await this.getMembership(data.communityId, data.userId, tx);
+    return { membership: existing!, wasCreated: false };
+  }
+
   async createMembership(
     data: NewCommunityMembershipRow,
     tx?: DrizzleDatabase
   ): Promise<CommunityMembershipRow> {
-    const client = this.getClient(tx);
-    const [row] = await client.insert(communityMemberships).values(data).returning();
-    return row!;
+    const { membership } = await this.upsertMembership(data, tx);
+    return membership;
   }
 
   async getMembership(

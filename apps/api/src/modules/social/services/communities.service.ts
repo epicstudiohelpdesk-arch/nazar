@@ -320,8 +320,24 @@ export class CommunitiesService {
       community.privacy === 'PRIVATE' ? 'PENDING' : 'ACTIVE';
 
     return this.databaseService.withTransaction(async (tx) => {
-      let membership: CommunityMemberDto;
-      if (existing) {
+      // Re-verify existing membership inside transaction for consistency under concurrency
+      const currentMembership = await this.communitiesRepo.getMembership(id, userId, tx);
+      if (currentMembership) {
+        if (currentMembership.status === 'BANNED') {
+          throw new ForbiddenException({
+            statusCode: 403,
+            code: ErrorCode.COMMUNITY_MEMBER_BANNED,
+            message: 'You have been banned from this community',
+          });
+        }
+        if (currentMembership.status === 'ACTIVE' || currentMembership.status === 'PENDING') {
+          return {
+            status: currentMembership.status as CommunityMembershipStatus,
+            role: currentMembership.role as CommunityRole,
+          };
+        }
+
+        // Re-joining after leaving
         const updated = await this.communitiesRepo.updateMembership(
           id,
           userId,
@@ -331,57 +347,72 @@ export class CommunitiesService {
           },
           tx
         );
-        membership = {
-          id: updated!.id,
-          communityId: updated!.communityId,
-          userId: updated!.userId,
-          role: updated!.role as CommunityRole,
-          status: updated!.status as CommunityMembershipStatus,
-          joinedAt: updated!.joinedAt.toISOString(),
-        };
-      } else {
-        const created = await this.communitiesRepo.createMembership(
-          {
-            id: generateUuidV7(),
+
+        if (targetStatus === 'ACTIVE') {
+          await this.communitiesRepo.incrementMemberCount(id, 1, tx);
+        }
+
+        // Outbox event
+        await tx.insert(outboxEvents).values({
+          id: generateUuidV7(),
+          eventType: 'community.member_joined',
+          aggregateType: 'COMMUNITY',
+          aggregateId: id,
+          payload: {
             communityId: id,
             userId,
-            role: 'MEMBER',
             status: targetStatus,
-            joinedAt: new Date(),
-            updatedAt: new Date(),
+            joinedAt: new Date().toISOString(),
           },
-          tx
-        );
-        membership = {
-          id: created.id,
-          communityId: created.communityId,
-          userId: created.userId,
-          role: created.role as CommunityRole,
-          status: created.status as CommunityMembershipStatus,
-          joinedAt: created.joinedAt.toISOString(),
+          status: 'PENDING',
+        });
+
+        return {
+          status: updated!.status as CommunityMembershipStatus,
+          role: updated!.role as CommunityRole,
         };
       }
 
-      if (targetStatus === 'ACTIVE') {
+      // No membership existed prior to transaction - upsert atomically to handle concurrent join races
+      const { membership, wasCreated } = await this.communitiesRepo.upsertMembership(
+        {
+          id: generateUuidV7(),
+          communityId: id,
+          userId,
+          role: 'MEMBER',
+          status: targetStatus,
+          joinedAt: new Date(),
+          updatedAt: new Date(),
+        },
+        tx
+      );
+
+      // Only increment count and fire domain events if this request actually created the active membership
+      if (wasCreated && targetStatus === 'ACTIVE') {
         await this.communitiesRepo.incrementMemberCount(id, 1, tx);
       }
 
-      // Outbox event
-      await tx.insert(outboxEvents).values({
-        id: generateUuidV7(),
-        eventType: 'community.member_joined',
-        aggregateType: 'COMMUNITY',
-        aggregateId: id,
-        payload: {
-          communityId: id,
-          userId,
-          status: targetStatus,
-          joinedAt: new Date().toISOString(),
-        },
-        status: 'PENDING',
-      });
+      if (wasCreated) {
+        // Outbox event
+        await tx.insert(outboxEvents).values({
+          id: generateUuidV7(),
+          eventType: 'community.member_joined',
+          aggregateType: 'COMMUNITY',
+          aggregateId: id,
+          payload: {
+            communityId: id,
+            userId,
+            status: targetStatus,
+            joinedAt: new Date().toISOString(),
+          },
+          status: 'PENDING',
+        });
+      }
 
-      return { status: membership.status, role: membership.role };
+      return {
+        status: membership.status as CommunityMembershipStatus,
+        role: membership.role as CommunityRole,
+      };
     });
   }
 

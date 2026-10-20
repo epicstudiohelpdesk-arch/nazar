@@ -53,6 +53,10 @@ export interface ICommunitiesRepository {
     data: NewCommunityMembershipRow,
     tx?: DrizzleDatabase
   ): Promise<CommunityMembershipRow>;
+  upsertMembership(
+    data: NewCommunityMembershipRow,
+    tx?: DrizzleDatabase
+  ): Promise<{ membership: CommunityMembershipRow; wasCreated: boolean }>;
   getMembership(
     communityId: string,
     userId: string,
