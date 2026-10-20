@@ -13,9 +13,9 @@ interface TabConfig {
 }
 
 const TAB_CONFIGS: Record<string, TabConfig> = {
-  'discovery/index': { icon: 'flame', label: 'Swipe' },
+  'discovery/index': { icon: 'flame', label: 'Discover' },
   'explore/index': { icon: 'compass', label: 'Explore' },
-  'matches/index': { icon: 'heart', label: 'Likes', badge: 3 },
+  'matches/index': { icon: 'heart', label: 'Likes', badge: 12 },
   'messages/index': { icon: 'message', label: 'Chat' },
   'profile/index': { icon: 'user', label: 'Profile' },
 };
@@ -64,11 +64,7 @@ const TabButton: React.FC<TabButtonProps> = ({
 
   const config = TAB_CONFIGS[routeName] || { icon: 'sparkles' as IconName, label: 'Nazar' };
 
-  const iconColor = isFocused
-    ? routeName === 'discovery/index' || routeName === 'matches/index'
-      ? '#DC0C24'
-      : '#FFFFFF'
-    : '#8E8E93';
+  const iconColor = isFocused ? '#F7F4FF' : '#A39CBD';
 
   const renderIcon = () => {
     if (routeName === 'discovery/index') {
@@ -76,8 +72,8 @@ const TabButton: React.FC<TabButtonProps> = ({
         <Icon
           name="flame"
           size={21}
-          color={isFocused ? '#DC0C24' : '#8E8E93'}
-          fill={isFocused ? '#DC0C24' : undefined}
+          color={iconColor}
+          fill={isFocused ? '#F7F4FF' : undefined}
           strokeWidth={isFocused ? 2.2 : 1.9}
         />
       );
@@ -89,8 +85,7 @@ const TabButton: React.FC<TabButtonProps> = ({
           <Icon
             name="heart"
             size={21}
-            color={isFocused ? '#DC0C24' : '#8E8E93'}
-            fill={isFocused ? '#DC0C24' : undefined}
+            color={iconColor}
             strokeWidth={isFocused ? 2.2 : 1.9}
           />
           {config.badge !== undefined && (
@@ -168,8 +163,8 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
         styles.floatingDock,
         {
           bottom: Math.max(bottomInset, 14),
-          backgroundColor: isDark ? 'rgba(18, 15, 23, 0.95)' : 'rgba(255, 255, 255, 0.96)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.08)',
+          backgroundColor: isDark ? '#171427' : 'rgba(255, 255, 255, 0.96)',
+          borderColor: isDark ? 'rgba(120, 108, 170, 0.10)' : 'rgba(0, 0, 0, 0.08)',
           shadowOpacity: isDark ? 0.55 : 0.16,
         },
       ]}
@@ -234,8 +229,8 @@ export default function TabsLayout(): React.JSX.Element {
         name="discovery/index"
         options={{
           title: 'Discover',
-          tabBarLabel: 'Swipe',
-          tabBarAccessibilityLabel: 'Swipe tab, browse recommendations',
+          tabBarLabel: 'Discover',
+          tabBarAccessibilityLabel: 'Discover tab, browse recommendations',
         }}
       />
       <Tabs.Screen
@@ -281,8 +276,8 @@ const styles = StyleSheet.create({
     right: 16,
     maxWidth: 420,
     alignSelf: 'center',
-    height: 68,
-    borderRadius: 34,
+    height: 64,
+    borderRadius: 32,
     borderWidth: 1,
     elevation: 20,
     shadowColor: '#000000',
@@ -307,18 +302,18 @@ const styles = StyleSheet.create({
   tabCapsule: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 22,
-    minWidth: 62,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    borderRadius: 21,
+    minWidth: 68,
   },
   tabCapsuleActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: '#252139',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   tabLabel: {
-    fontSize: 10.5,
+    fontSize: 11.5,
     marginTop: 3,
     letterSpacing: 0.1,
   },
@@ -327,7 +322,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   tabLabelInactive: {
-    color: '#8E8E93',
+    color: '#A39CBD',
     fontWeight: '600',
   },
   iconWithBadgeWrapper: {
@@ -337,21 +332,21 @@ const styles = StyleSheet.create({
   },
   tabBadgePill: {
     position: 'absolute',
-    top: -5,
-    right: -10,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#DC0C24',
+    top: -7,
+    right: -11,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FF4B72',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
     borderWidth: 1.5,
-    borderColor: '#120F17',
+    borderColor: '#171427',
   },
   tabBadgeText: {
     color: '#FFFFFF',
-    fontSize: 9.5,
+    fontSize: 11,
     fontWeight: '800',
     textAlign: 'center',
     lineHeight: 11,

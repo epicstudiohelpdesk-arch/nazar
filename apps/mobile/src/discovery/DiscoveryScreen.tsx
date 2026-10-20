@@ -11,9 +11,12 @@ import {
   Alert,
   TextInput,
   Modal,
+  ScrollView,
 } from 'react-native';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useFonts } from 'expo-font';
+import Svg, { Circle } from 'react-native-svg';
 import type { DiscoveryItemDto, DiscoveryResponseDto } from '@platform/api-contracts';
 import { useTheme } from '../design/theme/ThemeContext.js';
 import { Heading } from '../design/primitives/Heading.js';
@@ -48,45 +51,26 @@ const MOCK_DISCOVERY_CANDIDATES: DiscoveryItemDto[] = [
       id: 'demo-cand-1',
       userId: 'demo-cand-1',
       displayName: 'Aanya',
-      age: 24,
+      age: 21,
       gender: 'WOMAN',
-      bio: 'Architect & urban sketcher. Constantly searching for the city’s quietest courtyards and best espresso ☕✨',
-      occupation: 'Architect & Spatial Designer',
-      education: 'CEPT University',
-      city: 'Mumbai',
+      bio: 'Graphic Designer · Jadavpur University',
+      occupation: 'Graphic Designer',
+      education: 'Jadavpur University',
+      city: 'Kolkata',
       countryCode: 'IN',
       interests: [
-        { id: '1', name: 'Design', slug: 'design', category: 'Creative' },
-        { id: '2', name: 'Coffee', slug: 'coffee', category: 'Food & Drink' },
-        { id: '3', name: 'Art', slug: 'art', category: 'Creative' },
-        { id: '4', name: 'Architecture', slug: 'architecture', category: 'Creative' },
+        { id: '1', name: 'Music', slug: 'music', category: 'Creative' },
+        { id: '2', name: 'Travel', slug: 'travel', category: 'Lifestyle' },
+        { id: '3', name: 'Coffee', slug: 'coffee', category: 'Food & Drink' },
       ],
       prompts: [
         {
           id: 'p1',
-          prompt: 'My ideal Sunday looks like...',
-          answer: 'Exploring heritage lanes with filter coffee and a film camera.',
-        },
-        {
-          id: 'p2',
-          prompt: 'A boundary I hold sacred is...',
-          answer: 'No phone screens during dinner conversations.',
+          prompt: 'Why you match',
+          answer: 'indie music & weekend trips',
         },
       ],
-      media: [
-        {
-          id: 'm1',
-          url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
-          position: 0,
-          isPrimary: true,
-        },
-        {
-          id: 'm2',
-          url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80',
-          position: 1,
-          isPrimary: false,
-        },
-      ],
+      media: [],
     },
     distanceBucket: '1-5 km',
   },
@@ -277,6 +261,12 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   const isReduced = useReducedMotion();
   const { cardWidth } = useResponsiveLayout();
 
+  const [fontsLoaded] = useFonts({
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Folkra: require('../../assets/fonts/folkra.ttf'),
+  });
+  const folkraFont = fontsLoaded ? 'Folkra' : undefined;
+
   const discoveryApi = useMemo(() => createDiscoveryApi(authClient), [authClient]);
   const interactionsApi = useMemo(() => createInteractionsApi(authClient), [authClient]);
 
@@ -285,7 +275,9 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isWorkModeVisible, setIsWorkModeVisible] = useState(false);
-  const [activeFeedTab, setActiveFeedTab] = useState<'for_you' | 'nearby'>('for_you');
+  const [activeFeedTab, setActiveFeedTab] = useState<'for_you' | 'nearby' | 'interests' | 'verified'>('for_you');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedVibe, setSelectedVibe] = useState<string | null>(null);
 
   // Animated swipe tracking
   const position = useRef(new Animated.ValueXY()).current;
@@ -382,15 +374,45 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
   // Tab-filtered / ordered candidates
   const displayedCandidates: DiscoveryItemDto[] = useMemo(() => {
+    let list = [...candidates];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (c) =>
+          c.profile.displayName.toLowerCase().includes(q) ||
+          c.profile.occupation?.toLowerCase().includes(q) ||
+          c.profile.city?.toLowerCase().includes(q) ||
+          c.profile.interests?.some((i) => i.name.toLowerCase().includes(q))
+      );
+    }
+    if (selectedVibe) {
+      const v = selectedVibe.toLowerCase();
+      const filtered = list.filter(
+        (c) =>
+          c.profile.interests?.some((i) => i.name.toLowerCase().includes(v)) ||
+          c.profile.bio?.toLowerCase().includes(v)
+      );
+      if (filtered.length > 0) list = filtered;
+    }
     if (activeFeedTab === 'nearby') {
-      return [...candidates].sort((a, b) => {
-        const da = a.distanceBucket?.includes('< 1') || a.distanceBucket?.includes('1-5') ? 0 : 1;
-        const db = b.distanceBucket?.includes('< 1') || b.distanceBucket?.includes('1-5') ? 0 : 1;
+      return list.sort((a, b) => {
+        const da =
+          a.distanceBucket?.includes('< 1') ||
+          a.distanceBucket?.includes('1-5') ||
+          a.distanceBucket?.includes('3 km')
+            ? 0
+            : 1;
+        const db =
+          b.distanceBucket?.includes('< 1') ||
+          b.distanceBucket?.includes('1-5') ||
+          b.distanceBucket?.includes('3 km')
+            ? 0
+            : 1;
         return da - db;
       });
     }
-    return candidates;
-  }, [candidates, activeFeedTab]);
+    return list;
+  }, [candidates, activeFeedTab, searchQuery, selectedVibe]);
 
   const activeCandidate = displayedCandidates[currentIndex];
   const nextCandidate = displayedCandidates[currentIndex + 1];
@@ -759,22 +781,23 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
     const mediaUrls = (profile.media || []).map((m) => m.url);
     const primary = profile.media?.find((m) => m.isPrimary)?.url || mediaUrls[0] || null;
 
-    const matchScores = [96, 94, 91, 88, 93, 89];
+    const matchScores = [95, 94, 91, 88, 93, 89];
     const matchPercentage = matchScores[index % matchScores.length];
+
+    const distanceFormatted =
+      distanceBucket === '1-5 km'
+        ? '3 km away'
+        : distanceBucket
+          ? `${distanceBucket} away`
+          : '3 km away';
 
     return {
       id: profile.userId || profile.id,
       name: profile.displayName,
       age: profile.age,
-      city: profile.city || undefined,
+      city: profile.city || 'Kolkata',
       country: profile.countryCode || undefined,
-      contextualInfo: profile.eventPlusOne
-        ? `🎟️ Looking for +1 to ${profile.eventPlusOne.eventTitle}`
-        : profile.travelMode && profile.travelCity
-          ? `✈️ Visiting ${profile.travelCity}${profile.travelCountry ? `, ${profile.travelCountry}` : ''}`
-          : distanceBucket
-            ? `${distanceBucket} away`
-            : undefined,
+      contextualInfo: distanceFormatted,
       bio: profile.bio || undefined,
       occupation: profile.occupation || undefined,
       education: profile.education || undefined,
@@ -794,175 +817,258 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Top Luxury Navigation Header */}
-      {/* Top Header - Tinder & Amore Fusion */}
-      <View style={[styles.topLuxuryHeader, { borderBottomColor: theme.colors.border }]}>
-        {/* Left: Filter Controls & Brand Emblem */}
-        <View style={styles.headerLeftRow}>
-          <TouchableOpacity
-            style={[
-              styles.headerGlassBtn,
-              {
-                backgroundColor: isDark ? '#1C1922' : theme.colors.surfaceMuted,
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.10)' : theme.colors.border,
-              },
-            ]}
-            onPress={() => {
-              trackOnboardingEvent('filter_opened');
-              if (onOpenFilters) {
-                onOpenFilters();
-              } else {
-                router.push('/modal/filters');
-              }
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Open discovery filters"
-            testID="discovery-filter-btn"
-          >
-            <Icon name="filter" size={17} color={theme.colors.textPrimary} />
-            <View style={styles.filterActiveDot} />
-          </TouchableOpacity>
-
+      {/* Top Header - Nazar Brand with Eye Emblem & Notifications */}
+      <View style={styles.topNazarHeader}>
+        <View style={styles.headerBrandCol}>
           <View style={styles.brandTitleRow}>
-            <Heading level="h3" style={styles.brandTitleText}>
-              NAZAR
-            </Heading>
-            <View style={styles.brandRubyDot} />
+            {/* Concentric Eye Emblem matching reference design */}
+            <Svg width={26} height={26} viewBox="0 0 28 28" style={{ marginRight: 12 }}>
+              <Circle cx={14} cy={14} r={12} fill="#7059E4" />
+              <Circle cx={14} cy={14} r={8} fill="#FFFFFF" />
+              <Circle cx={14} cy={14} r={4.5} fill="#0C0B14" />
+            </Svg>
+            <Text style={styles.brandTitleText}>NAZAR</Text>
           </View>
+          <Text style={styles.headerTagline}>Real people. Meaningful connections.</Text>
         </View>
 
-        {/* Center: Tinder-Style Segmented Pills (For You, Nearby) */}
-        <View style={styles.tinderSegmentedRow}>
-          <TouchableOpacity
-            style={[
-              styles.tinderPillTab,
-              activeFeedTab === 'for_you' && styles.tinderPillTabActive,
-            ]}
-            onPress={() => {
-              if (activeFeedTab !== 'for_you') {
-                haptics.selection();
-                setActiveFeedTab('for_you');
-              }
-            }}
-            accessibilityRole="tab"
-            accessibilityLabel="Curated For You feed"
-          >
-            <Text
-              style={[
-                styles.tinderPillText,
-                activeFeedTab === 'for_you'
-                  ? styles.tinderPillTextActive
-                  : styles.tinderPillTextInactive,
-              ]}
-            >
-              For You
-            </Text>
-          </TouchableOpacity>
+        {/* Right: Notification Bell Button */}
+        <TouchableOpacity
+          style={styles.notificationBtn}
+          onPress={() => {
+            haptics.selection();
+            Alert.alert('Notifications', 'You have no new notifications right now.');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+        >
+          <Icon name="bell" size={22} color="#F7F4FF" />
+          <View style={styles.notificationPinkDot} />
+        </TouchableOpacity>
+      </View>
 
-          <TouchableOpacity
-            style={[styles.tinderPillTab, activeFeedTab === 'nearby' && styles.tinderPillTabActive]}
-            onPress={() => {
-              if (activeFeedTab !== 'nearby') {
-                haptics.selection();
-                setActiveFeedTab('nearby');
-              }
-            }}
-            accessibilityRole="tab"
-            accessibilityLabel="Nearby candidates feed"
-          >
-            <Text
-              style={[
-                styles.tinderPillText,
-                activeFeedTab === 'nearby'
-                  ? styles.tinderPillTextActive
-                  : styles.tinderPillTextInactive,
-              ]}
-            >
-              Nearby
-            </Text>
-          </TouchableOpacity>
-        </View>
+      {/* Search / Vibe Input Bar */}
+      <View style={styles.searchBarContainer}>
+        <Icon name="search" size={20} color="#8E89A8" style={{ marginRight: 10 }} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Find someone with the same vibe..."
+          placeholderTextColor="#A19AB8"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          autoCorrect={false}
+        />
+        <TouchableOpacity
+          style={styles.filterIconButton}
+          onPress={() => {
+            trackOnboardingEvent('filter_opened');
+            if (onOpenFilters) {
+              onOpenFilters();
+            } else {
+              router.push('/modal/filters');
+            }
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open discovery filters"
+          testID="discovery-filter-btn"
+        >
+          <Icon name="filter" size={16} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
 
-        {/* Right: Utility & Boost Actions */}
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={[
-              styles.headerGlassBtn,
-              passportQuery.data?.enabled
-                ? { backgroundColor: '#DC0C24', borderColor: '#DC0C24' }
-                : {
-                    backgroundColor: isDark ? '#1C1922' : theme.colors.surfaceMuted,
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.10)' : theme.colors.border,
-                  },
-            ]}
-            onPress={() => setIsPassportModalVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Passport Travel Mode"
+      {/* Stories / Vibes Horizontal Scroll Row */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.vibesScrollContent}
+        style={styles.vibesScrollView}
+      >
+        {/* 1. Add Story */}
+        <TouchableOpacity
+          style={styles.vibeItem}
+          onPress={() => {
+            haptics.selection();
+            Alert.alert('Add to Story', 'Share what you are up to right now with potential matches.');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Add Story"
+        >
+          <View style={styles.addStoryCircle}>
+            <Icon name="plus" size={20} color="#FFFFFF" strokeWidth={2.4} />
+          </View>
+          <Text style={styles.vibeLabel}>Add Story</Text>
+        </TouchableOpacity>
+
+        {/* 2. Your Vibe */}
+        <TouchableOpacity
+          style={styles.vibeItem}
+          onPress={() => {
+            haptics.selection();
+            setSelectedVibe(selectedVibe === 'Your Vibe' ? null : 'Your Vibe');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Your Vibe"
+        >
+          <LinearGradient
+            colors={['#EC4899', '#8B5CF6']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.yourVibeGradientRing}
           >
-            <Icon
-              name="plane"
-              size={15}
-              color={passportQuery.data?.enabled ? '#FFFFFF' : theme.colors.textPrimary}
+            <LinearGradient
+              colors={['#A45B91', '#D47A86', '#55406F']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.yourVibeInner}
+            >
+              <View style={styles.yourVibePinkDot} />
+            </LinearGradient>
+          </LinearGradient>
+          <Text style={[styles.vibeLabel, selectedVibe === 'Your Vibe' && styles.vibeLabelActive]}>
+            Your Vibe
+          </Text>
+        </TouchableOpacity>
+
+        {/* 3. Travel */}
+        <TouchableOpacity
+          style={styles.vibeItem}
+          onPress={() => {
+            haptics.selection();
+            setSelectedVibe(selectedVibe === 'Travel' ? null : 'Travel');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Travel Vibe"
+        >
+          <LinearGradient
+            colors={['#EC5AA5', '#A15DCE']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.vibeGradientCircle}
+          >
+            <LinearGradient
+              colors={['#325DA6', '#5193F5', '#78BDFF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.vibeInnerCircle}
             />
-          </TouchableOpacity>
+          </LinearGradient>
+          <Text style={[styles.vibeLabel, selectedVibe === 'Travel' && styles.vibeLabelActive]}>
+            Travel
+          </Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.headerGlassBtn,
-              {
-                backgroundColor: isDark ? '#1C1922' : theme.colors.surfaceMuted,
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.10)' : theme.colors.border,
-              },
-            ]}
-            onPress={() => {
-              haptics.selection();
-              setIsWorkModeVisible(true);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Activate Work Mode Disguise"
+        {/* 4. Food */}
+        <TouchableOpacity
+          style={styles.vibeItem}
+          onPress={() => {
+            haptics.selection();
+            setSelectedVibe(selectedVibe === 'Food' ? null : 'Food');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Food Vibe"
+        >
+          <LinearGradient
+            colors={['#EC5AA5', '#A15DCE']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.vibeGradientCircle}
           >
-            <Icon name="eyeOff" size={15} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
+            <LinearGradient
+              colors={['#9B562B', '#DF843A', '#F3B454']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.vibeInnerCircle}
+            />
+          </LinearGradient>
+          <Text style={[styles.vibeLabel, selectedVibe === 'Food' && styles.vibeLabelActive]}>
+            Food
+          </Text>
+        </TouchableOpacity>
 
-          {activeCandidate && (
+        {/* 5. Music */}
+        <TouchableOpacity
+          style={styles.vibeItem}
+          onPress={() => {
+            haptics.selection();
+            setSelectedVibe(selectedVibe === 'Music' ? null : 'Music');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Music Vibe"
+        >
+          <LinearGradient
+            colors={['#EC5AA5', '#A15DCE']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.vibeGradientCircle}
+          >
+            <LinearGradient
+              colors={['#6151B6', '#A583F5', '#C59CFF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.vibeInnerCircle}
+            />
+          </LinearGradient>
+          <Text style={[styles.vibeLabel, selectedVibe === 'Music' && styles.vibeLabelActive]}>
+            Music
+          </Text>
+        </TouchableOpacity>
+
+        {/* 6. Art */}
+        <TouchableOpacity
+          style={styles.vibeItem}
+          onPress={() => {
+            haptics.selection();
+            setSelectedVibe(selectedVibe === 'Art' ? null : 'Art');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Art Vibe"
+        >
+          <LinearGradient
+            colors={['#EC5AA5', '#A15DCE']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.vibeGradientCircle}
+          >
+            <LinearGradient
+              colors={['#23786E', '#3EBBA1', '#74DDC5']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.vibeInnerCircle}
+            />
+          </LinearGradient>
+          <Text style={[styles.vibeLabel, selectedVibe === 'Art' && styles.vibeLabelActive]}>
+            Art
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Feed Category Filter Tabs (For You, Nearby, Interests, Verified) */}
+      <View style={styles.feedCategoryRow}>
+        {(['for_you', 'nearby', 'interests', 'verified'] as const).map((tabKey) => {
+          const isActive = activeFeedTab === tabKey;
+          const labelMap: Record<string, string> = {
+            for_you: 'For You',
+            nearby: 'Nearby',
+            interests: 'Interests',
+            verified: 'Verified',
+          };
+          return (
             <TouchableOpacity
-              style={[
-                styles.headerGlassBtn,
-                {
-                  backgroundColor: isDark ? '#1C1922' : theme.colors.surfaceMuted,
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.10)' : theme.colors.border,
-                },
-              ]}
-              onPress={() => setShareProfileId(activeCandidate.profile.id)}
-              accessibilityRole="button"
-              accessibilityLabel="Share profile"
-              testID="discovery-share-btn"
+              key={tabKey}
+              style={[styles.categoryTabBtn, isActive && styles.categoryTabBtnActive]}
+              onPress={() => {
+                haptics.selection();
+                setActiveFeedTab(tabKey);
+              }}
+              accessibilityRole="tab"
+              accessibilityLabel={`${labelMap[tabKey]} feed`}
             >
-              <Icon name="share" size={15} color={theme.colors.textPrimary} />
+              <Text style={[styles.categoryTabText, isActive && styles.categoryTabTextActive]}>
+                {labelMap[tabKey]}
+              </Text>
             </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={[
-              styles.headerGlassBtn,
-              {
-                backgroundColor: 'rgba(192, 132, 252, 0.15)',
-                borderColor: 'rgba(192, 132, 252, 0.35)',
-              },
-            ]}
-            onPress={() => {
-              haptics.medium();
-              Alert.alert(
-                'Nazar Spotlight',
-                'Boost your profile to be the top candidate in your area for 30 minutes.'
-              );
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Spotlight Boost"
-          >
-            <Icon name="sparkles" size={16} color="#C084FC" />
-          </TouchableOpacity>
-        </View>
+          );
+        })}
       </View>
 
       {/* Passport Travel Mode Active Banner */}
@@ -970,16 +1076,16 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
         <TouchableOpacity
           style={[
             styles.passportBanner,
-            { backgroundColor: 'rgba(220, 12, 36, 0.12)', borderColor: '#DC0C24' },
+            { backgroundColor: 'rgba(255, 36, 0, 0.12)', borderColor: '#FF2400' },
           ]}
           onPress={() => setIsPassportModalVisible(true)}
           accessibilityLabel="Change Passport travel location"
         >
           <View style={styles.passportBannerContent}>
-            <Icon name="plane" size={14} color="#DC0C24" />
+            <Icon name="plane" size={14} color="#FF2400" />
             <Text
               level="caption"
-              style={{ color: '#DC0C24', fontWeight: '700', marginLeft: 6, letterSpacing: 0.2 }}
+              style={{ color: '#FF2400', fontWeight: '700', marginLeft: 6, letterSpacing: 0.2 }}
             >
               Passporting in {passportQuery.data.city || 'Passport Mode'}
               {passportQuery.data.country ? `, ${passportQuery.data.country}` : ''} • Tap to switch
@@ -1007,7 +1113,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
         {isLoading && candidates.length === 0 ? (
           // Loading Skeleton State
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color="#DC0C24" />
+            <ActivityIndicator size="large" color="#FF2400" />
             <Text level="bodySmall" color="secondary" style={{ marginTop: 12 }}>
               Curating thoughtful profiles...
             </Text>
@@ -1016,7 +1122,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
           // Error State
           <View style={styles.centerContainer}>
             <Icon name="warning" size="lg" color={theme.colors.warning} />
-            <Heading level="h2" style={{ marginTop: 12, textAlign: 'center' }}>
+            <Heading level="h2" style={{ marginTop: 12, textAlign: 'center', fontFamily: folkraFont }}>
               Unable to load feed
             </Heading>
             <Text level="body" color="secondary" style={styles.messageText}>
@@ -1038,21 +1144,41 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             elevation="none"
             style={[
               styles.emptyCard,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+              {
+                backgroundColor: isDark ? '#14121A' : theme.colors.surface,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.10)' : theme.colors.border,
+              },
             ]}
           >
             <View
               style={[
                 styles.emptyIconCircle,
-                { backgroundColor: 'rgba(220, 12, 36, 0.12)', borderColor: '#DC0C24' },
+                { backgroundColor: 'rgba(255, 36, 0, 0.12)', borderColor: '#FF2400' },
               ]}
             >
-              <Icon name="sparkles" size="lg" color="#DC0C24" />
+              <Icon name="sparkles" size="lg" color="#FF2400" />
             </View>
-            <Heading level="h2" style={{ textAlign: 'center', marginTop: 14, fontWeight: '800' }}>
+            <Heading
+              level="h2"
+              style={{
+                textAlign: 'center',
+                marginTop: 16,
+                fontWeight: '800',
+                fontFamily: folkraFont,
+                color: isDark ? '#FFFFFF' : '#0B0B0E',
+                fontSize: 24,
+              }}
+            >
               You're All Caught Up
             </Heading>
-            <Text level="body" color="secondary" style={styles.messageText}>
+            <Text
+              level="body"
+              color="secondary"
+              style={[
+                styles.messageText,
+                { color: isDark ? 'rgba(255, 255, 255, 0.65)' : 'rgba(0, 0, 0, 0.60)' },
+              ]}
+            >
               You've seen all potential matches nearby. Broaden your distance or age preferences to
               meet more incredible people.
             </Text>
@@ -1064,7 +1190,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                 fullWidth
                 onPress={() => router.push('/modal/filters')}
                 accessibilityLabel="Adjust discovery preferences"
-                style={{ backgroundColor: '#DC0C24', borderColor: '#DC0C24' }}
+                style={{ backgroundColor: '#FF2400', borderColor: '#FF2400' }}
               >
                 Expand Preferences
               </Button>
@@ -1125,24 +1251,14 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                   styles.likeBadge,
                   {
                     opacity: likeBadgeOpacity,
-                    borderColor: '#DC0C24',
-                    backgroundColor: 'rgba(220, 12, 36, 0.18)',
+                    borderColor: '#FF4B72',
+                    backgroundColor: 'rgba(255, 75, 114, 0.22)',
                   },
                 ]}
               >
                 <View style={styles.badgeInnerRow}>
-                  <Icon name="heart" size="sm" color="#DC0C24" fill="#DC0C24" />
-                  <Text
-                    level="title"
-                    style={{
-                      color: '#DC0C24',
-                      fontWeight: '800',
-                      marginLeft: 6,
-                      letterSpacing: 1.5,
-                    }}
-                  >
-                    LIKE
-                  </Text>
+                  <Icon name="heart" size="sm" color="#FF4B72" fill="#FF4B72" />
+                  <Text style={[styles.badgeText, { color: '#FF4B72' }]}>LIKE</Text>
                 </View>
               </Animated.View>
 
@@ -1152,24 +1268,14 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                   styles.passBadge,
                   {
                     opacity: passBadgeOpacity,
-                    borderColor: '#FB7185',
-                    backgroundColor: 'rgba(251, 113, 133, 0.18)',
+                    borderColor: '#818CF8',
+                    backgroundColor: 'rgba(129, 140, 248, 0.22)',
                   },
                 ]}
               >
                 <View style={styles.badgeInnerRow}>
-                  <Icon name="close" size="sm" color="#FB7185" strokeWidth={2.8} />
-                  <Text
-                    level="title"
-                    style={{
-                      color: '#FB7185',
-                      fontWeight: '800',
-                      marginLeft: 6,
-                      letterSpacing: 1.5,
-                    }}
-                  >
-                    NOPE
-                  </Text>
+                  <Icon name="close" size="sm" color="#818CF8" strokeWidth={2.8} />
+                  <Text style={[styles.badgeText, { color: '#818CF8' }]}>NOPE</Text>
                 </View>
               </Animated.View>
 
@@ -1179,6 +1285,8 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                 onPress={() =>
                   handleOpenDetail(activeCandidate.profile.userId || activeCandidate.profile.id)
                 }
+                onLike={() => triggerLike()}
+                onShare={() => setShareProfileId(activeCandidate.profile.id)}
                 onInlineLike={handleOpenInlineLike}
               />
             </Animated.View>
@@ -1188,100 +1296,80 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
       {/* Bottom Floating Luxury Action Bar */}
       {activeCandidate && (
-        <View style={[styles.bottomActionBar, { marginBottom: Math.max(insets.bottom, 12) + 70 }]}>
+        <View
+          style={[
+            styles.bottomActionBar,
+            { marginBottom: Math.max(insets.bottom, 14) + 74 - insets.bottom },
+          ]}
+        >
           {/* Undo Button */}
           <FloatingActionButton
-            size={42}
-            style={[
-              styles.actionCircle,
-              {
-                backgroundColor: isDark ? '#1E1B24' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
-                opacity: currentIndex > 0 ? 1 : 0.4,
-              },
-            ]}
+            size={48}
+            style={styles.darkActionCircle}
             onPress={handleUndo}
             disabled={currentIndex === 0 || isSubmitting}
             hitSlop={ensureMinTouchTarget(44, 44)}
             accessibilityLabel="Undo last pass or like"
             testID="discovery-undo-btn"
           >
-            <Icon name="refresh" size={18} color="#F59E0B" strokeWidth={2.4} />
+            <Icon name="refresh" size={19} color="#B8B2CD" strokeWidth={2.2} />
           </FloatingActionButton>
 
           {/* Pass Button */}
           <FloatingActionButton
-            size={58}
-            style={[
-              styles.actionCircle,
-              {
-                backgroundColor: isDark ? '#241E26' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
+            size={56}
+            style={styles.darkActionCircle}
             onPress={triggerPass}
             disabled={isSubmitting}
             accessibilityLabel={`Pass on ${activeCandidate.profile.displayName}`}
             testID="discovery-pass-btn"
           >
-            <Icon name="close" size={25} color="#FB7185" strokeWidth={2.8} />
+            <Icon name="close" size={24} color="#FFFFFF" strokeWidth={2.8} />
           </FloatingActionButton>
 
-          {/* Super Like / Blue Star Button */}
+          {/* Hero Like Button (Solid Coral Pink #FF4B72 with soft glow) */}
           <FloatingActionButton
-            size={46}
-            style={[
-              styles.actionCircle,
-              {
-                backgroundColor: isDark ? '#1E1B24' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
-            onPress={() => triggerLike()}
-            disabled={isSubmitting}
-            accessibilityLabel={`Super like ${activeCandidate.profile.displayName}`}
-            testID="discovery-super-btn"
-          >
-            <Icon name="star" size={20} color="#38BDF8" strokeWidth={2.2} />
-          </FloatingActionButton>
-
-          {/* Hero Like Button (Ruby Red Accent) */}
-          <FloatingActionButton
-            size={64}
-            style={[
-              styles.actionCircle,
-              styles.likeCircleGlow,
-              {
-                backgroundColor: isDark ? '#271720' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(220, 12, 36, 0.45)' : 'rgba(220, 12, 36, 0.25)',
-              },
-            ]}
+            size={68}
+            style={styles.heroLikePinkCircle}
             onPress={() => triggerLike()}
             disabled={isSubmitting}
             accessibilityLabel={`Like ${activeCandidate.profile.displayName}`}
             testID="discovery-like-btn"
           >
-            <Icon name="heart" size={27} color="#DC0C24" fill="#DC0C24" strokeWidth={2.4} />
+            <Icon name="heart" size={28} color="#0C0B15" strokeWidth={2.4} />
           </FloatingActionButton>
 
-          {/* Boost / Instant Message / Detail Button */}
+          {/* Super Like / Star Button */}
           <FloatingActionButton
-            size={42}
-            style={[
-              styles.actionCircle,
-              {
-                backgroundColor: isDark ? '#1E1B24' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
+            size={56}
+            style={styles.darkActionCircle}
+            onPress={() => triggerLike()}
+            disabled={isSubmitting}
+            accessibilityLabel={`Super like ${activeCandidate.profile.displayName}`}
+            testID="discovery-super-btn"
+          >
+            <Icon name="star" size={22} color="#818CF8" strokeWidth={2.4} />
+          </FloatingActionButton>
+
+          {/* Message / Compliment Button */}
+          <FloatingActionButton
+            size={48}
+            style={styles.darkActionCircle}
             onPress={() =>
-              handleOpenDetail(activeCandidate.profile.userId || activeCandidate.profile.id)
+              handleOpenInlineLike({
+                type: 'PROMPT',
+                id: 'profile-compliment',
+                text:
+                  activeCandidate.profile.prompts?.[0]?.answer ||
+                  activeCandidate.profile.bio ||
+                  undefined,
+              })
             }
             hitSlop={ensureMinTouchTarget(44, 44)}
-            accessibilityLabel={`View full profile for ${activeCandidate.profile.displayName}`}
+            accessibilityLabel={`Send message to ${activeCandidate.profile.displayName}`}
             testID="discovery-info-btn"
           >
-            <Icon name="zap" size={18} color="#C084FC" fill="#C084FC" />
+            <Icon name="message" size={19} color="#B8B2CD" />
           </FloatingActionButton>
         </View>
       )}
@@ -1311,11 +1399,11 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             <View style={styles.sheetHandle} />
 
             <View style={styles.inlineTargetHeader}>
-              <Icon name="heart" size="sm" color={theme.colors.accent} />
+              <Icon name="heart" size="sm" color="#FF2400" fill="#FF2400" />
               <Text
                 variant="label"
                 weight="bold"
-                style={{ marginLeft: 6, color: theme.colors.accent }}
+                style={{ marginLeft: 6, color: '#FF2400' }}
               >
                 {inlineLikeModal?.attachmentType === 'PROMPT' ? 'Like Prompt' : 'Like Photo'}
               </Text>
@@ -1373,7 +1461,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.modalPrimaryBtn, { backgroundColor: theme.colors.accent }]}
+                style={[styles.modalPrimaryBtn, { backgroundColor: '#FF2400' }]}
                 onPress={handleSendInlineLike}
               >
                 <Text variant="caption" weight="bold" style={{ color: '#FFFFFF' }}>
@@ -1414,49 +1502,15 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0C0B15',
   },
-  topLuxuryHeader: {
+  topNazarHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 4,
-    height: 46,
-  },
-  headerLeftRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  tinderSegmentedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  tinderPillTab: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tinderPillTabActive: {
-    backgroundColor: '#26222D',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  tinderPillText: {
-    fontSize: 13,
-    letterSpacing: 0.1,
-  },
-  tinderPillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  tinderPillTextInactive: {
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontWeight: '600',
+    paddingBottom: 6,
   },
   headerBrandCol: {
     flexDirection: 'column',
@@ -1468,73 +1522,159 @@ const styles = StyleSheet.create({
   brandTitleText: {
     fontSize: 20,
     fontWeight: '900',
-    letterSpacing: 2,
+    letterSpacing: 3,
+    color: '#FFFFFF',
   },
-  brandRubyDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#DC0C24',
-    marginLeft: 4,
-    marginBottom: 4,
+  headerTagline: {
+    fontSize: 12,
+    color: '#A39CBD',
+    marginTop: 2,
+    letterSpacing: 0.1,
   },
-  headerSubtitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 1,
-    letterSpacing: 0.2,
-  },
-  segmentedCapsule: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 3,
-    gap: 2,
-  },
-  capsuleTab: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 16,
-  },
-  capsuleTabActive: {
-    shadowColor: '#DC0C24',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  capsuleText: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerGlassBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 1,
+  notificationBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#191727',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  filterActiveDot: {
+  notificationPinkDot: {
     position: 'absolute',
-    top: 7,
-    right: 7,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#DC0C24',
+    top: 9,
+    right: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#FF4B72',
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#181627',
+    borderWidth: 1,
+    borderColor: '#232035',
+    borderRadius: 22,
+    height: 44,
+    paddingLeft: 14,
+    paddingRight: 6,
+    marginHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 14.5,
+    paddingVertical: 0,
+  },
+  filterIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#5B4DFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vibesScrollView: {
+    maxHeight: 84,
+    marginBottom: 8,
+  },
+  vibesScrollContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+    alignItems: 'center',
+  },
+  vibeItem: {
+    alignItems: 'center',
+  },
+  addStoryCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#131120',
+    borderWidth: 1.5,
+    borderColor: '#3D3856',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  yourVibeGradientRing: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    padding: 2,
+  },
+  yourVibeInner: {
+    flex: 1,
+    borderRadius: 27,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  yourVibePinkDot: {
+    position: 'absolute',
+    bottom: -1,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FF4B72',
+    borderWidth: 2,
+    borderColor: '#0C0B15',
+  },
+  vibeGradientCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    padding: 3,
+  },
+  vibeInnerCircle: {
+    flex: 1,
+    borderRadius: 26,
+  },
+  vibeLabel: {
+    fontSize: 12,
+    color: '#B8B2CD',
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  vibeLabelActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  feedCategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    height: 38,
+    borderRadius: 22,
+    backgroundColor: '#191627',
+  },
+  categoryTabBtn: {
+    flex: 1,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+  },
+  categoryTabBtnActive: {
+    backgroundColor: '#F5F2FF',
+  },
+  categoryTabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#B8B2CD',
+  },
+  categoryTabTextActive: {
+    color: '#0C0B15',
+    fontWeight: '700',
   },
   passportBanner: {
     marginHorizontal: 16,
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 4,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -1558,9 +1698,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
     paddingTop: 0,
-    paddingBottom: 2,
+    paddingBottom: 0,
   },
   centerContainer: {
     alignItems: 'center',
@@ -1607,21 +1747,23 @@ const styles = StyleSheet.create({
     height: '100%',
     maxHeight: '100%',
   },
-  nextCardWrapper: {},
+  nextCardWrapper: {
+    zIndex: 5,
+  },
   activeCardWrapper: {
     zIndex: 10,
   },
   swipeBadge: {
     position: 'absolute',
-    top: 40,
+    top: 36,
     zIndex: 30,
     borderWidth: 2.5,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    shadowColor: '#000',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 6,
   },
@@ -1629,12 +1771,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  badgeText: {
+    fontSize: 16,
+    fontWeight: '900',
+    marginLeft: 6,
+    letterSpacing: 1.5,
+  },
   likeBadge: {
-    left: 24,
+    left: 20,
     transform: [{ rotate: '-14deg' }],
   },
   passBadge: {
-    right: 24,
+    right: 20,
     transform: [{ rotate: '14deg' }],
   },
   bottomActionBar: {
@@ -1642,53 +1790,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-evenly',
     paddingVertical: 2,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     width: '100%',
-    maxWidth: 390,
+    maxWidth: 380,
     alignSelf: 'center',
+    zIndex: 50,
   },
-  actionCircle: {
+  darkActionCircle: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    shadowColor: '#000',
+    backgroundColor: '#171524',
+    borderWidth: 1,
+    borderColor: '#29253D',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 4,
   },
-  undoButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-  },
-  passCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-  },
-  superCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-  },
-  infoCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-  },
-  likeCircleGlow: {
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    shadowColor: '#DC0C24',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.55,
-    shadowRadius: 18,
-    elevation: 14,
+  heroLikePinkCircle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF4B72',
+    shadowColor: '#FF4B72',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
+    elevation: 10,
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.60)',
     justifyContent: 'flex-end',
   },
   inlineLikeSheet: {
@@ -1702,7 +1834,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#CCCCCC',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     alignSelf: 'center',
     marginBottom: 16,
   },
@@ -1733,13 +1865,13 @@ const styles = StyleSheet.create({
   },
   modalSecondaryBtn: {
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     borderRadius: 20,
     borderWidth: 1,
   },
   modalPrimaryBtn: {
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     borderRadius: 20,
   },
 });

@@ -8,7 +8,7 @@ import {
   type GestureResponderEvent,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useTheme } from '../../theme/index.js';
 import { Text } from '../../primitives/Text.js';
 import { Heading } from '../../primitives/Heading.js';
@@ -59,6 +59,7 @@ export interface ProfileCardProps {
   readonly onLike?: () => void;
   readonly onSuperLike?: () => void;
   readonly onMessage?: () => void;
+  readonly onShare?: () => void;
   readonly onPress?: () => void;
   readonly onFollow?: () => void;
   readonly onInlineLike?: (attachment: {
@@ -107,6 +108,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   onLike,
   onSuperLike,
   onMessage,
+  onShare,
   onPress,
   onFollow: _onFollow,
   onInlineLike,
@@ -189,15 +191,33 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     lifestylePills.push({ id: 'ls-3', emoji: '🌙', text: 'Aries' });
   }
 
+  const interestChips: { id: string; emoji: string; text: string }[] = [];
+  if (profile.interests && profile.interests.length > 0) {
+    profile.interests.slice(0, 3).forEach((interest, idx) => {
+      const lower = interest.toLowerCase();
+      let emoji = '✨';
+      if (lower.includes('coffee') || lower.includes('drink') || lower.includes('wine')) emoji = '☕';
+      else if (lower.includes('travel') || lower.includes('trip')) emoji = '✈';
+      else if (lower.includes('music') || lower.includes('rock') || lower.includes('song')) emoji = '♫';
+      else if (lower.includes('design') || lower.includes('art')) emoji = '🎨';
+      else if (lower.includes('food') || lower.includes('ramen')) emoji = '🍜';
+      else if (lower.includes('book') || lower.includes('read')) emoji = '📚';
+      else if (lower.includes('trek') || lower.includes('outdoor')) emoji = '🏔️';
+      else if (lower.includes('tech') || lower.includes('code')) emoji = '💻';
+      interestChips.push({ id: `int-${idx}`, emoji, text: interest });
+    });
+  }
+  if (interestChips.length === 0) {
+    interestChips.push({ id: 'ic-1', emoji: '♫', text: 'Music' });
+    interestChips.push({ id: 'ic-2', emoji: '✈', text: 'Travel' });
+    interestChips.push({ id: 'ic-3', emoji: '☕', text: 'Coffee' });
+  }
+
   if (isDiscovery) {
     return (
       <View
         style={[
           styles.discoveryCard,
-          {
-            backgroundColor: colors.surface,
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-          },
           style,
         ]}
         testID={testID || `profile-card-${profile.id}`}
@@ -210,20 +230,54 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           accessibilityLabel={`View full profile for ${profile.name}`}
         >
           {/* Background Image / Media - Full bleed to top */}
-          <View style={[styles.discoveryImageWrapper, { backgroundColor: colors.surfaceMuted }]}>
+          <View style={[styles.discoveryImageWrapper, { backgroundColor: '#2D1B36' }]}>
             {currentPhoto ? (
               <Image
                 source={{ uri: currentPhoto }}
                 style={styles.discoveryImage}
                 resizeMode="cover"
-                accessibilityLabel={`${profile.name}'s profile photo ${activePhotoIdx + 1} of ${mediaList.length || 1}`}
+                accessibilityLabel={`${profile.name}'s profile photo`}
               />
             ) : (
-              <View style={styles.imagePlaceholder}>
-                <Text variant="display" weight="bold" style={{ color: colors.accent }}>
-                  {profile.name.charAt(0)}
-                </Text>
-              </View>
+              <LinearGradient
+                colors={['#342139', '#63354F', '#9D4D70', '#3A2536']}
+                locations={[0, 0.34, 0.68, 1]}
+                start={{ x: 0.95, y: 0 }}
+                end={{ x: 0.1, y: 1 }}
+                style={styles.discoveryImage}
+              >
+                <Svg
+                  width="100%"
+                  height="100%"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                  style={StyleSheet.absoluteFill}
+                >
+                  <Defs>
+                    <RadialGradient
+                      id={`profile-placeholder-glow-${profile.id.replace(/[^a-zA-Z0-9_-]/g, '')}`}
+                      cx="34%"
+                      cy="53%"
+                      r="72%"
+                    >
+                      <Stop offset="0%" stopColor="#D58D91" stopOpacity="0.9" />
+                      <Stop offset="42%" stopColor="#BE6B83" stopOpacity="0.8" />
+                      <Stop offset="78%" stopColor="#A24A72" stopOpacity="0.52" />
+                      <Stop offset="100%" stopColor="#241B2B" stopOpacity="0" />
+                    </RadialGradient>
+                  </Defs>
+                  <Rect
+                    x="0"
+                    y="0"
+                    width="100"
+                    height="100"
+                    fill={`url(#profile-placeholder-glow-${profile.id.replace(/[^a-zA-Z0-9_-]/g, '')})`}
+                  />
+                </Svg>
+                <View style={styles.placeholderCenter}>
+                  <Text style={styles.placeholderText}>Profile photo placeholder</Text>
+                </View>
+              </LinearGradient>
             )}
 
             {/* Tap areas for photo cycling */}
@@ -246,219 +300,152 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
               </View>
             )}
 
-            {/* Top Protective Vignette Fade (Amore & Modern UI) */}
+            {/* Top Protective Vignette Fade */}
             <LinearGradient
               colors={[
-                'rgba(0, 0, 0, 0.65)',
-                'rgba(0, 0, 0, 0.32)',
-                'rgba(0, 0, 0, 0.08)',
+                'rgba(12, 11, 20, 0.75)',
+                'rgba(12, 11, 20, 0.35)',
+                'rgba(12, 11, 20, 0.05)',
                 'transparent',
               ]}
-              locations={[0, 0.38, 0.7, 1]}
+              locations={[0, 0.35, 0.7, 1]}
               style={styles.topVignette}
               pointerEvents="none"
             />
 
-            {/* Bottom Multi-Stop Velvety Fade Scrim (Signature Faded Design) */}
+            {/* Bottom Multi-Stop Dark Scrim */}
             <LinearGradient
               colors={[
                 'transparent',
-                'rgba(12, 10, 16, 0.08)',
-                'rgba(12, 10, 16, 0.48)',
-                'rgba(12, 10, 16, 0.84)',
-                'rgba(12, 10, 16, 0.98)',
+                'rgba(12, 11, 20, 0.15)',
+                'rgba(12, 11, 20, 0.65)',
+                'rgba(12, 11, 20, 0.95)',
               ]}
-              locations={[0, 0.22, 0.5, 0.78, 1]}
+              locations={[0, 0.3, 0.65, 1]}
               style={styles.discoveryScrim}
               pointerEvents="none"
             />
 
-            {/* Top Story Progress Bars */}
-            {mediaList.length > 1 && (
-              <View style={styles.storyProgressRow} pointerEvents="none">
-                {mediaList.map((_, idx) => (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.storyProgressBar,
-                      {
-                        backgroundColor:
-                          idx === activePhotoIdx ? '#FFFFFF' : 'rgba(255, 255, 255, 0.38)',
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
-            )}
+            {/* Top Story Progress Bars (4 bars as in reference screenshot) */}
+            <View style={styles.discoveryProgressRow} pointerEvents="none">
+              {(mediaList.length > 1 ? mediaList : [1, 2, 3, 4]).map((_, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    styles.discoveryProgressBar,
+                    {
+                      backgroundColor:
+                        idx === activePhotoIdx ? '#FFFFFF' : 'rgba(255, 255, 255, 0.35)',
+                    },
+                  ]}
+                />
+              ))}
+            </View>
 
             {/* Top Badges Row */}
-            <View style={styles.topBadgesRow} pointerEvents="box-none">
-              {/* Left Match Score Pill with vivid ruby gradient */}
-              <LinearGradient
-                colors={['#FF2E48', '#DC0C24']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.matchScoreGradientPill}
-              >
-                <Icon name="sparkles" size={11} color="#FFFFFF" style={{ marginRight: 4 }} />
-                <Text style={styles.matchScoreText}>{profile.matchPercentage ?? 94}% MATCH</Text>
-              </LinearGradient>
+            <View style={styles.discoveryTopBadgesRow} pointerEvents="box-none">
+              {/* Left Match Score Pill with coral pink background (#FF4B72) */}
+              <View style={styles.matchBadgePill}>
+                <Icon name="sparkles" size={11} color="#000000" style={{ marginRight: 4 }} />
+                <Text style={styles.matchBadgeText}>{profile.matchPercentage ?? 95}% match</Text>
+              </View>
 
-              {/* Right Location & Counter Badges */}
-              <View style={styles.topRightPills}>
-                {effectiveDistance && (
-                  <View style={styles.frostedPill}>
-                    <Icon name="compass" size={11} color="#FFFFFF" style={{ marginRight: 3.5 }} />
-                    <Text style={styles.frostedPillText}>{effectiveDistance}</Text>
-                  </View>
-                )}
-                {mediaList.length > 1 && (
-                  <View style={styles.frostedPill}>
-                    <Icon name="camera" size={10} color="#FFFFFF" style={{ marginRight: 3 }} />
-                    <Text style={styles.frostedPillText}>
-                      {activePhotoIdx + 1}/{mediaList.length}
-                    </Text>
-                  </View>
-                )}
+              {/* Right Location & Distance Badge */}
+              <View style={styles.locationBadgePill}>
+                <Text style={styles.locationBadgeText}>
+                  {profile.city || 'Kolkata'} · {effectiveDistance || '3 km away'}
+                </Text>
               </View>
             </View>
 
-            {/* Bottom Content Vignette - Medina Amandel & Tinder Inspiration */}
+            {/* Right-Side Recess and Vertical Action Dock */}
+            <View style={styles.verticalActionDockRecess} pointerEvents="none" />
+            <View style={styles.verticalActionDock} pointerEvents="box-none">
+              <TouchableOpacity
+                style={styles.dockCircleBtn}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  haptics.selection();
+                  onShare?.();
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Share profile"
+                testID="discovery-share-btn"
+              >
+                <Icon name="send" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.dockCircleBtn, styles.dockHeartBtn]}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  haptics.medium();
+                  onLike?.();
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Like profile"
+              >
+                <Icon name="heart" size={18} color="#0C0B15" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.dockCircleBtn}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  haptics.selection();
+                  onInlineLike?.({
+                    type: 'PROMPT',
+                    id: 'prompt-0',
+                    text: featuredPrompt?.answer || 'indie music & weekend trips',
+                  });
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Send note"
+              >
+                <Icon name="message" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Bottom Content Area */}
             <View style={styles.discoveryDetailsOverlay} pointerEvents="box-none">
-              {/* 1. Name, Age, Verified & Circular White Info Button */}
+              {/* 1. Name, Age & Verified Checkmark */}
               <View style={styles.nameHeaderRow}>
-                <View style={styles.nameRow}>
+                <View style={styles.discoveryNameRow}>
                   <Text style={styles.discoveryNameText} numberOfLines={1}>
                     {profile.name}
                   </Text>
-                  <Text style={styles.discoveryAgeText}>, {profile.age}</Text>
-                  {effectiveVerified && (
-                    <View style={styles.discoveryVerifiedBadge}>
-                      <ScallopedVerifiedBadge isDark={true} size={19} />
-                    </View>
-                  )}
-                  <View style={styles.onlineBadge}>
-                    <View style={styles.onlineDot} />
-                    <Text style={styles.onlineText}>Active</Text>
+                  <Text style={styles.discoveryAgeText}> {profile.age}</Text>
+                  <View style={styles.blueVerifiedCircle}>
+                    <Icon name="check" size={11} color="#FFFFFF" strokeWidth={3} />
                   </View>
                 </View>
-
-                {/* Circular White Info / Detail Button */}
-                <TouchableOpacity
-                  style={styles.tinderInfoBtn}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    haptics.selection();
-                    onPress?.();
-                  }}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`View full profile for ${profile.name}`}
-                  testID="discovery-info-btn"
-                >
-                  <Icon name="arrowUpRight" size={16} color="#111113" strokeWidth={2.8} />
-                </TouchableOpacity>
               </View>
 
-              {/* 2. Professional Location & Career Subtitle */}
-              <View style={styles.metaRow}>
-                {effectiveCity ? (
-                  <View style={styles.metaItem}>
-                    <Icon
-                      name="location"
-                      size={11.5}
-                      color="rgba(255, 255, 255, 0.85)"
-                      style={{ marginRight: 3.5 }}
-                    />
-                    <Text style={styles.metaText} numberOfLines={1}>
-                      {effectiveCity}
-                    </Text>
-                  </View>
-                ) : null}
-                {effectiveCity && (profile.occupation || profile.education) ? (
-                  <Text style={styles.metaDot}>•</Text>
-                ) : null}
-                {profile.occupation || profile.education ? (
-                  <View style={styles.metaItem}>
-                    <Icon
-                      name="briefcase"
-                      size={11.5}
-                      color="rgba(255, 255, 255, 0.85)"
-                      style={{ marginRight: 3.5 }}
-                    />
-                    <Text style={styles.metaText} numberOfLines={1}>
-                      {profile.occupation || profile.education}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
+              {/* 2. Occupation & Education Subtitle */}
+              <Text style={styles.occupationSubtitleText} numberOfLines={1}>
+                {profile.occupation || 'Graphic Designer'}
+                {profile.education ? ` · ${profile.education}` : ' · Jadavpur University'}
+              </Text>
 
-              {/* 3. Compatibility Highlight (Medina Amandel Inspiration) */}
-              <View style={styles.preferenceMatchRow}>
-                <Icon name="sparkles" size={11} color="#FF4D6D" style={{ marginRight: 4 }} />
-                <Text style={styles.preferenceMatchText}>
-                  Matched{' '}
-                  {profile.interests?.length
-                    ? `${Math.min(profile.interests.length, 5)}+ Preferences`
-                    : 'Key Preferences'}
-                </Text>
-              </View>
-
-              {/* 4. Compact Lifestyle & Interest Chips */}
-              <View style={styles.lifestyleChipsWrap}>
-                {lifestylePills.slice(0, 4).map((item) => (
-                  <View key={item.id} style={styles.tinderLifestyleChip}>
-                    <Text style={styles.lifestyleChipEmoji}>{item.emoji}</Text>
-                    <Text style={styles.tinderLifestyleChipText} numberOfLines={1}>
-                      {item.text}
-                    </Text>
+              {/* 3. Interest Chips Row */}
+              <View style={styles.interestChipsRow}>
+                {interestChips.map((item) => (
+                  <View key={item.id} style={styles.discoveryInterestChip}>
+                    <Text style={styles.discoveryInterestChipEmoji}>{item.emoji}</Text>
+                    <Text style={styles.discoveryInterestChipText}>{item.text}</Text>
                   </View>
                 ))}
-                {lifestylePills.length > 4 && (
-                  <View style={styles.moreChipsBadge}>
-                    <Text style={styles.moreChipsText}>+{lifestylePills.length - 4}</Text>
-                  </View>
-                )}
               </View>
 
-              {/* 5. Editorial Prompt or Bio Highlight */}
-              {featuredPrompt ? (
-                <View style={styles.promptTeaserBox}>
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text style={styles.promptTeaserQuestion} numberOfLines={1}>
-                      {featuredPrompt.question}
-                    </Text>
-                    <Text style={styles.promptTeaserAnswer} numberOfLines={2}>
-                      "{featuredPrompt.answer}"
-                    </Text>
-                  </View>
-                  {onInlineLike && (
-                    <TouchableOpacity
-                      style={styles.discoveryInlineHeartBtn}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        haptics.selection();
-                        onInlineLike({
-                          type: 'PROMPT',
-                          id: 'prompt-0',
-                          text: featuredPrompt.answer,
-                        });
-                      }}
-                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Like prompt: ${featuredPrompt.question}`}
-                    >
-                      <Icon name="heart" size={13} color="#DC0C24" fill="#DC0C24" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ) : profile.bio ? (
-                <View style={styles.bioTeaserBox}>
-                  <Text style={styles.bioTeaserText} numberOfLines={2}>
-                    "{profile.bio}"
+              {/* 4. "Why you match" Box */}
+              <View style={styles.whyYouMatchBox}>
+                <Text style={styles.whyYouMatchText}>
+                  <Text style={styles.whyYouMatchHighlight}>Why you match</Text>
+                  <Text style={styles.whyYouMatchContent}>
+                    {' '}· {featuredPrompt?.answer || 'indie music & weekend trips'}
                   </Text>
-                </View>
-              ) : null}
+                </Text>
+              </View>
             </View>
           </View>
         </TouchableOpacity>
@@ -1327,11 +1314,13 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 28,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 1.5,
+    borderColor: '#6654A6',
+    backgroundColor: '#1E1B2A',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 22,
+    shadowOpacity: 0.45,
+    shadowRadius: 24,
     elevation: 10,
   },
   discoveryTouchable: {
@@ -1346,6 +1335,18 @@ const styles = StyleSheet.create({
   discoveryImage: {
     width: '100%',
     height: '100%',
+  },
+  placeholderCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ translateY: -28 }],
+  },
+  placeholderText: {
+    color: 'rgba(255, 255, 255, 0.62)',
+    fontSize: 13.5,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
   topVignette: {
     position: 'absolute',
@@ -1363,71 +1364,213 @@ const styles = StyleSheet.create({
     height: '66%',
     zIndex: 4,
   },
-  matchScoreGradientPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    shadowColor: '#DC0C24',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.45,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  matchScoreText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  topRightPills: {
+  discoveryProgressRow: {
+    position: 'absolute',
+    top: 14,
+    left: 20,
+    right: 20,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    zIndex: 10,
   },
-  frostedPill: {
+  discoveryProgressBar: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+  },
+  discoveryTopBadgesRow: {
+    position: 'absolute',
+    top: 5,
+    left: 6,
+    right: 14,
+    height: 64,
+    zIndex: 10,
+  },
+  matchBadgePill: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(12, 10, 16, 0.60)',
-    paddingHorizontal: 9.5,
-    paddingVertical: 4.5,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: '#FF4B72',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 22,
   },
-  frostedPillText: {
+  matchBadgeText: {
+    color: '#000000',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  locationBadgePill: {
+    position: 'absolute',
+    top: 27,
+    right: 0,
+    backgroundColor: 'rgba(22, 19, 32, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 22,
+  },
+  locationBadgeText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 13.5,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
+  verticalActionDockRecess: {
+    position: 'absolute',
+    right: -1,
+    bottom: 62,
+    width: 72,
+    height: 184,
+    backgroundColor: '#0C0B15',
+    borderWidth: 1.5,
+    borderColor: '#6553A3',
+    borderTopLeftRadius: 36,
+    borderBottomLeftRadius: 36,
+    zIndex: 18,
+  },
+  verticalActionDock: {
+    position: 'absolute',
+    right: 8,
+    bottom: 76,
+    backgroundColor: '#171427',
+    borderRadius: 30,
+    borderWidth: 1.5,
+    borderColor: '#4F4488',
+    padding: 5,
+    gap: 8,
+    alignItems: 'center',
+    zIndex: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  dockCircleBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#201C30',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dockHeartBtn: {
+    backgroundColor: '#FF4B72',
+    shadowColor: '#FF4B72',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    elevation: 6,
+  },
   discoveryDetailsOverlay: {
     position: 'absolute',
-    bottom: 12,
-    left: 14,
-    right: 14,
+    bottom: 16,
+    left: 18,
+    right: 76,
     zIndex: 10,
   },
   nameHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 2,
   },
-  tinderInfoBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#FFFFFF',
+  discoveryNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  discoveryNameText: {
+    fontFamily: 'Folkra',
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+  },
+  discoveryAgeText: {
+    fontSize: 28,
+    fontWeight: '400',
+    color: '#FFFFFF',
+    textDecorationLine: 'underline',
+    textDecorationColor: 'rgba(255, 255, 255, 0.6)',
+  },
+  blueVerifiedCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#38BDF8',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 4,
-    elevation: 3,
+  },
+  occupationSubtitleText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.88)',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  interestChipsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  discoveryInterestChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(24, 20, 36, 0.80)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderRadius: 18,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+  },
+  discoveryInterestChipEmoji: {
+    fontSize: 13,
+    marginRight: 4,
+    color: '#FFFFFF',
+  },
+  discoveryInterestChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  interestChipEmoji: {
+    fontSize: 12,
+    marginRight: 4,
+    color: '#FFFFFF',
+  },
+  interestChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  whyYouMatchBox: {
+    backgroundColor: 'rgba(20, 17, 30, 0.90)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    maxWidth: '100%',
+  },
+  whyYouMatchText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  whyYouMatchHighlight: {
+    color: '#FF4B72',
+    fontWeight: '700',
+  },
+  whyYouMatchContent: {
+    color: '#FFFFFF',
+    fontWeight: '500',
   },
   metaRow: {
     flexDirection: 'row',
@@ -1516,24 +1659,6 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.85)',
-  },
-  discoveryNameText: {
-    fontFamily: 'Folkra',
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.4,
-    textShadowColor: 'rgba(0, 0, 0, 0.65)',
-    textShadowOffset: { width: 0, height: 1.5 },
-    textShadowRadius: 4,
-  },
-  discoveryAgeText: {
-    fontSize: 23,
-    fontWeight: '400',
-    color: 'rgba(255, 255, 255, 0.90)',
-    textShadowColor: 'rgba(0, 0, 0, 0.55)',
-    textShadowOffset: { width: 0, height: 1.5 },
-    textShadowRadius: 4,
   },
   discoveryVerifiedBadge: {
     marginLeft: 7,
@@ -1627,7 +1752,7 @@ const styles = StyleSheet.create({
   promptTeaserQuestion: {
     fontSize: 9.5,
     fontWeight: '700',
-    color: '#FF4D6D',
+    color: '#FF2400',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 1,
