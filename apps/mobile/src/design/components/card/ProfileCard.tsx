@@ -79,7 +79,109 @@ export interface ProfileCardProps {
   readonly isSubmitting?: boolean;
   readonly style?: ViewStyle;
   readonly testID?: string;
+  readonly showMatchBadge?: boolean;
+  readonly showActionDock?: boolean;
 }
+
+export interface DiscoveryMatchPillProps {
+  readonly matchPercentage?: number;
+  readonly cardHeight: number;
+  readonly style?: ViewStyle;
+}
+
+export const DiscoveryMatchPill: React.FC<DiscoveryMatchPillProps> = ({
+  matchPercentage = 95,
+  cardHeight,
+  style,
+}) => {
+  const top = Math.max(2, Math.round(cardHeight * 0.108) - 46);
+  return (
+    <View style={[styles.matchBadgePill, { top, left: 2 }, style]} pointerEvents="box-none">
+      <Text style={styles.matchBadgeText}>{matchPercentage}% match</Text>
+    </View>
+  );
+};
+
+export interface DiscoveryActionDockProps {
+  readonly cardHeight: number;
+  readonly onShare?: () => void;
+  readonly onLike?: () => void;
+  readonly onMessage?: () => void;
+  readonly style?: ViewStyle;
+}
+
+export const DiscoveryActionDock: React.FC<DiscoveryActionDockProps> = ({
+  cardHeight,
+  onShare,
+  onLike,
+  onMessage,
+  style,
+}) => {
+  const dockHeight = 164;
+  const dockWidth = 48;
+  const yScoopStart = Math.round(cardHeight * 0.384);
+  const yScoopEnd = Math.round(cardHeight * 0.898);
+  const dockTop = Math.round(yScoopStart + (yScoopEnd - yScoopStart - dockHeight) / 2);
+
+  return (
+    <View
+      style={[
+        styles.verticalActionDock,
+        {
+          top: dockTop,
+          right: 6,
+          width: dockWidth,
+          height: dockHeight,
+        },
+        style,
+      ]}
+      pointerEvents="box-none"
+    >
+      {/* Share / Airplane Button */}
+      <TouchableOpacity
+        style={styles.dockCircleBtn}
+        onPress={(e) => {
+          e.stopPropagation();
+          haptics.selection();
+          onShare?.();
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Share profile"
+        testID="discovery-share-btn"
+      >
+        <Icon name="send" size={17} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      {/* Like / Coral Pink Heart Button */}
+      <TouchableOpacity
+        style={[styles.dockCircleBtn, styles.dockHeartBtn]}
+        onPress={(e) => {
+          e.stopPropagation();
+          haptics.medium();
+          onLike?.();
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Like profile"
+      >
+        <Icon name="heart" size={20} color="#0C0B15" />
+      </TouchableOpacity>
+
+      {/* Note / Message Button */}
+      <TouchableOpacity
+        style={styles.dockCircleBtn}
+        onPress={(e) => {
+          e.stopPropagation();
+          haptics.selection();
+          onMessage?.();
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Send note"
+      >
+        <Icon name="message" size={17} color="#FFFFFF" />
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 /**
  * High-fidelity 12-lobed scalloped verified badge matching user specifications:
@@ -124,6 +226,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   isSubmitting = false,
   style,
   testID,
+  showMatchBadge = true,
+  showActionDock = true,
 }) => {
   const { colors, spacing, isDark } = useTheme();
   const { isSmallScreen, isLargeScreen } = useResponsiveLayout();
@@ -273,12 +377,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     ].join(' ');
   }, [cardW, cardH]);
 
-  const dockHeight = 164;
-  const dockWidth = 48;
-  const yScoopStart = Math.round(cardH * 0.384);
-  const yScoopEnd = Math.round(cardH * 0.898);
-  const dockTop = Math.round(yScoopStart + (yScoopEnd - yScoopStart - dockHeight) / 2);
-
   if (isDiscovery) {
     return (
       <View
@@ -413,24 +511,13 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             ))}
           </View>
 
-          {/* Top Left Match Score Pill (✦ 95% match) embedded in stepped notch */}
-          <View
-            style={[
-              styles.matchBadgePill,
-              {
-                top: Math.max(8, Math.round(cardH * 0.108) - 40),
-                left: 10,
-              },
-            ]}
-          >
-            <Svg width={12} height={12} viewBox="0 0 12 12" fill="none" style={{ marginRight: 6 }}>
-              <Path
-                d="M 6 0 C 6 3 3 6 0 6 C 3 6 6 9 6 12 C 6 9 9 6 12 6 C 9 6 6 3 6 0 Z"
-                fill="#0C0B15"
-              />
-            </Svg>
-            <Text style={styles.matchBadgeText}>{profile.matchPercentage ?? 95}% match</Text>
-          </View>
+          {/* Top Left Match Score Pill (% match) embedded in stepped notch */}
+          {showMatchBadge && (
+            <DiscoveryMatchPill
+              matchPercentage={profile.matchPercentage ?? 95}
+              cardHeight={cardH}
+            />
+          )}
 
           {/* Top Right Location & Distance Badge */}
           <View
@@ -448,53 +535,12 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           </View>
 
           {/* Right-Side Vertical Action Dock inside Scoop Recess */}
-          <View
-            style={[
-              styles.verticalActionDock,
-              {
-                top: dockTop,
-                right: 6,
-                width: dockWidth,
-                height: dockHeight,
-              },
-            ]}
-            pointerEvents="box-none"
-          >
-            {/* Share / Airplane Button */}
-            <TouchableOpacity
-              style={styles.dockCircleBtn}
-              onPress={(e) => {
-                e.stopPropagation();
-                haptics.selection();
-                onShare?.();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Share profile"
-              testID="discovery-share-btn"
-            >
-              <Icon name="send" size={17} color="#FFFFFF" />
-            </TouchableOpacity>
-
-            {/* Like / Coral Pink Heart Button */}
-            <TouchableOpacity
-              style={[styles.dockCircleBtn, styles.dockHeartBtn]}
-              onPress={(e) => {
-                e.stopPropagation();
-                haptics.medium();
-                onLike?.();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Like profile"
-            >
-              <Icon name="heart" size={20} color="#0C0B15" />
-            </TouchableOpacity>
-
-            {/* Note / Message Button */}
-            <TouchableOpacity
-              style={styles.dockCircleBtn}
-              onPress={(e) => {
-                e.stopPropagation();
-                haptics.selection();
+          {showActionDock && (
+            <DiscoveryActionDock
+              cardHeight={cardH}
+              onShare={onShare}
+              onLike={onLike}
+              onMessage={() => {
                 if (onInlineLike) {
                   onInlineLike({
                     type: 'PROMPT',
@@ -505,12 +551,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                   onMessage?.();
                 }
               }}
-              accessibilityRole="button"
-              accessibilityLabel="Send note"
-            >
-              <Icon name="message" size={17} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+            />
+          )}
 
           {/* Bottom Content Area */}
           <View
@@ -1499,14 +1541,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FF4B72',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 18,
-    zIndex: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 14,
   },
   matchBadgeText: {
     color: '#0C0B15',
-    fontSize: 13.5,
+    fontSize: 12.5,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
@@ -1539,12 +1580,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'space-between',
-    zIndex: 20,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.45,
     shadowRadius: 10,
-    elevation: 8,
   },
   dockCircleBtn: {
     width: 38,

@@ -24,7 +24,12 @@ import { Text } from '../design/primitives/Text.js';
 import { Icon } from '../design/primitives/Icon.js';
 import { Button } from '../design/components/button/Button.js';
 import { SurfaceCard } from '../design/primitives/SurfaceCard.js';
-import { ProfileCard, type ProfileCardData } from '../design/components/card/ProfileCard.js';
+import {
+  ProfileCard,
+  DiscoveryMatchPill,
+  DiscoveryActionDock,
+  type ProfileCardData,
+} from '../design/components/card/ProfileCard.js';
 import { createDiscoveryApi, DISCOVERY_QUERY_KEYS } from './discovery-api.js';
 import { createInteractionsApi } from '../interactions/interactions-api.js';
 import { MATCHES_QUERY_KEYS } from '../matches/matches-api.js';
@@ -278,6 +283,12 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isWorkModeVisible, setIsWorkModeVisible] = useState(false);
   const [selectedVibe, setSelectedVibe] = useState<string | null>(null);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const swipeDirRef = useRef<'left' | 'right' | null>(null);
+  const [cardLayout, setCardLayout] = useState<{ width: number; height: number }>({
+    width: cardWidth || 360,
+    height: 560,
+  });
 
   // Animated swipe tracking
   const position = useRef(new Animated.ValueXY()).current;
@@ -545,12 +556,16 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
     if (isReduced) {
       handleLike(attachmentOptions);
     } else {
+      swipeDirRef.current = 'right';
+      setSwipeDirection('right');
       Animated.timing(position, {
         toValue: { x: SCREEN_WIDTH + 100, y: 0 },
         duration: 250,
         useNativeDriver: true,
       }).start(() => {
         handleLike(attachmentOptions);
+        swipeDirRef.current = null;
+        setSwipeDirection(null);
       });
     }
   };
@@ -578,13 +593,17 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
     if (isReduced) {
       handleLike(attachmentOptions);
     } else {
+      swipeDirRef.current = 'right';
+      setSwipeDirection('right');
       Animated.spring(position, {
-        toValue: { x: SCREEN_WIDTH + 140, y: -24 },
+        toValue: { x: SCREEN_WIDTH + 140, y: 0 },
         tension: 42,
         friction: 6,
         useNativeDriver: true,
       }).start(() => {
         handleLike(attachmentOptions);
+        swipeDirRef.current = null;
+        setSwipeDirection(null);
       });
     }
   };
@@ -594,13 +613,17 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
     if (isReduced) {
       handlePass();
     } else {
+      swipeDirRef.current = 'left';
+      setSwipeDirection('left');
       Animated.spring(position, {
-        toValue: { x: -SCREEN_WIDTH - 140, y: -24 },
+        toValue: { x: -SCREEN_WIDTH - 140, y: 0 },
         tension: 42,
         friction: 6,
         useNativeDriver: true,
       }).start(() => {
         handlePass();
+        swipeDirRef.current = null;
+        setSwipeDirection(null);
       });
     }
   };
@@ -647,16 +670,23 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
     }
   };
 
-  // PanResponder for card gesture swiping with fluid 2D physics and velocity flick detection
+  // PanResponder for card gesture swiping strictly restricted to left and right horizontal axes
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => !isSubmitting,
       onMoveShouldSetPanResponder: (_, gesture) => {
-        return (Math.abs(gesture.dx) > 10 || Math.abs(gesture.dy) > 10) && !isSubmitting;
+        return (
+          Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) && !isSubmitting
+        );
       },
       onPanResponderMove: (_, gesture) => {
-        position.setValue({ x: gesture.dx, y: gesture.dy * 0.65 });
+        position.setValue({ x: gesture.dx, y: 0 });
         const dx = gesture.dx;
+        const newDir = dx < -2 ? 'left' : dx > 2 ? 'right' : null;
+        if (newDir !== swipeDirRef.current) {
+          swipeDirRef.current = newDir;
+          setSwipeDirection(newDir);
+        }
         if (!hasCrossedThreshold.current && Math.abs(dx) >= SWIPE_THRESHOLD) {
           hasCrossedThreshold.current = true;
           haptics.selection();
@@ -668,45 +698,74 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
           gesture.dx < -SWIPE_THRESHOLD || (gesture.dx < -40 && gesture.vx < -0.65);
 
         if (isSwipeRight) {
+          swipeDirRef.current = 'right';
+          setSwipeDirection('right');
           if (isReduced) {
             handleLike();
+            swipeDirRef.current = null;
+            setSwipeDirection(null);
           } else {
             Animated.spring(position, {
-              toValue: { x: SCREEN_WIDTH + 140, y: gesture.dy * 1.2 },
-              velocity: { x: gesture.vx, y: gesture.vy },
+              toValue: { x: SCREEN_WIDTH + 140, y: 0 },
+              velocity: { x: gesture.vx, y: 0 },
               tension: 40,
               friction: 6,
               useNativeDriver: true,
             }).start(() => {
               handleLike();
+              swipeDirRef.current = null;
+              setSwipeDirection(null);
             });
           }
         } else if (isSwipeLeft) {
+          swipeDirRef.current = 'left';
+          setSwipeDirection('left');
           if (isReduced) {
             handlePass();
+            swipeDirRef.current = null;
+            setSwipeDirection(null);
           } else {
             Animated.spring(position, {
-              toValue: { x: -SCREEN_WIDTH - 140, y: gesture.dy * 1.2 },
-              velocity: { x: gesture.vx, y: gesture.vy },
+              toValue: { x: -SCREEN_WIDTH - 140, y: 0 },
+              velocity: { x: gesture.vx, y: 0 },
               tension: 40,
               friction: 6,
               useNativeDriver: true,
             }).start(() => {
               handlePass();
+              swipeDirRef.current = null;
+              setSwipeDirection(null);
             });
           }
         } else {
           if (isReduced) {
             position.setValue({ x: 0, y: 0 });
+            swipeDirRef.current = null;
+            setSwipeDirection(null);
           } else {
             Animated.spring(position, {
               toValue: { x: 0, y: 0 },
               tension: 65,
               friction: 7,
               useNativeDriver: true,
-            }).start();
+            }).start(() => {
+              swipeDirRef.current = null;
+              setSwipeDirection(null);
+            });
           }
         }
+        hasCrossedThreshold.current = false;
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(position, {
+          toValue: { x: 0, y: 0 },
+          tension: 65,
+          friction: 7,
+          useNativeDriver: true,
+        }).start(() => {
+          swipeDirRef.current = null;
+          setSwipeDirection(null);
+        });
         hasCrossedThreshold.current = false;
       },
     })
@@ -1143,6 +1202,8 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                 <ProfileCard
                   context="discovery"
                   profile={formatProfileData(nextCandidate, currentIndex + 1)}
+                  showMatchBadge={false}
+                  showActionDock={false}
                 />
               </Animated.View>
             )}
@@ -1200,11 +1261,73 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
                 onPress={() =>
                   handleOpenDetail(activeCandidate.profile.userId || activeCandidate.profile.id)
                 }
-                onLike={() => triggerLike()}
-                onShare={() => setShareProfileId(activeCandidate.profile.id)}
-                onInlineLike={handleOpenInlineLike}
+                showMatchBadge={false}
+                showActionDock={false}
               />
             </Animated.View>
+
+            {/* Stationary Match Pill (Left - Overlapped by card when swiping left) */}
+            <View
+              style={[
+                styles.cardWrapper,
+                { maxWidth: cardWidth },
+                styles.fixedCardOverlay,
+                {
+                  zIndex: swipeDirection === 'left' ? 6 : 25,
+                  elevation: swipeDirection === 'left' ? 6 : 25,
+                },
+              ]}
+              pointerEvents="box-none"
+              onLayout={(e) => {
+                const { width, height } = e.nativeEvent.layout;
+                if (
+                  width > 0 &&
+                  height > 0 &&
+                  (width !== cardLayout.width || height !== cardLayout.height)
+                ) {
+                  setCardLayout({ width, height });
+                }
+              }}
+            >
+              {/* Stationary Match Percentage Pill (Dynamic data updates per profile) */}
+              <DiscoveryMatchPill
+                matchPercentage={
+                  formatProfileData(activeCandidate, currentIndex).matchPercentage ?? 95
+                }
+                cardHeight={cardLayout.height}
+              />
+            </View>
+
+            {/* Stationary Vertical Action Dock (Right - Overlapped by card when swiping right) */}
+            <View
+              style={[
+                styles.cardWrapper,
+                { maxWidth: cardWidth },
+                styles.fixedCardOverlay,
+                {
+                  zIndex: swipeDirection === 'right' ? 6 : 25,
+                  elevation: swipeDirection === 'right' ? 6 : 25,
+                },
+              ]}
+              pointerEvents="box-none"
+            >
+              {/* Stationary Vertical Action Dock (Fixed on right scoop recess) */}
+              <DiscoveryActionDock
+                cardHeight={cardLayout.height}
+                onShare={() => setShareProfileId(activeCandidate.profile.id)}
+                onLike={() => triggerLike()}
+                onMessage={() =>
+                  handleOpenInlineLike({
+                    type: 'PROMPT',
+                    id: 'prompt-0',
+                    text:
+                      activeCandidate.profile.prompts?.[0]?.answer ||
+                      activeCandidate.profile.bio ||
+                      'indie music & weekend trips',
+                  })
+                }
+              />
+            </View>
           </View>
         )}
       </View>
@@ -1580,10 +1703,16 @@ const styles = StyleSheet.create({
     maxHeight: '100%',
   },
   nextCardWrapper: {
-    zIndex: 5,
+    zIndex: 2,
+    elevation: 2,
   },
   activeCardWrapper: {
     zIndex: 10,
+    elevation: 10,
+  },
+  fixedCardOverlay: {
+    zIndex: 25,
+    elevation: 25,
   },
   swipeBadge: {
     position: 'absolute',
