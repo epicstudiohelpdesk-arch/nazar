@@ -280,22 +280,6 @@ export default function OnboardingPreviewScreen(): React.JSX.Element {
                 Live Discovery Deck Simulation
               </Text>
             </View>
-            <View
-              style={[
-                styles.deckHintPill,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.035)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                },
-              ]}
-            >
-              <Text
-                style={[styles.deckHintText, { color: theme.colors.textTertiary }]}
-                numberOfLines={1}
-              >
-                Tap photo edges to cycle
-              </Text>
-            </View>
           </View>
 
           {/* Card Presentation */}
@@ -717,7 +701,6 @@ const styles = StyleSheet.create({
   previewCanvasHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 10,
     paddingHorizontal: 8,
     width: '100%',
@@ -735,17 +718,6 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: '600',
     letterSpacing: 0.15,
-  },
-  deckHintPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3.5,
-    borderRadius: 9999,
-    borderWidth: 1,
-    flexShrink: 0,
-  },
-  deckHintText: {
-    fontSize: 10.5,
-    fontWeight: '500',
   },
   cardWrapper: {
     alignItems: 'center',

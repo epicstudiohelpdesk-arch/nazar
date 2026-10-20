@@ -544,19 +544,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             </View>
           )}
 
-          {/* Top Minimal Photo Counter (Only when multiple photos exist) */}
-          {mediaList.length > 1 && (
-            <View style={styles.previewTopRow} pointerEvents="box-none">
-              <View />
-              <View style={styles.previewFrostedPill}>
-                <Icon name="camera" size={10} color="#FFFFFF" style={{ marginRight: 3.5 }} />
-                <Text style={styles.previewFrostedPillText}>
-                  {activePhotoIdx + 1}/{mediaList.length}
-                </Text>
-              </View>
-            </View>
-          )}
-
           {/* Multi-stop Frosted Glass Bottom Scrim Gradient */}
           <LinearGradient
             colors={
@@ -1742,44 +1729,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 2,
     elevation: 2,
-  },
-  previewTopRow: {
-    position: 'absolute',
-    top: 24,
-    left: 18,
-    right: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    zIndex: 10,
-  },
-  previewMatchPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8.5,
-    paddingVertical: 4.5,
-    borderRadius: 999,
-  },
-  previewMatchText: {
-    color: '#FFFFFF',
-    fontSize: 10.5,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
-  previewFrostedPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(15, 15, 20, 0.55)',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-  },
-  previewFrostedPillText: {
-    color: '#FFFFFF',
-    fontSize: 10.5,
-    fontWeight: '600',
   },
   previewGradientScrim: {
     position: 'absolute',
