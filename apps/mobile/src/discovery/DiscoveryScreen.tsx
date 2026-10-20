@@ -75,7 +75,26 @@ const MOCK_DISCOVERY_CANDIDATES: DiscoveryItemDto[] = [
           answer: 'indie music & weekend trips',
         },
       ],
-      media: [],
+      media: [
+        {
+          id: 'm1-1',
+          url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
+          position: 0,
+          isPrimary: true,
+        },
+        {
+          id: 'm1-2',
+          url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80',
+          position: 1,
+          isPrimary: false,
+        },
+        {
+          id: 'm1-3',
+          url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop&q=80',
+          position: 2,
+          isPrimary: false,
+        },
+      ],
     },
     distanceBucket: '1-5 km',
   },
@@ -105,10 +124,22 @@ const MOCK_DISCOVERY_CANDIDATES: DiscoveryItemDto[] = [
       ],
       media: [
         {
-          id: 'm3',
+          id: 'm2-1',
           url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80',
           position: 0,
           isPrimary: true,
+        },
+        {
+          id: 'm2-2',
+          url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80',
+          position: 1,
+          isPrimary: false,
+        },
+        {
+          id: 'm2-3',
+          url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80',
+          position: 2,
+          isPrimary: false,
         },
       ],
     },
@@ -140,10 +171,28 @@ const MOCK_DISCOVERY_CANDIDATES: DiscoveryItemDto[] = [
       ],
       media: [
         {
-          id: 'm4',
+          id: 'm3-1',
           url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop&q=80',
           position: 0,
           isPrimary: true,
+        },
+        {
+          id: 'm3-2',
+          url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=80',
+          position: 1,
+          isPrimary: false,
+        },
+        {
+          id: 'm3-3',
+          url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
+          position: 2,
+          isPrimary: false,
+        },
+        {
+          id: 'm3-4',
+          url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80',
+          position: 3,
+          isPrimary: false,
         },
       ],
     },
@@ -779,19 +828,19 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
 
   const scaleNext = position.x.interpolate({
     inputRange: [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
-    outputRange: [1, 0.93, 1],
+    outputRange: [1, 0.96, 1],
     extrapolate: 'clamp',
   });
 
   const translateYNext = position.x.interpolate({
     inputRange: [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
-    outputRange: [0, 16, 0],
+    outputRange: [0, 0, 0],
     extrapolate: 'clamp',
   });
 
   const opacityNext = position.x.interpolate({
-    inputRange: [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
-    outputRange: [1, 0.72, 1],
+    inputRange: [-SWIPE_THRESHOLD, -20, 0, 20, SWIPE_THRESHOLD],
+    outputRange: [1, 0.75, 0, 0.75, 1],
     extrapolate: 'clamp',
   });
 
@@ -804,6 +853,45 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   const passBadgeOpacity = position.x.interpolate({
     inputRange: [-SWIPE_THRESHOLD, -20],
     outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  // Dynamic animations for the Cross and Like buttons while swiping:
+  // Swiping left (PASS): Cross button scales up and elevates; Like button scales down and dims
+  // Swiping right (LIKE): Like button scales up and elevates; Cross button scales down and dims
+  const passButtonScale = position.x.interpolate({
+    inputRange: [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
+    outputRange: [1.22, 1, 0.9],
+    extrapolate: 'clamp',
+  });
+
+  const passButtonTranslateY = position.x.interpolate({
+    inputRange: [-SWIPE_THRESHOLD, 0],
+    outputRange: [-6, 0],
+    extrapolate: 'clamp',
+  });
+
+  const passButtonOpacity = position.x.interpolate({
+    inputRange: [0, SWIPE_THRESHOLD],
+    outputRange: [1, 0.65],
+    extrapolate: 'clamp',
+  });
+
+  const likeButtonScale = position.x.interpolate({
+    inputRange: [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
+    outputRange: [0.9, 1, 1.22],
+    extrapolate: 'clamp',
+  });
+
+  const likeButtonTranslateY = position.x.interpolate({
+    inputRange: [0, SWIPE_THRESHOLD],
+    outputRange: [0, -6],
+    extrapolate: 'clamp',
+  });
+
+  const likeButtonOpacity = position.x.interpolate({
+    inputRange: [-SWIPE_THRESHOLD, 0],
+    outputRange: [0.65, 1],
     extrapolate: 'clamp',
   });
 
@@ -847,8 +935,10 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
     };
   };
 
+  const screenBg = isDark ? '#0C0B15' : theme.colors.background;
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: screenBg }]}>
       {/* Top Header Row: NAZAR Brand (Left) & Actions (Right: Search Icon + Filter Button) */}
       <View style={styles.topHeaderRow}>
         <RNText style={[styles.brandTitleText, fontsLoaded ? { fontFamily: 'Folkra' } : null]}>
@@ -1315,7 +1405,7 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
               <DiscoveryActionDock
                 cardHeight={cardLayout.height}
                 onShare={() => setShareProfileId(activeCandidate.profile.id)}
-                onLike={() => triggerLike()}
+                onSuperLike={() => triggerLike()}
                 onMessage={() =>
                   handleOpenInlineLike({
                     type: 'PROMPT',
@@ -1337,12 +1427,31 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
         <View
           style={[
             styles.bottomActionBar,
-            { marginBottom: Math.max(insets.bottom, 14) + 74 - insets.bottom },
+            { marginBottom: Math.max(insets.bottom, 14) + 88 - insets.bottom },
           ]}
         >
-          {/* Undo Button */}
+          {/* Pass / Cross Button (Animated during swipe gestures) */}
+          <Animated.View
+            style={{
+              transform: [{ scale: passButtonScale }, { translateY: passButtonTranslateY }],
+              opacity: passButtonOpacity,
+            }}
+          >
+            <FloatingActionButton
+              size={50}
+              style={styles.darkActionCircle}
+              onPress={triggerPass}
+              disabled={isSubmitting}
+              accessibilityLabel={`Pass on ${activeCandidate.profile.displayName}`}
+              testID="discovery-pass-btn"
+            >
+              <Icon name="close" size={22} color="#FFFFFF" strokeWidth={2.8} />
+            </FloatingActionButton>
+          </Animated.View>
+
+          {/* Rewind / Undo Button (Center / Mid between Pass and Like, proportionally compact) */}
           <FloatingActionButton
-            size={48}
+            size={38}
             style={styles.darkActionCircle}
             onPress={handleUndo}
             disabled={currentIndex === 0 || isSubmitting}
@@ -1350,65 +1459,27 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
             accessibilityLabel="Undo last pass or like"
             testID="discovery-undo-btn"
           >
-            <Icon name="refresh" size={19} color="#B8B2CD" strokeWidth={2.2} />
+            <Icon name="refresh" size={16} color="#B8B2CD" strokeWidth={2.2} />
           </FloatingActionButton>
 
-          {/* Pass Button */}
-          <FloatingActionButton
-            size={56}
-            style={styles.darkActionCircle}
-            onPress={triggerPass}
-            disabled={isSubmitting}
-            accessibilityLabel={`Pass on ${activeCandidate.profile.displayName}`}
-            testID="discovery-pass-btn"
+          {/* Hero Like Button (Animated during swipe gestures with radiant white heart) */}
+          <Animated.View
+            style={{
+              transform: [{ scale: likeButtonScale }, { translateY: likeButtonTranslateY }],
+              opacity: likeButtonOpacity,
+            }}
           >
-            <Icon name="close" size={24} color="#FFFFFF" strokeWidth={2.8} />
-          </FloatingActionButton>
-
-          {/* Hero Like Button (Solid Coral Pink #FF4B72 with soft glow) */}
-          <FloatingActionButton
-            size={68}
-            style={styles.heroLikePinkCircle}
-            onPress={() => triggerLike()}
-            disabled={isSubmitting}
-            accessibilityLabel={`Like ${activeCandidate.profile.displayName}`}
-            testID="discovery-like-btn"
-          >
-            <Icon name="heart" size={28} color="#0C0B15" strokeWidth={2.4} />
-          </FloatingActionButton>
-
-          {/* Super Like / Star Button */}
-          <FloatingActionButton
-            size={56}
-            style={styles.darkActionCircle}
-            onPress={() => triggerLike()}
-            disabled={isSubmitting}
-            accessibilityLabel={`Super like ${activeCandidate.profile.displayName}`}
-            testID="discovery-super-btn"
-          >
-            <Icon name="star" size={22} color="#818CF8" strokeWidth={2.4} />
-          </FloatingActionButton>
-
-          {/* Message / Compliment Button */}
-          <FloatingActionButton
-            size={48}
-            style={styles.darkActionCircle}
-            onPress={() =>
-              handleOpenInlineLike({
-                type: 'PROMPT',
-                id: 'profile-compliment',
-                text:
-                  activeCandidate.profile.prompts?.[0]?.answer ||
-                  activeCandidate.profile.bio ||
-                  undefined,
-              })
-            }
-            hitSlop={ensureMinTouchTarget(44, 44)}
-            accessibilityLabel={`Send message to ${activeCandidate.profile.displayName}`}
-            testID="discovery-info-btn"
-          >
-            <Icon name="message" size={19} color="#B8B2CD" />
-          </FloatingActionButton>
+            <FloatingActionButton
+              size={50}
+              style={styles.heroLikePinkCircle}
+              onPress={() => triggerLike()}
+              disabled={isSubmitting}
+              accessibilityLabel={`Like ${activeCandidate.profile.displayName}`}
+              testID="discovery-like-btn"
+            >
+              <Icon name="heart" size={23} color="#FFFFFF" strokeWidth={2} fill="#FFFFFF" />
+            </FloatingActionButton>
+          </Animated.View>
         </View>
       )}
 
@@ -1694,13 +1765,14 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
   cardWrapper: {
     position: 'absolute',
     width: '100%',
     maxWidth: 420,
-    height: '100%',
-    maxHeight: '100%',
+    top: 0,
+    bottom: -56,
   },
   nextCardWrapper: {
     zIndex: 2,
@@ -1751,9 +1823,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-evenly',
     paddingVertical: 2,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     width: '100%',
-    maxWidth: 380,
+    maxWidth: 250,
     alignSelf: 'center',
     zIndex: 50,
   },

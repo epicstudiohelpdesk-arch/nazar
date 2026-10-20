@@ -32,6 +32,7 @@ import {
   Bell,
   Lock,
   RotateCcw,
+  Share,
   Share2,
   AlertTriangle,
   Info,
@@ -95,6 +96,7 @@ export type IconName =
   | 'logout'
   | 'refresh'
   | 'share'
+  | 'share2'
   | 'warning'
   | 'info'
   | 'eye'
@@ -236,6 +238,8 @@ export const Icon: React.FC<IconProps> = ({
       case 'refresh':
         return RotateCcw;
       case 'share':
+        return Share;
+      case 'share2':
         return Share2;
       case 'warning':
         return AlertTriangle;
