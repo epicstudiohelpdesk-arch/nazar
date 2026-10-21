@@ -13,6 +13,8 @@ import {
   TextInput,
   Modal,
   ScrollView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -940,8 +942,21 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: screenBg }]}>
       {/* Top Header Row: NAZAR Brand (Left) & Actions (Right: Search Icon + Filter Button) */}
-      <View style={styles.topHeaderRow}>
-        <RNText style={[styles.brandTitleText, fontsLoaded ? { fontFamily: 'Folkra' } : null]}>
+      <View
+        style={[
+          styles.topHeaderRow,
+          Platform.OS === 'android' && {
+            paddingTop: Math.max(insets.top, (StatusBar.currentHeight ?? 24) + 6),
+          },
+        ]}
+      >
+        <RNText
+          style={[
+            styles.brandTitleText,
+            fontsLoaded ? { fontFamily: 'Folkra' } : null,
+            Platform.OS === 'android' && { includeFontPadding: false },
+          ]}
+        >
           NAZAR
         </RNText>
 
@@ -1427,7 +1442,12 @@ export const DiscoveryScreen: React.FC<DiscoveryScreenProps> = ({
         <View
           style={[
             styles.bottomActionBar,
-            { marginBottom: Math.max(insets.bottom, 14) + 88 - insets.bottom },
+            {
+              marginBottom:
+                Platform.OS === 'android'
+                  ? Math.max(insets.bottom, 14) + 72
+                  : Math.max(insets.bottom, 14) + 88 - insets.bottom,
+            },
           ]}
         >
           {/* Pass / Cross Button (Animated during swipe gestures) */}
@@ -1772,7 +1792,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     top: 0,
-    bottom: -56,
+    bottom: Platform.OS === 'android' ? 0 : -56,
   },
   nextCardWrapper: {
     zIndex: 2,

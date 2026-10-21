@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  SafeAreaView,
+  ActivityIndicator,
+  TouchableOpacity,
+  Platform,
+  StatusBar,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../src/design/theme/ThemeContext.js';
 import { Heading } from '../src/design/primitives/Heading.js';
 import { Text } from '../src/design/primitives/Text.js';
@@ -76,6 +85,7 @@ function resolvePendingRoute(): string | null {
 
 export default function AppLaunchScreen(): React.JSX.Element {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const sessionService = getDefaultSessionService();
 
@@ -184,7 +194,15 @@ export default function AppLaunchScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
+      <View
+        style={[
+          styles.content,
+          Platform.OS === 'android' && {
+            paddingTop: Math.max(insets.top, (StatusBar.currentHeight ?? 24) + 12),
+            paddingBottom: Math.max(insets.bottom, 24),
+          },
+        ]}
+      >
         <View style={styles.brandHero}>
           <View
             style={[

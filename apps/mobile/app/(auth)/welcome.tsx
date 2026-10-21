@@ -20,9 +20,12 @@ import { haptics } from '../../src/design/haptics/index.js';
 import { useReducedMotion } from '../../src/design/motion/index.js';
 import { trackOnboardingEvent } from '../../src/analytics/onboarding-analytics.js';
 import { useFonts } from 'expo-font';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function WelcomeScreen(): React.JSX.Element {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const isAndroid = Platform.OS === 'android';
   const { width, height } = useWindowDimensions();
   const isReducedMotion = useReducedMotion();
 
@@ -247,10 +250,30 @@ export default function WelcomeScreen(): React.JSX.Element {
         style={StyleSheet.absoluteFill}
       />
 
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView
+        style={[
+          styles.safeArea,
+          isAndroid && {
+            paddingBottom: Math.max(insets.bottom, 16),
+          },
+        ]}
+      >
         {/* Top Header: Pure textual brand mark with ETHNOCENTRIC typography */}
-        <View style={styles.header}>
-          <RNText style={[styles.brandTitle, fontsLoaded && { fontFamily: 'Ethnocentric' }]}>
+        <View
+          style={[
+            styles.header,
+            isAndroid && {
+              paddingTop: Math.max(insets.top, (StatusBar.currentHeight ?? 24) + 10),
+            },
+          ]}
+        >
+          <RNText
+            style={[
+              styles.brandTitle,
+              fontsLoaded ? { fontFamily: 'Ethnocentric' } : null,
+              isAndroid && { includeFontPadding: false },
+            ]}
+          >
             NAZAR
           </RNText>
         </View>
@@ -581,7 +604,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2.2,
     textTransform: 'uppercase',
     fontFamily: Platform?.select
-      ? Platform.select({ ios: 'Ethnocentric', default: 'sans-serif' })
+      ? Platform.select({ ios: 'Ethnocentric', android: 'Ethnocentric', default: 'Ethnocentric' })
       : 'Ethnocentric',
     paddingLeft: 2.2,
   },

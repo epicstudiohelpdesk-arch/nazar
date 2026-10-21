@@ -1579,12 +1579,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: -0.3,
+    includeFontPadding: false,
   },
   discoveryAgeText: {
     fontSize: 23,
     fontWeight: '400',
     color: '#FFFFFF',
     marginLeft: 6,
+    includeFontPadding: false,
   },
   metaVerifiedBadge: {
     marginLeft: 8,
