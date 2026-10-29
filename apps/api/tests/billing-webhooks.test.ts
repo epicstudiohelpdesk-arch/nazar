@@ -23,6 +23,14 @@ describe('Billing: Provider Webhooks & Idempotency (Gate 11)', () => {
   let webhookConsumer: BillingWebhookConsumer;
 
   beforeAll(async () => {
+    // Gate 1A: webhook processing is fail-closed by default because these
+    // payloads are NOT signature-verified (Gate 0 finding C-4; Gate 1C ships
+    // verification). This suite explicitly opts in via environment flags —
+    // the only sanctioned way — to keep exercising the legacy pipeline and
+    // its idempotency/claiming logic behind the gate. Default-deny behavior
+    // is asserted in gate-1a-fail-closed-trust-boundaries.
+    process.env.BILLING_PROVIDER_MOCK = 'true';
+    process.env.BILLING_ALLOW_UNVERIFIED_PROVIDERS = 'true';
     const setup = await createTestApp();
     app = setup.app;
     mockEmailProvider = app.get<MockEmailProvider>(EMAIL_PROVIDER_TOKEN);
@@ -34,6 +42,10 @@ describe('Billing: Provider Webhooks & Idempotency (Gate 11)', () => {
     await app.close();
   });
 
+  // NOTE (Gate 1A): this helper forges a JWS with a fake signature. Under the
+  // default configuration such payloads are REJECTED before parsing (no
+  // signature verification exists; Gate 0 finding C-4 / Gate 1C scope). The
+  // suite only reaches this code with BILLING_ALLOW_UNVERIFIED_PROVIDERS=true.
   function makeJWS(payload: object): string {
     const header = Buffer.from(JSON.stringify({ alg: 'ES256', typ: 'JWT' })).toString('base64url');
     const body = Buffer.from(JSON.stringify(payload)).toString('base64url');

@@ -22,6 +22,9 @@ describe('Billing: Subscriptions & Transaction History (Gate 11)', () => {
   let databaseService: DatabaseService;
 
   beforeAll(async () => {
+    // Gate 1A: server-controlled mock billing flag (test-only opt-in; startup
+    // validation forbids it in staging/production).
+    process.env.BILLING_PROVIDER_MOCK = 'true';
     const setup = await createTestApp();
     app = setup.app;
     mockEmailProvider = app.get<MockEmailProvider>(EMAIL_PROVIDER_TOKEN);

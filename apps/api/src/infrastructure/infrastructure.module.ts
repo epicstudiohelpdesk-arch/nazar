@@ -10,10 +10,11 @@ import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interc
 
 import { STORAGE_SERVICE_TOKEN } from './storage/storage.interface.js';
 import { S3StorageService } from './storage/s3-storage.service.js';
+import { RedisModule } from './redis/redis.module.js';
 
 @Global()
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, RedisModule],
   providers: [
     SystemClock,
     {
@@ -38,6 +39,7 @@ import { S3StorageService } from './storage/s3-storage.service.js';
   ],
   exports: [
     DatabaseModule,
+    RedisModule,
     CLOCK_TOKEN,
     ID_GENERATOR_TOKEN,
     IDEMPOTENCY_STORE_TOKEN,

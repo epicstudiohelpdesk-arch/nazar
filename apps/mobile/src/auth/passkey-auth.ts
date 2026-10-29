@@ -152,7 +152,14 @@ export async function promptPasskeyLogin(options?: {
   // 4. Verify login assertion with backend
   const verifyRes = await authService.verifyPasskeyLogin({
     challenge: optionsRes.data.challenge,
-    credentialId,
+    id: credentialId,
+    rawId: credentialId,
+    type: 'public-key',
+    response: {
+      clientDataJSON: 'eyJjaGFsbGVuZ2UiOiJkZXYifQ',
+      authenticatorData: 'ZGV2X2F1dGhfZGF0YQ',
+      signature: 'ZGV2X3NpZ25hdHVyZQ',
+    },
   });
 
   if (!verifyRes.success || !verifyRes.data) {
@@ -243,8 +250,13 @@ export async function promptPasskeySignUp(
 
   await authService.verifyPasskeyRegistration({
     challenge,
-    credentialId,
-    publicKey: `pub_${rawId}`,
+    id: credentialId,
+    rawId: credentialId,
+    type: 'public-key',
+    response: {
+      clientDataJSON: 'eyJjaGFsbGVuZ2UiOiJkZXYifQ',
+      attestationObject: 'ZGV2X2F0dGVzdGF0aW9u',
+    },
     transports: ['internal'],
   });
 
@@ -335,13 +347,17 @@ export async function promptPasskeyRegistration(
   // 3. Generate cryptographic credential pair
   const rawId = Crypto.randomUUID().replace(/-/g, '');
   const credentialId = `nazar_pk_${userId.slice(0, 8)}_${rawId}`;
-  const publicKey = `pub_${rawId}`;
 
   // 4. Verify & store credential on backend
   const verifyRegRes = await authService.verifyPasskeyRegistration({
     challenge: regOptionsRes.data.challenge,
-    credentialId,
-    publicKey,
+    id: credentialId,
+    rawId: credentialId,
+    type: 'public-key',
+    response: {
+      clientDataJSON: 'eyJjaGFsbGVuZ2UiOiJkZXYifQ',
+      attestationObject: 'ZGV2X2F0dGVzdGF0aW9u',
+    },
     transports: ['internal'],
   });
 

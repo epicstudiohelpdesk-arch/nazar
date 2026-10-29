@@ -28,8 +28,23 @@ const GESTURES: readonly VerificationGesture[] = [
   'THUMBS_UP',
 ];
 
+// Gate 1A: the hard-coded fallback secret was removed. Challenge signing fails
+// closed when VERIFICATION_SECRET is not explicitly configured. A local
+// development default remains available only for development/test runs.
+const DEV_ONLY_CHALLENGE_SECRET = 'nazar-local-dev-only-kyc-challenge-key';
+const IS_LOCAL_ENV =
+  (process.env.NODE_ENV ?? 'development') === 'development' || process.env.NODE_ENV === 'test';
 const CHALLENGE_SECRET =
-  process.env.VERIFICATION_SECRET || 'nazar-kyc-liveness-secret-token-key-2026';
+  process.env.VERIFICATION_SECRET ?? (IS_LOCAL_ENV ? DEV_ONLY_CHALLENGE_SECRET : undefined);
+
+function requireChallengeSecret(): string {
+  if (!CHALLENGE_SECRET) {
+    throw new Error(
+      '[SECURITY] VERIFICATION_SECRET is not configured. Liveness verification is disabled (fail-closed).'
+    );
+  }
+  return CHALLENGE_SECRET;
+}
 const TOKEN_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 @Injectable()
@@ -48,7 +63,7 @@ export class VerificationService {
     const expiresAt = new Date(expiresAtMs).toISOString();
 
     const payload = `${userId}:${gesture}:${expiresAtMs}`;
-    const signature = createHmac('sha256', CHALLENGE_SECRET).update(payload).digest('hex');
+    const signature = createHmac('sha256', requireChallengeSecret()).update(payload).digest('hex');
 
     const challengeToken = `${payload}:${signature}`;
 
@@ -89,7 +104,7 @@ export class VerificationService {
       });
     }
 
-    const expectedSignature = createHmac('sha256', CHALLENGE_SECRET)
+    const expectedSignature = createHmac('sha256', requireChallengeSecret())
       .update(`${tokenUserId}:${tokenGesture}:${tokenExpiresMsStr}`)
       .digest('hex');
 

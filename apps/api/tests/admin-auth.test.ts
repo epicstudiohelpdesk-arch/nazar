@@ -30,7 +30,7 @@ describe('Gate 14: Admin Authentication & Credential Segregation', () => {
     authService = app.get(AuthService);
 
     // Bootstrap seed admin and create dedicated test super admin
-    await adminAuthService.ensureSeedAdmin();
+    await adminAuthService.ensureDefaultRolesAndPermissions();
     testAdminId = crypto.randomUUID();
     const passwordHash = adminAuthService.hashPassword(testPassword);
 

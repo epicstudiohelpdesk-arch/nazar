@@ -60,6 +60,10 @@ export class AdminUsersRepository {
       .where(eq(adminUsers.id, id));
   }
 
+  async deleteAdminUser(id: string): Promise<void> {
+    await this.databaseService.client.delete(adminUsers).where(eq(adminUsers.id, id));
+  }
+
   async getUserRoles(adminUserId: string): Promise<AdminRoleName[]> {
     const rows = await this.databaseService.client
       .select({

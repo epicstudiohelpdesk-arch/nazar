@@ -30,17 +30,26 @@ const SENSITIVE_KEYS = new Set([
   'passkey',
   'assertion',
   'signature',
+  'ssn',
+  'taxid',
+  'encryptionkey',
+  'rawtoken',
+  'phonenumber',
+  'phone_number',
+  'plaintext',
 ]);
 
 const BEARER_REGEX = /Bearer\s+[A-Za-z0-9._~+/-]+=*/gi;
 const JWT_REGEX = /\bey[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]+\b/g;
 const SECRET_KV_REGEX =
   /(password|secret|token|otp|code|api_?key|auth_?key)\s*[:=]\s*["']?([^"',&\s]+)["']?/gi;
+const DB_URL_REGEX = /(postgres|postgresql|redis|mongodb):\/\/[^@\s]+@[^\s/]+/gi;
 
 export function redactSensitiveString(text: string): string {
   return text
     .replace(BEARER_REGEX, 'Bearer [REDACTED]')
     .replace(JWT_REGEX, '[REDACTED_JWT]')
+    .replace(DB_URL_REGEX, '$1://[REDACTED_CREDENTIALS]@')
     .replace(SECRET_KV_REGEX, '$1=[REDACTED]');
 }
 

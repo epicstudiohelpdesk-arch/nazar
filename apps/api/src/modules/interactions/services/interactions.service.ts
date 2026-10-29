@@ -38,6 +38,7 @@ import { normalizeUserPair } from '../../matches/domain/match.utils.js';
 import { SafetyEnforcementService } from '../../safety/services/safety-enforcement.service.js';
 import { EntitlementService } from '../../payments/services/entitlement.service.js';
 import { SmartPhotosService } from '../../profiles/services/smart-photos.service.js';
+import { FieldEncryptionService } from '../../../common/crypto/field-encryption.service.js';
 
 const ACTIVE_MATCH_CAP = 5;
 const MATCH_EXPIRATION_HOURS = 48;
@@ -62,7 +63,9 @@ export class InteractionsService {
     @Inject(S3StorageService)
     private readonly storageService?: S3StorageService,
     @Inject(SmartPhotosService)
-    private readonly smartPhotosService?: SmartPhotosService
+    private readonly smartPhotosService?: SmartPhotosService,
+    @Inject(FieldEncryptionService)
+    private readonly fieldEncryptionService?: FieldEncryptionService
   ) {}
 
   async like(
@@ -227,7 +230,9 @@ export class InteractionsService {
               senderUserId: actorUserId,
               clientMessageId: clientMsgId,
               messageType: 'TEXT',
-              body: attachmentOptions.comment,
+              body: this.fieldEncryptionService
+                ? this.fieldEncryptionService.encrypt(attachmentOptions.comment)
+                : attachmentOptions.comment,
               metadata: {
                 attachmentType: attachmentOptions.targetAttachmentType || 'PROFILE',
                 attachmentId: attachmentOptions.targetAttachmentId || null,

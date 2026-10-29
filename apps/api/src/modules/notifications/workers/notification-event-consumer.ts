@@ -33,6 +33,7 @@ import {
 } from '../../safety/repositories/user-restrictions.repository.interface.js';
 import { AppLoggerService } from '../../../common/logging/app-logger.service.js';
 import type { NotificationType, NotificationPriority } from '@platform/api-contracts';
+import { FieldEncryptionService } from '../../../common/crypto/field-encryption.service.js';
 
 @Injectable()
 export class NotificationEventConsumer {
@@ -52,7 +53,9 @@ export class NotificationEventConsumer {
     @Inject(USER_RESTRICTIONS_REPOSITORY_TOKEN)
     private readonly userRestrictionsRepo: IUserRestrictionsRepository,
     @Inject(AppLoggerService)
-    private readonly logger: AppLoggerService
+    private readonly logger: AppLoggerService,
+    @Inject(FieldEncryptionService)
+    private readonly fieldEncryption?: FieldEncryptionService
   ) {}
 
   /**
@@ -255,9 +258,11 @@ export class NotificationEventConsumer {
     }
 
     const title = `New message from ${senderName}`;
+    const plainBody =
+      this.fieldEncryption && typeof body === 'string' ? this.fieldEncryption.decrypt(body) : body;
     const notificationBody =
-      prefs.messagePreviewEnabled && body
-        ? String(body).slice(0, 100).trim()
+      prefs.messagePreviewEnabled && plainBody
+        ? String(plainBody).slice(0, 100).trim()
         : 'You have a new message';
 
     // 6. Create durable notification & delivery jobs

@@ -1,4 +1,4 @@
-import { Module, type OnModuleInit, Inject } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AppConfigModule } from '../../config/app-config.module.js';
 import { DatabaseModule } from '../../infrastructure/database/database.module.js';
 
@@ -96,18 +96,9 @@ import {
     AdminAuditLogsRepository,
   ],
 })
-export class AdminModule implements OnModuleInit {
-  constructor(
-    @Inject(AdminAuthService)
-    private readonly adminAuthService: AdminAuthService
-  ) {}
 
-  async onModuleInit(): Promise<void> {
-    try {
-      await this.adminAuthService.ensureSeedAdmin();
-    } catch (err: unknown) {
-      // Ignore during migrations or dry-run, log warning
-      console.warn('[AdminModule] Seed admin initialization notice:', (err as Error).message);
-    }
-  }
-}
+// Gate 1A: the OnModuleInit bootstrap that created a default SUPER_ADMIN
+// account (admin@nazar.internal) with a hard-coded password on every start
+// was removed. Administrators are now provisioned explicitly via the
+// audited `pnpm admin:provision` workflow (see tools/provision-admin-cli.ts).
+export class AdminModule {}

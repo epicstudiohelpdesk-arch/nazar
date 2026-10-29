@@ -23,6 +23,11 @@ describe('Billing: Concurrency & Race Conditions (Gate 11)', () => {
   let databaseService: DatabaseService;
 
   beforeAll(async () => {
+    // Gate 1A: server-controlled billing flags (test-only opt-in; startup
+    // validation forbids both in staging/production). Apple webhook payloads
+    // in this suite are unverified, hence the explicit unverified-provider flag.
+    process.env.BILLING_PROVIDER_MOCK = 'true';
+    process.env.BILLING_ALLOW_UNVERIFIED_PROVIDERS = 'true';
     const setup = await createTestApp();
     app = setup.app;
     mockEmailProvider = app.get<MockEmailProvider>(EMAIL_PROVIDER_TOKEN);

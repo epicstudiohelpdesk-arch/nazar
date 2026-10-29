@@ -31,7 +31,7 @@ describe('Gate 15: Analytics Aggregation, Funnels, Retention & Admin API', () =>
     adminUsersRepo = app.get(AdminUsersRepository);
 
     // Bootstrap seed and create test platform admin
-    await adminAuthService.ensureSeedAdmin();
+    await adminAuthService.ensureDefaultRolesAndPermissions();
     const adminId = crypto.randomUUID();
     const passwordHash = adminAuthService.hashPassword(adminPassword);
 

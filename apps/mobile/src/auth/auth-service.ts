@@ -365,7 +365,7 @@ export class AuthService {
       return { success: true, data: res.data };
     } catch (err: unknown) {
       if (__DEV__) {
-        return { success: true, data: { credentialId: payload.credentialId } };
+        return { success: true, data: { credentialId: payload.id } };
       }
       return this.handleNetworkError(err, 'passkey_reg_verify');
     }

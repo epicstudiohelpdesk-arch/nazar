@@ -1,4 +1,5 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
+import { ErrorCode } from '@platform/api-contracts';
 import type { PaymentProviderType } from '@platform/api-contracts';
 import {
   type IPaymentProvider,
@@ -22,8 +23,22 @@ export class PaymentProviderFactory {
   ) {}
 
   getProvider(providerType: PaymentProviderType): IPaymentProvider {
-    // If mock billing is forced or requested in non-prod
-    if (this.config.billingProviderMock || providerType === 'MOCK') {
+    // Gate 1A: the mock provider is only reachable via the server-controlled
+    // BILLING_PROVIDER_MOCK environment flag (forbidden in staging/production
+    // by environment validation). A client-supplied `provider` field can no
+    // longer select it, and unknown provider types fail closed instead of
+    // silently falling back to the mock provider.
+    if (providerType === 'MOCK') {
+      if (!this.config.billingProviderMock) {
+        throw new HttpException(
+          {
+            code: ErrorCode.SERVICE_UNAVAILABLE,
+            message:
+              'Mock billing provider is disabled in this environment. Purchase verification is unavailable.',
+          },
+          HttpStatus.SERVICE_UNAVAILABLE
+        );
+      }
       return this.mockProvider;
     }
 
@@ -33,7 +48,13 @@ export class PaymentProviderFactory {
       case 'GOOGLE_PLAY':
         return this.googleProvider;
       default:
-        return this.mockProvider;
+        throw new HttpException(
+          {
+            code: ErrorCode.SERVICE_UNAVAILABLE,
+            message: `Unsupported payment provider: ${providerType}`,
+          },
+          HttpStatus.SERVICE_UNAVAILABLE
+        );
     }
   }
 }

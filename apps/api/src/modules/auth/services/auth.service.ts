@@ -595,15 +595,18 @@ export class AuthService {
     if (rotatedHistory) {
       // CRITICAL SECURITY ALERT: Rotated token reused!
       // Immediately revoke the compromised session
+      const compromisedSession = await this.sessionRepo.findById(rotatedHistory.sessionId);
       await this.sessionRepo.revokeSession(rotatedHistory.sessionId, 'TOKEN_REPLAY_DETECTED');
 
       await this.securityService.recordSecurityEvent({
         eventType: AuthEventType.SESSION_REPLAY_DETECTED,
         severity: 'CRITICAL',
+        userId: compromisedSession?.userId,
         sessionId: rotatedHistory.sessionId,
+        deviceId: compromisedSession?.deviceId ?? undefined,
         ipAddress,
         userAgent,
-        metadata: { tokenHash: '[REDACTED]' },
+        metadata: { tokenHash: '[REDACTED]', reason: 'Replay of rotated token hash detected' },
       });
 
       throw new UnauthorizedException({

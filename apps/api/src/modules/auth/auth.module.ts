@@ -9,6 +9,7 @@ import { MockEmailProvider, EMAIL_PROVIDER_TOKEN } from './providers/email.provi
 import {
   GoogleOAuthProvider,
   AppleOAuthProvider,
+  JwksKeyService,
   GOOGLE_OAUTH_PROVIDER_TOKEN,
   APPLE_OAUTH_PROVIDER_TOKEN,
 } from './providers/oauth.provider.js';
@@ -62,6 +63,7 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
       useClass: AppleOAuthProvider,
     },
     AppleOAuthProvider,
+    JwksKeyService,
     {
       provide: FIREBASE_AUTH_PROVIDER_TOKEN,
       useClass: FirebaseAuthProvider,

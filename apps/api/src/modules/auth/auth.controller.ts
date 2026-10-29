@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -39,11 +40,13 @@ import {
   type DeviceRegistrationPayload,
   type CheckIdentifierPayload,
   type CheckIdentifierResponse,
+  ErrorCode,
 } from '@platform/api-contracts';
 import { AppValidationPipe } from '../../common/pipes/app-validation.pipe.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { AuthGuard, type AuthenticatedPrincipal } from '../../common/guards/auth.guard.js';
+import { AppConfigService } from '../../config/app-config.service.js';
 import { AuthService } from './services/auth.service.js';
 import { PasskeyService } from './providers/passkey.service.js';
 import {
@@ -67,11 +70,36 @@ import {
 @UseGuards(AuthGuard)
 export class AuthController {
   constructor(
+    @Inject(AppConfigService)
+    private readonly configService: AppConfigService,
     @Inject(AuthService)
     private readonly authService: AuthService,
     @Inject(PasskeyService)
     private readonly passkeyService: PasskeyService
   ) {}
+
+  /**
+   * Gate 1A: fail-closed kill switch for identity-federation providers that do
+   * not yet perform cryptographic verification (signature checks land in
+   * Gate 1B). When disabled (the default in every environment), the endpoint
+   * rejects before any token parsing, so no session can be established through
+   * an unverified path.
+   */
+  private assertProviderEnabled(
+    providerDisplayName: string,
+    enabled: boolean,
+    remediationGate: string
+  ): void {
+    if (!enabled) {
+      throw new HttpException(
+        {
+          code: ErrorCode.SERVICE_UNAVAILABLE,
+          message: `${providerDisplayName} sign-in is temporarily disabled pending security hardening (${remediationGate}).`,
+        },
+        HttpStatus.SERVICE_UNAVAILABLE
+      );
+    }
+  }
 
   // ----------------------------------------------------
   // Phone OTP Endpoints
@@ -163,6 +191,11 @@ export class AuthController {
     @Body(new AppValidationPipe(googleAuthSchema)) body: GoogleAuthPayload,
     @Req() req: Request
   ): Promise<AuthTokensResponse> {
+    this.assertProviderEnabled(
+      'Google OAuth',
+      this.configService.authGoogleOAuthEnabled,
+      'Gate 1B'
+    );
     const userAgent = req.headers['user-agent'];
     return this.authService.loginWithGoogle(body, req.ip, userAgent);
   }
@@ -176,6 +209,7 @@ export class AuthController {
     @Body(new AppValidationPipe(appleAuthSchema)) body: AppleAuthPayload,
     @Req() req: Request
   ): Promise<AuthTokensResponse> {
+    this.assertProviderEnabled('Apple OAuth', this.configService.authAppleOAuthEnabled, 'Gate 1B');
     const userAgent = req.headers['user-agent'];
     return this.authService.loginWithApple(body, req.ip, userAgent);
   }
@@ -208,6 +242,7 @@ export class AuthController {
   async getPasskeyRegisterOptions(
     @CurrentUser() user: AuthenticatedPrincipal
   ): Promise<PasskeyRegisterOptionsResponse> {
+    this.assertProviderEnabled('Passkey', this.configService.authPasskeyEnabled, 'Gate 1B');
     return this.passkeyService.createRegistrationOptions(user.userId);
   }
 
@@ -219,6 +254,7 @@ export class AuthController {
     @CurrentUser() user: AuthenticatedPrincipal,
     @Body(new AppValidationPipe(passkeyRegisterVerifySchema)) body: PasskeyRegisterVerifyPayload
   ): Promise<{ credentialId: string }> {
+    this.assertProviderEnabled('Passkey', this.configService.authPasskeyEnabled, 'Gate 1B');
     const cred = await this.passkeyService.verifyRegistration(user.userId, body);
     return { credentialId: cred.credentialId };
   }
@@ -230,6 +266,7 @@ export class AuthController {
   async getPasskeyLoginOptions(
     @Body(new AppValidationPipe(passkeyLoginOptionsSchema)) body: { emailOrPhone?: string }
   ): Promise<PasskeyLoginOptionsResponse> {
+    this.assertProviderEnabled('Passkey', this.configService.authPasskeyEnabled, 'Gate 1B');
     return this.passkeyService.createLoginOptions(body.emailOrPhone);
   }
 
@@ -241,6 +278,7 @@ export class AuthController {
     @Body(new AppValidationPipe(passkeyLoginVerifySchema)) body: PasskeyLoginVerifyPayload,
     @Req() req: Request
   ): Promise<AuthTokensResponse> {
+    this.assertProviderEnabled('Passkey', this.configService.authPasskeyEnabled, 'Gate 1B');
     const credential = await this.passkeyService.verifyLogin(body);
     const userAgent = req.headers['user-agent'];
     return this.authService.createSessionForPasskeyUser(

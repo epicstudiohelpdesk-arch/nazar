@@ -3,6 +3,12 @@ name: Deploy Staging
 on:
   workflow_dispatch:
 
+# Gate 1A: least-privilege token; id-token:write is required only for the
+# GitHub OIDC federation with AWS (no long-lived keys).
+permissions:
+  contents: read
+  id-token: write
+
 concurrency:
   group: deploy-staging
   cancel-in-progress: false

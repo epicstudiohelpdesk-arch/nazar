@@ -160,7 +160,7 @@ describe('Google & Passkey Authentication Suite', () => {
           return new Response(
             JSON.stringify({
               success: true,
-              data: { credentialId: body.credentialId },
+              data: { credentialId: body.id || body.credentialId },
             }),
             { status: 201, headers: { 'Content-Type': 'application/json' } }
           );
@@ -181,8 +181,11 @@ describe('Google & Passkey Authentication Suite', () => {
 
       const verifyRes = await customService.verifyPasskeyRegistration({
         challenge: 'reg-challenge-abc',
-        credentialId: 'cred_new_99',
-        publicKey: 'pubkey_sample',
+        id: 'cred_new_99',
+        response: {
+          clientDataJSON: 'eyJjaGFsbGVuZ2UiOiJyZWctY2hhbGxlbmdlLWFiYyJ9',
+          attestationObject: 'attestation-obj-mock',
+        },
       });
       expect(verifyRes.success).toBe(true);
       expect(verifyRes.data?.credentialId).toBe('cred_new_99');

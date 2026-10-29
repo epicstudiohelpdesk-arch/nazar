@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+# Gate 1A: least-privilege workflow token (no write scopes required for CI)
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

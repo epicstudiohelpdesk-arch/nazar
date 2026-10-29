@@ -28,6 +28,10 @@ on:
           - android
         default: all
 
+# Gate 1A: least-privilege workflow token (no write scopes required here)
+permissions:
+  contents: read
+
 concurrency:
   group: mobile-release-candidate-${{ github.ref }}
   cancel-in-progress: false

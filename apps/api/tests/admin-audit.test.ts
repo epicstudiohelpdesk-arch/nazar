@@ -26,7 +26,7 @@ describe('Gate 14: Admin Immutable Audit Logging & Concurrency', () => {
     adminUsersRepo = app.get(AdminUsersRepository);
     databaseService = app.get(DatabaseService);
 
-    await adminAuthService.ensureSeedAdmin();
+    await adminAuthService.ensureDefaultRolesAndPermissions();
 
     const password = 'AdminAuditPassword123!';
     const adminId = crypto.randomUUID();

@@ -8,26 +8,42 @@ This runbook outlines operational procedures, incident response playbooks, and r
 
 ## 2. Initial Setup & Staff Provisioning
 
-### Default Bootstrap Credentials
+### First Administrator Provisioning (Gate 1A)
 
-During initial database migration and application startup, `AdminModule.onModuleInit()` ensures that canonical roles and the default super-administrator account exist:
+There are **no default bootstrap credentials**. The boot-time seed account and its
+hard-coded password were removed, along with the `ADMIN_BOOTSTRAP_PASSWORD`
+documentation. Administrative accounts are created only through the audited
+provisioning command:
 
-- **Email**: `admin@nazar.internal`
-- **Initial Password**: Configured via `ADMIN_BOOTSTRAP_PASSWORD` env var (or default `SuperAdmin123!` in local development).
-- **Assigned Role**: `super_admin`
+```bash
+cd apps/api
+pnpm admin:provision -- \
+  --email=ops-admin@nazar.internal --first-name=Ada --last-name=Admin \
+  --role=SUPER_ADMIN [--mfa] [--token=<ADMIN_PROVISIONING_TOKEN>]
+```
 
-> **CRITICAL**: In staging and production environments, the initial password must be changed immediately upon first login.
+- In **staging/production**, the command refuses to run unless the environment
+  configures `ADMIN_PROVISIONING_TOKEN` (min 32 chars) and the operator presents
+  the matching `--token`.
+- When no password is supplied, a cryptographically random **one-time password**
+  is printed to the operator's terminal exactly once. Deliver it out-of-band;
+  it is never stored or logged.
+- Every provisioning writes an `ADMIN_PROVISIONED` entry to the admin audit log.
+- While `ADMIN_MFA_REQUIRED` is enforced (default in staging/production), an
+  account cannot sign in until MFA enrollment is completed.
 
 ### Provisioning a New Staff Member
 
-1. Log in to the Admin Console using a `super_admin` account.
+1. Sign in with a `super_admin` account (provisioned as above).
 2. Navigate to **Staff Management** (`/admin/staff`).
 3. Click **Add Staff Member** and enter:
    - Full Name
    - Corporate Email (`@nazar.internal`)
-   - Initial Temporary Password
    - Assigned Role (e.g. `moderator`, `trust_and_safety`, `support_agent`)
 4. Confirm user creation. An audit log entry (`ADMIN_STAFF_CREATED`) is automatically created.
+
+> **Note**: Admin login is protected by dedicated brute-force throttling
+> (5 failed attempts → 15-minute lockout per email, per instance).
 
 ---
 

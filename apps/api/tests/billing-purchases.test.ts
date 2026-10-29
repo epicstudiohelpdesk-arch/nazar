@@ -22,6 +22,11 @@ describe('Billing: Purchase Verification, Idempotency & Restoration (Gate 11)', 
   let databaseService: DatabaseService;
 
   beforeAll(async () => {
+    // Gate 1A: the mock billing provider is now server-controlled. Enable it
+    // for this suite via the environment flag (startup validation forbids it
+    // in staging/production) so purchase flows remain testable behind the gate.
+    // Default-deny behavior is asserted in gate-1a-fail-closed-trust-boundaries.
+    process.env.BILLING_PROVIDER_MOCK = 'true';
     const setup = await createTestApp();
     app = setup.app;
     mockEmailProvider = app.get<MockEmailProvider>(EMAIL_PROVIDER_TOKEN);

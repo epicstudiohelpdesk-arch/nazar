@@ -1,0 +1,16 @@
+# Gate 1A: keep secrets and VCS metadata out of the Docker build context
+# (and therefore out of BuildKit layer caches and CI cache exports).
+.git
+.env
+.env.*
+!.env.example
+!.env.production.example
+!.env.staging.example
+node_modules
+**/node_modules
+.turbo
+**/dist
+*.log
+.DS_Store
+GATE_0_AUDIT_REPORT.md
+GATE_1A_REPORT.md

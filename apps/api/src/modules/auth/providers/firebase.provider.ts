@@ -43,12 +43,14 @@ export class FirebaseAuthProvider implements IFirebaseAuthProvider, OnModuleInit
     }
 
     try {
+      // Gate 1A: developer-machine absolute paths were removed. Credentials
+      // must come from explicit environment configuration (or workload
+      // identity in cloud deployments).
       const candidatePaths = [
         this.configService.firebaseServiceAccountPath,
         path.resolve(process.cwd(), 'secrets/firebase-service-account.json'),
         path.resolve(process.cwd(), 'apps/api/secrets/firebase-service-account.json'),
         path.resolve(process.cwd(), '../api/secrets/firebase-service-account.json'),
-        '/Users/subhamdas/Downloads/nazar-85664-firebase-adminsdk-fbsvc-f507fa6678.json',
       ].filter(Boolean) as string[];
 
       let credentialLoaded = false;

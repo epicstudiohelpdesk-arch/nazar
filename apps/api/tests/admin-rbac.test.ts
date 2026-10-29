@@ -26,7 +26,7 @@ describe('Gate 14: Admin Role-Based Access Control (RBAC)', () => {
     adminUsersRepo = app.get(AdminUsersRepository);
     databaseService = app.get(DatabaseService);
 
-    await adminAuthService.ensureSeedAdmin();
+    await adminAuthService.ensureDefaultRolesAndPermissions();
 
     const password = 'RoleTestPassword123!';
 

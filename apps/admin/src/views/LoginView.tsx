@@ -4,8 +4,10 @@ import { useAdminAuth } from '../context/AdminAuthContext.js';
 
 export function LoginView(): React.JSX.Element {
   const { login } = useAdminAuth();
-  const [email, setEmail] = useState('admin@nazar.internal');
-  const [password, setPassword] = useState('SuperAdmin123!');
+  // Gate 1A: no default credentials are pre-filled or embedded in the client.
+  // Accounts are provisioned via the audited `pnpm admin:provision` workflow.
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

@@ -7,6 +7,7 @@ import { AppConfigService } from './config/app-config.service.js';
 import { AppLoggerService } from './common/logging/app-logger.service.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { AppValidationPipe } from './common/pipes/app-validation.pipe.js';
+import { RedisIoAdapter } from './modules/chat/adapters/redis-io.adapter.js';
 import { setupSwagger } from './swagger.js';
 
 export async function bootstrap() {
@@ -45,6 +46,11 @@ export async function bootstrap() {
 
   // 6. Configure Global Validation
   app.useGlobalPipes(new AppValidationPipe());
+
+  // 6.5. Configure Redis WebSocket Adapter for Multi-Pod Clustering (SEC-02)
+  const redisIoAdapter = new RedisIoAdapter(app, configService);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
 
   // 7. Configure CORS
   const corsOrigin =

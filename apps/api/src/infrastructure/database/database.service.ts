@@ -62,6 +62,17 @@ export class DatabaseService implements IDatabaseService, OnApplicationShutdown 
     });
   }
 
+  /**
+   * Executes a transaction within a user-scoped tenant context enforcing PostgreSQL Row-Level Security (RLS).
+   */
+  async withUserContext<T>(userId: string, fn: (tx: DrizzleDatabase) => Promise<T>): Promise<T> {
+    return this.db.transaction(async (tx: any) => {
+      await tx.execute(sql.raw(`SET LOCAL ROLE nazar_app_role;`));
+      await tx.execute(sql.raw(`SET LOCAL app.current_user_id = '${userId.replace(/'/g, "''")}';`));
+      return fn(tx as unknown as DrizzleDatabase);
+    });
+  }
+
   async createUnitOfWork(): Promise<IUnitOfWork> {
     const client = await this.dbPool.connect();
     let inTransaction = false;

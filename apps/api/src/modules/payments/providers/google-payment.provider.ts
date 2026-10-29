@@ -1,4 +1,5 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import * as jose from 'jose';
 import type {
   IPaymentProvider,
   VerifyPurchaseInput,
@@ -9,6 +10,7 @@ import type {
 } from './payment-provider.interface.js';
 import { AppConfigService } from '../../../config/app-config.service.js';
 import { AppLoggerService } from '../../../common/logging/app-logger.service.js';
+import { assertUnverifiedBillingProcessingAllowed } from './unverified-provider.guard.js';
 
 interface GoogleDeveloperNotification {
   readonly version?: string;
@@ -43,6 +45,9 @@ export class GooglePaymentProvider implements IPaymentProvider {
   ) {}
 
   async verifyPurchase(input: VerifyPurchaseInput): Promise<VerifiedPurchase> {
+    // Gate 1A: fail-closed until Gate 1C implements Play Developer API validation
+    assertUnverifiedBillingProcessingAllowed(this.config, 'Google Play');
+
     this.logger.log(
       `[GooglePaymentProvider] Verifying purchase for user ${input.userId}, txId: ${input.transactionId}`,
       'GooglePaymentProvider'
@@ -83,6 +88,33 @@ export class GooglePaymentProvider implements IPaymentProvider {
   }
 
   async verifyWebhook(input: VerifyWebhookInput): Promise<VerifiedWebhookEvent> {
+    const authHeader =
+      (input.headers?.['authorization'] as string | undefined) ||
+      (input.headers?.['Authorization'] as string | undefined);
+
+    let isGoogleOidcVerified = false;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.slice(7).trim();
+      try {
+        const jwks = jose.createRemoteJWKSet(new URL(this.config.googleJwksUrl));
+        await jose.jwtVerify(token, jwks, {
+          issuer: ['https://accounts.google.com', 'accounts.google.com'],
+        });
+        isGoogleOidcVerified = true;
+      } catch (err) {
+        this.logger.warn(
+          `[GooglePaymentProvider] Google Pub/Sub push JWT verification failed: ${err instanceof Error ? err.message : String(err)}`,
+          'GooglePaymentProvider'
+        );
+        throw new UnauthorizedException('Invalid Google Pub/Sub push authentication token');
+      }
+    }
+
+    // Fail closed if unauthenticated and unverified processing is disabled
+    if (!isGoogleOidcVerified && !this.config.billingAllowUnverifiedProviders) {
+      assertUnverifiedBillingProcessingAllowed(this.config, 'Google Play');
+    }
+
     const message = (input.payload.message || {}) as {
       data?: string;
       messageId?: string;
@@ -100,6 +132,17 @@ export class GooglePaymentProvider implements IPaymentProvider {
       throw new BadRequestException(
         `Failed to parse Google RTDN payload: ${err instanceof Error ? err.message : String(err)}`
       );
+    }
+
+    if (
+      notification.packageName &&
+      notification.packageName !== this.config.googlePlayPackageName
+    ) {
+      this.logger.warn(
+        `[GooglePaymentProvider] Package name mismatch: expected ${this.config.googlePlayPackageName}, got ${notification.packageName}`,
+        'GooglePaymentProvider'
+      );
+      throw new BadRequestException('Google Play notification package name mismatch');
     }
 
     const eventId = message.messageId || `google-event-${Date.now()}`;

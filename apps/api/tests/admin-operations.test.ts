@@ -34,7 +34,7 @@ describe('Gate 14: Admin Operations, Moderation & Health', () => {
     adminUsersRepo = app.get(AdminUsersRepository);
     databaseService = app.get(DatabaseService);
 
-    await adminAuthService.ensureSeedAdmin();
+    await adminAuthService.ensureDefaultRolesAndPermissions();
 
     const password = 'AdminOperationsPass123!';
     const adminId = crypto.randomUUID();

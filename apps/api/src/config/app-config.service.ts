@@ -85,12 +85,20 @@ export class AppConfigService {
     return this.env.DATABASE_STATEMENT_TIMEOUT_MS;
   }
 
+  get redisUrl(): string {
+    return this.env.REDIS_URL;
+  }
+
   get jwtAccessSecret(): string {
     return this.env.JWT_ACCESS_SECRET;
   }
 
   get jwtRefreshSecret(): string {
     return this.env.JWT_REFRESH_SECRET;
+  }
+
+  get fieldEncryptionKey(): string {
+    return this.env.FIELD_ENCRYPTION_KEY;
   }
 
   get jwtAccessExpirationSeconds(): number {
@@ -125,12 +133,34 @@ export class AppConfigService {
     return this.env.EMAIL_VERIFICATION_EXPIRATION_SECONDS;
   }
 
+  // Gate 1B: prefer the allowlist accessors below; these remain for legacy
+  // call sites but return the first configured value (or '').
   get googleClientId(): string {
-    return this.env.GOOGLE_CLIENT_ID;
+    return this.googleClientIds[0] ?? '';
   }
 
   get appleClientId(): string {
-    return this.env.APPLE_CLIENT_ID;
+    return this.appleClientIds[0] ?? '';
+  }
+
+  get googleOAuthClientSecret(): string | undefined {
+    return this.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  }
+
+  get appleOAuthClientSecret(): string | undefined {
+    return this.env.APPLE_OAUTH_CLIENT_SECRET;
+  }
+
+  get appleSignInTeamId(): string | undefined {
+    return this.env.APPLE_SIGN_IN_TEAM_ID;
+  }
+
+  get appleSignInKeyId(): string | undefined {
+    return this.env.APPLE_SIGN_IN_KEY_ID;
+  }
+
+  get appleSignInPrivateKey(): string | undefined {
+    return this.env.APPLE_SIGN_IN_PRIVATE_KEY;
   }
 
   get passkeyRpId(): string {
@@ -255,6 +285,125 @@ export class AppConfigService {
 
   get billingProviderMock(): boolean {
     return this.env.BILLING_PROVIDER_MOCK;
+  }
+
+  /**
+   * Gate 1A: when false (default), Apple/Google purchase & webhook processing
+   * that lacks cryptographic verification is rejected fail-closed. The schema
+   * forbids enabling this outside development/test environments.
+   */
+  get billingAllowUnverifiedProviders(): boolean {
+    return this.env.BILLING_ALLOW_UNVERIFIED_PROVIDERS;
+  }
+
+  /**
+   * Gate 1A: one-time enrollment secret for administrator provisioning.
+   * Required (and operator-supplied) in staging/production; optional locally.
+   */
+  get adminProvisioningToken(): string | undefined {
+    return this.env.ADMIN_PROVISIONING_TOKEN;
+  }
+
+  /**
+   * Gate 1A: MFA policy for privileged administrators.
+   * Defaults to enforced in staging/production when the variable is unset.
+   */
+  get adminMfaRequired(): boolean {
+    if (this.env.ADMIN_MFA_REQUIRED !== undefined) {
+      return this.env.ADMIN_MFA_REQUIRED;
+    }
+    return this.nodeEnv === 'staging' || this.nodeEnv === 'production';
+  }
+
+  /**
+   * Gate 1A: identity-federation kill switches. Disabled by default because
+   * these providers currently lack cryptographic verification (Gate 1B).
+   */
+  get authGoogleOAuthEnabled(): boolean {
+    return this.env.AUTH_GOOGLE_OAUTH_ENABLED;
+  }
+
+  get authAppleOAuthEnabled(): boolean {
+    return this.env.AUTH_APPLE_OAUTH_ENABLED;
+  }
+
+  get authPasskeyEnabled(): boolean {
+    return this.env.AUTH_PASSKEY_ENABLED;
+  }
+
+  // ----------------------------------------------------
+  // Gate 1B: Identity provider verification configuration
+  // ----------------------------------------------------
+
+  get googleJwksUrl(): string {
+    return this.env.GOOGLE_JWKS_URL;
+  }
+
+  get googleTokenUrl(): string {
+    return this.env.GOOGLE_TOKEN_URL;
+  }
+
+  get appleJwksUrl(): string {
+    return this.env.APPLE_JWKS_URL;
+  }
+
+  get appleTokenUrl(): string {
+    return this.env.APPLE_TOKEN_URL;
+  }
+
+  get googleIssuers(): string[] {
+    return this.env.GOOGLE_ISSUERS.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  get appleIssuers(): string[] {
+    return this.env.APPLE_ISSUERS.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  /** Configured OAuth client IDs (comma separated allowlist). */
+  get googleClientIds(): string[] {
+    return this.env.GOOGLE_CLIENT_ID.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  get appleClientIds(): string[] {
+    return this.env.APPLE_CLIENT_ID.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  /** Exact-match allowlist of permitted OAuth redirect targets. */
+  get oauthRedirectAllowlist(): string[] {
+    return this.env.OAUTH_REDIRECT_ALLOWLIST.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  get passkeyAllowedOrigins(): string[] {
+    const origins = [this.env.PASSKEY_ORIGIN, ...this.env.PASSKEY_ALLOWED_ORIGINS.split(',')]
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return Array.from(new Set(origins));
+  }
+
+  get passkeyUserVerification(): 'required' | 'preferred' | 'discouraged' {
+    return this.env.PASSKEY_USER_VERIFICATION;
+  }
+
+  get passkeyAttestation(): 'none' | 'indirect' | 'direct' {
+    return this.env.PASSKEY_ATTESTATION;
+  }
+
+  get passkeyResidentKey(): 'required' | 'preferred' | 'discouraged' {
+    return this.env.PASSKEY_RESIDENT_KEY;
+  }
+
+  get passkeyChallengeTtlSeconds(): number {
+    return this.env.PASSKEY_CHALLENGE_TTL_SECONDS;
   }
 
   get firebaseProjectId(): string {

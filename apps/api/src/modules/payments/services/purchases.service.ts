@@ -104,6 +104,10 @@ export class PurchasesService {
       };
     }
 
+    // Gate 1A: resolve/validate the payment provider BEFORE any other work so
+    // that disabled or unverified providers fail closed immediately (503).
+    const provider = this.providerFactory.getProvider(dto.provider);
+
     // 2. Resolve internal product:
     // First try by provider product ID mapping, fallback to internal code
     let resolvedProduct = null;
@@ -127,8 +131,7 @@ export class PurchasesService {
       });
     }
 
-    // 3. Verify against external store provider
-    const provider = this.providerFactory.getProvider(dto.provider);
+    // 3. Verify against external store provider (resolved fail-closed above)
     const verifiedPurchase = await provider.verifyPurchase({
       userId,
       provider: dto.provider,

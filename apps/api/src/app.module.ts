@@ -10,8 +10,12 @@ import { LoggingInterceptor } from './common/logging/logging.interceptor.js';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor.js';
 import { AppThrottlerGuard } from './common/guards/app-throttler.guard.js';
 import { InfrastructureModule } from './infrastructure/infrastructure.module.js';
+import { CryptoModule } from './common/crypto/crypto.module.js';
 import { IdempotencyInterceptor } from './common/idempotency/idempotency.interceptor.js';
 import { HealthModule } from './health/health.module.js';
+
+import { RedisModule } from './infrastructure/redis/redis.module.js';
+import { RedisThrottlerStorage } from './infrastructure/redis/redis-throttler-storage.js';
 
 // Domain Module Boundaries (Placeholders for future gates)
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -29,6 +33,7 @@ import { RecommendationsModule } from './modules/recommendations/recommendations
 import { AdminModule } from './modules/admin/admin.module.js';
 import { AnalyticsModule } from './modules/analytics/analytics.module.js';
 import { ComplianceModule } from './modules/compliance/compliance.module.js';
+import { WorkersModule } from './modules/workers/workers.module.js';
 
 import { AuthGuard } from './common/guards/auth.guard.js';
 
@@ -37,17 +42,21 @@ import { AuthGuard } from './common/guards/auth.guard.js';
     AppConfigModule,
     RequestContextModule,
     AppLoggerModule,
+    CryptoModule,
     InfrastructureModule,
     HealthModule,
     ThrottlerModule.forRootAsync({
-      imports: [AppConfigModule],
-      inject: [AppConfigService],
-      useFactory: (config: AppConfigService) => [
-        {
-          ttl: config.rateLimitTtlMs,
-          limit: config.rateLimitLimit,
-        },
-      ],
+      imports: [AppConfigModule, RedisModule],
+      inject: [AppConfigService, RedisThrottlerStorage],
+      useFactory: (config: AppConfigService, storage: RedisThrottlerStorage) => ({
+        throttlers: [
+          {
+            ttl: config.rateLimitTtlMs,
+            limit: config.rateLimitLimit,
+          },
+        ],
+        storage,
+      }),
     }),
     // Domain modules
     AuthModule,
@@ -65,6 +74,7 @@ import { AuthGuard } from './common/guards/auth.guard.js';
     AdminModule,
     AnalyticsModule,
     ComplianceModule,
+    WorkersModule,
   ],
   providers: [
     {

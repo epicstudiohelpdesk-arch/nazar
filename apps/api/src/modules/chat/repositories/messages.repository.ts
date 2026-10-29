@@ -10,16 +10,27 @@ import {
   type NewMessageRow,
 } from '../../../infrastructure/database/drizzle/schema/messages.js';
 import type { IMessagesRepository } from './messages.repository.interface.js';
+import { FieldEncryptionService } from '../../../common/crypto/field-encryption.service.js';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
   constructor(
     @Inject(DatabaseService)
-    private readonly databaseService: DatabaseService
+    private readonly databaseService: DatabaseService,
+    @Inject(FieldEncryptionService)
+    private readonly fieldEncryption: FieldEncryptionService
   ) {}
 
   private getClient(tx?: DrizzleDatabase) {
     return tx || this.databaseService.client;
+  }
+
+  private decryptMessageRow(row: MessageRow): MessageRow {
+    if (!row) return row;
+    return {
+      ...row,
+      body: this.fieldEncryption.decrypt(row.body),
+    };
   }
 
   async createMessage(
@@ -28,16 +39,21 @@ export class MessagesRepository implements IMessagesRepository {
   ): Promise<{ message: MessageRow; wasCreated: boolean }> {
     const client = this.getClient(tx);
 
+    const encryptedRow: NewMessageRow = {
+      ...row,
+      body: this.fieldEncryption.encrypt(row.body),
+    };
+
     const inserted = await client
       .insert(messages)
-      .values(row)
+      .values(encryptedRow)
       .onConflictDoNothing({
         target: [messages.conversationId, messages.senderUserId, messages.clientMessageId],
       })
       .returning();
 
     if (inserted && inserted.length > 0 && inserted[0]) {
-      return { message: inserted[0], wasCreated: true };
+      return { message: this.decryptMessageRow(inserted[0]), wasCreated: true };
     }
 
     // Already exists via idempotency key
@@ -58,7 +74,7 @@ export class MessagesRepository implements IMessagesRepository {
   async findMessageById(messageId: string, tx?: DrizzleDatabase): Promise<MessageRow | null> {
     const client = this.getClient(tx);
     const rows = await client.select().from(messages).where(eq(messages.id, messageId)).limit(1);
-    return rows[0] || null;
+    return rows[0] ? this.decryptMessageRow(rows[0]) : null;
   }
 
   async findMessageByClientMessageId(
@@ -79,7 +95,7 @@ export class MessagesRepository implements IMessagesRepository {
         )
       )
       .limit(1);
-    return rows[0] || null;
+    return rows[0] ? this.decryptMessageRow(rows[0]) : null;
   }
 
   async findMessagesByConversation(
@@ -102,12 +118,14 @@ export class MessagesRepository implements IMessagesRepository {
       );
     }
 
-    return client
+    const rows = await client
       .select()
       .from(messages)
       .where(and(...conditions))
       .orderBy(desc(messages.createdAt), desc(messages.id))
       .limit(options.limit);
+
+    return rows.map((r) => this.decryptMessageRow(r));
   }
 
   async findMessagesSince(
@@ -126,11 +144,13 @@ export class MessagesRepository implements IMessagesRepository {
       )!,
     ];
 
-    return client
+    const rows = await client
       .select()
       .from(messages)
       .where(and(...conditions))
       .orderBy(asc(messages.createdAt), asc(messages.id))
       .limit(limit);
+
+    return rows.map((r) => this.decryptMessageRow(r));
   }
 }

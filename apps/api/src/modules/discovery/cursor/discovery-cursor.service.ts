@@ -20,7 +20,15 @@ export class DiscoveryCursorService implements IDiscoveryCursorService {
     @Inject(AppConfigService)
     private readonly configService: AppConfigService
   ) {
-    this.secret = this.configService.jwtAccessSecret || 'discovery-cursor-secret-key-default-32ch';
+    // Gate 1A: the hard-coded fallback secret was removed. Cursor signing is
+    // bound to the validated JWT access secret (environment validation rejects
+    // development defaults outside development/test) and fails closed if absent.
+    this.secret = this.configService.jwtAccessSecret;
+    if (!this.secret) {
+      throw new Error(
+        '[SECURITY] JWT_ACCESS_SECRET is not configured; discovery cursor signing is disabled (fail-closed).'
+      );
+    }
   }
 
   encode(score: number, id: string): string {

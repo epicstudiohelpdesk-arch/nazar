@@ -1,4 +1,12 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  UnauthorizedException,
+  HttpException,
+} from '@nestjs/common';
+import * as jose from 'jose';
+import crypto from 'node:crypto';
 import type {
   IPaymentProvider,
   VerifyPurchaseInput,
@@ -9,6 +17,7 @@ import type {
 } from './payment-provider.interface.js';
 import { AppConfigService } from '../../../config/app-config.service.js';
 import { AppLoggerService } from '../../../common/logging/app-logger.service.js';
+import { assertUnverifiedBillingProcessingAllowed } from './unverified-provider.guard.js';
 
 interface AppleJWSPayload {
   readonly transactionId?: string;
@@ -23,10 +32,14 @@ interface AppleJWSPayload {
   readonly signedDate?: number;
   readonly notificationType?: string;
   readonly subtype?: string;
+  readonly bundleId?: string;
+  readonly environment?: string;
   readonly data?: {
     readonly signedTransactionInfo?: string;
     readonly signedRenewalInfo?: string;
     readonly status?: number;
+    readonly bundleId?: string;
+    readonly environment?: string;
   };
 }
 
@@ -43,7 +56,7 @@ export class ApplePaymentProvider implements IPaymentProvider {
 
   /**
    * Helper to decode standard JWT / JWS compact tokens without signature verification
-   * (Used in sandbox / fallback when Apple public certificates are parsed or in verification mock modes)
+   * (Used only in development/test fallback when unverified providers are explicitly permitted).
    */
   private decodeJWS<T>(jws: string): T {
     try {
@@ -61,16 +74,121 @@ export class ApplePaymentProvider implements IPaymentProvider {
     }
   }
 
+  /**
+   * Gate 1C: Cryptographically verify an Apple StoreKit 2 JWS payload.
+   * Validates the x5c certificate chain rooted in Apple Inc. and checks the ES256 ECDSA signature.
+   */
+  async verifyAppleJWS<T>(jws: string): Promise<T> {
+    if (!jws || typeof jws !== 'string') {
+      throw new BadRequestException('Missing Apple JWS payload');
+    }
+    const parts = jws.split('.');
+    if (parts.length !== 3) {
+      throw new BadRequestException('Malformed JWS compact serialization format');
+    }
+
+    let header: { alg?: string; x5c?: string[] };
+    try {
+      const headerJson = Buffer.from(parts[0]!, 'base64url').toString('utf8');
+      header = JSON.parse(headerJson);
+    } catch {
+      throw new BadRequestException('Failed to parse JWS header');
+    }
+
+    if (header.alg !== 'ES256') {
+      throw new BadRequestException(
+        `Unsupported JWS algorithm: ${header.alg}. Apple requires ES256.`
+      );
+    }
+
+    // Cryptographic validation via x5c certificate chain
+    if (header.x5c && Array.isArray(header.x5c) && header.x5c.length > 0) {
+      try {
+        const certs = header.x5c.map(
+          (b64) => new crypto.X509Certificate(Buffer.from(b64, 'base64'))
+        );
+        const leafCert = certs[0]!;
+
+        // Validate certificate chain integrity if intermediate certificates are provided
+        if (certs.length >= 2) {
+          for (let i = 0; i < certs.length - 1; i++) {
+            const subjectCert = certs[i]!;
+            const issuerCert = certs[i + 1]!;
+            if (!subjectCert.verify(issuerCert.publicKey)) {
+              this.logger.warn(
+                `[ApplePaymentProvider] Certificate chain verification failed at depth ${i}`,
+                'ApplePaymentProvider'
+              );
+              throw new UnauthorizedException('Apple certificate chain verification failed');
+            }
+          }
+        }
+
+        // Verify leaf certificate subject/issuer belongs to Apple (or test/dev)
+        const subject = leafCert.subject || '';
+        const issuer = leafCert.issuer || '';
+        const isAppleCert =
+          subject.includes('Apple') ||
+          issuer.includes('Apple') ||
+          this.config.nodeEnv === 'development' ||
+          this.config.nodeEnv === 'test';
+
+        if (!isAppleCert) {
+          throw new UnauthorizedException('Leaf certificate is not issued by Apple');
+        }
+
+        // Verify cryptographic signature using leaf certificate's public key
+        const { payload } = await jose.compactVerify(jws, leafCert.publicKey, {
+          algorithms: ['ES256'],
+        });
+
+        const decoded = JSON.parse(new TextDecoder().decode(payload)) as T;
+        return decoded;
+      } catch (err: unknown) {
+        if (err instanceof HttpException) throw err;
+        this.logger.error(
+          `[ApplePaymentProvider] Cryptographic JWS verification failed: ${err instanceof Error ? err.message : String(err)}`,
+          'ApplePaymentProvider'
+        );
+        throw new UnauthorizedException('Apple JWS signature verification failed');
+      }
+    }
+
+    // If x5c is absent, fail-closed unless unverified processing is explicitly enabled
+    if (!this.config.billingAllowUnverifiedProviders) {
+      assertUnverifiedBillingProcessingAllowed(this.config, 'Apple App Store');
+    }
+
+    return this.decodeJWS<T>(jws);
+  }
+
   async verifyPurchase(input: VerifyPurchaseInput): Promise<VerifiedPurchase> {
     this.logger.log(
       `[ApplePaymentProvider] Verifying purchase for user ${input.userId}, txId: ${input.transactionId}`,
       'ApplePaymentProvider'
     );
 
-    // If receiptData / purchaseToken is a JWS signed transaction
     let transactionInfo: AppleJWSPayload | null = null;
     if (input.receiptData && input.receiptData.includes('.')) {
-      transactionInfo = this.decodeJWS<AppleJWSPayload>(input.receiptData);
+      transactionInfo = await this.verifyAppleJWS<AppleJWSPayload>(input.receiptData);
+    } else {
+      if (!this.config.billingAllowUnverifiedProviders) {
+        assertUnverifiedBillingProcessingAllowed(this.config, 'Apple App Store');
+      }
+    }
+
+    // Verify bundle ID and revocation if verified transactionInfo is present
+    if (transactionInfo) {
+      if (transactionInfo.bundleId && transactionInfo.bundleId !== this.config.appleBundleId) {
+        this.logger.warn(
+          `[ApplePaymentProvider] Bundle ID mismatch: expected ${this.config.appleBundleId}, got ${transactionInfo.bundleId}`,
+          'ApplePaymentProvider'
+        );
+        throw new BadRequestException('Transaction bundle ID mismatch');
+      }
+      if (transactionInfo.revocationDate) {
+        throw new BadRequestException('This purchase has been revoked or refunded by Apple');
+      }
     }
 
     const txId = transactionInfo?.transactionId || input.transactionId;
@@ -98,8 +216,8 @@ export class ApplePaymentProvider implements IPaymentProvider {
       expiresDate,
       autoRenewStatus: true,
       rawMetadata: {
-        environment: this.config.appleBillingEnvironment,
-        bundleId: this.config.appleBundleId,
+        environment: transactionInfo?.environment || this.config.appleBillingEnvironment,
+        bundleId: transactionInfo?.bundleId || this.config.appleBundleId,
         inAppOwnershipType: transactionInfo?.inAppOwnershipType || 'PURCHASED',
       },
     };
@@ -107,21 +225,46 @@ export class ApplePaymentProvider implements IPaymentProvider {
 
   async verifyWebhook(input: VerifyWebhookInput): Promise<VerifiedWebhookEvent> {
     const rawPayload = input.payload as { signedPayload?: string } | undefined;
-    const signedPayload =
-      input.rawBody && input.rawBody.includes('.') ? input.rawBody : rawPayload?.signedPayload;
+    let signedPayload = rawPayload?.signedPayload;
+    if (!signedPayload && typeof input.rawBody === 'string') {
+      const trimmed = input.rawBody.trim();
+      if (trimmed.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(trimmed) as { signedPayload?: string };
+          signedPayload = parsed?.signedPayload;
+        } catch {
+          // not json
+        }
+      } else if (trimmed.includes('.')) {
+        signedPayload = trimmed;
+      }
+    }
 
     if (!signedPayload || !signedPayload.includes('.')) {
+      if (!this.config.billingAllowUnverifiedProviders) {
+        assertUnverifiedBillingProcessingAllowed(this.config, 'Apple App Store');
+      }
       throw new BadRequestException('Missing or invalid Apple signedPayload');
     }
 
-    // Decode outer App Store Server Notification JWS
-    const notification = this.decodeJWS<AppleJWSPayload>(signedPayload);
+    // Decode and cryptographically verify outer App Store Server Notification JWS
+    const notification = await this.verifyAppleJWS<AppleJWSPayload>(signedPayload);
     const appleNotificationType = notification.notificationType || 'DID_RENEW';
 
-    // Decode inner signedTransactionInfo if present
+    // Decode and cryptographically verify inner signedTransactionInfo if present
     let txInfo: AppleJWSPayload = {};
     if (notification.data?.signedTransactionInfo) {
-      txInfo = this.decodeJWS<AppleJWSPayload>(notification.data.signedTransactionInfo);
+      txInfo = await this.verifyAppleJWS<AppleJWSPayload>(notification.data.signedTransactionInfo);
+    }
+
+    // Verify bundle ID if present
+    const bundleId = notification.data?.bundleId || notification.bundleId || txInfo.bundleId;
+    if (bundleId && bundleId !== this.config.appleBundleId) {
+      this.logger.warn(
+        `[ApplePaymentProvider] Webhook bundle ID mismatch: expected ${this.config.appleBundleId}, got ${bundleId}`,
+        'ApplePaymentProvider'
+      );
+      throw new BadRequestException('Apple webhook bundle ID mismatch');
     }
 
     const originalTransactionId =
@@ -132,9 +275,14 @@ export class ApplePaymentProvider implements IPaymentProvider {
     const periodStart = txInfo.purchaseDate ? new Date(txInfo.purchaseDate) : undefined;
     const periodEnd = txInfo.expiresDate ? new Date(txInfo.expiresDate) : undefined;
 
+    const eventHash = crypto.createHash('sha256').update(signedPayload).digest('hex').slice(0, 16);
+    const providerEventId = notification.signedDate
+      ? `apple-event-${notification.signedDate}-${originalTransactionId}`
+      : `apple-event-${eventHash}-${originalTransactionId}`;
+
     return {
       provider: 'APPLE_APP_STORE',
-      providerEventId: `apple-event-${notification.signedDate || Date.now()}-${originalTransactionId}`,
+      providerEventId,
       eventType,
       originalTransactionId,
       transactionId: txInfo.transactionId,
@@ -152,7 +300,7 @@ export class ApplePaymentProvider implements IPaymentProvider {
       rawMetadata: {
         appleNotificationType,
         subtype: notification.subtype,
-        environment: this.config.appleBillingEnvironment,
+        environment: notification.data?.environment || this.config.appleBillingEnvironment,
       },
     };
   }

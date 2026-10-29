@@ -253,7 +253,7 @@ describe('Gate 16: Security Hardening & Assurance Review', () => {
     const supportEmail = `support-${Date.now()}@nazar.internal`;
 
     beforeAll(async () => {
-      await adminAuthService.ensureSeedAdmin();
+      await adminAuthService.ensureDefaultRolesAndPermissions();
       const supportId = crypto.randomUUID();
       const passwordHash = adminAuthService.hashPassword('SupportPassword123!');
 

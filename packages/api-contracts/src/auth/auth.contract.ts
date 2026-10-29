@@ -118,18 +118,30 @@ export interface PasskeyRegisterOptionsResponse {
     readonly type: 'public-key';
   }>;
   readonly timeout: number;
+  readonly attestation?: 'none' | 'indirect' | 'direct';
   readonly authenticatorSelection: {
     readonly residentKey?: 'discouraged' | 'preferred' | 'required';
     readonly userVerification?: 'discouraged' | 'preferred' | 'required';
   };
 }
 
+/**
+ * Gate 1B: standards-compliant WebAuthn registration response.
+ * The server performs full cryptographic verification of the attestation
+ * object, client data, challenge, origin and relying-party identifier.
+ */
 export interface PasskeyRegisterVerifyPayload {
   readonly challenge: string;
-  readonly credentialId: string;
-  readonly publicKey: string;
+  readonly id: string;
+  readonly rawId?: string;
+  readonly type?: 'public-key';
+  readonly response: {
+    readonly clientDataJSON: string;
+    readonly attestationObject: string;
+  };
   readonly transports?: readonly string[];
-  readonly aaguid?: string;
+  readonly authenticatorAttachment?: string;
+  readonly clientExtensionResults?: Record<string, unknown>;
 }
 
 export interface PasskeyLoginOptionsPayload {
@@ -141,14 +153,30 @@ export interface PasskeyLoginOptionsResponse {
   readonly rpId: string;
   readonly timeout: number;
   readonly userVerification: 'discouraged' | 'preferred' | 'required';
+  readonly allowCredentials?: ReadonlyArray<{
+    readonly id: string;
+    readonly type: 'public-key';
+    readonly transports?: readonly string[];
+  }>;
 }
 
+/**
+ * Gate 1B: standards-compliant WebAuthn authentication response.
+ * The server verifies the assertion signature against the stored credential
+ * public key, and validates challenge, origin, RP ID and authenticator data.
+ */
 export interface PasskeyLoginVerifyPayload {
   readonly challenge: string;
-  readonly credentialId: string;
-  readonly authenticatorData?: string;
-  readonly clientDataJSON?: string;
-  readonly signature?: string;
+  readonly id: string;
+  readonly rawId?: string;
+  readonly type?: 'public-key';
+  readonly response: {
+    readonly clientDataJSON: string;
+    readonly authenticatorData: string;
+    readonly signature: string;
+    readonly userHandle?: string;
+  };
+  readonly clientExtensionResults?: Record<string, unknown>;
   readonly device?: DeviceRegistrationPayload;
 }
 

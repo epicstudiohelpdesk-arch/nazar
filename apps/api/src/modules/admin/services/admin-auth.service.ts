@@ -1,4 +1,11 @@
-import { Injectable, Inject, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  UnauthorizedException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { ErrorCode } from '@platform/api-contracts';
@@ -6,10 +13,8 @@ import { AppConfigService } from '../../../config/app-config.service.js';
 import { AdminUsersRepository } from '../repositories/admin-users.repository.js';
 import { AdminSessionsRepository } from '../repositories/admin-sessions.repository.js';
 import { AdminRolesRepository } from '../repositories/admin-roles.repository.js';
-import {
-  ADMIN_TOKEN_EXPIRATION_SECONDS,
-  ADMIN_JWT_SECRET_FALLBACK,
-} from '../constants/admin.constants.js';
+import { AdminAuditLogsRepository } from '../repositories/admin-audit-logs.repository.js';
+import { ADMIN_TOKEN_EXPIRATION_SECONDS } from '../constants/admin.constants.js';
 import type {
   AdminLoginRequest,
   AdminLoginResponse,
@@ -18,6 +23,23 @@ import type {
   AdminRoleName,
   AdminPermissionName,
 } from '@platform/api-contracts';
+
+// Valid-format scrypt digest used to equalize response timing when an
+// administrative email does not exist (anti-enumeration). Contains no secret.
+const DUMMY_PASSWORD_HASH = crypto
+  .scryptSync(crypto.randomBytes(16), crypto.randomBytes(16), 64)
+  .toString('hex');
+const DUMMY_STORED_HASH = `scrypt:${'00'.repeat(16)}:${DUMMY_PASSWORD_HASH}`;
+
+const LOGIN_MAX_FAILED_ATTEMPTS = 5;
+const LOGIN_FAILURE_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
+
+interface LoginThrottleState {
+  failures: number;
+  windowStartedAt: number;
+  lockedUntil: number;
+}
 
 export interface AdminTokenPayload {
   readonly sub: string;
@@ -42,11 +64,25 @@ export class AdminAuthService {
     @Inject(AdminSessionsRepository)
     private readonly adminSessionsRepo: AdminSessionsRepository,
     @Inject(AdminRolesRepository)
-    private readonly adminRolesRepo: AdminRolesRepository
+    private readonly adminRolesRepo: AdminRolesRepository,
+    @Inject(AdminAuditLogsRepository)
+    private readonly adminAuditLogsRepo: AdminAuditLogsRepository
   ) {}
 
+  /**
+   * Gate 1A: administrative tokens are signed exclusively with the validated
+   * JWT access secret. There is no hard-coded fallback; missing secret fails
+   * closed. Environment validation rejects development defaults outside
+   * development/test at startup.
+   */
   private get jwtSecret(): string {
-    return this.configService.jwtAccessSecret || ADMIN_JWT_SECRET_FALLBACK;
+    const secret = this.configService.jwtAccessSecret;
+    if (!secret) {
+      throw new Error(
+        '[SECURITY] JWT_ACCESS_SECRET is not configured. Administrative token signing is disabled (fail-closed).'
+      );
+    }
+    return secret;
   }
 
   hashPassword(password: string): string {
@@ -77,13 +113,59 @@ export class AdminAuthService {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
 
+  /**
+   * Gate 1A: dedicated, in-memory admin login throttling (per email).
+   * Limits both online password guessing and email enumeration. Note: this is
+   * per-instance state; distributed brute-force resistance across replicas is
+   * deferred to the shared-rate-limit work tracked in Gate 1B.
+   */
+  private readonly loginThrottle = new Map<string, LoginThrottleState>();
+
+  private assertLoginNotLocked(email: string): void {
+    const state = this.loginThrottle.get(email);
+    if (state && state.lockedUntil > Date.now()) {
+      throw new HttpException(
+        {
+          code: ErrorCode.RATE_LIMITED,
+          message: 'Too many failed administrative login attempts. Access temporarily locked.',
+        },
+        HttpStatus.TOO_MANY_REQUESTS
+      );
+    }
+  }
+
+  private recordLoginFailure(email: string): void {
+    const now = Date.now();
+    const state = this.loginThrottle.get(email);
+    if (!state || now - state.windowStartedAt > LOGIN_FAILURE_WINDOW_MS) {
+      this.loginThrottle.set(email, { failures: 1, windowStartedAt: now, lockedUntil: 0 });
+      return;
+    }
+    state.failures += 1;
+    if (state.failures >= LOGIN_MAX_FAILED_ATTEMPTS) {
+      state.lockedUntil = now + LOGIN_LOCKOUT_MS;
+    }
+  }
+
+  private recordLoginSuccess(email: string): void {
+    this.loginThrottle.delete(email);
+  }
+
   async login(
     input: AdminLoginRequest,
     ipAddress?: string,
     userAgent?: string
   ): Promise<AdminLoginResponse> {
+    const throttleKey = String(input.email || '')
+      .trim()
+      .toLowerCase();
+    this.assertLoginNotLocked(throttleKey);
+
     const adminUser = await this.adminUsersRepo.findByEmail(input.email);
     if (!adminUser) {
+      // Equalize timing with a real password verification (anti-enumeration)
+      this.verifyPassword(input.password, DUMMY_STORED_HASH);
+      this.recordLoginFailure(throttleKey);
       throw new UnauthorizedException({
         code: ErrorCode.UNAUTHORIZED,
         message: 'Invalid administrative email or password',
@@ -91,6 +173,7 @@ export class AdminAuthService {
     }
 
     if (!adminUser.isActive) {
+      this.recordLoginFailure(throttleKey);
       throw new ForbiddenException({
         code: ErrorCode.FORBIDDEN,
         message: 'Administrative staff account is deactivated',
@@ -99,11 +182,27 @@ export class AdminAuthService {
 
     const isValid = this.verifyPassword(input.password, adminUser.passwordHash);
     if (!isValid) {
+      this.recordLoginFailure(throttleKey);
       throw new UnauthorizedException({
         code: ErrorCode.UNAUTHORIZED,
         message: 'Invalid administrative email or password',
       });
     }
+
+    // Gate 1A: enforce the configured MFA policy for privileged administrators.
+    // Defaults to enforced in staging/production. Until TOTP enrollment ships
+    // (Gate 1B), non-MFA administrators cannot establish sessions when the
+    // policy is active — fail closed rather than silent exposure.
+    if (this.configService.adminMfaRequired && !adminUser.mfaEnabled) {
+      this.recordLoginFailure(throttleKey);
+      throw new ForbiddenException({
+        code: ErrorCode.FORBIDDEN,
+        message:
+          'Multi-factor authentication is required for administrative accounts. This account has not completed MFA enrollment.',
+      });
+    }
+
+    this.recordLoginSuccess(throttleKey);
 
     // Load roles and permissions
     const roles = await this.adminUsersRepo.getUserRoles(adminUser.id);
@@ -260,26 +359,97 @@ export class AdminAuthService {
   }
 
   /**
-   * Automatically initializes the default roles, permissions, and initial super admin staff user if needed.
+   * Gate 1A: initializes the baseline role/permission definitions only.
+   * This creates NO user accounts and is safe to invoke at startup or in tests.
    */
-  async ensureSeedAdmin(): Promise<void> {
+  async ensureDefaultRolesAndPermissions(): Promise<void> {
+    await this.adminRolesRepo.ensureDefaultRolesAndPermissions();
+  }
+
+  /**
+   * Gate 1A: auditable, explicit administrator provisioning.
+   *
+   * Replaces the removed boot-time seed that created `admin@nazar.internal`
+   * with a hard-coded password in every environment. There are no default
+   * credentials: when no password is supplied, a cryptographically random
+   * one-time password is generated and returned to the operator exactly once
+   * (never persisted in plaintext, never logged by this method).
+   *
+   * Fail-closed: in staging/production, provisioning is refused unless an
+   * operator-configured ADMIN_PROVISIONING_TOKEN exists (the CLI additionally
+   * requires the operator to present that token).
+   */
+  async provisionAdmin(input: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: AdminRoleName;
+    password?: string;
+    mfaEnabled?: boolean;
+  }): Promise<{
+    adminUserId: string;
+    email: string;
+    role: AdminRoleName;
+    oneTimePassword?: string;
+  }> {
+    const hardenedEnv =
+      this.configService.nodeEnv === 'staging' || this.configService.nodeEnv === 'production';
+
+    if (hardenedEnv && !this.configService.adminProvisioningToken) {
+      throw new Error(
+        '[SECURITY] Administrator provisioning is disabled: ADMIN_PROVISIONING_TOKEN is not configured for this environment.'
+      );
+    }
+
+    const email = String(input.email || '')
+      .trim()
+      .toLowerCase();
+    if (!email) {
+      throw new Error('Administrator provisioning requires an email address.');
+    }
+
+    // Ensure RBAC definitions exist before assigning a role
     await this.adminRolesRepo.ensureDefaultRolesAndPermissions();
 
-    const existingAdmin = await this.adminUsersRepo.findByEmail('admin@nazar.internal');
-    if (!existingAdmin) {
-      const adminId = crypto.randomUUID();
-      const passwordHash = this.hashPassword('SuperAdmin123!');
-      await this.adminUsersRepo.createAdminUser({
-        id: adminId,
-        email: 'admin@nazar.internal',
-        passwordHash,
-        firstName: 'System',
-        lastName: 'SuperAdmin',
-        isActive: true,
-        mfaEnabled: false,
-      });
-
-      await this.adminUsersRepo.assignRole(adminId, 'SUPER_ADMIN');
+    const existing = await this.adminUsersRepo.findByEmail(email);
+    if (existing) {
+      throw new Error(
+        `Administrator provisioning refused: an administrative account already exists for ${email}.`
+      );
     }
+
+    const oneTimePassword = input.password ?? crypto.randomBytes(24).toString('base64url');
+    const adminUserId = crypto.randomUUID();
+
+    await this.adminUsersRepo.createAdminUser({
+      id: adminUserId,
+      email,
+      passwordHash: this.hashPassword(oneTimePassword),
+      firstName: input.firstName,
+      lastName: input.lastName,
+      isActive: true,
+      mfaEnabled: input.mfaEnabled ?? false,
+    });
+    await this.adminUsersRepo.assignRole(adminUserId, input.role);
+
+    // Durable audit trail for the privileged change (no credential material)
+    await this.adminAuditLogsRepo.createLog({
+      id: crypto.randomUUID(),
+      actorAdminId: null,
+      actorEmail: 'system:admin-provisioning',
+      actorRole: 'SYSTEM',
+      action: 'ADMIN_PROVISIONED',
+      resourceType: 'admin_user',
+      resourceId: adminUserId,
+      reason: 'Explicit administrator provisioning (Gate 1A workflow)',
+      newState: { email, role: input.role, mfaEnabled: input.mfaEnabled ?? false },
+    });
+
+    return {
+      adminUserId,
+      email,
+      role: input.role,
+      oneTimePassword: input.password ? undefined : oneTimePassword,
+    };
   }
 }

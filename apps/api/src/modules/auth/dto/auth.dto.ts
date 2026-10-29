@@ -39,6 +39,8 @@ export const googleAuthSchema = z
     idToken: z.string().optional(),
     authorizationCode: z.string().optional(),
     codeVerifier: z.string().optional(),
+    redirectUri: z.string().max(2048).optional(),
+    nonce: z.string().max(255).optional(),
     device: deviceRegistrationSchema.optional(),
   })
   .refine((data) => data.idToken || data.authorizationCode, {
@@ -49,7 +51,9 @@ export const appleAuthSchema = z
   .object({
     idToken: z.string().optional(),
     authorizationCode: z.string().optional(),
-    nonce: z.string().optional(),
+    codeVerifier: z.string().optional(),
+    redirectUri: z.string().max(2048).optional(),
+    nonce: z.string().max(255).optional(),
     device: deviceRegistrationSchema.optional(),
   })
   .refine((data) => data.idToken || data.authorizationCode, {
@@ -67,10 +71,16 @@ export const refreshTokenSchema = z.object({
 
 export const passkeyRegisterVerifySchema = z.object({
   challenge: z.string().min(1),
-  credentialId: z.string().min(1),
-  publicKey: z.string().min(1),
+  id: z.string().min(1),
+  rawId: z.string().min(1).optional(),
+  type: z.literal('public-key').optional(),
+  response: z.object({
+    clientDataJSON: z.string().min(1),
+    attestationObject: z.string().min(1),
+  }),
   transports: z.array(z.string()).optional(),
-  aaguid: z.string().optional(),
+  authenticatorAttachment: z.string().max(64).optional(),
+  clientExtensionResults: z.record(z.unknown()).optional(),
 });
 
 export const passkeyLoginOptionsSchema = z.object({
@@ -79,9 +89,15 @@ export const passkeyLoginOptionsSchema = z.object({
 
 export const passkeyLoginVerifySchema = z.object({
   challenge: z.string().min(1),
-  credentialId: z.string().min(1),
-  authenticatorData: z.string().optional(),
-  clientDataJSON: z.string().optional(),
-  signature: z.string().optional(),
+  id: z.string().min(1),
+  rawId: z.string().min(1).optional(),
+  type: z.literal('public-key').optional(),
+  response: z.object({
+    clientDataJSON: z.string().min(1),
+    authenticatorData: z.string().min(1),
+    signature: z.string().min(1),
+    userHandle: z.string().optional(),
+  }),
+  clientExtensionResults: z.record(z.unknown()).optional(),
   device: deviceRegistrationSchema.optional(),
 });

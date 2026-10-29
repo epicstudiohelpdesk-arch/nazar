@@ -26,7 +26,7 @@ describe('Gate 15: Analytics Experimentation Engine', () => {
     adminUsersRepo = app.get(AdminUsersRepository);
 
     // Bootstrap seed and create test admin
-    await adminAuthService.ensureSeedAdmin();
+    await adminAuthService.ensureDefaultRolesAndPermissions();
     const adminId = crypto.randomUUID();
     const passwordHash = adminAuthService.hashPassword(adminPassword);
 

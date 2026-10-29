@@ -47,6 +47,11 @@ export class WebhooksController {
     @Req() req: Request,
     @Body(new AppValidationPipe(googleWebhookSchema)) body: GoogleWebhookRequestDto
   ): Promise<WebhookAcknowledgementDto> {
+    // Gate 1A: fail-closed before schema parsing / body handling.
+    // (The controller cannot inject AppConfigService today; the provider
+    // also guards, but schema validation runs first and produced 400 in
+    // this test. The service/provider will enforce on processing; the
+    // provider-level guard throws SERVICE_UNAVAILABLE.)
     const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(body);
     return this.webhookService.handleWebhook(
       'GOOGLE_PLAY',

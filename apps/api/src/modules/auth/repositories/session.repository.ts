@@ -91,6 +91,34 @@ export class SessionRepository implements ISessionRepository {
     newExpiresAt: Date
   ): Promise<SessionRow> {
     return this.databaseService.withTransaction(async (tx) => {
+      // 0. Acquire row-level exclusive lock on the session to serialize concurrent rotations
+      const [lockedSession] = await tx
+        .select()
+        .from(sessions)
+        .where(eq(sessions.id, sessionId))
+        .for('update');
+
+      if (!lockedSession) {
+        throw new UnauthorizedException({
+          code: ErrorCode.SESSION_EXPIRED,
+          message: 'Session does not exist',
+        });
+      }
+
+      if (lockedSession.revokedAt) {
+        throw new UnauthorizedException({
+          code: ErrorCode.SESSION_REVOKED,
+          message: 'Session has been revoked',
+        });
+      }
+
+      if (lockedSession.tokenHash !== oldTokenHash) {
+        throw new UnauthorizedException({
+          code: ErrorCode.TOKEN_REPLAY_DETECTED,
+          message: 'Refresh token has already been rotated by another concurrent request',
+        });
+      }
+
       // 1. Archive old token hash into token history for replay detection
       await tx.insert(sessionTokenHistory).values({
         id: generateUuidV7(),

@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
+import { ErrorCode } from '@platform/api-contracts';
 import type {
   IPaymentProvider,
   VerifyPurchaseInput,
@@ -7,10 +8,35 @@ import type {
   VerifiedWebhookEvent,
   WebhookEventType,
 } from './payment-provider.interface.js';
+import { AppConfigService } from '../../../config/app-config.service.js';
 
 @Injectable()
 export class MockPaymentProvider implements IPaymentProvider {
   readonly providerType = 'MOCK' as const;
+
+  constructor(
+    @Inject(AppConfigService)
+    private readonly config: AppConfigService
+  ) {}
+
+  /**
+   * Gate 1A: the mock provider only operates when the server-controlled
+   * BILLING_PROVIDER_MOCK flag is enabled (environment validation forbids it
+   * in staging/production). A client-supplied `provider: "MOCK"` field can no
+   * longer reach mock verification in a hardened environment.
+   */
+  private assertMockEnabled(): void {
+    if (!this.config.billingProviderMock) {
+      throw new HttpException(
+        {
+          code: ErrorCode.SERVICE_UNAVAILABLE,
+          message:
+            'Mock billing provider is disabled in this environment. Purchase verification is unavailable.',
+        },
+        HttpStatus.SERVICE_UNAVAILABLE
+      );
+    }
+  }
 
   private readonly verifiedPurchases: VerifyPurchaseInput[] = [];
   private readonly verifiedWebhooks: VerifyWebhookInput[] = [];
@@ -45,6 +71,7 @@ export class MockPaymentProvider implements IPaymentProvider {
   }
 
   async verifyPurchase(input: VerifyPurchaseInput): Promise<VerifiedPurchase> {
+    this.assertMockEnabled();
     this.verifiedPurchases.push(input);
 
     if (
@@ -88,6 +115,7 @@ export class MockPaymentProvider implements IPaymentProvider {
   }
 
   async verifyWebhook(input: VerifyWebhookInput): Promise<VerifiedWebhookEvent> {
+    this.assertMockEnabled();
     this.verifiedWebhooks.push(input);
 
     if (this.shouldFailWebhook || input.rawBody.includes('invalid_signature')) {

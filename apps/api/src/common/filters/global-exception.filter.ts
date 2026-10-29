@@ -96,12 +96,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       );
     }
 
+    const sanitizedMessage = this.sanitizeMessage(message);
+    const sanitizedDetails = details?.map((d) => ({
+      ...d,
+      message: this.sanitizeMessage(d.message),
+    }));
+
     const envelope: ApiFailureEnvelope = createFailureResponse(
       {
         statusCode,
         code: errorCode,
-        message,
-        details,
+        message: sanitizedMessage,
+        details: sanitizedDetails,
         path,
         timestamp: new Date().toISOString(),
       },
@@ -109,6 +115,26 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     );
 
     response.status(statusCode).json(envelope);
+  }
+
+  private sanitizeMessage(raw: string): string {
+    if (!raw || typeof raw !== 'string') return raw;
+    let sanitized = raw
+      .replace(/(postgres|postgresql|redis|mongodb):\/\/[^@\s]+@[^\s/]+/gi, '$1://[REDACTED]@')
+      .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/gi, 'Bearer [REDACTED]')
+      .replace(/\bey[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]+\b/g, '[REDACTED_JWT]');
+
+    if (
+      sanitized.includes('syntax error at or near') ||
+      sanitized.includes('violates unique constraint') ||
+      sanitized.includes('violates foreign key constraint') ||
+      sanitized.includes('relation "') ||
+      sanitized.includes('column "')
+    ) {
+      sanitized = 'A database operation error occurred';
+    }
+
+    return sanitized;
   }
 
   private mapStatusToErrorCode(status: number): ErrorCode {
