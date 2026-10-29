@@ -94,7 +94,7 @@ describe('Gate 1A: Admin Bootstrap & Credential Safety', () => {
     for (let i = 0; i < 5; i++) {
       const fail = await request(app.getHttpServer())
         .post('/v1/admin/auth/login')
-        .send({ email, password: `wrong-${i}` });
+        .send({ email, password: `WrongPassword${i}!` });
       expect([400, 401]).toContain(fail.status);
     }
 
@@ -107,7 +107,7 @@ describe('Gate 1A: Admin Bootstrap & Credential Safety', () => {
     // Lockout is per-identifier: unrelated logins are unaffected
     const other = await request(app.getHttpServer())
       .post('/v1/admin/auth/login')
-      .send({ email: `other-${crypto.randomUUID()}@nazar.internal`, password: 'x' });
+      .send({ email: `other-${crypto.randomUUID()}@nazar.internal`, password: 'OtherWrongPassword1!' });
     expect(other.status).toBe(401);
   });
 

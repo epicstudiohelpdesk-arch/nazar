@@ -1,3 +1,7 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+--> statement-breakpoint
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+--> statement-breakpoint
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'nazar_app_role') THEN
     CREATE ROLE nazar_app_role;

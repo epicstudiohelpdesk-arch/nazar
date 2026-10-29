@@ -123,6 +123,9 @@ describe('Production Environment Configuration Validation (Gate 18)', () => {
       REDIS_URL: 'rediss://prod_user:prod_pass@redis.internal.nazar.app:6379/0',
       JWT_ACCESS_SECRET: 'prod_access_secret_entropy_64_characters_high_random_key_abc_123',
       JWT_REFRESH_SECRET: 'prod_refresh_secret_entropy_64_characters_high_random_key_def_456',
+      FIELD_ENCRYPTION_KEY: 'prod_field_encryption_key_entropy_64_characters_high_random_key_!',
+      S3_ACCESS_KEY_ID: 'prod_s3_access_key_strictly_non_default_123',
+      S3_SECRET_ACCESS_KEY: 'prod_s3_secret_key_strictly_non_default_456',
       PUSH_PROVIDER_MOCK: false,
       BILLING_PROVIDER_MOCK: false,
     };

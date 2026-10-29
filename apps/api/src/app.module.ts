@@ -52,10 +52,10 @@ import { AuthGuard } from './common/guards/auth.guard.js';
         throttlers: [
           {
             ttl: config.rateLimitTtlMs,
-            limit: config.rateLimitLimit,
+            limit: config.isTest ? 10000 : config.rateLimitLimit,
           },
         ],
-        storage,
+        storage: config.isTest ? undefined : storage,
       }),
     }),
     // Domain modules

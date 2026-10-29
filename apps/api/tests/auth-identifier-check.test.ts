@@ -9,8 +9,8 @@ import { users, userIdentities } from '../src/infrastructure/database/drizzle/sc
 describe('Auth: Identifier Existence Check (Anti-Enumeration Guarded)', () => {
   let app: INestApplication;
   let db: DatabaseService;
-  const testPhone = '+919876543210';
-  const testEmail = `user_${Date.now()}@example.com`;
+  const testPhone = `+9198${Math.floor(10000000 + Math.random() * 90000000)}`;
+  const testEmail = `user_${Date.now()}_${Math.floor(Math.random() * 10000)}@example.com`;
 
   beforeAll(async () => {
     const setup = await createTestApp();

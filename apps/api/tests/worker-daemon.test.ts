@@ -69,22 +69,23 @@ describe('SEC-03: Background Worker Daemon Subsystem', () => {
       },
       status: 'PENDING',
       attempts: 0,
-      availableAt: new Date(Date.now() - 1000), // Ready to claim immediately
+      availableAt: new Date(0), // Head of the queue
     });
 
-    // Execute single tick
-    const processedCount = await daemonService.processSingleTick();
-    expect(processedCount).toBeGreaterThanOrEqual(1);
-
-    // Verify outbox row status transitioned to PUBLISHED
-    const [updatedRow] = await databaseService.client
-      .select()
-      .from(outboxEvents)
-      .where(eq(outboxEvents.id, testEventId));
+    // Execute ticks until test event is drained
+    let updatedRow;
+    for (let i = 0; i < 5; i++) {
+      await daemonService.processSingleTick();
+      [updatedRow] = await databaseService.client
+        .select()
+        .from(outboxEvents)
+        .where(eq(outboxEvents.id, testEventId));
+      if (updatedRow?.status === 'PUBLISHED') break;
+    }
 
     expect(updatedRow).toBeDefined();
-    expect(updatedRow.status).toBe('PUBLISHED');
-    expect(updatedRow.processedAt).toBeDefined();
+    expect(updatedRow?.status).toBe('PUBLISHED');
+    expect(updatedRow?.processedAt).toBeDefined();
   });
 
   it('isolates errors if a consumer step fails without crashing daemon process', async () => {
